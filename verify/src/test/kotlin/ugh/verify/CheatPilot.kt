@@ -19,6 +19,9 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
 
     fun attach() = ugh.onGameFrame { step() }
 
+    /** Acts only at frame boundaries of a frame-level differential test (so both sides see the changes). */
+    fun attachTo(diff: FrameDiff) { diff.beforeCopy += { step() } }
+
     private fun w(off: Int, v: Int) = ugh.machine.write16(OriginalUgh.SEG_DGROUP, off, v)
     private fun r(off: Int) = ugh.dgroup16(off)
     private fun rs(off: Int) = ugh.dgroupS16(off)

@@ -60,6 +60,9 @@ class Vga {
         if (!gc.contentEquals(o.gc) || gcIndex != o.gcIndex) return "VGA graphics controller ${gc.toList()}/$gcIndex vs ${o.gc.toList()}/${o.gcIndex}"
         if (!crtc.contentEquals(o.crtc)) return "VGA CRTC differs"
         if (!dac.contentEquals(o.dac)) return "VGA DAC differs"
+        if (dacWrite != o.dacWrite || dacRead != o.dacRead) return "VGA DAC index $dacWrite/$dacRead vs ${o.dacWrite}/${o.dacRead}"
+        if (!attr.contentEquals(o.attr) || attrIndex != o.attrIndex || attrFlipFlop != o.attrFlipFlop) return "VGA attribute controller differs"
+        if (crtcIndex != o.crtcIndex || mode != o.mode) return "VGA CRTC index / mode differs"
         return null
     }
 

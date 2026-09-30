@@ -84,6 +84,30 @@ a tří nedosažitelných zarovnávacích `NOP`.
 | `2b7f` bonusy, `2b96` spawn, `2207` sebrání | `Bonuses.kt` | spolu s pasažéry |
 | `2363` objekty (4 typy, 27 stavových rutin), `2196`, `22f1` | `Objects.kt` | 20 levelů zadaných heslem, 170 000+ volání, všechny uložitelné stavy |
 
+| `0c7d–0fa4` celý herní snímek vč. kreslení | `Frame.kt`, `Draw.kt` | `FrameDiff`: 17 000+ snímků (levely 1, 2 team, 4, 5, 43 s deštěm), RAM + celá VGA |
+
+### Kreslení a celý snímek
+
+- Snímek: stmívání palety (`4e36`) nebo čekání na zatemnění, stavový řádek (`3f55`), mazání hráčů, pasažérů,
+  bublin, objektů, bonusů a kapek obnovou z pozadí (`43ea`, write mode 1), voda (`2d1c`), klávesy (`0fe8`),
+  logika, kreslení (pasažéři, stromy a foukače, vrtulníky, ostatní objekty, bonusy, bubliny, déšť), animace
+  hladiny (`2db9`) a přepnutí stránky (`4ebb`).
+- Sprite (`41fd`): po sloupcích, barva 0 průhledná, řádky pod hladinou `| 0x40`, sprity ve výšce stavového
+  řádku jdou na stránku `CS:4604`. Šířka nebo výška 0 znamená 256 (smyčky `DEC`/`JNZ`).
+- Stavový řádek se překresluje jen při změně: životy; skóre (max 999 999, jen změněné číslice), nebo náklad,
+  nebo jízdné a násobitel; vždy ukazatel energie (1 px na `DGROUP:c5` jednotek, prázdná energie = konec života).
+- Voda: hladina se mění každý druhý snímek. Nově zatopený řádek pozadí se zabarví hardwarovým OR (bit mask 0x40,
+  funkce OR) a oba buffery se opraví ve dvou po sobě jdoucích snímcích.
+- **Déšť** (příznak levelu `+0c`, 1 = zprava, 2 = zleva): 384 kapek barvy `0x5b`, nové kapky rodí RNG `4f09`.
+- Animace hladiny jsou kompilované zapisovače v kódu originálu. Port je „přehrává“ malým interpretem přímo
+  z bajtů v paměti (4 roviny × 80 bajtů jednoho řádku).
+- Pauza (P): port vrátí `PAUSE`. Volající počká jako originál a pokračuje `frameAfterKeys` s klávesou, která
+  pauzu ukončila. Ovládání joystickem (`51ec`) se neportuje.
+- `FrameDiff`: na hranici snímku (`113b:0c7d`) porovná předchozí snímek portu s originálem, obslouží odložená
+  přerušení (`Machine.serviceInterruptsNow`), zkopíruje stav a spustí v portu celý další snímek. Během snímku
+  se přerušení odkládají, klávesy tak dorazí mezi snímky oběma stranám stejně. Test se záměrně změněným
+  pixelem a barvou ověřuje, že rozdíly hlásí.
+
 ### Objekty (nepřátelé)
 
 Stejný princip jako u pasažérů: stav `2cf3[i]` je adresa rutiny, deskriptor `2cad[i]` určuje typ.

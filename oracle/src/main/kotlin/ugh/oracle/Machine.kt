@@ -206,13 +206,41 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
                 breakpoints[a]?.forEach { it() }
                 if (stopRequested || exited) break
             }
-            try {
-                cpu.step()
-            } catch (e: CpuException) {
-                throw CpuException("${e.message} (time $time, frame $vgaFrame)")
+            stepOnce()
+        }
+    }
+
+    private fun stepOnce() {
+        try {
+            cpu.step()
+        } catch (e: CpuException) {
+            throw CpuException("${e.message} (time $time, frame $vgaFrame)")
+        }
+        time = cpu.instructions + idle
+        if (time >= nextEvent) { processEvents(); nextEvent = nextEventTime() }
+    }
+
+    /**
+     * Services all deliverable hardware interrupts right now, running each handler to its IRET (breakpoints
+     * are not triggered inside). Used at frame boundaries of the differential tests, so that interrupts
+     * held back during a checked frame take effect before the next frame starts.
+     */
+    fun serviceInterruptsNow() {
+        while (cpu.iff && !irqHold) {
+            val irq = pic.next()
+            if (irq < 0) return
+            pic.acknowledge(irq)
+            val retCs = cpu.cs; val retIp = cpu.ip; val retSp = cpu.sp
+            cpu.interrupt(8 + irq)
+            var guard = 0L
+            while (!(cpu.cs == retCs && cpu.ip == retIp && cpu.sp == retSp)) {
+                if (cpu.iff && !cpu.irqInhibit) {
+                    val nested = pic.next()
+                    if (nested >= 0) { pic.acknowledge(nested); cpu.interrupt(8 + nested) }
+                }
+                stepOnce()
+                if (++guard > 50_000_000L) throw CpuException("interrupt handler %d did not return".format(irq))
             }
-            time = cpu.instructions + idle
-            if (time >= nextEvent) { processEvents(); nextEvent = nextEventTime() }
         }
     }
 
