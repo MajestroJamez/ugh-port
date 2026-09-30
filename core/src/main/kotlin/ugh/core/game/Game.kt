@@ -44,10 +44,13 @@ class Game(val mem: Memory) {
      */
     var soundEffect: (adlxSeg: Int, priority: Int, flags: Int) -> Unit = { _, _, _ -> }
 
-    internal fun playEffect(r: Regs, adlxSeg: Int) {
-        soundEffect(adlxSeg, 0xff, 1)
+    internal fun playEffect(r: Regs, adlxSeg: Int, flags: Int = 1) {
+        soundEffect(adlxSeg, 0xff, flags)
         r.ax = 0xffff
     }
+
+    /** Stops a sound started with flags 0 (far call 1878:1768 with the handle); a no-op without sound card. */
+    var soundStop: (handle: Int) -> Unit = {}
 
     /** Word in the game code segment (variables kept in CS by the original). */
     fun cs(off: Int) = mem.read16(CODE, off)

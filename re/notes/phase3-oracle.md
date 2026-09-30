@@ -82,6 +82,24 @@ a tří nedosažitelných zarovnávacích `NOP`.
 | `1095` fyzika vrtulníku, `1457` test kolize | `Game.copterUpdate` | 3 průběhy, 6 000+ volání |
 | `1486` pasažéři (36 stavových rutin), `2276` dotyk s vrtulníkem | `Passengers.kt` | levely 1–3, 1 hráč i team, 116 000+ volání |
 | `2b7f` bonusy, `2b96` spawn, `2207` sebrání | `Bonuses.kt` | spolu s pasažéry |
+| `2363` objekty (4 typy, 27 stavových rutin), `2196`, `22f1` | `Objects.kt` | 20 levelů zadaných heslem, 170 000+ volání, všechny uložitelné stavy |
+
+### Objekty (nepřátelé)
+
+Stejný princip jako u pasažérů: stav `2cf3[i]` je adresa rutiny, deskriptor `2cad[i]` určuje typ.
+- `0x7630` **létající nepřítel**: po prodlevě zakřičí, vybere dalšího hráče a přiletí z opačného okraje v jeho
+  výšce (omezené hladinou vody). Mávání křídel je zvuk ve smyčce, jeho handle se ukládá do `2d61` (bez karty
+  `0xFFFF`), takže port bude muset vracet stejná čísla kanálů jako originální zvuková knihovna. Dotyk
+  s vrtulníkem cílového hráče = havárie.
+- `0x766c` **chodící nepřítel** na plošině: otočí se k přistálému vrtulníku, rozběhne se (zrychluje) a vrtulník
+  vyhodí do vzduchu.
+- `0x76a8` **foukač**: podle fáze animace posouvá vrtulníky v oblasti před sebou do stran (±0x29).
+- `0x76e4` **strom**: odrazí padajícího pasažéra a pustí další bonus ze svého seznamu (`2cd5`).
+- Pasažér typu `0x78dc` shozený na nepřítele ho omráčí (body z `+3a`).
+
+Rutina `28a3` (varianta zotavení s tabulkou `+32`) se z žádného deskriptoru nezdá dosažitelná, převedená je i tak.
+Pokrytí zajišťuje `CheatPilot` (chycení a shození stojícího pasažéra nad nepřítelem, u letícího nepřítele
+přímým „vstříknutím“ pádu pasažéra do paměti originálu).
 
 ### Pasažéři
 

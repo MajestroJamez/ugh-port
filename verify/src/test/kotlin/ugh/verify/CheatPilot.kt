@@ -57,6 +57,41 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
             val p = passengers.firstOrNull { r(0x2a0d + it) == 0x1a42 && r(0x2a2d + it) == 0 }
             if (p != null) { landOn(r(0x2a6d + p)); count("deliver"); wait = 40 + rnd.nextInt(80); return }
         }
+        // a passenger hanging below the copter: carry it over an enemy and drop it there
+        val hanging = passengers.firstOrNull { r(0x2a0d + it) == 0x1c6b && r(0x2a2d + it) == 0 }
+        val targets = (0 until 5).map { it * 2 }.takeWhile { r(0x2cad + it) != 0xffff }.filter { r(0x2d43 + it) != 0xffff }
+        if (hanging != null && targets.isNotEmpty() && rnd.nextInt(10) < 7) {
+            val o = targets[rnd.nextInt(targets.size)]
+            // lead a moving target: the passenger needs ~20 frames to fall to it
+            val lead = rs(0x2ce9 + o) * (10 + rnd.nextInt(20))
+            place(rs(0x2cc1 + o) + lead - 0x200 + rnd.nextInt(0x100), rs(0x2ccb + o) - 0x700 - rnd.nextInt(0x200), landed = -1)
+            ugh.machine.scancodes(0xe0, 0x1d); fireFrames = 3
+            wait = 30 + rnd.nextInt(40)
+            count("dropOnEnemy")
+            return
+        }
+        // state injection: make the standing passenger fall right onto a flying enemy
+        val flyer = targets.firstOrNull { r(0x2cad + it) == 0x7630 && r(0x2cf3 + it) == 0x2493 }
+        val standingAny = passengers.firstOrNull { r(0x29ad + it) == 0x78dc && r(0x2a0d + it) in setOf(0x1c27, 0x1c6b) }
+        if (flyer != null && standingAny != null && rnd.nextInt(10) < 5) {
+            if (r(0x2a0d + standingAny) == 0x1c6b) { w(0x27fc + r(0x2a2d + standingAny), 0); w(0x2804 + r(0x2a2d + standingAny), 0) }
+            w(0x2a0d + standingAny, 0x1cee)
+            w(0x2aed + standingAny, rs(0x2cc1 + flyer) + rs(0x2ce9 + flyer) * 4 - 0x80)
+            w(0x2b0d + standingAny, rs(0x2ccb + flyer) - 0x180)
+            w(0x2acd + standingAny, 0)
+            w(0x2c6d + standingAny, 4)
+            wait = 20
+            count("injectHit")
+            return
+        }
+        // grab a standing passenger
+        val standing = passengers.firstOrNull { r(0x2a0d + it) == 0x1c27 }
+        if (standing != null && !carrying && rnd.nextInt(10) < 4) {
+            place(rs(0x2aed + standing) - 0x100, rs(0x2b0d + standing) - 0x200, landed = -1)
+            wait = 5
+            count("grab")
+            return
+        }
         if (rs(Game.P_LANDED) < 0 && rnd.nextInt(3) > 0) { landOn(rnd.nextInt(padCount())); count("land"); return }
         when (rnd.nextInt(10)) {
             in 0..5 -> if (carrying) {
