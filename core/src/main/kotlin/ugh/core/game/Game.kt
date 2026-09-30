@@ -10,7 +10,7 @@ import ugh.core.hw.Memory
  * Each function names the original routine it replaces. 16-bit semantics (wrap-around, SAR, signed compares)
  * are kept exactly; quirks of the original are kept as well and marked "original:".
  */
-class Game(val mem: Memory) {
+class Game(val mem: Memory, var host: Host = NO_HOST) {
 
     // ------------------------------------------------------------ memory helpers
 
@@ -44,10 +44,16 @@ class Game(val mem: Memory) {
      */
     var soundEffect: (adlxSeg: Int, priority: Int, flags: Int) -> Unit = { _, _, _ -> }
 
-    internal fun playEffect(r: Regs, adlxSeg: Int, flags: Int = 1) {
-        soundEffect(adlxSeg, 0xff, flags)
+    internal fun playEffect(r: Regs, adlxSeg: Int, flags: Int = 1, priority: Int = 0xff) {
+        soundEffect(adlxSeg, priority, flags)
         r.ax = 0xffff
     }
+
+    /** Far call 1878:1059 (sound library control, the game uses 0x11 before starting music or effects). */
+    var soundControl: (Int) -> Unit = {}
+
+    /** Far call 1878:0f88 - starts the music of the ADLX block segment [adlxSeg]. */
+    var musicStart: (adlxSeg: Int, a: Int, b: Int) -> Unit = { _, _, _ -> }
 
     /** Stops a sound started with flags 0 (far call 1878:1768 with the handle); a no-op without sound card. */
     var soundStop: (handle: Int) -> Unit = {}
@@ -252,6 +258,11 @@ class Game(val mem: Memory) {
     }
 
     companion object {
+        /** Host for code that never waits (single routines, frame bodies). */
+        val NO_HOST = object : Host {
+            override fun frame() = error("this code path waits for a retrace: give the Game a Host")
+        }
+
         const val CODE = 0x113b
         const val DGROUP = 0x6c09
 

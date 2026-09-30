@@ -1,5 +1,6 @@
 package ugh.extractor
 
+import ugh.core.data.Ice
 import kotlinx.serialization.Serializable
 
 /*

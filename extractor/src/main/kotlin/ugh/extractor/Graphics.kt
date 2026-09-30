@@ -1,5 +1,6 @@
 package ugh.extractor
 
+import ugh.core.data.Ice
 import java.awt.image.BufferedImage
 import java.awt.image.IndexColorModel
 import java.io.File

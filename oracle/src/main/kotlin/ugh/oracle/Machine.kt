@@ -189,6 +189,8 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
 
     var stopRequested = false
 
+    private var stoppedAtBreakpoint = -1
+
     /** While set, hardware interrupts stay pending (used to check a routine in isolation). */
     var irqHold = false
 
@@ -196,16 +198,20 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
     fun run(maxInstructions: Long = Long.MAX_VALUE) {
         stopRequested = false
         val limit = if (maxInstructions == Long.MAX_VALUE) Long.MAX_VALUE else cpu.instructions + maxInstructions
+        // resuming at the breakpoint that stopped the previous run: its callbacks already ran
+        var skipBreakpointAt = stoppedAtBreakpoint
+        stoppedAtBreakpoint = -1
         while (!exited && !stopRequested && cpu.instructions < limit) {
             if (cpu.iff && !cpu.irqInhibit && !irqHold) {
                 val irq = pic.next()
                 if (irq >= 0) { pic.acknowledge(irq); cpu.interrupt(8 + irq) }
             }
             val a = ((cpu.cs shl 4) + cpu.ip) and 0xfffff
-            if (bpFlags[a]) {
+            if (bpFlags[a] && a != skipBreakpointAt) {
                 breakpoints[a]?.forEach { it() }
-                if (stopRequested || exited) break
+                if (stopRequested || exited) { stoppedAtBreakpoint = a; break }
             }
+            skipBreakpointAt = -1
             stepOnce()
         }
     }
@@ -218,6 +224,17 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
         }
         time = cpu.instructions + idle
         if (time >= nextEvent) { processEvents(); nextEvent = nextEventTime() }
+    }
+
+    /**
+     * Delivers one scancode through the keyboard controller right now (IRQ 1 serviced synchronously),
+     * bypassing the timed queue. Used by the lockstep tests at frame boundaries.
+     */
+    fun deliverKeyNow(scancode: Int) {
+        kbd.latch = scancode and 0xff
+        kbd.outputFull = true
+        pic.request(1)
+        serviceInterruptsNow()
     }
 
     /**

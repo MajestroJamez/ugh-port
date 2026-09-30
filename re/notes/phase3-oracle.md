@@ -86,6 +86,32 @@ a tří nedosažitelných zarovnávacích `NOP`.
 
 | `0c7d–0fa4` celý herní snímek vč. kreslení | `Frame.kt`, `Draw.kt` | `FrameDiff`: 17 000+ snímků (levely 1, 2 team, 4, 5, 43 s deštěm), RAM + celá VGA |
 
+| `0c61–0fe7` nová hra, start levelu (`3d66`, `3976`, popisek `0664`), hraní, konec levelu | `Level.kt`, `GameFlow.kt`, `Host.kt` | lockstep: 40 000+ snímků, přechod na další level, ztráta životů, game over |
+
+### Start a konec levelu, lockstep
+
+- **Běh portu:** originál je psaný blokujícím stylem (popisek levelu, stmívání, pauza, menu čekají ve smyčkách na
+  zatemnění). Port volá na těch místech `Host.frame()` a hostitel rozhoduje, co je snímek. V okně to bude tik
+  70 Hz, v testu jeden snímek originálu. Tok hry je tak převedený 1:1.
+- **Start levelu** (`3d66`): vynuluje stav (`2648–27cf`), energie `0x5a3b`, „rozbije“ uložené hodnoty stavového řádku,
+  aby se překreslil celý, rozmístí prvky stavového řádku podle počtu hráčů, načte level (`3976`: záznam levelu,
+  **znovu rozbalí ICE s mapami** do bufferu `1a67:0000`, hráči, hladina, plošiny, pasažéři, objekty, déšť
+  předpočítaný 577 kroky), popisek (`0664`), černá paleta, dlaždice do kreslicí stránky → pozadí, přepnutí stránek,
+  ikony stavového řádku a první krok objektů a pasažérů.
+- **Popisek levelu:** smazání celé videopaměti, „LEVEL nn“, text levelu, heslo; text `077c` (znaky = sprite
+  `0x237 + znak`, `0xFE` centruje, `0x0D` a `0xFD` nový řádek, `0x8E`/`0x99`/`0x9A` jsou přehlásky), roztmívání,
+  čekání na klávesu, ztmavení.
+- **Konec levelu** (`0fa7`): příznak `27cf` (nastavený posledním doručeným pasažérem) = další level, po posledním
+  levelu konec hry. Jinak ztráta života: zbývá-li nějaký, level se opakuje s násobitelem 1, jinak game over.
+- **Klávesnice portu:** port obsluhy `4567` (`keyboardInterrupt`). Joystick se bere jako nepřipojený
+  (`51ec` vrací „nic“, polohy `[3343]`), jako v emulátoru bez joysticku.
+- **`Lockstep` harness:** port běží od kopie stavu originálu a udává tempo. Při každém `Host.frame()` se originál
+  posune na další čekání na zatemnění (`44c6`) a porovná se celá RAM (kromě zásobníku) a VGA. Na hranici snímku
+  se obslouží odložená přerušení a klávesy dostanou obě strany (originál přes IRQ 1, port přes svou obsluhu).
+  Stav, který port zatím nemodeluje (zvuková knihovna, plánovač časovače, data BIOSu), se kopíruje z originálu.
+- Oprava emulátoru: po zastavení na breakpointu se při dalším rozběhu stejný breakpoint znovu nespouští. Dřív se
+  snímek na `44c6` počítal dvakrát a krokování po jednom snímku originál nikdy neposunulo.
+
 ### Kreslení a celý snímek
 
 - Snímek: stmívání palety (`4e36`) nebo čekání na zatemnění, stavový řádek (`3f55`), mazání hráčů, pasažérů,

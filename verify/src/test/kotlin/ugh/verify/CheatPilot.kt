@@ -22,7 +22,14 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
     /** Acts only at frame boundaries of a frame-level differential test (so both sides see the changes). */
     fun attachTo(diff: FrameDiff) { diff.beforeCopy += { step() } }
 
-    private fun w(off: Int, v: Int) = ugh.machine.write16(OriginalUgh.SEG_DGROUP, off, v)
+    /** Acts at the boundaries of a lockstep test: writes go to both states, keys to both sides. */
+    fun attachTo(lockstep: Lockstep) { this.lockstep = lockstep; lockstep.atBoundary += { step() } }
+
+    private var lockstep: Lockstep? = null
+
+    private fun keys(vararg codes: Int) { val l = lockstep; if (l != null) codes.forEach(l::key) else ugh.machine.scancodes(*codes) }
+
+    private fun w(off: Int, v: Int) { val l = lockstep; if (l != null) l.poke16(off, v) else ugh.machine.write16(OriginalUgh.SEG_DGROUP, off, v) }
     private fun r(off: Int) = ugh.dgroup16(off)
     private fun rs(off: Int) = ugh.dgroupS16(off)
 
@@ -34,17 +41,17 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
     private var spaceFrames = 0
 
     private fun step() {
-        if (fireFrames > 0 && --fireFrames == 0) ugh.machine.scancodes(0xe0, 0x9d)
-        if (spaceFrames > 0 && --spaceFrames == 0) ugh.machine.scancodes(0xb9)
+        if (fireFrames > 0 && --fireFrames == 0) keys(0xe0, 0x9d)
+        if (spaceFrames > 0 && --spaceFrames == 0) keys(0xb9)
         if (!inPlay()) {
             // level caption / game over screens wait for a key (the game looks for a change of the last scancode)
-            if (++idle % 150 == 0 && spaceFrames == 0) { ugh.machine.scancodes(0x39); spaceFrames = 3; count("space") }
+            if (++idle % 150 == 0 && spaceFrames == 0) { keys(0x39); spaceFrames = 3; count("space") }
             return
         }
         idle = 0
         if (++frame % 50 == 0) { // keep the game going: energy and lives
             w(Game.V_ENERGY, 0x4000)
-            if (ugh.dgroup8(0x263c) < 3) ugh.machine.write8(OriginalUgh.SEG_DGROUP, 0x263c, 3)
+            if (ugh.dgroup8(0x263c) < 3) w(0x263c, (r(0x263c) and 0xff00) or 3)
         }
         if (--wait > 0) {
             // never let the unpiloted copter fall for long (floating on the water is fine)
@@ -68,7 +75,7 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
             // lead a moving target: the passenger needs ~20 frames to fall to it
             val lead = rs(0x2ce9 + o) * (10 + rnd.nextInt(20))
             place(rs(0x2cc1 + o) + lead - 0x200 + rnd.nextInt(0x100), rs(0x2ccb + o) - 0x700 - rnd.nextInt(0x200), landed = -1)
-            ugh.machine.scancodes(0xe0, 0x1d); fireFrames = 3
+            keys(0xe0, 0x1d); fireFrames = 3
             wait = 30 + rnd.nextInt(40)
             count("dropOnEnemy")
             return
@@ -128,7 +135,7 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
                     count("water")
                 }
             }
-            8 -> { ugh.machine.scancodes(0xe0, 0x1d); fireFrames = 5; count("fire") }
+            8 -> { keys(0xe0, 0x1d); fireFrames = 5; count("fire") }
             else -> { place(rnd.nextInt(0x2400), rnd.nextInt(0x1000), landed = -1); count("teleport") }
         }
     }

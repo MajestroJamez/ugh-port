@@ -18,6 +18,13 @@ class Pilot(private val ugh: OriginalUgh, seed: Long, private val player: Int = 
 
     fun attach() = ugh.onGameFrame { step() }
 
+    /** Presses its keys at the boundaries of a lockstep test (delivered to both sides). */
+    fun attachTo(lockstep: Lockstep) { this.lockstep = lockstep; lockstep.atBoundary += { step() } }
+
+    private var lockstep: Lockstep? = null
+
+    private fun keys(vararg codes: Int) { val l = lockstep; if (l != null) codes.forEach(l::key) else ugh.machine.scancodes(*codes) }
+
     private fun step() {
         if (--framesLeft > 0) return
         framesLeft = 1 + rnd.nextInt(40)
@@ -27,7 +34,7 @@ class Pilot(private val ugh: OriginalUgh, seed: Long, private val player: Int = 
         when (rnd.nextInt(3)) { 1 -> want[2] = true; 2 -> want[3] = true }
         for (k in 0..3) if (want[k] != held[k]) {
             val code = if (want[k]) codes[k] else codes[k] or 0x80
-            if (extended) ugh.machine.scancodes(0xe0, code) else ugh.machine.scancodes(code)
+            if (extended) keys(0xe0, code) else keys(code)
             held[k] = want[k]
         }
     }

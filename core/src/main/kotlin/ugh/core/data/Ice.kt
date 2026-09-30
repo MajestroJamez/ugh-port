@@ -1,4 +1,4 @@
-package ugh.extractor
+package ugh.core.data
 
 /**
  * Faithful port of the Pack-Ice depacker at 113b:4cad..4ddc in UGH.EXE.
