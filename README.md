@@ -51,7 +51,8 @@ The high score table is kept in `%APPDATA%\ugh-port`.
 
 1. Executable map (segments, hardware access, game loop) - done
 2. Asset extractor - done
-3. Deterministic game core verified against the original - in progress (reference emulator done,
-   copter physics ported and verified)
+3. Deterministic game core verified against the original - in progress (reference emulator done;
+   the whole game logic, drawing and all screens outside the game ported and verified in lockstep;
+   sound next)
 4. Complete game 1:1 packaged for Windows
 5. Enhancements (new graphics etc.)

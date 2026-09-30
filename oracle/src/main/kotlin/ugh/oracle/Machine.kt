@@ -362,14 +362,6 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
         pic.eoi(0x20)
     }
 
-    private val asciiOf = mapOf(
-        0x01 to 0x1b, 0x0e to 0x08, 0x1c to 0x0d, 0x39 to 0x20,
-        0x02 to '1'.code, 0x03 to '2'.code, 0x04 to '3'.code, 0x05 to '4'.code, 0x06 to '5'.code,
-        0x07 to '6'.code, 0x08 to '7'.code, 0x09 to '8'.code, 0x0a to '9'.code, 0x0b to '0'.code,
-    ) + "QWERTYUIOP".mapIndexed { i, c -> 0x10 + i to c.lowercaseChar().code } +
-        "ASDFGHJKL".mapIndexed { i, c -> 0x1e + i to c.lowercaseChar().code } +
-        "ZXCVBNM".mapIndexed { i, c -> 0x2c + i to c.lowercaseChar().code }
-
     private var e0Prefix = false
 
     private fun biosKeyboard() {
@@ -379,7 +371,7 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
         val ext = e0Prefix
         e0Prefix = false
         if (sc and 0x80 == 0) {
-            val word = (sc shl 8) or (if (ext) 0 else asciiOf[sc] ?: 0)
+            val word = ugh.core.hw.BiosKeys.word(sc, ext)
             val tail = peek16(0x41c)
             val next = if (tail + 2 >= 0x3e) 0x1e else tail + 2
             if (next != peek16(0x41a)) { poke16(0x400 + tail, word); poke16(0x41c, next) }

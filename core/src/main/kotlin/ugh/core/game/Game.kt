@@ -12,6 +12,12 @@ import ugh.core.hw.Memory
  */
 class Game(val mem: Memory, var host: Host = NO_HOST) {
 
+    /** True while the BIOS keyboard handler is installed (password and name entry use INT 16h). */
+    var biosKeyboard = false
+    internal var biosExtended = false
+    /** BIOS keyboard buffer (scancode << 8 | ASCII), 15 entries like the BIOS ring buffer. */
+    val biosBuffer = ArrayDeque<Int>()
+
     // ------------------------------------------------------------ memory helpers
 
     /** Signed 16-bit word in DGROUP. */
@@ -48,6 +54,9 @@ class Game(val mem: Memory, var host: Host = NO_HOST) {
         soundEffect(adlxSeg, priority, flags)
         r.ax = 0xffff
     }
+
+    /** Sound library init (1878:0003 with the device flags, 1 = AdLib) and shutdown (0: 1878:008a). */
+    var soundLibrary: (Int) -> Unit = {}
 
     /** Far call 1878:1059 (sound library control, the game uses 0x11 before starting music or effects). */
     var soundControl: (Int) -> Unit = {}

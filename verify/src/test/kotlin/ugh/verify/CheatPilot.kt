@@ -40,9 +40,13 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
     private var idle = 0
     private var spaceFrames = 0
 
+    /** While false, only keys still held are released (screens outside the level play are driven by the test). */
+    var enabled = true
+
     private fun step() {
         if (fireFrames > 0 && --fireFrames == 0) keys(0xe0, 0x9d)
         if (spaceFrames > 0 && --spaceFrames == 0) keys(0xb9)
+        if (!enabled) return
         if (!inPlay()) {
             // level caption / game over screens wait for a key (the game looks for a change of the last scancode)
             if (++idle % 150 == 0 && spaceFrames == 0) { keys(0x39); spaceFrames = 3; count("space") }

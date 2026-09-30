@@ -3,7 +3,7 @@ package ugh.verify
 import ugh.core.game.Game
 import ugh.core.game.Host
 import ugh.core.game.StopGame
-import ugh.core.game.keyboardInterrupt
+import ugh.core.game.keyEvent
 import ugh.core.hw.Memory
 import ugh.oracle.OriginalUgh
 
@@ -33,6 +33,32 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
 
     fun key(scancode: Int) { keys.addLast(scancode) }
 
+    /** Files of the port (UGH!.HI); the original uses its own virtual disk, both start empty. */
+    val files = mutableMapOf<String, ByteArray>()
+
+    override fun readFile(name: String) = files[name.uppercase()]?.copyOf()
+
+    override fun writeFile(name: String, data: ByteArray) { files[name.uppercase()] = data.copyOf() }
+
+    /** Return address on top of the original's stack at the current retrace wait: tells which loop waits. */
+    fun waitingIn(): Int = ugh.machine.read16(ugh.machine.cpu.ss, ugh.machine.cpu.sp)
+
+    /** True once the original program has exited (after Q). */
+    val originalExited get() = ugh.machine.exited
+
+    /** The port quit: the original must get to its DOS exit without another retrace wait. */
+    override fun exit() {
+        val m = ugh.machine
+        m.irqHold = false
+        val before = ugh.gameFrame
+        repeat(50) { if (!m.exited) ugh.runGameFrames(1, vgaSlack = 20) }
+        if (ugh.gameFrame != before) {
+            mismatchCount++
+            mismatches += "the original waited %d more frames before its exit".format(ugh.gameFrame - before)
+        }
+        throw StopGame()
+    }
+
     /** Writes a DGROUP word into both states (for cheats at a boundary). */
     fun poke16(off: Int, v: Int) {
         ugh.machine.write16(Game.DGROUP, off, v)
@@ -54,7 +80,17 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
     override fun frame() {
         if (frames >= maxFrames) throw StopGame()
         val m = ugh.machine
-        ugh.runGameFrames(1)                 // the original to its next retrace wait
+        // the original to its next retrace wait; code that busy-waits for timer ticks without a retrace wait
+        // (the sound card detection at start-up) gets its held interrupts serviced
+        val target = ugh.gameFrame + 1
+        while (true) {
+            ugh.runGameFrames(1, vgaSlack = 20)
+            if (ugh.gameFrame >= target || m.exited) break
+            m.irqHold = false
+            m.serviceInterruptsNow()
+            m.irqHold = true
+        }
+        if (ugh.machine.exited) throw StopGame()
         frames++
         compare()
         // boundary: interrupts, keys, not yet ported state
@@ -64,7 +100,7 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
         while (keys.isNotEmpty()) {
             val sc = keys.removeFirst()
             m.deliverKeyNow(sc)
-            game.keyboardInterrupt(sc)
+            game.keyEvent(sc)
         }
         syncNotPorted()
         m.irqHold = true

@@ -12,6 +12,9 @@ class Pilot(private val ugh: OriginalUgh, seed: Long, private val player: Int = 
     private val held = BooleanArray(4)
     private var framesLeft = 0
 
+    /** While false, the pilot releases its keys and presses nothing (outside the level play). */
+    var enabled = true
+
     // make codes: up, down, left, right (player 1: grey arrows with E0 prefix, player 2: W Z A S)
     private val codes = if (player == 0) intArrayOf(0x48, 0x50, 0x4b, 0x4d) else intArrayOf(0x11, 0x2c, 0x1e, 0x1f)
     private val extended = player == 0
@@ -26,6 +29,11 @@ class Pilot(private val ugh: OriginalUgh, seed: Long, private val player: Int = 
     private fun keys(vararg codes: Int) { val l = lockstep; if (l != null) codes.forEach(l::key) else ugh.machine.scancodes(*codes) }
 
     private fun step() {
+        if (!enabled) {
+            for (k in 0..3) if (held[k]) { if (extended) keys(0xe0, codes[k] or 0x80) else keys(codes[k] or 0x80); held[k] = false }
+            framesLeft = 0
+            return
+        }
         if (--framesLeft > 0) return
         framesLeft = 1 + rnd.nextInt(40)
         val want = BooleanArray(4)

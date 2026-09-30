@@ -30,13 +30,16 @@ class OriginalUgh(exe: ByteArray, disk: VirtualDisk = VirtualDisk()) {
     /** Called at the start of every vsync wait, i.e. between two frames of game logic. */
     fun onGameFrame(hook: (Long) -> Unit) { frameHooks += hook }
 
-    /** Runs until [n] more game frames have started (or the program exits). */
-    fun runGameFrames(n: Long) {
+    /**
+     * Runs until [n] more game frames have started (or the program exits); gives up after [n] * 4 + [vgaSlack]
+     * VGA frames without the game waiting for a retrace.
+     */
+    fun runGameFrames(n: Long, vgaSlack: Long = 1000) {
         val target = gameFrame + n
         val hook: (Long) -> Unit = { if (it >= target) machine.stop() }
         frameHooks += hook
         try {
-            val vgaLimit = machine.vgaFrame + 4 * n + 1000   // safety net if the program stops waiting for retraces
+            val vgaLimit = machine.vgaFrame + 4 * n + vgaSlack   // safety net if the program stops waiting for retraces
             while (gameFrame < target && !machine.exited && machine.vgaFrame < vgaLimit) machine.run(5_000_000L)
         } finally {
             frameHooks -= hook

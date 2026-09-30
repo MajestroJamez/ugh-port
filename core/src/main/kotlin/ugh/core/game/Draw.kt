@@ -121,6 +121,7 @@ fun Game.flipPages() {
     val bx = cs16(0x460c)          // the page just drawn becomes visible
     setCs16(0x460c, display)
     setCs16(0x4608, bx)
+    mem.vga.resetFlipFlop()        // 44d2 polls port 3DA (end of the retrace)
     out(0x3d4, 0x0c); out(0x3d5, bx shr 8)
     out(0x3d4, 0x0d); out(0x3d5, bx and 0xff)
 }

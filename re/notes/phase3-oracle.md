@@ -88,6 +88,25 @@ a tří nedosažitelných zarovnávacích `NOP`.
 
 | `0c61–0fe7` nová hra, start levelu (`3d66`, `3976`, popisek `0664`), hraní, konec levelu | `Level.kt`, `GameFlow.kt`, `Host.kt` | lockstep: 40 000+ snímků, přechod na další level, ztráta životů, game over |
 
+### Obrazovky mimo hru
+
+Port `Meta.kt` pokrývá celý program od 113b:0008: start (4f5e), intro (0bb8, čtyři obrázky ICE!, Esc přeskočí,
+Q ukončí), hlavní menu (0063: F1 hra, F2 heslo, F3 obtížnost, F4 jeden hráč / tým, F5 ovládání, C attract,
+Q konec, po 0x834 snímcích bez klávesy attract), attract sekvenci (úvodní scéna 088d, titulky 07f6, druhá
+scéna 08cf, tabulka rekordů 01b1), zadání hesla a jména (společný řádkový editor nad klávesnicí BIOSu,
+Backspace, velká písmena, číslice), úvodní scénu hry, „bad luck“ po konci hry, závěrečnou scénu po posledním
+levelu, zápis rekordu a soubor `UGH!.HI` (0x6b bajtů XOR 0xFF) a ukončení (4ee6).
+
+- Snímek mimo hru je stejně jako ve hře jedno čekání na začátek zpětného běhu (44c6); návratová adresa na
+  vrcholu zásobníku originálu určuje, která smyčka čeká (test tím řídí klávesy).
+- Detekce zvukové karty při startu čeká na tiky časovače bez čekání na zpětný běh: lockstep pak originálu
+  obslouží zadržená přerušení (`runGameFrames(1, vgaSlack = 20)`).
+- Start ukládá původní vektor INT 9 do `DGROUP:93`, port ho čte ze synchronizované IVT.
+- `MetaLockstepTest`: celý program (intro, attract, menu, heslo, hra do game over, rekord se jménem, Q)
+  13 814 snímků; časové smyčky, týmový režim, poslední level (dokončení vynucené v obou pamětech), závěrečná
+  scéna a existující `UGH!.HI` 41 542 snímků; Q v intru / scéně / titulcích a Esc ve scéně. Vše 0 neshod,
+  obsah zapsaného `UGH!.HI` shodný, originál dojde až k ukončení programu.
+
 ### Start a konec levelu, lockstep
 
 - **Běh portu:** originál je psaný blokujícím stylem (popisek levelu, stmívání, pauza, menu čekají ve smyčkách na
