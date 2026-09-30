@@ -58,6 +58,47 @@ Kotlin modul, který spouští originální `UGH.EXE` deterministicky a bez okna
 Ověřeno: intro (4 obrázky), menu, úvodní animace, popisek levelu i hra v levelu 1 vypadají správně.
 Od zapnutí po první snímek levelu 1 je to 11 728 herních snímků (intro 11 427).
 
+## Přesné pokrytí disassembly
+
+Ghidra na několika místech vynechala i krátké úseky (např. `113b:1a06–1a0c` uprostřed rutiny `19fb`), které
+dřívější odhad pokrytí přehlédl. `ExportListing.java` proto u každé instrukce zapisuje délku a bajty
+a `re/tools/coverage.js` počítá pokrytí přesně na bajt. Segment 113b je teď pokrytý celý kromě dat
+(`2db3` skoková tabulka vody, `4509`, `45fb–4634` CS proměnné, `4681–4c81` palety, `4ddd–4e19` tabulky ICE)
+a tří nedosažitelných zarovnávacích `NOP`.
+
+## Port a rozdílové testy
+
+- `:core` obsahuje sdílený adresní prostor (`Memory`, loader MZ) a VGA, takže port pracuje se stejnou pamětí
+  jako originál. `Game` = přepsané rutiny.
+- `:verify`/`CallDiff`: při každém volání originální rutiny zkopíruje celý stav do portu, spustí port a po
+  návratu originálu porovná RAM (kromě zásobníku) a VGA. Přerušení se během kontrolovaného volání odkládají.
+  Test s úmyslně pokaženým portem ověřuje, že rozdíly opravdu hlásí.
+- `Pilot`: deterministický náhodný pilot. `CheatPilot`: kvůli pokrytí logiky pasažérů zapisuje mezi snímky polohu
+  vrtulníku přímo do paměti (přistání na plošině s pasažérem, doručení, přelet přes pasažéra, hladina, shození)
+  a mezerníkem pokračuje do dalších levelů.
+
+| Rutina | Port | Ověřeno |
+|---|---|---|
+| `1095` fyzika vrtulníku, `1457` test kolize | `Game.copterUpdate` | 3 průběhy, 6 000+ volání |
+| `1486` pasažéři (36 stavových rutin), `2276` dotyk s vrtulníkem | `Passengers.kt` | levely 1–3, 1 hráč i team, 116 000+ volání |
+| `2b7f` bonusy, `2b96` spawn, `2207` sebrání | `Bonuses.kt` | spolu s pasažéry |
+
+### Pasažéři
+
+Stav pasažéra je adresa rutiny v `DGROUP:2a0d[i]`. Rutiny pochází z deskriptoru typu (`29ad[i]`: `0x7720`,
+`0x77b4`, `0x7848`, `0x78dc` stojící) a navzájem si předávají řízení `JMP [SI+n]` i s registry (hlavně DI = hráč).
+Deskriptor: `+0/+2` posun postavy, `+4/+6` polovina šířky a výšky (dotyk s vrtulníkem), `+8…+2c` stavové rutiny,
+`+2e…+38` animační tabulky, `+3e` zpoždění animace, `+40/+42` počáteční a minimální jízdné, `+44` čas plavání,
+`+46` typ nákladu, `+48` sada stavů pro vodu. Výplata = jízdné × násobitel `263d` do 32bitového skóre `261e`.
+Rychlé doručení (časovač `2c8d`) pustí bonus (deskriptor `7a38`).
+
+### Bonusy
+
+12 slotů (`2d6b…`), padají s gravitací 3, na plošině leží 0x230 snímků. Sebrání: typ 0 = energie `2622`
+(max 0x5a3b), typ 1 = životy `263c` (max 99), jinak násobitel `263d` (max podle obtížnosti `2628`).
+**Chyba originálu:** když je všech 12 slotů plných, `2b96` vynechá `POP BX` a `RET` skočí na `CS:BX`.
+Port v tom případě hlásí výjimku.
+
 ## Další kroky
 
 1. Zápis stavu DGROUP po každém snímku a přehrávání vstupů po snímcích (replay).

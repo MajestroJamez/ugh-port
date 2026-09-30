@@ -67,7 +67,9 @@ public class ExportListing extends GhidraScript {
                             }
                         }
                     }
-                    pw.printf("%s  %-40s%s%n", ins.getAddress(), ins, extra);
+                    StringBuilder hex = new StringBuilder();
+                    for (byte x : ins.getBytes()) hex.append(String.format("%02x", x & 0xff));
+                    pw.printf("%s  %-40s%s  ;; len=%d bytes=%s%n", ins.getAddress(), ins, extra, ins.getLength(), hex);
                 }
             }
         }

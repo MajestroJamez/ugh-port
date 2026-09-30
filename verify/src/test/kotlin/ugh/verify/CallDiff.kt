@@ -25,6 +25,11 @@ class CallDiff(
     var mismatchCount = 0
         private set
 
+    private val callListeners = mutableListOf<(Game) -> Unit>()
+
+    /** Observes the state handed to the port at every call (before the port runs). */
+    fun onCall(l: (Game) -> Unit) { callListeners += l }
+
     private val portMem = Memory()
     private val game = Game(portMem)
     private var pendingReturnSp = -1
@@ -37,6 +42,7 @@ class CallDiff(
                 val c = m.cpu
                 val regs = Regs(c.ax, c.bx, c.cx, c.dx, c.si, c.di, c.bp)
                 portMem.copyFrom(m.memory)
+                callListeners.forEach { it(game) }
                 port(game, regs)
                 pendingRegs = regs
                 pendingReturnSp = c.sp + 2

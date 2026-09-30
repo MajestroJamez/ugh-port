@@ -19,6 +19,35 @@ class Game(val mem: Memory) {
     fun setD(off: Int, v: Int) = mem.write16(DGROUP, off, v)
     fun addD(off: Int, v: Int) = setD(off, d(off) + v)
     fun d8(off: Int) = mem.read8(DGROUP, off)
+    fun setD8(off: Int, v: Int) = mem.write8(DGROUP, off, v)
+
+    /** Unsigned 16-bit word in DGROUP. */
+    fun u(off: Int) = mem.read16(DGROUP, off and 0xffff)
+
+    /** 113b:3d5a - x * 3/2 (x + x SAR 1); leaves x SAR 1 in DGROUP:2648 like the original. */
+    fun times3half(x: Int): Int {
+        val half = s16(x) shr 1
+        setD(V_SCRATCH, half)
+        return (x + half) and 0xffff
+    }
+
+    /** 113b:3d4d - y * 3/4 (y - y SAR 2); leaves y SAR 2 in DGROUP:2648 like the original. */
+    fun times3quarter(y: Int): Int {
+        val quarter = s16(y) shr 2
+        setD(V_SCRATCH, quarter)
+        return (y - quarter) and 0xffff
+    }
+
+    /**
+     * Sound effect request (far call 1878:1852 with the ADLX block segment). The original returns -1 in AX when
+     * no sound card is present, which is what the reference runs use; the port's audio hooks in here.
+     */
+    var soundEffect: (adlxSeg: Int, priority: Int, flags: Int) -> Unit = { _, _, _ -> }
+
+    internal fun playEffect(r: Regs, adlxSeg: Int) {
+        soundEffect(adlxSeg, 0xff, 1)
+        r.ax = 0xffff
+    }
 
     /** Word in the game code segment (variables kept in CS by the original). */
     fun cs(off: Int) = mem.read16(CODE, off)
@@ -227,6 +256,7 @@ class Game(val mem: Memory) {
 
         // DGROUP variables (names provisional where the meaning is not fully known yet)
         const val V_ROW_BYTES = 0x00c3     // bytes per VGA row and plane (0x60 = 384 px virtual width)
+        const val V_SCRATCH = 0x2648       // scratch word of 3d4d / 3d5a
         const val V_ENERGY = 0x2622        // decremented by effort every frame
         const val CRASH_LIMITS = 0x262e    // max impact speed per difficulty (3 words)
         const val V_DIFFICULTY = 0x2638    // 0 easy, 1 medium, 2 hard
