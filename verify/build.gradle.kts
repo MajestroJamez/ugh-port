@@ -1,5 +1,4 @@
 plugins {
-    `java-library`
     alias(libs.plugins.kotlin.jvm)
 }
 
@@ -7,9 +6,11 @@ kotlin {
     jvmToolchain(25)
 }
 
+// Differential tests: the ported core against the original UGH.EXE running in the oracle.
 dependencies {
-    api(project(":core"))
-    implementation(project(":extractor"))
+    testImplementation(project(":core"))
+    testImplementation(project(":oracle"))
+    testImplementation(project(":extractor"))
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.launcher)
@@ -18,7 +19,7 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     systemProperty("ugh.exe", rootProject.layout.projectDirectory.file("OLD/UGH.EXE").asFile.absolutePath)
-    systemProperty("ugh.out", layout.buildDirectory.dir("oracle-out").get().asFile.absolutePath)
+    systemProperty("ugh.out", layout.buildDirectory.dir("verify-out").get().asFile.absolutePath)
     maxHeapSize = "2g"
     testLogging { showStandardStreams = true }
 }

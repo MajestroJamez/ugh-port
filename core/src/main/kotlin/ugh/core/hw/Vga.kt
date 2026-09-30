@@ -1,4 +1,4 @@
-package ugh.oracle
+package ugh.core.hw
 
 /**
  * VGA as used by UGH.EXE: mode 13h switched to unchained Mode X (113b:503b).
@@ -39,6 +39,29 @@ class Vga {
     }
 
     private val chain4 get() = seq[4] and 0x08 != 0
+
+    /** Full copy of the adapter state (memory, latches, registers, DAC). */
+    fun copyFrom(o: Vga) {
+        for (p in 0..3) System.arraycopy(o.planes[p], 0, planes[p], 0, 0x10000)
+        o.latch.copyInto(latch); o.seq.copyInto(seq); o.gc.copyInto(gc); o.crtc.copyInto(crtc); o.attr.copyInto(attr)
+        o.dac.copyInto(dac)
+        seqIndex = o.seqIndex; gcIndex = o.gcIndex; crtcIndex = o.crtcIndex; attrIndex = o.attrIndex
+        attrFlipFlop = o.attrFlipFlop; dacWrite = o.dacWrite; dacRead = o.dacRead; mode = o.mode
+    }
+
+    /** Describes the first difference to [o] (memory, latches, registers), or null if identical. */
+    fun diff(o: Vga): String? {
+        for (p in 0..3) if (!planes[p].contentEquals(o.planes[p])) {
+            val i = (0 until 0x10000).first { planes[p][it] != o.planes[p][it] }
+            return "VGA plane $p offset %04x: %02x vs %02x".format(i, planes[p][i], o.planes[p][i])
+        }
+        if (!latch.contentEquals(o.latch)) return "VGA latches ${latch.toList()} vs ${o.latch.toList()}"
+        if (!seq.contentEquals(o.seq) || seqIndex != o.seqIndex) return "VGA sequencer differs"
+        if (!gc.contentEquals(o.gc) || gcIndex != o.gcIndex) return "VGA graphics controller ${gc.toList()}/$gcIndex vs ${o.gc.toList()}/${o.gcIndex}"
+        if (!crtc.contentEquals(o.crtc)) return "VGA CRTC differs"
+        if (!dac.contentEquals(o.dac)) return "VGA DAC differs"
+        return null
+    }
 
     // ------------------------------------------------------------ memory
 

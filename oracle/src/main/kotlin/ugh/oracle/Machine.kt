@@ -1,5 +1,8 @@
 package ugh.oracle
 
+import ugh.core.hw.Memory
+import ugh.core.hw.MzLoader
+
 /** In-memory "C:\" for the DOS file functions (UGH!.HI). Names are upper-case 8.3. */
 class VirtualDisk(val files: MutableMap<String, ByteArray> = mutableMapOf())
 
@@ -12,9 +15,11 @@ class VirtualDisk(val files: MutableMap<String, ByteArray> = mutableMapOf())
  * Sound Blaster probes read 0xFF, so the game runs with sound disabled.
  */
 class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Long = 20_000_000L) : Bus {
-    val mem = ByteArray(0x100000)
+    /** Address space and VGA, shared type with the port (so state can be copied 1:1). */
+    val memory = Memory()
+    val mem = memory.ram
     val cpu = Cpu(this)
-    val vga = Vga()
+    val vga = memory.vga
 
     /** Emulated time in instructions; runs ahead of cpu.instructions when idle loops are skipped. */
     var time = 0L
@@ -33,20 +38,7 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
     val loadSeg = 0x1000
 
     init {
-        fun u16(o: Int) = (exe[o].toInt() and 0xff) or ((exe[o + 1].toInt() and 0xff) shl 8)
-        require(u16(0) == 0x5a4d) { "not an MZ executable" }
-        val headerSize = u16(8) * 16
-        val imageSize = (u16(4) - 1) * 512 + (if (u16(2) == 0) 512 else u16(2)) - headerSize
-        System.arraycopy(exe, headerSize, mem, loadSeg * 16, imageSize)
-        val relocs = u16(6)
-        val relocTable = u16(0x18)
-        for (i in 0 until relocs) {
-            val off = u16(relocTable + i * 4)
-            val seg = u16(relocTable + i * 4 + 2)
-            val a = (loadSeg + seg) * 16 + off
-            val v = (mem[a].toInt() and 0xff) or ((mem[a + 1].toInt() and 0xff) shl 8)
-            poke16(a, v + loadSeg)
-        }
+        val entry = MzLoader.load(exe, memory, loadSeg)
 
         // interrupt vectors point to host stubs F000:00nn (an IRET is placed there as well)
         for (n in 0 until 256) { poke16(n * 4, n); poke16(n * 4 + 2, 0xf000); mem[0xf0000 + n] = 0xcf.toByte() }
@@ -71,8 +63,8 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
         poke16(psp + 0x2c, envSeg)
         mem[psp + 0x80] = 0; mem[psp + 0x81] = 0x0d
 
-        cpu.cs = loadSeg + u16(0x16); cpu.ip = u16(0x14)
-        cpu.ss = loadSeg + u16(0x0e); cpu.sp = u16(0x10)
+        cpu.cs = entry.cs; cpu.ip = entry.ip
+        cpu.ss = entry.ss; cpu.sp = entry.sp
         cpu.ds = pspSeg; cpu.es = pspSeg
         cpu.flags = 0x0202
     }
@@ -87,12 +79,9 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
 
     // ------------------------------------------------------------ bus
 
-    override fun read8(addr: Int): Int =
-        if (addr in 0xa0000..0xaffff && vga.mode == 0x13) vga.read(addr - 0xa0000) else mem[addr].toInt() and 0xff
+    override fun read8(addr: Int): Int = memory.read8(addr)
 
-    override fun write8(addr: Int, v: Int) {
-        if (addr in 0xa0000..0xaffff && vga.mode == 0x13) vga.write(addr - 0xa0000, v) else if (addr < 0xf0000) mem[addr] = v.toByte()
-    }
+    override fun write8(addr: Int, v: Int) = memory.write8(addr, v)
 
     /** CS:IP of instructions that only poll the VGA status; reading there may skip idle time. */
     val pollSites = HashSet<Int>()
@@ -187,12 +176,15 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
 
     var stopRequested = false
 
+    /** While set, hardware interrupts stay pending (used to check a routine in isolation). */
+    var irqHold = false
+
     /** Runs until the program exits, [stop] is requested, or [maxInstructions] have executed. */
     fun run(maxInstructions: Long = Long.MAX_VALUE) {
         stopRequested = false
         val limit = if (maxInstructions == Long.MAX_VALUE) Long.MAX_VALUE else cpu.instructions + maxInstructions
         while (!exited && !stopRequested && cpu.instructions < limit) {
-            if (cpu.iff && !cpu.irqInhibit) {
+            if (cpu.iff && !cpu.irqInhibit && !irqHold) {
                 val irq = pic.next()
                 if (irq >= 0) { pic.acknowledge(irq); cpu.interrupt(8 + irq) }
             }
