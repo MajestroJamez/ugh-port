@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 
-include("extractor", "core", "oracle", "verify")
+include("extractor", "core", "oracle", "verify", "desktop")

@@ -22,11 +22,27 @@ Requirements: JDK 25 (the Gradle wrapper downloads everything else).
 .\gradlew.bat :extractor:run
 ```
 
+## Play
+
+Until the port is complete, the desktop window runs the **original** `UGH.EXE` in the project's own
+deterministic emulator (`:oracle`, no sound yet):
+
+```powershell
+.\gradlew.bat :desktop:run
+```
+
+Player 1: arrow keys (up = pedal), player 2: W / Z / A / S. F1 starts, F3 difficulty, F4 one player / team.
+The high score table is kept in `%APPDATA%\ugh-port`.
+
 ## Layout
 
 | Path | Content |
 |---|---|
 | `extractor/` | reads `UGH.EXE`: Pack-Ice depacker, sprites, palette, levels, pictures, AdLib blocks |
+| `core/` | the port: shared address space, VGA model, ported game routines |
+| `oracle/` | deterministic 286/VGA/DOS emulator running the original as the reference |
+| `verify/` | differential tests: every ported routine against the original, byte for byte |
+| `desktop/` | Windows window (Swing) |
 | `re/notes/` | reverse-engineering notes (Czech): executable map, data formats |
 | `re/tools/` | Node.js helper scripts used during analysis |
 | `re/ghidra-scripts/` | Ghidra headless export scripts |
@@ -35,6 +51,7 @@ Requirements: JDK 25 (the Gradle wrapper downloads everything else).
 
 1. Executable map (segments, hardware access, game loop) - done
 2. Asset extractor - done
-3. Deterministic game core verified frame by frame against the original in DOSBox-X - next
+3. Deterministic game core verified against the original - in progress (reference emulator done,
+   copter physics ported and verified)
 4. Complete game 1:1 packaged for Windows
 5. Enhancements (new graphics etc.)

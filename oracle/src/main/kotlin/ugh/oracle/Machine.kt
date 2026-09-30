@@ -3,8 +3,21 @@ package ugh.oracle
 import ugh.core.hw.Memory
 import ugh.core.hw.MzLoader
 
-/** In-memory "C:\" for the DOS file functions (UGH!.HI). Names are upper-case 8.3. */
-class VirtualDisk(val files: MutableMap<String, ByteArray> = mutableMapOf())
+/**
+ * "C:\" for the DOS file functions (UGH!.HI). Names are upper-case 8.3. With a [directory] the files are
+ * loaded from it at start and written back whenever the program changes them (e.g. the high score table).
+ */
+class VirtualDisk(val files: MutableMap<String, ByteArray> = mutableMapOf(), val directory: java.io.File? = null) {
+    init {
+        directory?.listFiles()?.filter { it.isFile }?.forEach { files[it.name.uppercase()] = it.readBytes() }
+    }
+
+    fun changed(name: String) {
+        val dir = directory ?: return
+        dir.mkdirs()
+        java.io.File(dir, name).writeBytes(files[name] ?: return)
+    }
+}
 
 /**
  * A deterministic PC for running the original UGH.EXE: 1 MB RAM, VGA, 8259 PIC, 8253 PIT channel 0,
@@ -414,6 +427,7 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
                 System.arraycopy(bytes, 0, h.data, h.pos, bytes.size)
                 h.pos = end
                 disk.files[h.name] = h.data.copyOf()
+                disk.changed(h.name)
                 cpu.ax = bytes.size; ok()
             }
             0x42 -> {
