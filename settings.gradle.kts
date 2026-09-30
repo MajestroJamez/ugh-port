@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 
-include("extractor")
+include("extractor", "oracle")

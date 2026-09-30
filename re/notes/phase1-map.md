@@ -117,8 +117,11 @@ herní smyčka (113b:0c07, jeden průchod = jeden snímek 70 Hz):
     3976  načtení levelu (tabulka, mapa, start pozice)
 ```
 
-Část 113b (`2db9–3961`) tvoří **kompilované sprity**: rozvinuté `MOV [DI+n],reg`, grafika uložená jako kód.
-Ghidra u některých funkcí podhodnotila velikost (skoky), ale disassembly je kompletní (`re/out/listing.asm`).
+Část 113b (`2e03–3961`) tvoří **kompilované sprity**: rozvinuté `MOV [DI+n],reg`, grafika uložená jako kód
+(animovaná hladina vody, 3 snímky, `113b:2db9`).
+
+**Oprava (fáze 3):** tvrzení, že je disassembly kompletní, neplatilo. Ghidra se zastavila na nepřímých skocích
+a ~10 kB herní logiky zůstalo nedisassemblovaných. Doplněno ve fázi 3, viz [phase3-oracle.md](phase3-oracle.md).
 
 ## Nástroje
 
