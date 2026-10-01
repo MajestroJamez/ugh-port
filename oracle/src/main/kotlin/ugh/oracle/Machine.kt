@@ -24,10 +24,18 @@ class VirtualDisk(val files: MutableMap<String, ByteArray> = mutableMapOf(), val
  * keyboard controller, and BIOS/DOS services implemented in Kotlin.
  *
  * Time is measured in emulated instructions ([ips] per second). Nothing depends on the host clock, so the
- * same program and the same input produce exactly the same run. There is no sound hardware: AdLib and
- * Sound Blaster probes read 0xFF, so the game runs with sound disabled.
+ * same program and the same input produce exactly the same run. Sound: an [AdLib] when [adlib] is set
+ * (register file, timers, recorded writes), otherwise AdLib and Sound Blaster probes read 0xFF and the game
+ * runs with sound disabled.
  */
-class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Long = 20_000_000L) : Bus {
+class Machine(
+    exe: ByteArray,
+    val disk: VirtualDisk = VirtualDisk(),
+    val ips: Long = 20_000_000L,
+    adlib: Boolean = false,
+) : Bus {
+    val adlib: AdLib? = if (adlib) AdLib(ips) else null
+
     /** Address space and VGA, shared type with the port (so state can be copied 1:1). */
     val memory = Memory()
     val mem = memory.ram
@@ -108,7 +116,8 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
         0x64 -> if (kbd.outputFull) 0x1d else 0x1c
         0x3da -> { vga.resetFlipFlop(); retraceStatus() }
         in 0x3c0..0x3cf, 0x3d5 -> vga.input(port)
-        else -> 0xff // joystick 0x201, AdLib 0x388, Sound Blaster: not present
+        0x388 -> adlib?.status(time) ?: 0xff
+        else -> 0xff // joystick 0x201, Sound Blaster: not present
     }
 
     override fun out8(port: Int, v: Int) {
@@ -121,6 +130,8 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
                 if (pit.pendingReset >= 0) { pit.nextIrq = time + pit.period(ips); pit.pendingReset = -1; nextEvent = 0 }
             }
             in 0x3c0..0x3cf, 0x3d4, 0x3d5 -> vga.out(port, v)
+            0x388 -> adlib?.writeIndex(v)
+            0x389 -> adlib?.writeData(v, time)
         }
     }
 
@@ -216,7 +227,11 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
         }
     }
 
+    /** When set, every executed instruction marks its linear address (dynamic code coverage). */
+    var coverage: BooleanArray? = null
+
     private fun stepOnce() {
+        coverage?.let { it[((cpu.cs shl 4) + cpu.ip) and 0xfffff] = true }
         try {
             cpu.step()
         } catch (e: CpuException) {
@@ -261,6 +276,18 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
         }
     }
 
+    /**
+     * The program busy-waits for the timer: lets the next timer interrupt happen right now (time skips to the
+     * next PIT tick unless one is pending) and services it, also while interrupts are held.
+     */
+    fun timerInterruptNow() {
+        if (pic.irr and 1 == 0) skipTo(pit.nextIrq)
+        val hold = irqHold
+        irqHold = false
+        serviceInterruptsNow()
+        irqHold = hold
+    }
+
     /** Cached time of the next device event; 0 forces a recalculation. */
     private var nextEvent = 0L
 
@@ -282,7 +309,9 @@ class Machine(exe: ByteArray, val disk: VirtualDisk = VirtualDisk(), val ips: Lo
             }
             return -1
         }
-        fun acknowledge(n: Int) { irr = irr and (1 shl n).inv(); isr = isr or (1 shl n) }
+        /** Interrupts acknowledged so far, per IRQ line. */
+        val count = LongArray(8)
+        fun acknowledge(n: Int) { irr = irr and (1 shl n).inv(); isr = isr or (1 shl n); count[n]++ }
         fun eoi(v: Int) {
             if (v == 0x20) { for (i in 0..7) if (isr and (1 shl i) != 0) { isr = isr and (1 shl i).inv(); return } }
             else if (v and 0xf8 == 0x60) isr = isr and (1 shl (v and 7)).inv()

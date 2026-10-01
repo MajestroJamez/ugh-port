@@ -44,28 +44,19 @@ class Game(val mem: Memory, var host: Host = NO_HOST) {
         return (y - quarter) and 0xffff
     }
 
-    /**
-     * Sound effect request (far call 1878:1852 with the ADLX block segment). The original returns -1 in AX when
-     * no sound card is present, which is what the reference runs use; the port's audio hooks in here.
-     */
-    var soundEffect: (adlxSeg: Int, priority: Int, flags: Int) -> Unit = { _, _, _ -> }
-
+    /** Far call 1878:1852: sound effect from the ADLX block at [adlxSeg]:0; AX = its channel (-1 without card). */
     internal fun playEffect(r: Regs, adlxSeg: Int, flags: Int = 1, priority: Int = 0xff) {
-        soundEffect(adlxSeg, priority, flags)
-        r.ax = 0xffff
+        r.ax = libEffect(0, adlxSeg, priority, flags)
     }
 
-    /** Sound library init (1878:0003 with the device flags, 1 = AdLib) and shutdown (0: 1878:008a). */
-    var soundLibrary: (Int) -> Unit = {}
+    /** Far call 1878:1059 - stops the effects and fades the music out over [fade] steps (the game uses 0x11). */
+    fun soundControl(fade: Int) { libControl(fade) }
 
-    /** Far call 1878:1059 (sound library control, the game uses 0x11 before starting music or effects). */
-    var soundControl: (Int) -> Unit = {}
+    /** Far call 1878:0f88 - music from the ADLX block at [adlxSeg]:0, faded in over [fade] steps to [volume]. */
+    fun musicStart(adlxSeg: Int, fade: Int, volume: Int) { libMusic(0, adlxSeg, fade, volume) }
 
-    /** Far call 1878:0f88 - starts the music of the ADLX block segment [adlxSeg]. */
-    var musicStart: (adlxSeg: Int, a: Int, b: Int) -> Unit = { _, _, _ -> }
-
-    /** Stops a sound started with flags 0 (far call 1878:1768 with the handle); a no-op without sound card. */
-    var soundStop: (handle: Int) -> Unit = {}
+    /** Far call 1878:1768 - stops the effect channel [handle] (a looped effect). */
+    fun soundStop(handle: Int) { libStop(handle) }
 
     /** Word in the game code segment (variables kept in CS by the original). */
     fun cs(off: Int) = mem.read16(CODE, off)

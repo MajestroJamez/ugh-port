@@ -45,10 +45,10 @@ fun Game.exitProgram() {
 }
 
 /** 113b:4f43 - sound library init (AdLib). */
-fun Game.soundInit() = soundLibrary(1)
+fun Game.soundInit() { libInit(1) }
 
 /** 113b:4f4e (second half) - sound library shutdown. */
-fun Game.soundShutdown() = soundLibrary(0)
+fun Game.soundShutdown() { libShutdown() }
 
 /** 113b:50c6 with no joystick connected: calibration data cleared, both joysticks absent. */
 fun Game.joystickDetect() {

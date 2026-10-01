@@ -84,8 +84,13 @@ class MetaLockstepTest {
     }
 
     @Test
-    fun `the whole program matches the original`() {
-        val ugh = OriginalUgh(exe)
+    fun `the whole program matches the original`() = wholeProgram(adlib = false)
+
+    @Test
+    fun `the whole program with an AdLib matches the original`() = wholeProgram(adlib = true)
+
+    private fun wholeProgram(adlib: Boolean) {
+        val ugh = OriginalUgh(exe, adlib = adlib)
         assertTrue(ugh.runUntil(0x113b, 0x000d, 100), "start of main not reached")
         val ls = Lockstep(ugh, maxFrames = 60_000)
         val d = Director(ls)
@@ -124,8 +129,9 @@ class MetaLockstepTest {
             step(At.MENU) { tap(0x10) }                      // Q: quit
         }
         ls.run { runProgram() }
-        println("whole program: ${ls.frames} frames, ${ls.mismatchCount} mismatches, ${d.gameFrames} game frames, " +
-            "original exited ${ls.originalExited}, UGH!.HI written ${ls.files.keys}")
+        println("whole program (AdLib $adlib): ${ls.frames} frames, ${ls.mismatchCount} mismatches, ${d.gameFrames} game frames, " +
+            "original exited ${ls.originalExited}, UGH!.HI written ${ls.files.keys}, " +
+            "${ls.adlibWrites} AdLib writes, ${ls.timerInterrupts} timer interrupts")
         println("waits: " + d.log.joinToString(" ").take(3000))
         ls.mismatches.forEach(::println)
         assertEquals(0, ls.mismatchCount)
@@ -135,8 +141,13 @@ class MetaLockstepTest {
     }
 
     @Test
-    fun `timeouts, team mode, the ending and an existing high score file match the original`() {
-        val ugh = OriginalUgh(exe)
+    fun `timeouts, team mode, the ending and an existing high score file match the original`() = ending(adlib = false)
+
+    @Test
+    fun `timeouts, team mode and the ending with an AdLib match the original`() = ending(adlib = true)
+
+    private fun ending(adlib: Boolean) {
+        val ugh = OriginalUgh(exe, adlib = adlib)
         assertTrue(ugh.runUntil(0x113b, 0x000d, 100), "start of main not reached")
         // a high score file from an earlier session (the default table)
         val hi = ByteArray(0x6b) { (ugh.dgroup8(0xc86 + it) xor 0xff).toByte() }
@@ -178,8 +189,9 @@ class MetaLockstepTest {
             step(At.MENU) { tap(0x10) }                      // Q
         }
         ls.run { runProgram() }
-        println("ending: ${ls.frames} frames, ${ls.mismatchCount} mismatches, ${d.gameFrames} game frames, " +
-            "level ${ugh.dgroup16(0x261c)}, original exited ${ls.originalExited}")
+        println("ending (AdLib $adlib): ${ls.frames} frames, ${ls.mismatchCount} mismatches, ${d.gameFrames} game frames, " +
+            "level ${ugh.dgroup16(0x261c)}, original exited ${ls.originalExited}, ${ls.adlibWrites} AdLib writes, " +
+            "${ls.timerInterrupts} timer interrupts")
         println("waits: " + d.log.joinToString(" ").take(3000))
         ls.mismatches.forEach(::println)
         assertEquals(0, ls.mismatchCount)

@@ -8,8 +8,8 @@ import ugh.extractor.Palette
  * a "game frame" is one wait for the start of a vertical retrace, 113b:44c6 (113b:44c3 falls into it; the
  * password entry and a few other loops call 44c6 directly). The game logic runs once per frame.
  */
-class OriginalUgh(exe: ByteArray, disk: VirtualDisk = VirtualDisk()) {
-    val machine = Machine(exe, disk)
+class OriginalUgh(exe: ByteArray, disk: VirtualDisk = VirtualDisk(), adlib: Boolean = false) {
+    val machine = Machine(exe, disk, adlib = adlib)
 
     /** Number of retrace waits so far. */
     var gameFrame = 0L

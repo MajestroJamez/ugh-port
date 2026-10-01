@@ -26,6 +26,21 @@ interface Host {
 
     /** The program ended (Q in the main menu or in the intro). */
     fun exit() { throw StopGame() }
+
+    /** Whether an AdLib answers the detection (its timer status); without one the game is silent. */
+    fun adlibPresent(): Boolean = false
+
+    /** One AdLib register write (index to port 388h, value to 389h). */
+    fun adlib(reg: Int, value: Int) {}
+
+    /**
+     * PIT channel 0 reprogrammed to [divisor] (0 = 65536) by the sound timer: from now on the host calls
+     * [timerInterrupt] at 1193182 / divisor Hz, between frames.
+     */
+    fun timerDivisor(divisor: Int) {}
+
+    /** The game busy-waits for the next timer interrupt (music fade-out); a live host lets that time pass. */
+    fun timerWait() {}
 }
 
 /** Thrown by hosts to stop the game thread (end of a test, window closed). */
