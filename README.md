@@ -12,6 +12,9 @@ To use the port you need your own copy of the original `UGH.EXE` (the extractor 
 `ef93d2cd5eb558f6a7d0007e0109f2e9ee952dc125389d7a6256646087636d7c`). The extractor reads the data straight
 from it into the local, git-ignored `assets/` directory.
 
+The copy this port was made from was downloaded from <https://mujsoubor.cz/stare-hry/ugh> (a Czech site
+with old DOS games). Check the SHA-256 above: the port only works with exactly that version.
+
 ## Build
 
 Requirements: JDK 25 (the Gradle wrapper downloads everything else).
