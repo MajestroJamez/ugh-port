@@ -24,7 +24,6 @@ import java.io.File
 import java.time.LocalTime
 import java.util.concurrent.ConcurrentLinkedQueue
 import javax.swing.JFrame
-import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 import kotlin.system.exitProcess
@@ -33,18 +32,13 @@ import kotlin.system.exitProcess
  * Desktop window for UGH!: runs the port (game code, graphics, AdLib sound through the OPL2 synthesizer).
  * With --original it runs the original program in the built-in emulator instead (no sound), for comparison.
  *
- * Usage: desktop [--original] [path\to\UGH.EXE]   (default OLD\UGH.EXE; the high score table is kept in
- * %APPDATA%\ugh-port, the same file for both)
+ * Usage: UGH-port [--original] [path\to\UGH.EXE]   ([GameFile] tells where UGH.EXE is looked for; the high
+ * score table is kept in %APPDATA%\ugh-port, the same file for both)
  */
 fun main(args: Array<String>) {
     val original = "--original" in args
-    val exeFile = File(args.firstOrNull { !it.startsWith("--") } ?: "OLD/UGH.EXE")
-    if (!exeFile.isFile) {
-        JOptionPane.showMessageDialog(null, "UGH.EXE not found: ${exeFile.absolutePath}", "UGH!", JOptionPane.ERROR_MESSAGE)
-        exitProcess(1)
-    }
-    val saveDir = File(System.getenv("APPDATA") ?: System.getProperty("user.home"), "ugh-port")
-    val exe = exeFile.readBytes()
+    val exe = GameFile.locate(args.firstOrNull { !it.startsWith("--") }) ?: exitProcess(1)
+    val saveDir = GameFile.saveDir
     SwingUtilities.invokeLater {
         if (original) {
             val ugh = OriginalUgh(exe, VirtualDisk(directory = saveDir))

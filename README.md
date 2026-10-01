@@ -38,6 +38,17 @@ For comparison, `--original` runs the original `UGH.EXE` in the project's determ
 .\gradlew.bat :desktop:run --args="--original"
 ```
 
+### Windows package
+
+```powershell
+.\gradlew.bat :desktop:packageZip
+```
+
+builds `desktop\build\jpackage\UGH-port\` (`UGH-port.exe` with its own Java runtime, no Java needed on the
+target machine) and `desktop\build\distributions\UGH-port-windows.zip`. The original game is not part of it:
+put `UGH.EXE` next to `UGH-port.exe`, or start it and pick `UGH.EXE` once (the path is remembered in
+`%APPDATA%\ugh-port`).
+
 Player 1: arrow keys (up = pedal), player 2: W / Z / A / S. F1 starts, F3 difficulty, F4 one player / team.
 The high score table is kept in `%APPDATA%\ugh-port`.
 
@@ -61,5 +72,5 @@ The high score table is kept in `%APPDATA%\ugh-port`.
 3. Deterministic game core verified against the original - done: the whole program (game logic, drawing,
    all screens, AdLib sound driver) ported and verified in lockstep with the original; own OPL2 synthesizer;
    the desktop window runs the port
-4. Complete game 1:1 packaged for Windows
+4. Complete game 1:1 packaged for Windows - done (`:desktop:packageZip`)
 5. Enhancements (new graphics etc.)
