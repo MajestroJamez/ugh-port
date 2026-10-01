@@ -89,7 +89,10 @@ class MetaLockstepTest {
     @Test
     fun `the whole program with an AdLib matches the original`() = wholeProgram(adlib = true)
 
-    private fun wholeProgram(adlib: Boolean) {
+    @Test
+    fun `the whole program from the bare program image matches the original`() = wholeProgram(adlib = true, fresh = true)
+
+    private fun wholeProgram(adlib: Boolean, fresh: Boolean = false) {
         val ugh = OriginalUgh(exe, adlib = adlib)
         assertTrue(ugh.runUntil(0x113b, 0x000d, 100), "start of main not reached")
         val ls = Lockstep(ugh, maxFrames = 60_000)
@@ -128,7 +131,7 @@ class MetaLockstepTest {
             step(At.INTRO_OR_PAGE) { tap(0x2d) }             // high score table
             step(At.MENU) { tap(0x10) }                      // Q: quit
         }
-        ls.run { runProgram() }
+        ls.run(if (fresh) exe else null) { runProgram() }
         println("whole program (AdLib $adlib): ${ls.frames} frames, ${ls.mismatchCount} mismatches, ${d.gameFrames} game frames, " +
             "original exited ${ls.originalExited}, UGH!.HI written ${ls.files.keys}, " +
             "${ls.adlibWrites} AdLib writes, ${ls.timerInterrupts} timer interrupts")

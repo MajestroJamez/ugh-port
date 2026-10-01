@@ -1,7 +1,7 @@
 # Fáze 3 – zvuk
 
 Stav: logika zvuku převedená a ověřená (`SoundTimer.kt`, `SoundDriver.kt`, `SoundLibrary.kt` v `:core`);
-syntezátor OPL2 hotový (`core/audio`); zbývá výstup do zvukové karty Windows a přepnutí okna na port. Emulátor originálu umí AdLib (`oracle/AdLib.kt`: registry, časovače
+syntezátor OPL2 (`core/audio`), výstup přes Java Sound a okno na portu (`desktop`). Emulátor originálu umí AdLib (`oracle/AdLib.kt`: registry, časovače
 kvůli detekci, záznam zápisů), zapíná se `OriginalUgh(exe, adlib = true)`; výchozí je stále bez karty, takže
 všechny dosavadní testy běží beze změny. `SoundExploreTest` (`.\gradlew.bat :verify:test --tests
 ugh.verify.SoundExploreTest -Pugh.explore`) zapíše vykonané adresy zvukového kódu a zápisy do AdLibu do
@@ -91,7 +91,11 @@ snímků), zbytek míst volání pokrývá lockstep celého programu s kartou.
 - `SoundRenderTest` vykreslí hudbu menu, levelu a rekordů, všechny efekty a mix do
   `verify/build/verify-out/sound/*.wav` (k poslechu; obsahuje hudbu hry, necommitovat).
 
-## Další krok
+## Okno
 
-Výstup přes javax.sound (převzorkování na 48 kHz, vyrovnání posunu hodin) a přepnutí okna na port – v
-samostatném commitu.
+- `desktop/AudioOut.kt`: převzorkování 49 716 → 48 000 Hz (lineárně), linka s bufferem 200 ms, cíl 60 ms ve
+  frontě; rozdíl hodin snímků a zvukové karty vyrovná zahozením nebo zopakováním několika vzorků. Busy wait
+  hry (ztlumení hudby) zapisuje blokujícím zápisem, takže trvá skutečný čas.
+- Okno spouští port z čistého obrazu EXE: C runtime před `main` zapisuje jen prostředí, PSP, své proměnné,
+  tabulku souborů a haldu, na kterých hra nezávisí – lockstep celého programu z čistého obrazu (`Lockstep.run(exe)`)
+  dává 0 neshod. `--original` dál pouští originál v emulátoru.

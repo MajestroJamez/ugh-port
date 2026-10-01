@@ -24,11 +24,18 @@ Requirements: JDK 25 (the Gradle wrapper downloads everything else).
 
 ## Play
 
-Until the port is complete, the desktop window runs the **original** `UGH.EXE` in the project's own
-deterministic emulator (`:oracle`, no sound yet):
+The desktop window runs the port (game code, graphics, AdLib music and effects through its own OPL2
+synthesizer):
 
 ```powershell
 .\gradlew.bat :desktop:run
+```
+
+For comparison, `--original` runs the original `UGH.EXE` in the project's deterministic emulator instead
+(`:oracle`, no sound):
+
+```powershell
+.\gradlew.bat :desktop:run --args="--original"
 ```
 
 Player 1: arrow keys (up = pedal), player 2: W / Z / A / S. F1 starts, F3 difficulty, F4 one player / team.
@@ -39,10 +46,10 @@ The high score table is kept in `%APPDATA%\ugh-port`.
 | Path | Content |
 |---|---|
 | `extractor/` | reads `UGH.EXE`: Pack-Ice depacker, sprites, palette, levels, pictures, AdLib blocks |
-| `core/` | the port: shared address space, VGA model, ported game routines |
+| `core/` | the port: shared address space, VGA model, ported game routines, sound driver, OPL2 synthesizer |
 | `oracle/` | deterministic 286/VGA/DOS emulator running the original as the reference |
 | `verify/` | differential tests: every ported routine against the original, byte for byte |
-| `desktop/` | Windows window (Swing) |
+| `desktop/` | Windows window (Swing) and sound output (Java Sound) |
 | `re/notes/` | reverse-engineering notes (Czech): executable map, data formats |
 | `re/tools/` | Node.js helper scripts used during analysis |
 | `re/ghidra-scripts/` | Ghidra headless export scripts |
@@ -51,8 +58,8 @@ The high score table is kept in `%APPDATA%\ugh-port`.
 
 1. Executable map (segments, hardware access, game loop) - done
 2. Asset extractor - done
-3. Deterministic game core verified against the original - in progress (reference emulator done;
-   the whole game logic, drawing, all screens outside the game and the AdLib sound driver ported and
-   verified in lockstep, OPL2 synthesizer; next: audio output and the window on the port)
+3. Deterministic game core verified against the original - done: the whole program (game logic, drawing,
+   all screens, AdLib sound driver) ported and verified in lockstep with the original; own OPL2 synthesizer;
+   the desktop window runs the port
 4. Complete game 1:1 packaged for Windows
 5. Enhancements (new graphics etc.)

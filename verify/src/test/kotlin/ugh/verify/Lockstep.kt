@@ -6,6 +6,7 @@ import ugh.core.game.StopGame
 import ugh.core.game.keyEvent
 import ugh.core.game.timerInterrupt
 import ugh.core.hw.Memory
+import ugh.core.hw.MzLoader
 import ugh.oracle.OriginalUgh
 
 /**
@@ -150,8 +151,14 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
     }
 
     /** Starts the lockstep at the original's current state and runs [portCode] on the port. */
-    fun run(portCode: Game.() -> Unit) {
-        portMem.copyFrom(ugh.machine.memory)
+    fun run(freshExe: ByteArray? = null, portCode: Game.() -> Unit) {
+        if (freshExe == null) portMem.copyFrom(ugh.machine.memory)
+        else {
+            // the port from the bare program image, without what the C runtime start-up wrote
+            MzLoader.load(freshExe, portMem)
+            ignored += RUNTIME_STARTUP
+            syncNotPorted()
+        }
         ugh.machine.irqHold = true
         try {
             game.portCode()
@@ -193,6 +200,9 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
         m.irqHold = true
     }
 
+    /** Further linear ranges left out of the comparison. */
+    val ignored = ArrayList<Pair<Int, Int>>()
+
     private fun syncNotPorted() {
         val a = ugh.machine.memory.ram
         val b = portMem.ram
@@ -205,7 +215,8 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
         val b = portMem.ram
         val stack = m.cpu.ss shl 4
         var i = java.util.Arrays.mismatch(a, b)
-        while (i >= 0 && (i in stack until stack + STACK_SIZE || NOT_PORTED.any { i in it.first until it.second })) {
+        while (i >= 0 && (i in stack until stack + STACK_SIZE || NOT_PORTED.any { i in it.first until it.second } ||
+                ignored.any { i in it.first until it.second })) {
             val r = java.util.Arrays.mismatch(a, i + 1, a.size, b, i + 1, b.size)
             i = if (r < 0) -1 else i + 1 + r
         }
@@ -231,6 +242,13 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
         val NOT_PORTED = listOf(
             0x00000 to 0x00500,                              // IVT and BIOS data area
             0x16640 + 0x1127 to 0x16640 + 0x112b,            // CPU speed measured by the sound driver
+        )
+
+        /** Written by the Borland C runtime before main: environment, PSP, its variables, streams, heap. */
+        val RUNTIME_STARTUP = listOf(
+            0x0fe00 to 0x10000, 0x10250 to 0x10258, 0x10790 to 0x107a0,
+            0x6c0e0 to 0x6c130, 0x73c80 to 0x74ee0,
+            0xf0000 to 0x100000,                             // the emulator's BIOS ROM
         )
     }
 }
