@@ -52,6 +52,9 @@ target machine) and `desktop\build\distributions\UGH-port-windows.zip`. The orig
 put `UGH.EXE` next to `UGH-port.exe`, or start it and pick `UGH.EXE` once (the path is remembered in
 `%APPDATA%\ugh-port`).
 
+Releases are built the same way by GitHub Actions (`.github/workflows/release.yml`) when a version tag `v*` is
+pushed; the release text is `.github/release-notes.md`.
+
 Player 1: arrow keys (up = pedal), player 2: W / Z / A / S. F1 starts, F3 difficulty, F4 one player / team.
 The high score table is kept in `%APPDATA%\ugh-port`.
 
