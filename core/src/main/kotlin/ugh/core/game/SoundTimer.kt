@@ -43,13 +43,14 @@ internal fun Game.timerInstall() {
     setD(HANDLE_SLOT, 0)
     setD(SLOT_HANDLE, 0)
     setD(SLOTS_LAST, 0)
-    // INT 8 -> 1a32:00d2 (the vector itself is the host's business)
+    mem.write16(0, 0x20, 0x00d2); mem.write16(0, 0x22, TIMER_SEG)   // INT 8 -> 1a32:00d2 (INT 21h AH=25h)
 }
 
 /** 1a32:00a0 - uninstalls the scheduler: old INT 8 back, PIT to 65536. */
 internal fun Game.timerUninstall() {
     if (mem.read16(TIMER_SEG, 6) == 0) return
     mem.write16(TIMER_SEG, 6, 0)
+    mem.write16(0, 0x20, u(OLD_INT8)); mem.write16(0, 0x22, u(OLD_INT8 + 2))
     host.timerDivisor(0)
 }
 

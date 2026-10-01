@@ -1,7 +1,7 @@
 # Fáze 3 – zvuk
 
 Stav: logika zvuku převedená a ověřená (`SoundTimer.kt`, `SoundDriver.kt`, `SoundLibrary.kt` v `:core`);
-syntezátor OPL2 a výstup zvuku zbývá. Emulátor originálu umí AdLib (`oracle/AdLib.kt`: registry, časovače
+syntezátor OPL2 hotový (`core/audio`); zbývá výstup do zvukové karty Windows a přepnutí okna na port. Emulátor originálu umí AdLib (`oracle/AdLib.kt`: registry, časovače
 kvůli detekci, záznam zápisů), zapíná se `OriginalUgh(exe, adlib = true)`; výchozí je stále bez karty, takže
 všechny dosavadní testy běží beze změny. `SoundExploreTest` (`.\gradlew.bat :verify:test --tests
 ugh.verify.SoundExploreTest -Pugh.explore`) zapíše vykonané adresy zvukového kódu a zápisy do AdLibu do
@@ -78,7 +78,20 @@ snímků), zbytek míst volání pokrývá lockstep celého programu s kartou.
 - Nepokryté větve jsou s daty této hry nedosažitelné (aditivní nástroje, meta události mimo 0x77, hudba bez
   opakování, tempo efektu před první hudbou, odebrání jiného než posledního slotu časovače, streamování).
 
+## Syntezátor a výstup
+
+- `core/audio/Opl2.kt`: vlastní OPL2 (49 716 Hz) podle popsaného chování čipu – tabulky logsin/exp počítané
+  ze vzorců, obálka 9 bitů po 0,1875 dB s rychlostmi 0–63 (KSR), KSL, tremolo 3,7 Hz, vibrato, 4 tvary vln,
+  zpětná vazba, FM i aditivní spojení. Bicí režim, CSM a časovače jako zvuk chybí (hra je nepoužívá: BD ani
+  08 nikdy nezapisuje). `Opl2Test`: frekvence z F-number/bloku/násobiče, útlum TL, náběh a uvolnění, FM.
+- `core/audio/SoundTimeline.kt`: čas PIT řídí tiky časovače i vzorky; hostitel volá `frame()` jednou za
+  snímek (17 024,6 tiků PIT) a `untilNextTick()` z `timerWait()`.
+- Hra budí OPL potichu (útlum 18–33 dB, skutečný AdLib to dohnal zesilovačem): výstup se zesiluje 8×, špičky
+  v hudbě i efektech pak zůstanou pod plným rozsahem.
+- `SoundRenderTest` vykreslí hudbu menu, levelu a rekordů, všechny efekty a mix do
+  `verify/build/verify-out/sound/*.wav` (k poslechu; obsahuje hudbu hry, necommitovat).
+
 ## Další krok
 
-Syntezátor OPL2 (vlastní implementace, ne GPL/LGPL kód) a výstup přes javax.sound; přepnutí okna na port
-v samostatném commitu.
+Výstup přes javax.sound (převzorkování na 48 kHz, vyrovnání posunu hodin) a přepnutí okna na port – v
+samostatném commitu.
