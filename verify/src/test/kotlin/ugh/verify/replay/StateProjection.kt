@@ -44,6 +44,15 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
 
         if (phase !in LEVEL_PHASES) return m
 
+        // ---------------------------------------------------------------- level
+        put("game.passengersLeft", b(0x28f1))
+        put("game.waterYf", s(0x28fe))
+        put("game.waterHold", b(0x27a2))
+        put("game.waterToggle", b(0x27ce))
+        put("game.waterAnim", s(0x27a4))
+        put("game.waterAnimDelay", b(0x27a3))
+        put("game.rain", rainChecksum())
+
         // ---------------------------------------------------------------- copters
         for (p in 0 until players.coerceIn(1, 2)) {
             val bx = 2 * p
@@ -55,6 +64,10 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
             put(c + "landedPad", s(Game.P_LANDED + bx))
             put(c + "effort", s(Game.P_EFFORT + bx))
             put(c + "impact", s(Game.P_IMPACT + bx))
+            put(c + "x", s(Game.P_X + bx))
+            put(c + "y", s(Game.P_Y + bx))
+            put(c + "sprite", hex(u(0x27e8 + bx)))
+            put(c + "animCounter", s(0x27f0 + bx))
             put(c + "carrying", hexOrNone(u(0x27fc + bx), none = 0))
             put(c + "targetPad", s(0x2804 + bx))
             put(c + "fare", s(0x2808 + bx))
@@ -79,6 +92,9 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
             put(c + "y", s(Game.PAD_Y + si))
             put(c + "number", s(0x2985 + si))
             put(c + "waiting", s(0x2999 + si))
+            put(c + "doorX", s(0x2949 + si))
+            put(c + "waitX", s(0x295d + si))
+            put(c + "standX", s(0x2971 + si))
         }
 
         // ---------------------------------------------------------------- passengers (level list B)
@@ -97,6 +113,12 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
             put(c + "pickupPad", s(0x2a4d + si))
             put(c + "targetPad", s(0x2a6d + si))
             put(c + "bonusTimer", s(0x2c8d + si))
+            put(c + "startPad", s(0x29cd + si))
+            put(c + "route", hex(u(0x29ed + si)))
+            put(c + "x", s(0x2b2d + si))
+            put(c + "y", s(0x2b6d + si))
+            put(c + "anim", s(0x2bad + si))
+            put(c + "animDelay", s(0x2bcd + si))
             put(c + "sprite", hexOrNone(u(0x2bed + si)))
             put(c + "bubble", hexOrNone(u(0x2c2d + si)))
         }
@@ -114,6 +136,11 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
             put(c + "vx", s(0x2ce9 + si))
             put(c + "timer", s(0x2cfd + si))
             put(c + "facing", s(0x2d57 + si))
+            put(c + "pad", s(0x2cb7 + si))
+            put(c + "table", hex(u(0x2cd5 + si)))
+            put(c + "startDelay", s(0x2cdf + si))
+            put(c + "anim", s(0x2d2f + si))
+            put(c + "animDelay", s(0x2d39 + si))
             put(c + "sprite", hexOrNone(u(0x2d43 + si)))
         }
 
@@ -134,7 +161,64 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
         return m
     }
 
+    /**
+     * The 193 raindrops (113b:3c35 / 3c78; respawning draws random numbers, so they matter for game.rng): CRC-32
+     * (zlib) of drop 0..192 as two little-endian words each, its offset in the VGA page (row * 0x60 + x / 4,
+     * DGROUP:2e8b) and its plane (x & 3, DGROUP:318f), as 8 hex digits.
+     */
+    private fun rainChecksum(): String {
+        val crc = java.util.zip.CRC32()
+        for (bx in 0..0x180 step 2) for (v in intArrayOf(u(0x2e8b + bx), u(0x318f + bx))) { crc.update(v and 0xff); crc.update(v shr 8) }
+        return "%08x".format(crc.value)
+    }
+
+    /** Variable of the original the projection leaves out on purpose: [length] bytes at [seg]:[off]. */
+    data class Hidden(val seg: Int, val off: Int, val length: Int, val reason: String) {
+        val linear get() = (seg shl 4) + off
+    }
+
     companion object {
+        /**
+         * Everything the game changes during play but the projection does not contain (checked by [StateAudit]):
+         * renderer bookkeeping of the VGA version (what was drawn where, to erase it next frame), the status line,
+         * values that follow from the keys or from the level data, scratch, sound.
+         */
+        val NOT_PROJECTED = listOf(
+            Hidden(Game.CODE, 0x4509, 1, "keyboard handler: last raw scancode (follows from the k= lists)"),
+            Hidden(Game.CODE, 0x45fc, 4, "scratch of the sprite drawing (clipping at the water) and of the level load"),
+            Hidden(Game.CODE, 0x4608, 2, "VGA: display page"),
+            Hidden(Game.CODE, 0x460c, 2, "VGA: draw page"),
+            Hidden(Game.CODE, 0x4981, 0x300, "faded palette = palette CS:4681 * game.fade / 256"),
+            Hidden(Game.DGROUP, 0x00c8, 0x0e, "status line: digits being drawn"),
+            Hidden(Game.DGROUP, 0x0bfd, 2, "level caption: digits of the level number"),
+            Hidden(Game.DGROUP, 0x2643, 5, "keyboard: last scancode, the one before, changed bits, position in a key sequence (follow from the k= lists)"),
+            Hidden(Game.DGROUP, 0x2648, 2, "scratch word of 3d4d / 3d5a"),
+            Hidden(Game.DGROUP, 0x264c, 0x140, "level map, copied from the level data of game.level"),
+            Hidden(Game.DGROUP, 0x27a6, 2, "status line: length of the energy bar drawn"),
+            Hidden(Game.DGROUP, 0x27ac, 0x22, "status line: item redrawn next, positions, values shown"),
+            Hidden(Game.DGROUP, 0x27e0, 8, "copters: position drawn last frame"),
+            Hidden(Game.DGROUP, 0x27ec, 4, "copters: sprite drawn last frame"),
+            Hidden(Game.DGROUP, 0x2800, 4, "status line: cargo shown"),
+            Hidden(Game.DGROUP, 0x28e9, 0x1a, "level record: the rest is level data (list pointers, start positions, water speed)"),
+            Hidden(Game.DGROUP, 0x2905, 4, "water: row redrawn (renderer), waterRow * row bytes (set from game.waterRow every frame)"),
+            Hidden(Game.DGROUP, 0x2a8d, 0x40, "passengers: pickup / target pad * 2 (always set together with them)"),
+            Hidden(Game.DGROUP, 0x2b4d, 0x20, "passengers: x drawn last frame"),
+            Hidden(Game.DGROUP, 0x2b8d, 0x20, "passengers: y drawn last frame"),
+            Hidden(Game.DGROUP, 0x2bed, 0x20, "passengers: sprite slots after the end of the list (cleared by the level setup)"),
+            Hidden(Game.DGROUP, 0x2c0d, 0x20, "passengers: sprite drawn last frame"),
+            Hidden(Game.DGROUP, 0x2c4d, 0x20, "passengers: bubble drawn last frame"),
+            Hidden(Game.DGROUP, 0x2d07, 0x14, "objects: x drawn this / last frame"),
+            Hidden(Game.DGROUP, 0x2d1b, 0x14, "objects: y drawn this / last frame"),
+            Hidden(Game.DGROUP, 0x2d4d, 0x0a, "objects: sprite drawn last frame"),
+            Hidden(Game.DGROUP, 0x2d61, 0x0a, "objects: handle of the looping flap sound (sound)"),
+            Hidden(Game.DGROUP, 0x2db3, 0x18, "bonus items: sprite drawn last frame"),
+            Hidden(Game.DGROUP, 0x2dfb, 0x18, "bonus items: x drawn this frame"),
+            Hidden(Game.DGROUP, 0x2e13, 0x18, "bonus items: x drawn last frame"),
+            Hidden(Game.DGROUP, 0x2e2b, 0x18, "bonus items: y drawn this frame"),
+            Hidden(Game.DGROUP, 0x2e43, 0x18, "bonus items: y drawn last frame"),
+            Hidden(Game.DGROUP, 0x300d, 0x182, "rain: drawn last frame"),
+        )
+
         /** Phases in which a level is loaded. */
         val LEVEL_PHASES = setOf("caption", "play")
 

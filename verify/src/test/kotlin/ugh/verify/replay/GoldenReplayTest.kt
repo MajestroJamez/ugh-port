@@ -32,7 +32,8 @@ class GoldenReplayTest {
                     val difficulty: Int = 1, val cheat: Boolean = false)
 
     data class Result(val spec: Spec, val file: File, val frames: Long, val end: GameEnd?, val problems: List<String>,
-                      val states: Set<String>, val levelsDone: Int, val injections: Int, val summary: String)
+                      val states: Set<String>, val levelsDone: Int, val injections: Int, val summary: String,
+                      val audit: StateAudit)
 
     private fun toNewGame(menuKeys: List<Int>, password: String?): OriginalUgh {
         val ugh = OriginalUgh(exe)
@@ -64,7 +65,8 @@ class GoldenReplayTest {
         if (!cheat) Pilot(ugh, seed, player = 0).attachTo(lockstep)
         if (team) Pilot(ugh, seed + 1000, player = 1).attachTo(lockstep)
 
-        val original = StateProjection { seg, off -> ugh.machine.read16(seg, off) }
+        val audit = StateAudit()
+        val original = StateProjection(audit.reading { seg, off -> ugh.machine.read16(seg, off) })
         val port = StateProjection { seg, off -> lockstep.portMem.read16(seg, off) }
         val meta = linkedMapOf(
             "exe-sha256" to exeSha256, "start" to "newgame", "level" to "$level", "password" to (password ?: "NONE"),
@@ -101,6 +103,7 @@ class GoldenReplayTest {
                 pendingInject = emptyMap()
                 keys.clear()
                 val phase = StateProjection.phaseOfPort()
+                audit.frame(lockstep.portMem.ram, ugh.machine.cpu.ss shl 4, phase)
                 val o = original.project(phase)
                 val p = port.project(phase)
                 for ((k, v) in o) {
@@ -134,7 +137,7 @@ class GoldenReplayTest {
         problems += readBackProblems(file)
         val summary = "replay $name: ${lockstep.frames} frames, end $end, levels done $levelsDone, " +
             "injections $injections, ${file.length() / 1024} kB" + (cheatPilot?.let { ", pilot ${it.actions}" } ?: "")
-        return Result(spec, file, lockstep.frames, end, problems.map { "$name: $it" }, states, levelsDone, injections, summary)
+        return Result(spec, file, lockstep.frames, end, problems.map { "$name: $it" }, states, levelsDone, injections, summary, audit)
     }
 
     /** The file reads back to the same full states (delta encoding, removed fields). */
@@ -195,7 +198,16 @@ class GoldenReplayTest {
         println("${results.size} replays, ${results.sumOf { it.frames }} frames, ${results.sumOf { it.file.length() } / 1024 / 1024} MB")
         println("levels completed: ${completed.sumOf { it.levelsDone }} in ${completed.map { it.spec.name }}")
         println("named states never run: ${missing.sorted()}")
+        val audit = StateAudit().also { a -> results.forEach { a.merge(it.audit) } }
+        val unprojected = audit.unprojected(StateProjection.NOT_PROJECTED)
+        File(outDir, "audit.txt").writeText((audit.unprojected().map { it.toString() + (StateProjection.NOT_PROJECTED
+            .firstOrNull { h -> it.linear in h.linear until h.linear + h.length }?.let { h -> " - not projected: ${h.reason}" } ?: "") })
+            .joinToString("\n", postfix = "\n"))
+        println("changed, not projected and not explained: ${unprojected.size} ranges")
+        unprojected.forEach { println("  $it") }
+        println("not projected, never changed: ${audit.unchanged(StateProjection.NOT_PROJECTED).map { StateAudit.where(it.linear) }}")
         assertTrue(completed.size >= 3, "levels completed in ${completed.size} replays")
+        assertEquals(emptyList<String>(), unprojected.map { it.toString() }, "state the projection misses")
         assertEquals(emptyList<String>(), missing.sorted(), "named states never run")
     }
 
