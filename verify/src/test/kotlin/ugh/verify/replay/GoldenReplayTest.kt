@@ -3,10 +3,13 @@ package ugh.verify.replay
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import ugh.core.game.Game
 import ugh.core.game.GameEnd
 import ugh.core.game.playGame
+import ugh.core.hw.Memory
 import ugh.extractor.Exe
 import ugh.extractor.Levels
+import ugh.extractor.Sim
 import ugh.oracle.OriginalUgh
 import ugh.verify.CheatPilot
 import ugh.verify.Lockstep
@@ -27,13 +30,17 @@ class GoldenReplayTest {
     private val levels = Levels.extract(Exe(exe))
     private val outDir = File(System.getProperty("ugh.replays"))
 
+    /** The data export of the extractor (format UGHSIM01), read back like the C++ core reads it. */
+    private val simFile = File(System.getProperty("ugh.out"), "sim/ugh-sim.bin").also { Sim.write(Sim.blocks(Exe(exe)), it) }
+    private val masks = Sim.read(simFile).filter { it.name == "MASK" }.associate { it.off to it.data }
+
     /** [level] 0-based; [difficulty]: 0 easy, 1 medium (the menu's default), 2 hard. */
     data class Spec(val name: String, val seed: Long, val frames: Long, val level: Int = 0, val team: Boolean = false,
                     val difficulty: Int = 1, val cheat: Boolean = false)
 
     data class Result(val spec: Spec, val file: File, val frames: Long, val end: GameEnd?, val problems: List<String>,
                       val states: Set<String>, val levelsDone: Int, val injections: Int, val summary: String,
-                      val audit: StateAudit)
+                      val audit: StateAudit, val maskRecords: Set<Int>, val probe: ProbeStats)
 
     private fun toNewGame(menuKeys: List<Int>, password: String?): OriginalUgh {
         val ugh = OriginalUgh(exe)
@@ -86,6 +93,9 @@ class GoldenReplayTest {
         for ((address, state) in handlers) ugh.machine.onExecute(OriginalUgh.SEG_GAME, address) { states += state }
         var levelsDone = 0
         var injections = 0
+        val maskRecords = HashSet<Int>()
+        val probe = ProbeStats().also { it.attachTo(ugh) }
+        var lastPhase = ""
         ReplayWriter(file, meta).use { writer ->
             writer.tick(0, 0, emptyList(), original.project("start"))
             val keys = ArrayList<Int>()
@@ -103,6 +113,13 @@ class GoldenReplayTest {
                 pendingInject = emptyMap()
                 keys.clear()
                 val phase = StateProjection.phaseOfPort()
+                // the collision mask: entering the level play and every 64th frame (bit 7 of the background never changes)
+                if (phase == "play" && (lastPhase != "play" || lockstep.frames % 64 == 0L)) {
+                    val record = currentRecord(lockstep.portMem)
+                    maskRecords += record
+                    maskProblem(lockstep.portMem, record)?.let { problems += "frame ${lockstep.frames} ($lastPhase -> $phase): $it" }
+                }
+                lastPhase = phase
                 audit.frame(lockstep.portMem.ram, ugh.machine.cpu.ss shl 4, phase)
                 val o = original.project(phase)
                 val p = port.project(phase)
@@ -134,10 +151,60 @@ class GoldenReplayTest {
         check(lockstep.mismatchCount == 0) { "${lockstep.mismatchCount} lockstep mismatches: ${lockstep.mismatches.firstOrNull()}" }
         check(projectionMismatches == 0) { "$projectionMismatches projection mismatches, first $firstMismatch" }
         check(unknownStates.isEmpty()) { "state handlers without a name: ${unknownStates.take(3)}" }
+        check(probe.outsideSolid == 0L) { "collision probe found solid pixels outside the background page: ${probe.outsideSolid} in rows ${probe.solidRows}" }
         problems += readBackProblems(file)
         val summary = "replay $name: ${lockstep.frames} frames, end $end, levels done $levelsDone, " +
             "injections $injections, ${file.length() / 1024} kB" + (cheatPilot?.let { ", pilot ${it.actions}" } ?: "")
-        return Result(spec, file, lockstep.frames, end, problems.map { "$name: $it" }, states, levelsDone, injections, summary, audit)
+        return Result(spec, file, lockstep.frames, end, problems.map { "$name: $it" }, states, levelsDone, injections, summary, audit, maskRecords, probe)
+    }
+
+    /** DGROUP offset of the record of the current level (113b:3976). */
+    private fun currentRecord(mem: Memory): Int {
+        val table = mem.read16(Game.DGROUP, 0x2909 + ((mem.read16(Game.DGROUP, 0x2634) - 1) shl 1))
+        return mem.read16(Game.DGROUP, table + (mem.read16(Game.DGROUP, 0x261c) shl 1))
+    }
+
+    /** Bit 7 of the background page of the port's VGA against the exported collision mask of the level. */
+    private fun maskProblem(mem: Memory, record: Int): String? {
+        val mask = masks[record] ?: return "no collision mask for level record 0x%04x".format(record)
+        val page = mem.read16(Game.CODE, Game.CS_BACK_PAGE)
+        var differences = 0
+        var first: String? = null
+        for (y in 0 until Sim.MASK_HEIGHT) for (x in 0 until Sim.MASK_WIDTH) {
+            val solid = mem.vga.planes[x and 3][(page + y * 0x60 + (x shr 2)) and 0xffff].toInt() and 0x80 != 0
+            if (solid != Sim.maskBit(mask, x, y)) { differences++; if (first == null) first = "x $x y $y: page $solid" }
+        }
+        return if (differences == 0) null else "collision mask of level record 0x%04x: %d pixels differ, first %s".format(record, differences, first)
+    }
+
+    /**
+     * 113b:1457 in the original: how often the 10 probed bytes lie outside the background page (copter at the top
+     * or bottom edge: the neighbouring VGA memory is read) and whether one of them was solid there.
+     */
+    class ProbeStats {
+        var probes = 0L; var outside = 0L; var outsideSolid = 0L
+        /** Solid bytes outside the page by row relative to the page (negative = above it). */
+        val solidRows = java.util.TreeMap<Int, Int>()
+
+        fun attachTo(ugh: OriginalUgh) {
+            val m = ugh.machine
+            m.onExecute(OriginalUgh.SEG_GAME, 0x1457) {
+                probes++
+                val page = m.read16(OriginalUgh.SEG_GAME, Game.CS_BACK_PAGE)
+                for (k in PROBE_OFFSETS) {
+                    val a = (m.cpu.si + k) and 0xffff
+                    if (a - page !in 0 until 0x4800) {
+                        outside++
+                        // reading loads the latches, as the probe itself does right after
+                        if (m.memory.read8(m.cpu.es, a) and 0x80 != 0) { outsideSolid++; solidRows.merge(Math.floorDiv(a - page, 0x60), 1, Int::plus) }
+                    }
+                }
+            }
+        }
+
+        fun add(o: ProbeStats) { probes += o.probes; outside += o.outside; outsideSolid += o.outsideSolid; o.solidRows.forEach { (k, v) -> solidRows.merge(k, v, Int::plus) } }
+
+        companion object { private val PROBE_OFFSETS = intArrayOf(0, 3, 5, 0x720, 0x723, 0x725, 0x240, 0x245, 0x480, 0x485) }
     }
 
     /** The file reads back to the same full states (delta encoding, removed fields). */
@@ -206,6 +273,11 @@ class GoldenReplayTest {
         println("changed, not projected and not explained: ${unprojected.size} ranges")
         unprojected.forEach { println("  $it") }
         println("not projected, never changed: ${audit.unchanged(StateProjection.NOT_PROJECTED).map { StateAudit.where(it.linear) }}")
+        val probe = ProbeStats().also { p -> results.forEach { p.add(it.probe) } }
+        val maskRecords = results.flatMap { it.maskRecords }.toSet()
+        println("collision probes: ${probe.probes}, bytes outside the background page ${probe.outside}, solid there ${probe.outsideSolid} in rows ${probe.solidRows}")
+        println("collision masks checked: ${maskRecords.size} of ${masks.size} levels")
+        assertEquals(masks.keys, maskRecords, "levels whose collision mask was checked")
         assertTrue(completed.size >= 3, "levels completed in ${completed.size} replays")
         assertEquals(emptyList<String>(), unprojected.map { it.toString() }, "state the projection misses")
         assertEquals(emptyList<String>(), missing.sorted(), "named states never run")

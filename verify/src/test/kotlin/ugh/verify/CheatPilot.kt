@@ -165,7 +165,13 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
         place(x shl 5, (y - 0x14) shl 5, landed = pad)
     }
 
-    private fun place(xf: Int, yf: Int, landed: Int) {
+    /**
+     * Within the range the copter physics keeps it in (113b:1095: x -0x200..0x2600, y -0x260..0x17e0); further
+     * up the collision probe would read the draw page above the background page.
+     */
+    private fun place(x: Int, y: Int, landed: Int) {
+        val xf = x.coerceIn(-0x200, 0x2600)
+        val yf = y.coerceIn(-0x260, 0x17e0)
         w(Game.P_XF, xf); w(Game.P_X, xf shr 5)
         w(Game.P_YF, yf); w(Game.P_Y, yf shr 5)
         w(Game.P_VX, 0); w(Game.P_VY, 0)
