@@ -57,6 +57,14 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
             w(Game.V_ENERGY, 0x4000)
             if (ugh.dgroup8(0x263c) < 3) w(0x263c, (r(0x263c) and 0xff00) or 3)
         }
+        // a walker charging at the landed copter: sometimes take off before it hits (the walker recovers)
+        val charging = (0 until 5).map { it * 2 }.takeWhile { r(0x2cad + it) != 0xffff }.any { r(0x2cf3 + it) == 0x2748 }
+        if (charging && rs(Game.P_LANDED) >= 0 && rnd.nextInt(10) < 3) {
+            place(rs(Game.P_XF), rs(Game.P_YF) - 0x300, landed = -1)
+            wait = 30
+            count("escapeWalker")
+            return
+        }
         if (--wait > 0) {
             // never let the unpiloted copter fall for long (floating on the water is fine)
             if (rs(Game.P_LANDED) < 0 && !floating && wait > 12) wait = 12

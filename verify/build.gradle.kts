@@ -22,7 +22,7 @@ tasks.withType<Test>().configureEach {
     systemProperty("ugh.out", layout.buildDirectory.dir("verify-out").get().asFile.absolutePath)
     systemProperty("ugh.replays", layout.buildDirectory.dir("replays").get().asFile.absolutePath)
     if (project.hasProperty("ugh.explore")) systemProperty("ugh.explore", "1")
-    maxHeapSize = "2g"
+    maxHeapSize = "6g"
     testLogging { showStandardStreams = true }
 }
 

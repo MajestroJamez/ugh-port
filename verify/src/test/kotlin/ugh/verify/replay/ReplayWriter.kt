@@ -8,7 +8,7 @@ import java.io.Writer
  *
  *   UGR 0
  *   # free comment lines
- *   meta <key>=<value> ...             recording conditions (exe hash, seed, mode, ...)
+ *   meta <key>=<value> ...             recording conditions (exe hash, start level, seed, mode, ...)
  *   T <tick> w=<wait> k=<keys> | <field>=<value> ...
  *   I <field>=<value> ...              state injection after the preceding T line (see below)
  *
