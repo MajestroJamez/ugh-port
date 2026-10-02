@@ -11,7 +11,7 @@ else()
     add_compile_options(-Wall -Wextra)
 endif()
 
-add_library(ugh_sim STATIC src/api.cpp src/data.cpp src/fields.cpp src/logic.cpp)
+add_library(ugh_sim STATIC src/api.cpp src/bonuses.cpp src/data.cpp src/fields.cpp src/game.cpp src/passengers.cpp)
 target_include_directories(ugh_sim PUBLIC include PRIVATE src)
 
 add_executable(ugh_replay tools/ugh_replay.cpp)

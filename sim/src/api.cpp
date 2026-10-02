@@ -30,7 +30,16 @@ ugh_sim* ugh_sim_create(const char* data_path, char* err, size_t err_size) {
 
 void ugh_sim_destroy(ugh_sim* sim) { delete sim; }
 
+void ugh_sim_reset(ugh_sim* sim) { sim->sim.reset(); }
+
 void ugh_sim_clear(ugh_sim* sim) { sim->sim.clear(); }
+
+int ugh_sim_has_stage(const char* stage) { return std::strcmp(stage, "passengers") == 0; }
+
+void ugh_sim_take_problems(ugh_sim* sim, void (*callback)(void* ctx, const char* problem), void* ctx) {
+    for (const auto& p : sim->sim.problems) callback(ctx, p.c_str());
+    sim->sim.problems.clear();
+}
 
 int ugh_sim_set(ugh_sim* sim, const char* field, const char* value) { return sim->sim.set(field, value); }
 

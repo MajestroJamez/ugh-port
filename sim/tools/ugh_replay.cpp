@@ -7,9 +7,9 @@
 // keys delivered after it, runs the transition, and its fields are compared with the recorded state after the
 // tick. Stages the core does not have yet are undone on the expected state (B lines). Transitions:
 //   new game     start -> betweenLevels             game.*
-//   level start  betweenLevels / play -> caption    game.*, copter.*, pad.* (from play: its last frame and the
-//                                                  level end first)
-//   play frame   play -> play                       game.*, copter.* (every field must be known)
+//   level start  betweenLevels / play -> caption    game.*, copter.*, pad.*, passenger.* (from play: its last
+//                                                  frame and the level end first)
+//   play frame   play -> play                       the same (every field must be known)
 // Other ticks (caption, setup, fades between levels) are not checked yet (plan step 8).
 #include <cstdio>
 #include <cstdlib>
@@ -53,6 +53,7 @@ struct Result {
     long long mismatches = 0;
     std::vector<std::string> reports;
     std::map<std::string, long long> unknown;   // field -> ticks where the core did not know it (level start)
+    std::map<std::string, long long> compared;  // field group -> values compared
 };
 
 class Player {
@@ -74,27 +75,37 @@ public:
                 if (ugh_sim_level_end(sim_) != UGH_SIM_CONTINUE) { report(cur, "level start", "the core ended the game"); return; }
             }
             ugh_sim_level_start(sim_);
-            // what the stages changed in that last frame is partly overwritten by the load: not compared here
+            // what missing stages changed in that last frame is partly overwritten by the load: not compared here
             Fields expected = cur.state;
-            for (const auto& stage : cur.before) for (const auto& field : stage.second) expected.erase(field.first);
-            compare("level start", cur, expected, {"game.", "copter.", "pad."}, false);
+            for (const auto& [stage, fields] : cur.before)
+                if (!ugh_sim_has_stage(stage.c_str())) for (const auto& field : fields) expected.erase(field.first);
+            compare("level start", cur, expected, groups(), false);
         } else if (from == "play" && to == "play") {
             load(prev);
             ugh_sim_play_frame(sim_);
-            compare("play frame", cur, undoStages(cur), {"game.", "copter."}, true);
+            compare("play frame", cur, undoStages(cur), groups(), true);
         } else {
             r_.skipped++;
         }
+        ugh_sim_take_problems(sim_, [](void* ctx, const char* p) { static_cast<Player*>(ctx)->report(Tick{}, "core", p); }, this);
     }
 
 private:
     ugh_sim* sim_;
     Result& r_;
 
+    /** The field groups the core has (passengers: their pads too). */
+    static std::vector<const char*> groups() {
+        std::vector<const char*> g = {"game.", "copter."};
+        if (ugh_sim_has_stage("passengers")) { g.push_back("pad."); g.push_back("passenger."); }
+        return g;
+    }
+
     /** The recorded state after the tick without what the stages the core lacks changed (B lines, last first). */
     static Fields undoStages(const Tick& cur) {
         Fields expected = cur.state;
         for (auto it = cur.before.rbegin(); it != cur.before.rend(); ++it) {
+            if (ugh_sim_has_stage(it->first.c_str())) continue;
             for (const auto& [name, value] : it->second) {
                 if (value == "~") expected.erase(name); else expected[name] = value;
             }
@@ -124,7 +135,7 @@ private:
         if (r_.reports.size() < 10) r_.reports.push_back("tick " + std::to_string(t.number) + " " + what + ": " + text);
     }
 
-    void compare(const std::string& what, const Tick& cur, const Fields& expected, std::initializer_list<const char*> groups, bool allKnown) {
+    void compare(const std::string& what, const Tick& cur, const Fields& expected, const std::vector<const char*>& groups, bool allKnown) {
         r_.checked[what]++;
         Fields actual;
         ugh_sim_fields(sim_, [](void* ctx, const char* f, const char* v) { (*static_cast<Fields*>(ctx))[f] = v; }, &actual);
@@ -139,7 +150,10 @@ private:
             if (it == actual.end()) {
                 if (allKnown) { diffs += " " + name + " unknown (expected " + value + ")"; n++; }
                 else r_.unknown[name]++;
-            } else if (it->second != value) {
+            } else {
+                r_.compared[name.substr(0, name.find('.'))]++;
+            }
+            if (it != actual.end() && it->second != value) {
                 diffs += " " + name + " expected " + value + " got " + it->second;
                 n++;
             }
@@ -153,6 +167,7 @@ bool play(ugh_sim* sim, const std::string& path, Result& result) {
     if (!in) { std::fprintf(stderr, "cannot open %s\n", path.c_str()); return false; }
     std::string line;
     if (!std::getline(in, line) || line != "UGR 0") { std::fprintf(stderr, "%s: not a UGR 0 file\n", path.c_str()); return false; }
+    ugh_sim_reset(sim);
     Player player(sim, result);
     Fields state;
     std::vector<Tick> window;  // the previous and the current tick
@@ -212,7 +227,10 @@ int main(int argc, char** argv) {
         if (!play(sim, argv[i], r)) { ok = false; continue; }
         std::string checked;
         for (const auto& [what, n] : r.checked) checked += " " + what + " " + std::to_string(n) + ",";
-        std::printf("%s:%s skipped %lld, %lld mismatches\n", argv[i], checked.c_str(), r.skipped, r.mismatches);
+        std::string compared;
+        for (const auto& [group, n] : r.compared) compared += " " + group + " " + std::to_string(n);
+        std::printf("%s:%s skipped %lld, %lld mismatches; values compared:%s\n", argv[i], checked.c_str(), r.skipped,
+                    r.mismatches, compared.c_str());
         for (const auto& line : r.reports) std::printf("  %s\n", line.c_str());
         if (!r.unknown.empty()) {
             std::string names;

@@ -81,10 +81,13 @@ pilotů do game over na všech obtížnostech. Ve všech je 0 rozdílů a jsou p
 
 ## C++ jádro (`sim/`)
 
-C++20 bez závislostí, CMake + Ninja z Build Tools 2026, C API `include/ugh_sim.h` (`ugh_sim_*`). Stav jádra
-tvoří pole replayů se stejnými jmény a hodnotami jako v projekci, tabulky čte z `assets/sim/ugh-sim.bin`
-na původních adresách DGROUP. `tools/ugh_replay.cpp` přehrává `.ugr` snímek po snímku: vezme zaznamenaný stav
-před snímkem, I řádek a klávesy, provede přechod (nová hra, start levelu, snímek hry) a porovná známá pole se
+C++20 bez závislostí, CMake + Ninja z Build Tools 2026, C API `include/ugh_sim.h` (`ugh_sim_*`). Rozhraní tvoří
+pole replayů se stejnými jmény a hodnotami jako v projekci. Uvnitř drží jádro stav jako originál: DGROUP
+(64 kB, inicializovaná z `assets/sim/ugh-sim.bin`) na původních adresách, a logika je převedená z Kotlin
+portu rutinu po rutině se stejnými pomocníky (`u`, `d`, `setD`, `Regs`). Pole replayů jsou pohled na tuto
+paměť. Před každým přechodem jádro doplní skryté proměnné, které replay nemá a logika čte: kopii záznamu
+levelu, konce seznamů, volné sloty bonusů, plošiny × 2 a hráče × 2. `tools/ugh_replay.cpp` přehrává `.ugr`
+snímek po snímku: vezme zaznamenaný stav před snímkem, I řádek a klávesy, provede přechod (nová hra, start levelu, snímek hry) a porovná známá pole se
 stavem po snímku, kde jsou vrácené B řádky fází, které jádro ještě nemá. Protože je projekce úplná (krok 3),
 ověřuje přesný přechod každého snímku zvlášť celou simulaci. Úplný běh od začátku přijde v kroku 8.
 

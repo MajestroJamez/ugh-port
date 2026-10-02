@@ -1,14 +1,14 @@
 /*
  * UGH! game logic - C API of the C++ core (C++20, no dependencies).
  *
- * The state is the semantic game state of the golden replays (format "UGR 0", see
+ * The interface is the semantic game state of the golden replays (format "UGR 0", see
  * verify/src/test/kotlin/ugh/verify/replay/ReplayWriter.kt): named fields such as "copter.0.xf" with the same
  * values and units as the original (positions in 1/32 px, handlers and data by their DGROUP offsets). Fields
- * the core does not know (not set and not computed yet) are left out of ugh_sim_fields.
+ * the core does not know (not set and not computed yet) are left out of ugh_sim_fields. Inside, the state is
+ * kept like the original keeps it (DGROUP at the original offsets).
  *
- * Implemented so far (plan step 5): new game, level start (113b:3d66 / 3976 without passengers and objects),
- * level end, the play frame without passengers, objects and bonus items (copter physics 113b:1095, water,
- * rain, keyboard), random numbers.
+ * Implemented so far (plan step 6): new game, level start (113b:3d66 / 3976), level end, the play frame without
+ * objects and bonus items (copter physics 113b:1095, passengers 1486, water, rain, keyboard), random numbers.
  */
 #ifndef UGH_SIM_H
 #define UGH_SIM_H
@@ -25,11 +25,20 @@ typedef struct ugh_sim ugh_sim;
 ugh_sim* ugh_sim_create(const char* data_path, char* err, size_t err_size);
 void ugh_sim_destroy(ugh_sim* sim);
 
+/** Back to the program start: the initialized memory, every field unknown. */
+void ugh_sim_reset(ugh_sim* sim);
+
 /** Forgets every field of the replay state; what the replay does not hold (the raindrops, the keyboard handler) is kept. */
 void ugh_sim_clear(ugh_sim* sim);
 
+/** 1 if the core has the stage of the play frame (the B lines of the replays: passengers, objects, bonuses). */
+int ugh_sim_has_stage(const char* stage);
+
 /** Sets a field from its replay text. 1 = set, 0 = not a field of the core (ignored), -1 = bad value. */
 int ugh_sim_set(ugh_sim* sim, const char* field, const char* value);
+
+/** Calls back with what the core met and does not support since the last call (and forgets it). */
+void ugh_sim_take_problems(ugh_sim* sim, void (*callback)(void* ctx, const char* problem), void* ctx);
 
 /** Calls back with every known field of the state. */
 void ugh_sim_fields(const ugh_sim* sim, void (*callback)(void* ctx, const char* field, const char* value), void* ctx);

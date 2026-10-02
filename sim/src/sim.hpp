@@ -1,9 +1,11 @@
 // UGH! game logic core - internal declarations.
 //
-// Values are kept the way the original keeps them: raw 16-bit words (0 .. 0xffff) and bytes, signed where the
-// code compares them signed (s16). -1 marks a value the core does not know (not set from outside, not
-// computed yet). Every function names the routine of the original (113b:xxxx) and its Kotlin port
-// (core/src/main/kotlin/ugh/core/game).
+// The state is kept the way the original keeps it: a 64 KB DGROUP with the variables at their original offsets
+// (plus the few CS variables: random numbers, last scancode). The game logic is ported from the Kotlin port
+// (core/src/main/kotlin/ugh/core/game) routine by routine with the same helpers (u, d, setD ...) and the same
+// register passing (Regs), so every function names the routine of the original (113b:xxxx) and its Kotlin port.
+// The replay fields (fields.cpp) are a view of this memory, like verify/.../replay/StateProjection.kt; a field
+// is known once it was set from outside or written by the logic.
 #pragma once
 
 #include <array>
@@ -13,8 +15,6 @@
 #include <vector>
 
 namespace ugh {
-
-constexpr int UNKNOWN = -1;
 
 inline int s16(int v) { return static_cast<int16_t>(static_cast<uint16_t>(v)); }
 inline int w16(int v) { return v & 0xffff; }
@@ -27,109 +27,137 @@ struct Data {
     std::map<int, std::vector<uint8_t>> masks;                    // level record -> collision mask
 
     bool load(const std::string& path, std::string& error);
-
-    int u8(int off) const { return dgroup[w16(off)]; }
-    int u16(int off) const { return u8(off) | (u8(off + 1) << 8); }
-    int s16w(int off) const { return s16(u16(off)); }
 };
 
 constexpr int MASK_WIDTH = 384, MASK_HEIGHT = 192, MASK_ROW_BYTES = MASK_WIDTH / 8;
-constexpr int RAINDROPS = 193;
-constexpr int PADS = 10;
-constexpr int KEY_AREA = 0x278c;  // key states of both players (DGROUP:278c .. 27a1, one byte per slot)
 
-struct Copter {
-    int xf = UNKNOWN, yf = UNKNOWN;        // 27d0 / 27d4, 1/32 px
-    int x = UNKNOWN, y = UNKNOWN;          // 27d8 / 27dc, px
-    int vx = UNKNOWN, vy = UNKNOWN;        // 2810 / 2814
-    int landed = UNKNOWN;                  // 27f8, pad index, 0xffff = flying
-    int effort = UNKNOWN;                  // 27f4
-    int impact = UNKNOWN;                  // 2818
-    int carrying = UNKNOWN;                // 27fc
-    int targetPad = UNKNOWN;               // 2804
-    int fare = UNKNOWN, fareMin = UNKNOWN; // 2808 / 280c
-    int sprite = UNKNOWN;                  // 27e8
-    int animCounter = UNKNOWN;             // 27f0
-    bool keysKnown = false;
+/** Registers handed from routine to routine, as in the original (Kotlin: Regs). */
+struct Regs {
+    int ax = 0, bx = 0, cx = 0, dx = 0, si = 0, di = 0, bp = 0;
 };
 
-struct Pad {
-    int left = UNKNOWN, right = UNKNOWN, y = UNKNOWN;          // 290d / 2921 / 2935
-    int doorX = UNKNOWN, waitX = UNKNOWN, standX = UNKNOWN;    // 2949 / 295d / 2971
-    int number = UNKNOWN, waiting = UNKNOWN;                   // 2985 / 2999
-};
-
-struct State {
-    int level = UNKNOWN, players = UNKNOWN, difficulty = UNKNOWN;  // 261c / 2634 / 2638
-    int lives = UNKNOWN, multiplier = UNKNOWN;                     // bytes 263c / 263d
-    int scoreLo = UNKNOWN, scoreHi = UNKNOWN;                      // 261e / 2620
-    int energy = UNKNOWN;                                          // 2622
-    int fade = UNKNOWN, fadeStep = UNKNOWN;                        // 27a8 / 27aa
-    int levelDone = UNKNOWN;                                       // byte 27cf, bit 7
-    int wind = UNKNOWN;                                            // byte 28f5 (level record +0c)
-    int waterRow = UNKNOWN;                                        // 2903
-    int rainFloor = UNKNOWN;                                       // 2907
-    int passengersLeft = UNKNOWN;                                  // byte 28f1 (level record +08)
-    int waterYf = UNKNOWN;                                         // 28fe (level record +15)
-    int waterHold = UNKNOWN, waterToggle = UNKNOWN;                // bytes 27a2 / 27ce
-    int waterAnim = UNKNOWN, waterAnimDelay = UNKNOWN;             // 27a4 / byte 27a3
-    std::array<int, 4> rng{UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN};    // CS:4ef7, 4ef9, 4efb, 4efd
-
-    bool rainKnown = false;
-    std::array<int, RAINDROPS> rainOffset{};                       // 2e8b: row * 0x60 + x / 4
-    std::array<int, RAINDROPS> rainPlane{};                        // 318f: x & 3
-
-    std::array<int, 0x16> keys{};                                  // DGROUP:278c + slot
-    std::array<Copter, 2> copters;
-    std::array<Pad, PADS> pads;
-
-    // not part of the replay state
-    int lastScancode = 0;        // CS:4509 (only ESC and P matter)
-    int keyPosition = 0;         // 2647: position in a key sequence
-    std::vector<uint8_t> keyMatch; // 2821 + 6 * entry: entry ruled out (0xff) for the current sequence
-    int savedWaterRow = UNKNOWN; // the caption keeps the level's water row on the stack
-};
+// DGROUP variables (Game.kt companion)
+constexpr int V_ENERGY = 0x2622, V_DIFFICULTY = 0x2638, V_FADE = 0x27a8, V_FADE_STEP = 0x27aa;
+constexpr int V_WIND = 0x28f5, V_WATER_ROW = 0x2903, V_ROW_BYTES = 0x00c3, CRASH_LIMITS = 0x262e;
+constexpr int KEY_UP = 0x278c, KEY_DOWN = 0x2790, KEY_LEFT = 0x2794, KEY_RIGHT = 0x2798, KEY_FIRE = 0x279c;
+constexpr int P_XF = 0x27d0, P_YF = 0x27d4, P_X = 0x27d8, P_Y = 0x27dc, P_EFFORT = 0x27f4, P_LANDED = 0x27f8;
+constexpr int P_VX = 0x2810, P_VY = 0x2814, P_IMPACT = 0x2818;
+constexpr int PAD_LEFT = 0x290d, PAD_RIGHT = 0x2921, PAD_Y = 0x2935;
+constexpr int PLAYERS = 0x2634, PLAYERS2 = 0x2636;
 
 class Sim {
 public:
-    explicit Sim(Data data) : data_(std::move(data)) {}
+    explicit Sim(Data data);
 
-    State state;
-    const Data& data() const { return data_; }
-
-    // fields.cpp: the state as named replay fields
-    void reset();   // everything unknown
-    void clear();   // the replay fields unknown, the state the replay does not hold kept
+    // fields.cpp: the replay fields
+    void reset();   // initial memory, everything unknown
+    void clear();   // the replay fields unknown; what the replay does not hold keeps its value
     int set(const std::string& field, const std::string& value);
     std::vector<std::pair<std::string, std::string>> fields() const;
 
-    // logic.cpp
+    // game.cpp, passengers.cpp, bonuses.cpp
     void key(int scancode);
     void newGame();
     int levelEnd();
     void levelStart();
     void playFrame();
 
-    /** Problems found while running (unsupported situations); the replay player reports them. */
+    /** Problems found while running (situations the core does not support); the replay player reports them. */
     std::vector<std::string> problems;
+
+    // memory of the original (Game.kt: u, d, d8, setD, setD8, addD)
+    int u(int off) const { return mem_[w16(off)] | (mem_[w16(off + 1)] << 8); }
+    int d(int off) const { return s16(u(off)); }
+    int d8(int off) const { return mem_[w16(off)]; }
+    void setD(int off, int v) { setD8(off, v); setD8(off + 1, v >> 8); }
+    void setD8(int off, int v) { mem_[w16(off)] = static_cast<uint8_t>(v); known_[w16(off)] = 1; }
+    void addD(int off, int v) { setD(off, u(off) + v); }
+    bool known(int off, int length) const;
 
 private:
     Data data_;
+    std::vector<uint8_t> mem_ = std::vector<uint8_t>(0x10000);
+    std::vector<uint8_t> known_ = std::vector<uint8_t>(0x10000);
+    std::array<int, 4> rng_{};   // CS:4ef7, 4ef9, 4efb, 4efd
+    bool rngKnown_ = false;
+    bool rainKnown_ = false;     // the replay holds only a checksum of the raindrops
+    int lastScancode_ = 0;       // CS:4509 (only Esc and P matter)
+    int savedWaterRow_ = -1;     // the caption keeps the level's water row on the stack
 
+    friend struct Fields;
+
+    void prepare();
     int random(int range);
     int levelRecord() const;
+    int times3quarter(int y);
+    int times3half(int x);
+
+    // game.cpp
     void loadLevel();
     void spawnRaindrop(int bx);
     void moveRain();
     void updateWater();
     void drawWaterSurface();
-    void copterUpdate(int p);
-    void moveHorizontally(int p, int ch);
-    void moveVertically(int p, int ch);
-    void bounceVertically(int p, int bp);
-    void drawCopter(int p);
+    void copterUpdate(int bx);
+    void moveHorizontally(int bx, int ch);
+    void moveVertically(int bx, int ch);
+    void bounceVertically(int bx, int bp);
+    void drawCopter(int bx);
+    void drawPassengers();
     bool probe(int si, int plane) const;
-    int key16(int off) const;
+
+    // passengers.cpp
+    void passengersUpdate(Regs& r);
+    void passengerState(int addr, Regs& r);
+    void jumpVia(Regs& r, int off) { passengerState(u(r.si + off), r); }
+    void nextFrame(Regs& r, int table);
+    bool decZero(int off);
+    bool animTick(Regs& r);
+    void animReset(int bx);
+    bool fellIntoWater(Regs& r);
+    void switchToWaterSet(Regs& r);
+    bool hitByCopter(Regs& r);
+    bool touchesPlayer(Regs& r);
+    int playerOnPad(Regs& r, int pad);
+    void walkToCopter(Regs& r);
+    void floatOnSurface(Regs& r);
+    void gone(Regs& r);
+    void p149cNextStop(Regs& r);
+    void p1509Arriving(Regs& r);
+    void p153bAppear(Regs& r);
+    void p1582Appearing(Regs& r);
+    void p15b4StartWaiting(Regs& r);
+    void p15d7Waiting(Regs& r);
+    void p16f6StartCalling(Regs& r);
+    void p172aCalling(Regs& r);
+    void p17e6StartImpatient(Regs& r);
+    void p180aImpatient(Regs& r);
+    void p18c8StartBoarding(Regs& r);
+    void p18e6Boarding(Regs& r);
+    void p19e0Board(Regs& r, bool switchDescriptor);
+    void p1a42Riding(Regs& r);
+    void p1a7ePaid(Regs& r);
+    void p1b29WalkingAway(Regs& r);
+    void p1bbeStartEntering(Regs& r);
+    void p1bd6Entering(Regs& r);
+    void p1c0fStartStanding(Regs& r);
+    void p1c27Standing(Regs& r);
+    void p1c48Grabbed(Regs& r);
+    void p1c6bHanging(Regs& r);
+    void p1c81Dropped(Regs& r);
+    void p1ceeFalling(Regs& r);
+    void p1da8StartSplash(Regs& r);
+    void p1dd5Splash(Regs& r, bool advance);
+    void p1e9cStartSinking(Regs& r);
+    void p1ec0Sinking(Regs& r);
+    void p1f24StartSwimming(Regs& r);
+    void p1f43Swimming(Regs& r);
+    void p1fe2SwimCalling(Regs& r);
+    void p2068SwimWaving(Regs& r);
+    void p20c1SwimBoarding(Regs& r);
+
+    // bonuses.cpp
+    void bonusSpawn(Regs& r);
 };
 
 }  // namespace ugh
