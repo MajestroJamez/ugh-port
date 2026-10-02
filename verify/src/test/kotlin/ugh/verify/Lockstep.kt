@@ -35,6 +35,9 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
     val atBoundary = mutableListOf<(Lockstep) -> Unit>()
     private val keys = ArrayDeque<Int>()
 
+    /** Called with every scancode delivered at a boundary (after [atBoundary]), e.g. to record a replay. */
+    val onKey = mutableListOf<(Int) -> Unit>()
+
     fun key(scancode: Int) { keys.addLast(scancode) }
 
     /** Files of the port (UGH!.HI); the original uses its own virtual disk, both start empty. */
@@ -190,6 +193,7 @@ class Lockstep(private val ugh: OriginalUgh, private val maxFrames: Long, privat
         atBoundary.forEach { it(this) }
         while (keys.isNotEmpty()) {
             val sc = keys.removeFirst()
+            onKey.forEach { it(sc) }
             // a timer tick that came due while the boundary interrupts ran is serviced first (higher priority)
             val before = m.pic.count[0]
             m.deliverKeyNow(sc)
