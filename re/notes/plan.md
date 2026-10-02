@@ -70,7 +70,37 @@ Pravidla platná pro všechny kroky:
 - Pozor: na první popisce hry mají pole cestujících a `copter.effort/impact/fareMin` hodnoty z attract módu
   (load je nepřepíše, tick 0 je nemá). Popisek drží skutečnou hladinu na zásobníku (jádro: `savedWaterRow`).
 
-## Krok 9 - UE projekt v repu, šedé kostky
+## Krok 9 - C++ jádro: přepis do čisté architektury
+
+Současné jádro je věrný přepis assembleru (paměť DGROUP na adresách, registry `Regs`, skoky přes adresy
+obslužných rutin). Je přesné, ale nečitelné. Cíl: kód, který je radost číst. Logika zůstává bit po bitu stejná,
+replays jsou záchranná síť.
+
+- **Typovaný model místo paměti:** `World` (level, hráči, voda, déšť, skóre), `Copter`, `Pad`, `Passenger`,
+  `Enemy`, `BonusItem`. Žádné offsety DGROUP v logice; zůstanou jen ve dvou okrajových vrstvách (načtení dat
+  a projekce pro replays).
+- **Data levelu a deskriptory jako typy:** `LevelDefinition`, `PassengerKind`, `EnemyKind`, `BonusKind`,
+  `Animation` (snímky + prodleva), načtené z `ugh-sim.bin` továrnou (Factory). Logika nečte syrová slova.
+- **Stavové automaty jako vzor State:** stav cestujícího / nepřítele / bonusu je objekt s jasnými přechody,
+  ne adresa rutiny a `jumpVia(r, 0x24)`. Sloty deskriptoru (+08 … +2c) se stanou pojmenovanými přechody
+  (`onLanded`, `onHit`, `onDone` …).
+- **Druhy nepřátel jako Strategy:** pterodaktyl, walker, foukač a strom sdílí rozhraní `EnemyBehavior`.
+- **Hodnotové typy pro aritmetiku originálu:** `Fixed` (1/32 px, 16bit wrap), `Velocity`, `Int16` se stejným
+  přetečením a posuny, aby se v kódu nemuselo všude psát `w16(s16(...))`.
+- **Oddělené služby:** `CollisionMask` (sonda `1457`), `Random` (`4f09`), `Input` (klávesová tabulka →
+  `Controls` hráče), `Rain`, `Water`.
+- **Události místo vedlejších efektů (Observer):** zvuky, sebrání bonusu, doručení, havárie jako události pro
+  frontend (UE si podle nich přehraje zvuk nebo efekt), ne zápisy do proměnných stavového řádku.
+- **Pryč s balastem:** nic z vykreslování VGA (pozice „kreslil jsem minule“, stavový řádek, scratch
+  proměnné, `prepare()`). Zvláštnosti originálu (třeba neposouvaná sonda při pohybu doleva) pojmenované
+  a zdokumentované v kódu, ne schované v přepisu instrukcí.
+- **Adaptér pro replays:** `ReplayProjection` převádí model na pole replayů a zpět. Je to jediné místo se jmény
+  a formáty `UGR 0`.
+- Testy jednotek pro služby a automaty vedle replayů. Rozhraní C API zůstane (UE ho používá od kroku 10).
+- Hotovo když: všech 161 replayů projde celých, v logice nejsou offsety DGROUP ani `Regs` a kód projde code
+  review (`/code-review`) bez nálezů na čitelnost.
+
+## Krok 10 - UE projekt v repu, šedé kostky
 
 - `game/` (UE 5.8 C++ projekt), C++ jádro jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
   (FSR jen upscaler: `r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0`; offscreen oprava FSR).
@@ -79,7 +109,7 @@ Pravidla platná pro všechny kroky:
 - Replays jako UE automatické testy (`UnrealEditor-Cmd -nullrhi`).
 - Hotovo když: level 1 jde odehrát a replays projdou i uvnitř UE.
 
-## Krok 10 - Vizuální směr „Pravěké dioráma“
+## Krok 11 - Vizuální směr „Pravěké dioráma“
 
 - Krátký koncept (paleta, materiály, světlo, kamera), pak první level: útes v řezu generovaný z mapy dlaždic,
   ohniště s Lumen/RT, voda, mlha; herní rovina zůstává přesně podle kolizní masky.
