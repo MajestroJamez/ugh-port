@@ -7,7 +7,8 @@
 // keys delivered after it, runs the transition, and its fields are compared with the recorded state after the
 // tick. Stages the core does not have yet are undone on the expected state (B lines). Transitions:
 //   new game     start -> betweenLevels             game.*
-//   level start  betweenLevels / play -> caption    game.*, copter.*, pad.*, passenger.* (from play: its last
+//   level start  betweenLevels / play -> caption    game.*, copter.* and the groups of the stages the core has
+//                                                  (pad.* with passenger.*, object.*, bonus.*; from play: its last
 //                                                  frame and the level end first)
 //   play frame   play -> play                       the same (every field must be known)
 // Other ticks (caption, setup, fades between levels) are not checked yet (plan step 8).
@@ -94,10 +95,12 @@ private:
     ugh_sim* sim_;
     Result& r_;
 
-    /** The field groups the core has (passengers: their pads too). */
+    /** The field groups of the stages the core has (passengers: their pads too). */
     static std::vector<const char*> groups() {
         std::vector<const char*> g = {"game.", "copter."};
         if (ugh_sim_has_stage("passengers")) { g.push_back("pad."); g.push_back("passenger."); }
+        if (ugh_sim_has_stage("objects")) g.push_back("object.");
+        if (ugh_sim_has_stage("bonuses")) g.push_back("bonus.");
         return g;
     }
 

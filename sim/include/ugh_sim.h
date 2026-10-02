@@ -7,8 +7,9 @@
  * the core does not know (not set and not computed yet) are left out of ugh_sim_fields. Inside, the state is
  * kept like the original keeps it (DGROUP at the original offsets).
  *
- * Implemented so far (plan step 6): new game, level start (113b:3d66 / 3976), level end, the play frame without
- * objects and bonus items (copter physics 113b:1095, passengers 1486, water, rain, keyboard), random numbers.
+ * Implemented so far (plan step 7): new game, level start (113b:3d66 / 3976), level end and the whole play frame
+ * (copter physics 113b:1095, passengers 1486, objects 2363, bonus items 2b7f, water, rain, keyboard, random
+ * numbers). Not yet: the caption, setup and fade frames between the levels, game over (plan step 8).
  */
 #ifndef UGH_SIM_H
 #define UGH_SIM_H

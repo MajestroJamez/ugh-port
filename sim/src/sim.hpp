@@ -156,8 +156,53 @@ private:
     void p2068SwimWaving(Regs& r);
     void p20c1SwimBoarding(Regs& r);
 
+    // objects.cpp
+    void objectsUpdate(Regs& r);
+    void objectState(int addr, Regs& r);
+    void jumpObj(Regs& r, int off) { objectState(u(r.si + off), r); }
+    void addScore(int v);
+    void objFrame(Regs& r, int table);
+    int facingTable(Regs& r, int off);
+    bool passengerHitsObject(Regs& r, bool setSprite = true);
+    bool playerOnObjectPad(Regs& r);
+    void faceCopter(Regs& r);
+    bool fallingPassengerNear(Regs& r);
+    bool copterTouchesObject(Regs& r);
+    void o2379FlyerInit(Regs& r);
+    void o239fFlyerWait(Regs& r);
+    void o23b0FlyerScreech(Regs& r);
+    void o23d9FlyerWait2(Regs& r);
+    void o23eaFlyerStart(Regs& r);
+    void o2493Flying(Regs& r);
+    void o252bFlyerHit(Regs& r);
+    void o255eFlyerFalling(Regs& r);
+    void o25b1WalkerInit(Regs& r);
+    void o25c9Walking(Regs& r);
+    void o2667StartWatching(Regs& r);
+    void o2681Watching(Regs& r);
+    void o272eStartCharging(Regs& r);
+    void o2748Charging(Regs& r);
+    void o2830StartRecovering(Regs& r);
+    void o2844Recovering(Regs& r, int table);
+    void o28eeWalkerStunned(Regs& r);
+    void o2914Stunned(Regs& r);
+    void o295bBlowerInit(Regs& r);
+    void o2973Blowing(Regs& r);
+    void o2a53BlowerStunned(Regs& r);
+    void o2a76BlowerWait(Regs& r);
+    void o2a87TreeInit(Regs& r);
+    void o2ab5Tree(Regs& r);
+    void o2b0cTreeCatch(Regs& r);
+    void o2b58TreeWait(Regs& r);
+
     // bonuses.cpp
+    void bonusesUpdate(Regs& r);
+    void bonusState(int addr, Regs& r);
     void bonusSpawn(Regs& r);
+    void b2be4Falling(Regs& r);
+    void b2c97Landed(Regs& r);
+    void b2ca9Lying(Regs& r);
+    bool copterTouchesBonus(Regs& r);
 };
 
 }  // namespace ugh

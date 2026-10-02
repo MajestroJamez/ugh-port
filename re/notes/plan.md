@@ -127,3 +127,8 @@ Pravidla platná pro všechny kroky:
   a bonus za rychlé doručení (`bonusSpawn`). Načtení levelu už plní i objekty (seznam C). Všech 161 replayů
   projde i pro `passenger.*` a `pad.*` (např. 1,7 mil. porovnaných hodnot cestujících v `1p-L01-cheat-long`);
   přehrávač vrací jen fáze, které jádro nemá (`ugh_sim_has_stage`). Další: **krok 7**.
+- 2026-10-02: krok 7 hotový - objekty (`objects.cpp`: pterodaktyl, walker, foukač, strom, 27 rutin
+  `113b:2363..2b7e`, testy blízkosti `2196`, `22f1`) a bonusové předměty (`bonuses.cpp`: `2b7f..2d1b`, `2207`).
+  Snímek hry je v jádře celý; všech 161 replayů projde pro všechna pole včetně `game.rng` a `game.rain`
+  (celkem 7,9 mil. porovnaných hodnot objektů, 125 tis. bonusů, 21,7 mil. cestujících). Zvuky jsou vynechané
+  (handle smyčky mávání `2d61`, který replay nemá, je v jádře 0). Další: **krok 8**.

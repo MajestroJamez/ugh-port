@@ -34,7 +34,9 @@ void ugh_sim_reset(ugh_sim* sim) { sim->sim.reset(); }
 
 void ugh_sim_clear(ugh_sim* sim) { sim->sim.clear(); }
 
-int ugh_sim_has_stage(const char* stage) { return std::strcmp(stage, "passengers") == 0; }
+int ugh_sim_has_stage(const char* stage) {
+    return std::strcmp(stage, "passengers") == 0 || std::strcmp(stage, "objects") == 0 || std::strcmp(stage, "bonuses") == 0;
+}
 
 void ugh_sim_take_problems(ugh_sim* sim, void (*callback)(void* ctx, const char* problem), void* ctx) {
     for (const auto& p : sim->sim.problems) callback(ctx, p.c_str());

@@ -547,7 +547,7 @@ void Sim::drawPassengers() {
 
 /**
  * One frame of the level play: 113b:0c7d .. 0fa4 (GameFlow.kt playLevel, Frame.kt frameBody / frameAfterKeys)
- * after the retrace wait that starts it. Objects and bonus items are not ported yet.
+ * after the retrace wait that starts it.
  */
 void Sim::playFrame() {
     prepare();
@@ -568,7 +568,8 @@ void Sim::playFrame() {
     }
     Regs r;
     passengersUpdate(r);
-    // objects (113b:2363) and bonus items (2b7f): step 7 of re/notes/plan.md
+    objectsUpdate(r);
+    bonusesUpdate(r);
 
     drawPassengers();
     int bx = 0;
