@@ -7,9 +7,9 @@
  * the core does not know (not set and not computed yet) are left out of ugh_sim_fields. Inside, the state is
  * kept like the original keeps it (DGROUP at the original offsets).
  *
- * Implemented so far (plan step 7): new game, level start (113b:3d66 / 3976), level end and the whole play frame
- * (copter physics 113b:1095, passengers 1486, objects 2363, bonus items 2b7f, water, rain, keyboard, random
- * numbers). Not yet: the caption, setup and fade frames between the levels, game over (plan step 8).
+ * The whole game from a new game to its end (plan step 8): level setup and caption, the play frames (copter
+ * physics 113b:1095, passengers 1486, objects 2363, bonus items 2b7f, water, rain, keyboard, random numbers),
+ * level end, game over. Left out: drawing, sound, the menus and pause (P).
  */
 #ifndef UGH_SIM_H
 #define UGH_SIM_H
@@ -47,11 +47,21 @@ void ugh_sim_fields(const ugh_sim* sim, void (*callback)(void* ctx, const char* 
 /** A scancode delivered between frames (keyboard handler 113b:4567). */
 void ugh_sim_key(ugh_sim* sim, int scancode);
 
+/**
+ * The game: from the start of a new game (113b:0c61, the state set before the first call) it runs to the next
+ * place where the original waits for the vertical retrace - one frame of the original (70.086 Hz). Deliver
+ * the keys with ugh_sim_key between the calls. Returns UGH_SIM_CONTINUE while the game goes on, else how it
+ * ended (game over, all levels done; no further frame).
+ */
+enum { UGH_SIM_CONTINUE = 0, UGH_SIM_GAME_OVER = 1, UGH_SIM_ALL_LEVELS_DONE = 2 };
+int ugh_sim_step(ugh_sim* sim);
+
+/* Single transitions from a state set from outside (the replay player checks them one by one). */
+
 /** 113b:3961: 3 lives, multiplier 1, score 0. */
 void ugh_sim_new_game(ugh_sim* sim);
 
 /** After a level (113b:0fa7): next level or one life less. */
-enum { UGH_SIM_CONTINUE = 0, UGH_SIM_GAME_OVER = 1, UGH_SIM_ALL_LEVELS_DONE = 2 };
 int ugh_sim_level_end(ugh_sim* sim);
 
 /** Level setup up to the caption: state, level load, the caption's water row. */

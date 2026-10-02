@@ -59,4 +59,6 @@ void ugh_sim_level_start(ugh_sim* sim) { sim->sim.levelStart(); }
 
 void ugh_sim_play_frame(ugh_sim* sim) { sim->sim.playFrame(); }
 
+int ugh_sim_step(ugh_sim* sim) { return sim->sim.step(); }
+
 }

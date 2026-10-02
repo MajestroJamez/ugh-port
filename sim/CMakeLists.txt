@@ -18,7 +18,7 @@ target_include_directories(ugh_sim PUBLIC include PRIVATE src)
 add_executable(ugh_replay tools/ugh_replay.cpp)
 target_link_libraries(ugh_replay PRIVATE ugh_sim)
 
-# One test per golden replay (recorded by .\gradlew.bat :verify:replays, data from .\gradlew.bat :extractor:run).
+# Two tests per golden replay: the whole game, and every transition on its own (recorded by .\gradlew.bat :verify:replays, data from .\gradlew.bat :extractor:run).
 enable_testing()
 set(UGH_SIM_DATA "${CMAKE_CURRENT_SOURCE_DIR}/../assets/sim/ugh-sim.bin" CACHE FILEPATH "Data exported by the extractor")
 set(UGH_REPLAYS "${CMAKE_CURRENT_SOURCE_DIR}/../verify/build/replays" CACHE PATH "Directory of the golden replays")
@@ -29,4 +29,5 @@ endif()
 foreach(replay IN LISTS UGH_REPLAY_FILES)
     get_filename_component(name "${replay}" NAME_WE)
     add_test(NAME "replay.${name}" COMMAND ugh_replay "${UGH_SIM_DATA}" "${replay}")
+    add_test(NAME "replay-each.${name}" COMMAND ugh_replay --each "${UGH_SIM_DATA}" "${replay}")
 endforeach()

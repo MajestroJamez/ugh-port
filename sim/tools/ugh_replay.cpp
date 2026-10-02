@@ -1,22 +1,27 @@
 // Replay player: checks the C++ core against golden replays (format "UGR 0", see
 // verify/src/test/kotlin/ugh/verify/replay/ReplayWriter.kt).
 //
-//   ugh_replay <ugh-sim.bin> <replay.ugr> ...
+//   ugh_replay [--each] <ugh-sim.bin> <replay.ugr> ...
 //
-// Tick by tick: the core gets the recorded state before the tick (T line, then the I line injection) and the
-// keys delivered after it, runs the transition, and its fields are compared with the recorded state after the
-// tick. Stages the core does not have yet are undone on the expected state (B lines). Transitions:
+// Default: the whole game. The core starts from the state of tick 0 (the start of a new game) and runs on its
+// own (ugh_sim_step), getting only the keys and the injections (I lines) of the recording; after every tick all
+// fields are compared with the recording. A field the core has never written (memory left by the screens
+// before the game, e.g. passengers of the attract mode) is taken over the first time the recording shows it;
+// a mismatch is reported and the recorded value taken over, so one error does not hide the next ones.
+//
+// --each: every transition on its own, from the recorded state before the tick (T line, I line, keys);
+// stages the core does not have are undone on the expected state (B lines):
 //   new game     start -> betweenLevels             game.*
 //   level start  betweenLevels / play -> caption    game.*, copter.* and the groups of the stages the core has
 //                                                  (pad.* with passenger.*, object.*, bonus.*; from play: its last
 //                                                  frame and the level end first)
 //   play frame   play -> play                       the same (every field must be known)
-// Other ticks (caption, setup, fades between levels) are not checked yet (plan step 8).
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <map>
-#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -52,22 +57,42 @@ struct Result {
     std::map<std::string, long long> checked;   // transition -> ticks
     long long skipped = 0;
     long long mismatches = 0;
+    long long adopted = 0;                      // values the core took over (never written by it)
+    std::map<std::string, long long> adoptedFields;  // field (index as N) -> first tick
     std::vector<std::string> reports;
-    std::map<std::string, long long> unknown;   // field -> ticks where the core did not know it (level start)
+    std::map<std::string, long long> unknown;   // field -> ticks where the core did not know it (--each, level start)
     std::map<std::string, long long> compared;  // field group -> values compared
 };
+
+/** What to do with a recorded field the core does not know. */
+enum class Unknown { COUNT, ERROR, ADOPT };
 
 class Player {
 public:
     Player(ugh_sim* sim, Result& result) : sim_(sim), r_(result) {}
 
-    void step(const Tick& prev, const Tick& cur) {
+    /** The whole game: tick 0 sets the start, every later tick is one step of the core. */
+    void whole(const Tick& t, bool last) {
+        if (t.number == 0) {
+            for (const auto& [name, value] : t.state) set(name, value);
+        } else {
+            int end = ugh_sim_step(sim_);
+            if (end != UGH_SIM_CONTINUE && !last) report(t, "frame", "the core ended the game (" + std::to_string(end) + ")");
+            compare("frame", t, t.state, groups(), Unknown::ADOPT, true);
+        }
+        for (const auto& [name, value] : t.inject) set(name, value);
+        for (int k : t.keys) ugh_sim_key(sim_, k);
+        takeProblems();
+    }
+
+    /** One transition from the recorded state before it. */
+    void each(const Tick& prev, const Tick& cur) {
         const std::string& from = phase(prev);
         const std::string& to = phase(cur);
         if (from == "start" && to == "betweenLevels") {
             load(prev);
             ugh_sim_new_game(sim_);
-            compare("new game", cur, cur.state, {"game."}, false);
+            compare("new game", cur, cur.state, {"game."}, Unknown::COUNT, false);
         } else if (to == "caption" && (from == "betweenLevels" || from == "play")) {
             load(prev);
             if (from == "play") {
@@ -80,15 +105,15 @@ public:
             Fields expected = cur.state;
             for (const auto& [stage, fields] : cur.before)
                 if (!ugh_sim_has_stage(stage.c_str())) for (const auto& field : fields) expected.erase(field.first);
-            compare("level start", cur, expected, groups(), false);
+            compare("level start", cur, expected, groups(), Unknown::COUNT, false);
         } else if (from == "play" && to == "play") {
             load(prev);
             ugh_sim_play_frame(sim_);
-            compare("play frame", cur, undoStages(cur), groups(), true);
+            compare("play frame", cur, undoStages(cur), groups(), Unknown::ERROR, false);
         } else {
             r_.skipped++;
         }
-        ugh_sim_take_problems(sim_, [](void* ctx, const char* p) { static_cast<Player*>(ctx)->report(Tick{}, "core", p); }, this);
+        takeProblems();
     }
 
 private:
@@ -116,6 +141,20 @@ private:
         return expected;
     }
 
+    /** passenger.3.x -> passenger.N.x */
+    static std::string general(const std::string& name) {
+        std::string g;
+        for (size_t i = 0; i < name.size(); i++) {
+            if (std::isdigit(static_cast<unsigned char>(name[i])) && i > 0 && name[i - 1] == '.') {
+                while (i + 1 < name.size() && std::isdigit(static_cast<unsigned char>(name[i + 1]))) i++;
+                g += 'N';
+            } else {
+                g += name[i];
+            }
+        }
+        return g;
+    }
+
     static const std::string& phase(const Tick& t) {
         static const std::string none;
         auto it = t.state.find("game.phase");
@@ -138,7 +177,12 @@ private:
         if (r_.reports.size() < 10) r_.reports.push_back("tick " + std::to_string(t.number) + " " + what + ": " + text);
     }
 
-    void compare(const std::string& what, const Tick& cur, const Fields& expected, const std::vector<const char*>& groups, bool allKnown) {
+    void takeProblems() {
+        ugh_sim_take_problems(sim_, [](void* ctx, const char* p) { static_cast<Player*>(ctx)->report(Tick{}, "core", p); }, this);
+    }
+
+    void compare(const std::string& what, const Tick& cur, const Fields& expected, const std::vector<const char*>& groups,
+                 Unknown unknown, bool takeOver) {
         r_.checked[what]++;
         Fields actual;
         ugh_sim_fields(sim_, [](void* ctx, const char* f, const char* v) { (*static_cast<Fields*>(ctx))[f] = v; }, &actual);
@@ -151,21 +195,25 @@ private:
             if (!inGroup) continue;
             auto it = actual.find(name);
             if (it == actual.end()) {
-                if (allKnown) { diffs += " " + name + " unknown (expected " + value + ")"; n++; }
-                else r_.unknown[name]++;
-            } else {
-                r_.compared[name.substr(0, name.find('.'))]++;
+                switch (unknown) {
+                    case Unknown::COUNT: r_.unknown[name]++; break;
+                    case Unknown::ERROR: diffs += " " + name + " unknown (expected " + value + ")"; n++; break;
+                    case Unknown::ADOPT: set(name, value); r_.adopted++; r_.adoptedFields.emplace(general(name), cur.number); break;
+                }
+                continue;
             }
-            if (it != actual.end() && it->second != value) {
+            r_.compared[name.substr(0, name.find('.'))]++;
+            if (it->second != value) {
                 diffs += " " + name + " expected " + value + " got " + it->second;
                 n++;
+                if (takeOver) set(name, value);
             }
         }
         if (n > 0) report(cur, what, std::to_string(n) + " fields:" + diffs);
     }
 };
 
-bool play(ugh_sim* sim, const std::string& path, Result& result) {
+bool play(ugh_sim* sim, const std::string& path, bool each, Result& result) {
     std::ifstream in(path);
     if (!in) { std::fprintf(stderr, "cannot open %s\n", path.c_str()); return false; }
     std::string line;
@@ -173,14 +221,19 @@ bool play(ugh_sim* sim, const std::string& path, Result& result) {
     ugh_sim_reset(sim);
     Player player(sim, result);
     Fields state;
-    std::vector<Tick> window;  // the previous and the current tick
-    auto flush = [&]() {
-        if (window.size() == 2) { player.step(window[0], window[1]); window.erase(window.begin()); }
+    std::vector<Tick> window;  // ticks still waiting for their B / I lines
+    auto flush = [&](bool last) {
+        if (each) {
+            if (window.size() == 2) { player.each(window[0], window[1]); window.erase(window.begin()); }
+        } else if (!window.empty()) {
+            player.whole(window.back(), last);
+            window.clear();
+        }
     };
     while (std::getline(in, line)) {
         if (line.empty() || line[0] == '#' || startsWith(line, "meta ")) continue;
         if (startsWith(line, "T ")) {
-            flush();
+            flush(false);
             auto bar = line.find(" |");
             std::istringstream head(line.substr(2, bar == std::string::npos ? std::string::npos : bar - 2));
             Tick t;
@@ -210,35 +263,43 @@ bool play(ugh_sim* sim, const std::string& path, Result& result) {
             return false;
         }
     }
-    flush();
+    flush(true);
     return true;
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        std::fprintf(stderr, "usage: ugh_replay <ugh-sim.bin> <replay.ugr> ...\n");
+    int first = 1;
+    bool each = false;
+    if (argc > 1 && std::strcmp(argv[1], "--each") == 0) { each = true; first = 2; }
+    if (argc < first + 2) {
+        std::fprintf(stderr, "usage: ugh_replay [--each] <ugh-sim.bin> <replay.ugr> ...\n");
         return 2;
     }
     char err[256];
-    ugh_sim* sim = ugh_sim_create(argv[1], err, sizeof err);
+    ugh_sim* sim = ugh_sim_create(argv[first], err, sizeof err);
     if (!sim) { std::fprintf(stderr, "%s\n", err); return 2; }
     bool ok = true;
-    for (int i = 2; i < argc; i++) {
+    for (int i = first + 1; i < argc; i++) {
         Result r;
-        if (!play(sim, argv[i], r)) { ok = false; continue; }
+        if (!play(sim, argv[i], each, r)) { ok = false; continue; }
         std::string checked;
         for (const auto& [what, n] : r.checked) checked += " " + what + " " + std::to_string(n) + ",";
         std::string compared;
         for (const auto& [group, n] : r.compared) compared += " " + group + " " + std::to_string(n);
-        std::printf("%s:%s skipped %lld, %lld mismatches; values compared:%s\n", argv[i], checked.c_str(), r.skipped,
-                    r.mismatches, compared.c_str());
+        std::printf("%s:%s skipped %lld, %lld mismatches, %lld taken over; values compared:%s\n", argv[i], checked.c_str(),
+                    r.skipped, r.mismatches, r.adopted, compared.c_str());
         for (const auto& line : r.reports) std::printf("  %s\n", line.c_str());
         if (!r.unknown.empty()) {
             std::string names;
             for (const auto& [name, n] : r.unknown) names += " " + name;
             std::printf("  not known after a level start:%s\n", names.c_str());
+        }
+        if (!r.adoptedFields.empty()) {
+            std::string names;
+            for (const auto& [name, tick] : r.adoptedFields) names += " " + name + "@" + std::to_string(tick);
+            std::printf("  taken over (first tick):%s\n", names.c_str());
         }
         if (r.mismatches > 0) ok = false;
     }

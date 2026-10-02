@@ -207,6 +207,9 @@ void Sim::reset() {
     lastScancode_ = 0;
     savedWaterRow_ = -1;
     problems.clear();
+    game_ = Task();
+    waiting_ = nullptr;
+    result_ = 0;
 }
 
 void Sim::clear() {
@@ -326,12 +329,11 @@ std::vector<std::pair<std::string, std::string>> Sim::fields() const {
 }
 
 /**
- * Before a transition: what the replay leaves out but the logic reads (StateProjection.NOT_PROJECTED) - the
- * level record (from the level number; passengers left, wind and water are fields), the ends of the lists
- * (the replay lists only the entries before them), free bonus slots, the pickup / target pads * 2, players * 2
- * (2636, set together with 2634 by F4 in the menu).
+ * What the replay leaves out but the logic reads and that follows from other fields (StateProjection.NOT_PROJECTED):
+ * players * 2 (2636, set with 2634 by F4 in the menu), the level record (from the level number; passengers left,
+ * wind and water are fields), the pickup / target pads * 2 (set together with them).
  */
-void Sim::prepare() {
+void Sim::derive() {
     if (known(PLAYERS, 2)) setD(PLAYERS2, u(PLAYERS) << 1);
     if (known(0x261c, 2) && known(PLAYERS, 2)) {
         int rec = levelRecord();
@@ -342,6 +344,17 @@ void Sim::prepare() {
             known_[off] = 1;
         }
     }
+    for (int bx = 0; bx < 0x20 && known(0x29ad + bx, 2) && u(0x29ad + bx) != 0xffff; bx += 2) {
+        setD(0x2a8d + bx, u(0x2a4d + bx) << 1);
+        setD(0x2aad + bx, u(0x2a6d + bx) << 1);
+    }
+}
+
+/**
+ * Before a single transition from a recorded state: the ends of the lists (the replay lists only the entries
+ * before them) and the free bonus slots, then what follows from the fields.
+ */
+void Sim::prepare() {
     auto terminate = [&](int base, int slots, auto ended) {
         for (int bx = 0; bx < 2 * slots; bx += 2) {
             if (!known(base + bx, 2)) { setD(base + bx, 0xffff); return; }
@@ -352,10 +365,7 @@ void Sim::prepare() {
     terminate(0x29ad, 16, [&](int off) { return u(off) == 0xffff; });
     terminate(0x2cad, 5, [&](int off) { return u(off) == 0xffff; });
     for (int bx = 0; bx < 0x18; bx += 2) if (!known(0x2d9b + bx, 2)) setD(0x2d9b + bx, 0xffff);
-    for (int bx = 0; bx < 0x20 && u(0x29ad + bx) != 0xffff; bx += 2) {
-        setD(0x2a8d + bx, u(0x2a4d + bx) << 1);
-        setD(0x2aad + bx, u(0x2a6d + bx) << 1);
-    }
+    derive();
 }
 
 }  // namespace ugh

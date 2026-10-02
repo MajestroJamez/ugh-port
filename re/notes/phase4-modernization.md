@@ -89,13 +89,16 @@ paměť. Před každým přechodem jádro doplní skryté proměnné, které rep
 levelu, konce seznamů, volné sloty bonusů, plošiny × 2 a hráče × 2. `tools/ugh_replay.cpp` přehrává `.ugr`
 snímek po snímku: vezme zaznamenaný stav před snímkem, I řádek a klávesy, provede přechod (nová hra, start levelu, snímek hry) a porovná známá pole se
 stavem po snímku, kde jsou vrácené B řádky fází, které jádro ještě nemá. Protože je projekce úplná (krok 3),
-ověřuje přesný přechod každého snímku zvlášť celou simulaci. Úplný běh od začátku přijde v kroku 8.
+ověřuje přesný přechod každého snímku zvlášť celou simulaci (`--each`). Výchozí je ale plný běh: jádro jede od tiku 0
+samo (`ugh_sim_step`, průběh hry jako C++20 korutiny s `co_await vsync()` tam, kde originál čeká na paprsek),
+dostává jen klávesy a I řádky a po každém tiku se porovnají všechna pole. Pole, která jádro nikdy nezapsalo
+(paměť z attract módu, kterou load nepřepíše), převezme při prvním výskytu.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\sim\build.ps1
 ```
 
-Překlad + CTest (jeden test na replay, celkem 7 s). Postup podle kroků je v [plan.md](plan.md).
+Překlad + CTest (dva testy na replay: plný běh a `--each`, celkem 15 s). Postup podle kroků je v [plan.md](plan.md).
 
 ## Zabalená hra (test DLSS doma)
 

@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "flow.hpp"
+
 namespace ugh {
 
 inline int s16(int v) { return static_cast<int16_t>(static_cast<uint16_t>(v)); }
@@ -48,6 +50,8 @@ constexpr int PLAYERS = 0x2634, PLAYERS2 = 0x2636;
 class Sim {
 public:
     explicit Sim(Data data);
+    Sim(const Sim&) = delete;
+    Sim& operator=(const Sim&) = delete;
 
     // fields.cpp: the replay fields
     void reset();   // initial memory, everything unknown
@@ -61,6 +65,12 @@ public:
     int levelEnd();
     void levelStart();
     void playFrame();
+
+    /**
+     * The whole game from the start of 113b:0c61 (playGame): runs to the next retrace wait. 0 = waiting there,
+     * 1 = game over, 2 = all levels done (the game returned without another retrace wait).
+     */
+    int step();
 
     /** Problems found while running (situations the core does not support); the replay player reports them. */
     std::vector<std::string> problems;
@@ -81,11 +91,30 @@ private:
     std::array<int, 4> rng_{};   // CS:4ef7, 4ef9, 4efb, 4efd
     bool rngKnown_ = false;
     bool rainKnown_ = false;     // the replay holds only a checksum of the raindrops
-    int lastScancode_ = 0;       // CS:4509 (only Esc and P matter)
+    int lastScancode_ = 0;       // CS:4509: the last scancode of the keyboard handler
     int savedWaterRow_ = -1;     // the caption keeps the level's water row on the stack
+
+    // the game flow (game.cpp): coroutines that wait for the retrace like the original
+    Task game_;
+    std::coroutine_handle<> waiting_;
+    int result_ = 0;
+    Retrace vsync() { return Retrace{&waiting_}; }
+    Task playGame();
+    Task levelSetup();
+    Task levelCaption();
+    Task playLevel();
+    Task blackPalette();
+    Task fadeIn();
+    Task fadeOut();
+    Task waitKey();
+    void levelSetupStart();
+    void frameBody();
+    int readScancode();
+    void resetDrawnSprites();
 
     friend struct Fields;
 
+    void derive();
     void prepare();
     int random(int range);
     int levelRecord() const;

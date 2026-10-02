@@ -67,8 +67,6 @@ Pravidla platná pro všechny kroky:
 - Fáze (`setup`, `caption`, `play`, `betweenLevels`, ...), fade, konec levelu, ztráta života, game over, skóre,
   multiplikátor, team mode.
 - Hotovo když: **všechny replays projdou celé**. Volitelně FFM most do `verify` pro lockstep ladění C++ vs Kotlin.
-- Pozor: na první popisce hry mají pole cestujících a `copter.effort/impact/fareMin` hodnoty z attract módu
-  (load je nepřepíše, tick 0 je nemá). Popisek drží skutečnou hladinu na zásobníku (jádro: `savedWaterRow`).
 
 ## Krok 9 - C++ jádro: přepis do čisté architektury
 
@@ -162,3 +160,10 @@ replays jsou záchranná síť.
   Snímek hry je v jádře celý; všech 161 replayů projde pro všechna pole včetně `game.rng` a `game.rain`
   (celkem 7,9 mil. porovnaných hodnot objektů, 125 tis. bonusů, 21,7 mil. cestujících). Zvuky jsou vynechané
   (handle smyčky mávání `2d61`, který replay nemá, je v jádře 0). Další: **krok 8**.
+- 2026-10-02: krok 8 hotový - průběh hry jako C++20 korutiny (`flow.hpp`, `co_await vsync()` na místech, kde
+  originál čeká na paprsek): nová hra, černá paleta, popisek (fade in, čekání na klávesu, fade out), nastavení
+  levelu, smyčka hry s fade, konec levelu, ztráta života, game over; C API `ugh_sim_step` = jeden snímek.
+  **Všech 161 replayů projde celých** od tiku 0 jen z kláves a injekcí: 434 tis. snímků, 0 rozdílů, 82 mil.
+  porovnaných hodnot. Převzato 8 808 hodnot, které jádro nikdy nezapsalo (paměť attract módu: cestující
+  a `copter.effort/impact/fareMin` na první popisce, pole objektů, která load u daného druhu nepíše).
+  CTest: plný běh + `--each` (každý přechod zvlášť), 322 testů, 15 s. FFM most nebyl potřeba. Další: **krok 9**.

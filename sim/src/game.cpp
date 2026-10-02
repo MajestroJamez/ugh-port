@@ -111,11 +111,18 @@ int Sim::levelRecord() const {
 }
 
 /**
- * 113b:3d66 (Level.kt levelSetup) up to the caption's first retrace wait: the state, the level load, and the
- * caption (113b:0664, levelCaption) moving the water row out of the way while it is shown.
+ * The level setup up to the caption's first retrace wait (for checking single transitions): the state, the
+ * level load, and the caption moving the water row out of the way while it is shown.
  */
 void Sim::levelStart() {
     prepare();
+    levelSetupStart();
+    savedWaterRow_ = u(V_WATER_ROW);
+    setD(V_WATER_ROW, 0xaf);
+}
+
+/** 113b:3d66 - Level.kt levelSetup up to the caption: the state of a level attempt and the level load. */
+void Sim::levelSetupStart() {
     // 0xc4 words from the far pointer DGROUP:b7 = DGROUP:2648 .. 27cf: level map, key states, water counters,
     // fade, status line, level done flag
     for (int i = 0; i < 0xc4; i++) setD(0x2648 + 2 * i, 0);
@@ -141,8 +148,6 @@ void Sim::levelStart() {
         setD(0x27ba, 0xf4); setD(0x27bc, 0x122);
     }
     loadLevel();
-    savedWaterRow_ = u(V_WATER_ROW);
-    setD(V_WATER_ROW, 0xaf);
 }
 
 /** 113b:3976 - Level.kt loadLevel: level record, players, water, pads (A), passengers (B), objects (C), rain. */
@@ -546,17 +551,29 @@ void Sim::drawPassengers() {
 // ---------------------------------------------------------------- the play frame
 
 /**
- * One frame of the level play: 113b:0c7d .. 0fa4 (GameFlow.kt playLevel, Frame.kt frameBody / frameAfterKeys)
- * after the retrace wait that starts it.
+ * One frame of the level play after the retrace wait that starts it (for checking single transitions):
+ * the fade step of playLevel, then the frame body.
  */
 void Sim::playFrame() {
     prepare();
-    // the fade position advances right after the retrace wait (playLevel)
     int cx = d(V_FADE);
     if (cx <= 0x100) setD(V_FADE, cx + d(V_FADE_STEP));
+    frameBody();
+}
 
+/** 113b:44f1 - Frame.kt readScancode: AL = last scancode of the keyboard handler, AH = bits changed since. */
+int Sim::readScancode() {
+    setD8(0x2645, d8(0x2643));
+    setD8(0x2643, lastScancode_);
+    int ah = d8(0x2643) ^ d8(0x2645);
+    setD8(0x2646, ah);
+    return (ah << 8) | d8(0x2643);
+}
+
+/** 113b:0ca5 .. 0fa4 - Frame.kt frameBody / frameAfterKeys without the drawing. */
+void Sim::frameBody() {
     updateWater();
-    int key = lastScancode_;  // 113b:0fe8 frameKeys: the last scancode of the keyboard handler
+    int key = readScancode() & 0xff;  // 113b:0fe8 frameKeys (keyboard players only)
     if (key == 0x19) problems.push_back("pause (P) is not supported");
     if (key == 0x01) {  // Esc
         setD8(0x263c, 0);
@@ -576,6 +593,100 @@ void Sim::playFrame() {
     do { drawCopter(bx); bx += 2; } while (bx != u(PLAYERS2));
     if (d8(V_WIND) != 0) moveRain();
     drawWaterSurface();
+}
+
+// ---------------------------------------------------------------- the game flow
+
+int Sim::step() {
+    derive();  // values set from outside (a replay) bring their derived variables along
+    if (game_.done() && !waiting_) {
+        if (result_ != 0) return result_;
+        game_ = playGame();
+        game_.start();
+    } else if (waiting_) {
+        auto h = std::exchange(waiting_, nullptr);
+        h.resume();
+    }
+    return waiting_ ? 0 : result_;
+}
+
+/** 113b:0c61 .. 0fe7 - GameFlow.kt playGame: new game, then level attempts until the game is over. */
+Task Sim::playGame() {
+    newGame();
+    co_await blackPalette();
+    while (true) {
+        co_await levelSetup();
+        co_await playLevel();  // the music starts before it, the sound stops after it
+        int end = levelEnd();
+        if (end != 0) { result_ = end; co_return; }
+    }
+}
+
+/** 113b:3d66 - Level.kt levelSetup: the level, its caption, the background, the first update of the lists. */
+Task Sim::levelSetup() {
+    levelSetupStart();
+    co_await levelCaption();
+    co_await blackPalette();
+    // the game palette, the tiles and the background page are drawn here
+    Regs r;
+    objectsUpdate(r);
+    passengersUpdate(r);
+    resetDrawnSprites();
+}
+
+/** 113b:0664 - Level.kt levelCaption: "LEVEL nn", the text and the password, faded in; waits for a key. */
+Task Sim::levelCaption() {
+    int savedWater = u(V_WATER_ROW);
+    setD(V_WATER_ROW, 0xaf);
+    co_await fadeIn();
+    co_await waitKey();
+    setD(V_WATER_ROW, savedWater);
+    co_await fadeOut();
+}
+
+/** 113b:0b4f - Level.kt resetDrawnSprites: nothing drawn yet that the first frame would erase. */
+void Sim::resetDrawnSprites() {
+    for (int si = 8; si >= 0; si -= 2) { setD(0x2d43 + si, 0xffff); setD(0x2d4d + si, 0xffff); }
+    for (int si = 0x1e; si >= 0; si -= 2) { setD(0x2bed + si, 0xffff); setD(0x2c0d + si, 0xffff); }
+    for (int si = 0x16; si >= 0; si -= 2) { setD(0x2d9b + si, 0xffff); setD(0x2db3 + si, 0xffff); }
+}
+
+/** 113b:0c7d .. 0fa4 - GameFlow.kt playLevel: frames until the fade-out after the end of the level is done. */
+Task Sim::playLevel() {
+    while (true) {
+        int cx = d(V_FADE);
+        if (cx < 0) co_return;
+        if (cx <= 0x100) {
+            co_await vsync();  // 113b:4e36: the palette at the fade position
+            setD(V_FADE, cx + d(V_FADE_STEP));
+        } else {
+            co_await vsync();
+        }
+        frameBody();
+    }
+}
+
+/** 113b:4e9b - Host.kt blackPalette: 32 colours per retrace, 8 retraces. */
+Task Sim::blackPalette() {
+    for (int i = 0; i < 8; i++) co_await vsync();
+}
+
+/** 113b:4e19 / 4e28 - Host.kt fadeIn / fadeOut: 65 steps of the palette, one per retrace. */
+Task Sim::fadeIn() {
+    for (int cx = 0; cx <= 0x100; cx += 4) co_await vsync();
+}
+
+Task Sim::fadeOut() {
+    for (int cx = 0x100; cx >= 0; cx -= 4) co_await vsync();
+}
+
+/** 113b:44db - Host.kt waitKey: until the scancode changes (no joystick). */
+Task Sim::waitKey() {
+    readScancode();
+    while (true) {
+        co_await vsync();
+        if (readScancode() >> 8 != 0) co_return;
+    }
 }
 
 }  // namespace ugh
