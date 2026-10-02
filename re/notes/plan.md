@@ -67,6 +67,8 @@ Pravidla platná pro všechny kroky:
 - Fáze (`setup`, `caption`, `play`, `betweenLevels`, ...), fade, konec levelu, ztráta života, game over, skóre,
   multiplikátor, team mode.
 - Hotovo když: **všechny replays projdou celé**. Volitelně FFM most do `verify` pro lockstep ladění C++ vs Kotlin.
+- Pozor: na první popisce hry mají pole cestujících a `copter.effort/impact/fareMin` hodnoty z attract módu
+  (load je nepřepíše, tick 0 je nemá). Popisek drží skutečnou hladinu na zásobníku (jádro: `savedWaterRow`).
 
 ## Krok 9 - UE projekt v repu, šedé kostky
 
@@ -112,3 +114,10 @@ Pravidla platná pro všechny kroky:
   `GoldenReplayTest` porovnává masku se stránkou pozadí portu při vstupu do levelu a každý 64. snímek (81/81 shoda)
   a hlídá, že sonda mimo stránku nikdy nenarazí na pevný pixel. Cheat pilot teď drží vrtulník v rozsahu
   fyziky (předtím ho stavěl nad okraj, kde sonda četla kreslicí stránku). Další: **krok 5**.
+- 2026-10-02: krok 5 hotový - `sim/` (C++20, CMake + Ninja z Build Tools 2026, C API `ugh_sim.h`, přehrávač
+  `ugh_replay` + CTest, `sim/build.ps1`). Nová hra, start levelu (bez cestujících a objektů), konec levelu
+  a snímek hry s fyzikou vrtulníku, vodou, deštěm, klávesnicí a RNG: všech 161 replayů projde (`game.*`,
+  `copter.*`, `pad.*`), 7 s. Přehrávač kontroluje každý přechod zvlášť ze zaznamenaného stavu. Aby šlo jádro
+  ověřovat po fázích, replay má nové řádky `B` (co cestující / objekty / bonusy změnily mimo svou skupinu).
+  Do projekce přibylo `game.rainFloor` (skrytý vstup deště při načtení levelu); `game.rain` je `none` bez větru.
+  Další: **krok 6**.

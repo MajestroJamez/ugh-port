@@ -10,6 +10,7 @@ import java.io.Writer
  *   # free comment lines
  *   meta <key>=<value> ...             recording conditions (exe hash, start level, seed, mode, ...)
  *   T <tick> w=<wait> k=<keys> | <field>=<value> ...
+ *   B <stage> <field>=<value> ...      what a stage of the preceding T line's frame changed (see below)
  *   I <field>=<value> ...              state injection after the preceding T line (see below)
  *
  * One T line per frame (70.086 Hz tick of the original). The fields are the state *after* that frame
@@ -18,6 +19,12 @@ import java.io.Writer
  * complete state. k= lists the scancodes (hex, comma separated, "-" for none) delivered *after* the frame,
  * i.e. the input of the next frame. w= is the return address of the retrace wait the original stopped at
  * (which loop of the game the frame belongs to: level play, caption, fade, ...).
+ *
+ * B lines (after the T line of a frame that ran the level play logic, also the last one before the next level
+ * starts; in stage order passengers, objects, bonuses): the fields outside
+ * the stage's own group (passengers: all but passenger.*, objects: all but object.*, bonuses: all but bonus.*)
+ * that the stage changed during the frame, with their values right before it ("~" = the field did not exist).
+ * An implementation that lacks the later stages undoes them on the expected state, last stage first.
  *
  * An I line (only in recordings with a cheating pilot) lists fields the test harness set between the
  * preceding frame and the next one: a replaying implementation sets them in its state before running the
@@ -49,6 +56,12 @@ class ReplayWriter(file: File, meta: Map<String, String>) : AutoCloseable {
         ticks++
     }
 
+    /** What [stage] of the frame of the last [tick] changed outside its own group: values before it. */
+    fun before(stage: String, fields: Map<String, String>) {
+        if (fields.isEmpty()) return
+        out.write("B $stage " + fields.entries.joinToString(" ") { "${it.key}=${it.value}" } + "\n")
+    }
+
     /** Fields set between the last [tick] and the next frame. */
     fun inject(fields: Map<String, String>) {
         if (fields.isEmpty()) return
@@ -61,7 +74,8 @@ class ReplayWriter(file: File, meta: Map<String, String>) : AutoCloseable {
 /** Reads a "UGR 0" file back into full states per tick (used to check the writer and by later runners). */
 object ReplayReader {
     data class Tick(val tick: Long, val wait: Int, val keys: List<Int>, val state: Map<String, String>,
-                    var inject: Map<String, String> = emptyMap())
+                    var inject: Map<String, String> = emptyMap(),
+                    val before: MutableMap<String, Map<String, String>> = linkedMapOf())
 
     fun read(file: File): Pair<Map<String, String>, List<Tick>> {
         val lines = file.readLines()
@@ -82,6 +96,7 @@ object ReplayReader {
                     val keys = hm.getValue("k").let { if (it == "-") emptyList() else it.split(',').map { s -> s.toInt(16) } }
                     ticks += Tick(tick, hm.getValue("w").toInt(16), keys, HashMap(state))
                 }
+                line.startsWith("B ") -> line.removePrefix("B ").split(" ", limit = 2).let { ticks.last().before[it[0]] = pairs(it.getOrElse(1) { "" }) }
                 line.startsWith("I ") -> ticks.last().inject = pairs(line.removePrefix("I "))
                 else -> error("unexpected line: $line")
             }

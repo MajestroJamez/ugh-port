@@ -40,6 +40,9 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
         put("game.levelDone", if (b(0x27cf) and 0x80 != 0) 1 else 0)
         put("game.wind", b(Game.V_WIND))
         put("game.waterRow", s(Game.V_WATER_ROW))
+        // where raindrops restart (waterRow * row bytes of the last water surface drawn, 2db9); the level load moves
+        // the rain with the value left by the screen before (113b:3c78)
+        put("game.rainFloor", u(0x2907))
         put("game.rng", "%04x%04x%04x%04x".format(cs(0x4efd), cs(0x4efb), cs(0x4ef9), cs(0x4ef7)))
 
         if (phase !in LEVEL_PHASES) return m
@@ -51,7 +54,8 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
         put("game.waterToggle", b(0x27ce))
         put("game.waterAnim", s(0x27a4))
         put("game.waterAnimDelay", b(0x27a3))
-        put("game.rain", rainChecksum())
+        // without wind the load clears only the offsets (the planes keep older values) and nothing moves the rain
+        put("game.rain", if (b(Game.V_WIND) != 0) rainChecksum() else "none")
 
         // ---------------------------------------------------------------- copters
         for (p in 0 until players.coerceIn(1, 2)) {
@@ -200,7 +204,7 @@ class StateProjection(private val read16: (seg: Int, off: Int) -> Int) {
             Hidden(Game.DGROUP, 0x27ec, 4, "copters: sprite drawn last frame"),
             Hidden(Game.DGROUP, 0x2800, 4, "status line: cargo shown"),
             Hidden(Game.DGROUP, 0x28e9, 0x1a, "level record: the rest is level data (list pointers, start positions, water speed)"),
-            Hidden(Game.DGROUP, 0x2905, 4, "water: row redrawn (renderer), waterRow * row bytes (set from game.waterRow every frame)"),
+            Hidden(Game.DGROUP, 0x2905, 2, "water: row before the update (renderer: the row redrawn)"),
             Hidden(Game.DGROUP, 0x2a8d, 0x40, "passengers: pickup / target pad * 2 (always set together with them)"),
             Hidden(Game.DGROUP, 0x2b4d, 0x20, "passengers: x drawn last frame"),
             Hidden(Game.DGROUP, 0x2b8d, 0x20, "passengers: y drawn last frame"),

@@ -60,7 +60,7 @@ Zkušební projekt: `C:\Users\Ja079591\IdeaProjects\UghTrial` (mimo repo, po pr�
 
 Kód: `verify/src/test/kotlin/ugh/verify/replay/` - `StateProjection` (paměť → sémantický stav),
 `ReplayWriter`/`ReplayReader` (formát), `GoldenReplayTest` (záznam v lockstepu s originálem).
-Soubory: `verify/build/verify-out/replays/*.ugr`.
+Soubory: `verify/build/replays/*.ugr`.
 
 - Textový ASCII formát, jeden řádek na snímek: `T <tick> w=<čekání> k=<klávesy> | <pole>=<hodnota> ...`,
   jen změněná pole (delta), zmizelé pole `=~`. Klávesy jsou vstup *dalšího* snímku.
@@ -71,21 +71,28 @@ Soubory: `verify/build/verify-out/replays/*.ugr`.
 - `game.phase`: `start`, `setup`, `caption`, `play`, `betweenLevels`, ... (z volajícího v portu);
   seznamy levelu jen ve fázích `caption` a `play`.
 - Každý snímek se ověřuje, že projekce paměti originálu = projekce portu.
+- `B <fáze> <pole>=<hodnota> ...` = co fáze snímku (`passengers`, `objects`, `bonuses`) změnila mimo vlastní
+  skupinu polí, s hodnotami před ní. Jádro, které fázi ještě nemá, ji na očekávaném stavu vrátí.
 
-Nahrané sady (všechny 0 rozdílů):
+Sada (`.\gradlew.bat :verify:replays`, asi 2 min): 161 záznamů, 434 tisíc snímků. Pro každý level obou režimů je
+cheat záznam (start přes heslo), k tomu 4 dlouhé cheat záznamy, ve kterých se dokončují levely, a 7 náhodných
+pilotů do game over na všech obtížnostech. Ve všech je 0 rozdílů a jsou pokryté všechny dosažitelné stavy.
+Úplnost projekce hlídá `StateAudit` (viz `StateProjection.NOT_PROJECTED`).
 
-| Soubor | Pilot | Snímky | Konec |
-|---|---|---|---|
-| `1p-medium-seed11` | náhodné klávesy | 2 733 | game over |
-| `1p-easy-seed21` | náhodné klávesy | 2 671 | game over |
-| `1p-hard-seed22` | náhodné klávesy | 2 573 | game over |
-| `team-medium-seed3` | 2× náhodné klávesy | 1 819 | game over |
-| `1p-medium-cheat-seed1` | cheat pilot (208 zásahů) | 6 000 | - |
+## C++ jádro (`sim/`)
 
-Omezení: náhodný pilot do 40 s havaruje, pokrývá hlavně level 1. Pro další levely, doručování
-a nepřátele bude potřeba „chytrý“ pilot jen přes klávesy (autopilot k plošinám), případně delší
-cheat záznamy. Projekce zatím vynechává animaci vrtulníku, déšť a stavový řádek (čistě vizuální
-nebo odvozené věci) - doplnit podle potřeby C++ jádra.
+C++20 bez závislostí, CMake + Ninja z Build Tools 2026, C API `include/ugh_sim.h` (`ugh_sim_*`). Stav jádra
+tvoří pole replayů se stejnými jmény a hodnotami jako v projekci, tabulky čte z `assets/sim/ugh-sim.bin`
+na původních adresách DGROUP. `tools/ugh_replay.cpp` přehrává `.ugr` snímek po snímku: vezme zaznamenaný stav
+před snímkem, I řádek a klávesy, provede přechod (nová hra, start levelu, snímek hry) a porovná známá pole se
+stavem po snímku, kde jsou vrácené B řádky fází, které jádro ještě nemá. Protože je projekce úplná (krok 3),
+ověřuje přesný přechod každého snímku zvlášť celou simulaci. Úplný běh od začátku přijde v kroku 8.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\sim\build.ps1
+```
+
+Překlad + CTest (jeden test na replay, celkem 7 s). Postup podle kroků je v [plan.md](plan.md).
 
 ## Zabalená hra (test DLSS doma)
 
@@ -108,8 +115,3 @@ Bez PSO cache se první sekundy trhá (kompilace shaderů za běhu) - pro hru p�
   v Rideru nastavit jiný (např. 64343) a přidat ručně jako `rider`, ne přes Auto-Configure
   (přepsal by záznam `intellij`). Po přidání restart Claude Code.
 
-## Další kroky
-
-1. Zaregistrovat MCP servery `unreal` a `rider` v Claude Code, restart.
-2. Chytrý pilot pro replays napříč levely (náhodný i cheat pilot zůstávají v levelu 1).
-3. C++ jádro + přehrávač UGR 0.

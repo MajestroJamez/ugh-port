@@ -102,11 +102,14 @@ class GoldenReplayTest {
             var pending: Map<String, String>? = null
             var pendingWait = 0
             var pendingInject = emptyMap<String, String>()
+            var pendingStages = emptyMap<String, Map<String, String>>()
+            val stages = StageRecorder(ugh).also { it.attach() }
             lockstep.onKey += { keys += it }
             // runs first at every boundary: the previous frame's keys are complete, the new frame just ended
             lockstep.atBoundary.add(0) {
                 pending?.let {
                     writer.tick(writer.ticks, pendingWait, keys.toList(), it)
+                    for ((stage, fields) in pendingStages) writer.before(stage, fields)
                     writer.inject(pendingInject)
                     if (pendingInject.isNotEmpty()) injections++
                 }
@@ -135,6 +138,7 @@ class GoldenReplayTest {
                 }
                 pending = o
                 pendingWait = lockstep.waitingIn()
+                pendingStages = stages.frameDone()
             }
             // runs last at every boundary: what the pilots poked into the state is an injection
             lockstep.atBoundary += {
@@ -146,7 +150,10 @@ class GoldenReplayTest {
                 }
             }
             lockstep.run { end = playGame() }
-            pending?.let { writer.tick(writer.ticks, pendingWait, keys.toList(), it) }
+            pending?.let {
+                writer.tick(writer.ticks, pendingWait, keys.toList(), it)
+                for ((stage, fields) in pendingStages) writer.before(stage, fields)
+            }
         }
         check(lockstep.mismatchCount == 0) { "${lockstep.mismatchCount} lockstep mismatches: ${lockstep.mismatches.firstOrNull()}" }
         check(projectionMismatches == 0) { "$projectionMismatches projection mismatches, first $firstMismatch" }
