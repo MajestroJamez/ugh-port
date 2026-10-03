@@ -157,6 +157,7 @@ typedef struct {
     int fade;               /* 0 black .. UGH_LOGIC_FADE_SHOWN fully shown; it may overshoot by 2, and ends below 0 */
     int water_level;        /* the water surface, 1/32 px */
     int water_frame;        /* the animation of the surface, 0 .. 2 */
+    int wind;               /* where the wind of the level blows: -1 to the left, 1 to the right, 0 none (no rain) */
     int copter_count;
     ugh_logic_copter copters[2];
     int entity_count;

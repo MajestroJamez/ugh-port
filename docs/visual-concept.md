@@ -27,6 +27,9 @@ nic - kamera kouká do řezu jako do vitríny. Hratelnost zůstává 2D a pixelo
 - Ohniště na nejdelší suché římse bez plošiny (jen dekorace, do hry nezasahuje): dvě polena, plamen a blikající
   oranžové bodové světlo, které osvětlí jeskyni.
 - Mlha: nízká přízemní (exponential height fog) s objemovou mlhou, ať je hloubka čitelná.
+- Vítr (krok 12): level s větrem je bouřka - slabší chladné slunce, slabší obloha, hustá šedá mlha; plamen ohniště
+  se kloní po větru a víc bliká. Kapky deště jsou plastelínové čárky (4 x 1 px) šikmo po větru, na pozicích z logiky.
+- Menu: za ním ztlumené dioráma levelu, který by menu spustilo (po heslu ten level).
 
 ## Kamera
 
@@ -39,3 +42,5 @@ Pevná, úzký objektiv (30°), celý řez v záběru, mírně shora (-4°), aby
 - Geometrie útesu: `ProceduralMeshComponent` z masky při načtení levelu.
 - Balení: `package.ps1` (UAT, `NO_PROXY += ::1`, data z `assets/` vedle hry), PSO cache nahraná autopilotem
   `-UghShot` v zabalené hře (`pso.ps1`), aby se při startu netrhalo.
+- Kontrola všech levelů: `levels.ps1` - autopilot spustí každý level obou režimů z menu (heslem), nafotí ho bez okna
+  a složí kontaktní archy `Saved\Shots\Levels\levels-1p.png` a `levels-team.png`.

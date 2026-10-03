@@ -12,12 +12,22 @@
 
 namespace
 {
-	/** The sun: low and warm, from the front above and a little from the left (degrees, lux). */
+	/** The sun from the front above and a little from the left (degrees). */
 	const FRotator SunDirection(-30, -70, 0);
-	const FLinearColor SunColor(1.f, 0.88f, 0.72f);
-	constexpr float SunLux = 4.f, SkyIntensity = 1.2f;
-	/** A thin fog low over the water; the volumetric fog lets the campfire's light glow. */
-	constexpr float FogDensity = 0.01f, FogFalloff = 0.3f;
+	/** A fog low over the water (the volumetric fog lets the campfire's light glow): how fast it thins upwards. */
+	constexpr float FogFalloff = 0.3f;
+
+	/** The light and the air of a weather: the sun (colour, lux), the sky light, the fog (density, colour). */
+	struct FWeather
+	{
+		FLinearColor SunColor;
+		float SunLux, SkyIntensity, FogDensity;
+		FLinearColor FogColor;
+	};
+	/** Calm: a low warm evening sun, a thin fog of the engine's colour. */
+	const FWeather Calm{ FLinearColor(1.f, 0.88f, 0.72f), 4.f, 1.2f, 0.01f, FLinearColor(0.447f, 0.638f, 1.f) };
+	/** The wind of a level brings a storm: a dim cool sun, a dense grey fog. */
+	const FWeather Storm{ FLinearColor(0.7f, 0.8f, 1.f), 1.2f, 0.7f, 0.05f, FLinearColor(0.3f, 0.33f, 0.38f) };
 
 	/** The camera's horizontal field of view and how much it looks down (degrees); room around the screen. */
 	constexpr float FieldOfView = 30.f, LookDown = 4.f;
@@ -31,24 +41,20 @@ AUghStage::AUghStage()
 {
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 
-	UDirectionalLightComponent* Sun = CreateDefaultSubobject<UDirectionalLightComponent>(TEXT("Sun"));
+	Sun = CreateDefaultSubobject<UDirectionalLightComponent>(TEXT("Sun"));
 	Sun->SetupAttachment(RootComponent);
 	Sun->SetMobility(EComponentMobility::Movable);
 	Sun->SetRelativeRotation(SunDirection);
-	Sun->SetIntensity(SunLux);
-	Sun->SetLightColor(SunColor);
 	Sun->SetAtmosphereSunLight(false);   // the atmosphere would tint it orange at this low angle: the cave keeps its colours
 
 	CreateDefaultSubobject<USkyAtmosphereComponent>(TEXT("Sky"))->SetupAttachment(RootComponent);
-	USkyLightComponent* SkyLight = CreateDefaultSubobject<USkyLightComponent>(TEXT("SkyLight"));
+	SkyLight = CreateDefaultSubobject<USkyLightComponent>(TEXT("SkyLight"));
 	SkyLight->SetupAttachment(RootComponent);
 	SkyLight->SetMobility(EComponentMobility::Movable);
 	SkyLight->bRealTimeCapture = true;
-	SkyLight->SetIntensity(SkyIntensity);
 
-	UExponentialHeightFogComponent* Fog = CreateDefaultSubobject<UExponentialHeightFogComponent>(TEXT("Fog"));
+	Fog = CreateDefaultSubobject<UExponentialHeightFogComponent>(TEXT("Fog"));
 	Fog->SetupAttachment(RootComponent);
-	Fog->SetFogDensity(FogDensity);
 	Fog->SetFogHeightFalloff(FogFalloff);
 	Fog->SetVolumetricFog(true);
 
@@ -63,6 +69,7 @@ AUghStage::AUghStage()
 	Camera->SetFieldOfView(FieldOfView);
 	Camera->SetConstraintAspectRatio(false);
 	Camera->SetRelativeRotation(FRotator(-LookDown, -90, 0));   // looking along -Y (UghShapes)
+	SetWind(0);
 }
 
 void AUghStage::FitCamera()
@@ -81,4 +88,14 @@ void AUghStage::FitCamera()
 	const double Above = Distance * FMath::Tan(FMath::DegreesToRadians(LookDown)) / UghShapes::UnitsPerPixel;
 	Camera->SetWorldLocation(UghShapes::ToWorld(UghShapes::ScreenWidth / 2.0, UghShapes::ScreenHeight / 2.0 - Above,
 		-Distance));
+}
+
+void AUghStage::SetWind(int32 Wind)
+{
+	const FWeather& Weather = Wind == 0 ? Calm : Storm;
+	Sun->SetLightColor(Weather.SunColor);
+	Sun->SetIntensity(Weather.SunLux);
+	SkyLight->SetIntensity(Weather.SkyIntensity);
+	Fog->SetFogDensity(Weather.FogDensity);
+	Fog->SetFogInscatteringColor(Weather.FogColor);
 }

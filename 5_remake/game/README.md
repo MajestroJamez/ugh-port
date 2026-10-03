@@ -17,19 +17,25 @@ data in `assets\` (`.\gradlew.bat :extractor:run`):
 |---|---|
 | `setup.ps1` | copies the vendor plugins (DLSS + Streamline, FSR with its offscreen patch, about 5 GB, not in git) from the toolchain trial into `Plugins\`; `-From <folder>` elsewhere. Once |
 | `build.ps1` | builds the editor (modules UghLogic, UghGame, UghEditor) and makes the materials (commandlet `UghMakeAssets` -> `Content\Generated`); `-NoAssets` only builds |
-| `test.ps1` | the golden replays inside the engine without a window (automation tests `Ugh.Replays.*`, `UnrealEditor-Cmd -nullrhi`); needs the replays (`.\gradlew.bat :verify:replays`) |
-| `shot.ps1` | plays level 1 by itself without a window and saves `Saved\Shots\level1.png`; `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting |
+| `test.ps1` | the automation tests inside the engine without a window (`UnrealEditor-Cmd -nullrhi`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`) and the menu `Ugh.Menu`; `-Filter` other tests |
+| `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting |
+| `levels.ps1` | the same for every level of both modes in one run, then the contact sheets `Saved\Shots\Levels\levels-1p.png` and `levels-team.png` (and the menu's `menu.png`): does every level look right? `-Levels team:1-81` fewer |
 | `play.ps1` | the game in a window |
 | `package.ps1` | the game for Windows in `Packaged\Windows` with the data of `assets\` next to it, and a zip without `.pdb` (for your own use: the data is not ours to share). UAT needs `::1` in `NO_PROXY` (the script adds it) |
-| `pso.ps1` | the bundled PSO cache: packages, lets the packaged game play level 1 by itself with `-logPSO`, expands the recording with the cook's stable shader keys into `Build\Windows\PipelineCaches` and packages again |
+| `pso.ps1` | the bundled PSO cache: packages, lets the packaged game show the menu and play a calm level, a windy one and the team mode by itself with `-logPSO`, expands the recording with the cook's stable shader keys into `Build\Windows\PipelineCaches` and packages again |
 
 ```
 powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\build.ps1
 ```
 
-Keys: arrows fly, Right Ctrl or Space fires (pilot 2 of the team mode: W A S D, Left Ctrl - S, not the original's
-Z, which is Y on a Czech keyboard); Esc gives the game up, any key goes on from a caption. U switches the upscaler
-(DLSS where supported, FSR, TSR), G the DLSS frame generation. When the game is over: Enter a new game, Esc quit.
+The menu: Up and Down choose a row (one player or the team, the difficulty, a password), Left and Right change the
+mode or the difficulty, letters and digits type a level's password (the original's, `assets/levels.json`), Backspace
+deletes, Enter plays, Esc quits. The end of
+a game goes back to the menu.
+
+Keys in a game: arrows fly, Right Ctrl or Space fires (pilot 2 of the team mode: W A S D, Left Ctrl - S, not the
+original's Z, which is Y on a Czech keyboard); Esc gives the game up, any key goes on from a caption. U switches the
+upscaler (DLSS where supported, FSR, TSR), G the DLSS frame generation.
 
 ## Modules
 
@@ -43,23 +49,26 @@ The frontend:
 
 | Class | What it does |
 |---|---|
-| `AUghGameMode` | spawns the stage, the background, the figures and the campfire, runs the logic every frame and shows it, builds the diorama of each level; the keys of the frontend |
+| `AUghGameMode` | spawns the stage, the background, the figures and the campfire; the menu, then the logic every frame and its view; builds the diorama of each level (behind the menu the one the menu would start, dimmed); the keys of the frontend |
+| `FUghMenu` | the menu before a game (the mode, the difficulty, a password): its keys and the game it would start (`FUghGameChoice`); the HUD draws it. Test `Ugh.Menu` (`UghMenuTests.cpp`) |
+| `FUghPasswords` | the passwords of the levels of both modes (`assets/levels.json`) |
 | `FUghSimulation` | the logic at its fixed tick: `Advance(seconds)` runs the steps that are due, keeps the views before and after the last step (`Alpha` between them) |
 | `FUghKeyboard` | a key event of the engine to the logic (Adapter): pilots' keys, Esc, P, any other key |
 | `AUghPlayerController` | passes every key press and release to the game mode (the logic wants raw key events, not input actions) |
-| `AUghStage` | the sun, the sky, the fog, the exposure and the camera (fixed, a narrow lens, a little from above) |
+| `AUghStage` | the sun, the sky, the fog, the exposure and the camera (fixed, a narrow lens, a little from above); a windy level is a storm (a dim cool sun, a dense grey fog) |
 | `FUghRockMesh` | the rock of a level from its collision mask: the cut face, the floors, ceilings and walls one pixel a step, the bumpy back wall; where a campfire fits |
 | `FUghLevelArt` | the original's drawing of a level: its tiles (`assets/levels.json`) composed from the sprites into a texture |
 | `AUghBackground` | the rock mesh with the level's drawing, the water, the wooden box |
-| `AUghCampfire` | logs, a flame and a flickering light (decoration only) |
-| `AUghFigures` | copters, passengers, enemies, bonus items, raindrops: plasticine shapes between two steps (a jump is not interpolated); speech bubbles as sprite cards |
+| `AUghCampfire` | logs, a flame and a flickering light (decoration only); in the wind the flame leans and flickers more |
+| `AUghFigures` | copters, passengers, enemies, bonus items, raindrops (strokes of clay along their way with the wind): plasticine shapes between two steps (a jump is not interpolated); speech bubbles as sprite cards |
 | `FUghSprites` | the sprites of the original: their sizes (`assets/sprites.json`) and pixels (`assets/sprites/NNN.png`) |
 | `UghShapes` | where the screen of the original lies in the world (1 px = 10 units, X right, Z up, depth toward the camera negative), the slab of the play, shapes and materials |
 | `UghTexture` | pixels as a texture |
 | `UghMaterials` | the materials' paths and parameters, shared by the game and the commandlet |
-| `FUghShot` | `-UghShot`: the game plays level 1 by itself (hovering) and takes one screenshot |
+| `FUghShot` | `-UghShot`: the game starts levels from the menu by itself (a player's keys), lets them hover and takes a screenshot of each (`shot.ps1`, `levels.ps1`, `pso.ps1`) |
 | `FUghUpscaler` | DLSS / FSR / TSR at 67 % and the frame generation, as tried in the toolchain trial |
-| `AUghHud` | the status line, the caption, the end of the game, the keys |
+| `AUghHud` | the menu with how the last game ended; in a game the status line, the caption, the keys |
+| `UghJson` | reads a JSON file of the extracted data |
 
 ## Rules
 

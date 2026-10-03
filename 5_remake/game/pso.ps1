@@ -1,6 +1,7 @@
 # Records the bundled PSO cache, so the packaged game does not stutter when it first draws something:
 #   1. package.ps1 (the cook writes the stable shader keys, *.shk)
-#   2. the packaged game plays level 1 by itself without a window (-UghShot, -RenderOffscreen) with -logPSO
+#   2. the packaged game shows the menu and plays a few levels by itself without a window (-UghShot,
+#      -RenderOffscreen) with -logPSO
 #   3. ShaderPipelineCacheTools expands the recorded PSOs with the keys into Build\Windows\PipelineCaches
 #   4. package.ps1 again: the cache goes into the package (and the zip)
 # Windows PowerShell 5.1:
@@ -24,19 +25,18 @@ if (Test-Path $cache) { Remove-Item -Force $cache }
 if ($LASTEXITCODE -ne 0) { Write-Host 'FAILED: first package' -ForegroundColor Red; exit 1 }
 
 if (Test-Path $recorded) { Remove-Item -Recurse -Force $recorded }
-$shot = Join-Path $PSScriptRoot 'Saved\Shots\pso.png'
-$arguments = "-RenderOffscreen -unattended -nosplash -nosound -logPSO `"-UghShot=$shot`" -UghShotAt=10"
-$process = Start-Process -FilePath (Join-Path $game 'UghGame.exe') -ArgumentList $arguments -PassThru
-$null = $process.Handle   # PS 5.1 keeps the exit code only once the handle was read
-if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
-    Stop-Process -Id $process.Id -Force
+$shots = Join-Path $PSScriptRoot 'Saved\Shots\Pso'
+# the menu, a calm and a windy level of one player, the team
+$arguments = "-logPSO `"-UghShot=$shots`" -UghShotMenu -UghShotLevels=1p:1,1p:43,team:1 -UghShotAt=5"
+$code = Invoke-UghOffscreen (Join-Path $game 'UghGame.exe') $arguments $TimeoutSeconds
+if ($code -eq -1) {
     Write-Host "FAILED: the recording run did not end in $TimeoutSeconds s" -ForegroundColor Red
     exit 1
 }
 $records = @(Get-ChildItem $recorded -Filter '*.rec.upipelinecache' -ErrorAction SilentlyContinue)
 $stableKeys = @(Get-ChildItem $keys -Filter "*-$format.shk" -ErrorAction SilentlyContinue)
-if ($process.ExitCode -ne 0 -or $records.Count -eq 0 -or $stableKeys.Count -eq 0) {
-    Write-Host "FAILED: exit code $($process.ExitCode), $($records.Count) recordings, $($stableKeys.Count) key files" -ForegroundColor Red
+if ($code -ne 0 -or $records.Count -eq 0 -or $stableKeys.Count -eq 0) {
+    Write-Host "FAILED: exit code $code, $($records.Count) recordings, $($stableKeys.Count) key files" -ForegroundColor Red
     exit 1
 }
 

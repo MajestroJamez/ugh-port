@@ -12,9 +12,10 @@ namespace
 		int32 LogicKey;   // UGH_LOGIC_KEY_...
 	};
 
-	const FPilotKey* FindPilotKey(const FKey& Key)
+	/** The keys of both pilots; the first one of a logic key is the one FUghKeyboard::KeyOf gives. */
+	const TArray<FPilotKey>& PilotKeys()
 	{
-		static const FPilotKey PilotKeys[] = {
+		static const TArray<FPilotKey> Keys = {
 			{ EKeys::Up, 0, UGH_LOGIC_KEY_UP }, { EKeys::Down, 0, UGH_LOGIC_KEY_DOWN },
 			{ EKeys::Left, 0, UGH_LOGIC_KEY_LEFT }, { EKeys::Right, 0, UGH_LOGIC_KEY_RIGHT },
 			{ EKeys::RightControl, 0, UGH_LOGIC_KEY_FIRE }, { EKeys::SpaceBar, 0, UGH_LOGIC_KEY_FIRE },
@@ -22,15 +23,20 @@ namespace
 			{ EKeys::A, 1, UGH_LOGIC_KEY_LEFT }, { EKeys::D, 1, UGH_LOGIC_KEY_RIGHT },
 			{ EKeys::LeftControl, 1, UGH_LOGIC_KEY_FIRE },
 		};
-		for (const FPilotKey& PilotKey : PilotKeys)
-		{
-			if (PilotKey.Key == Key)
-			{
-				return &PilotKey;
-			}
-		}
-		return nullptr;
+		return Keys;
 	}
+
+	const FPilotKey* FindPilotKey(const FKey& Key)
+	{
+		return PilotKeys().FindByPredicate([&](const FPilotKey& PilotKey) { return PilotKey.Key == Key; });
+	}
+}
+
+FKey FUghKeyboard::KeyOf(int32 Player, int32 LogicKey)
+{
+	const FPilotKey* Found = PilotKeys().FindByPredicate(
+		[&](const FPilotKey& PilotKey) { return PilotKey.Player == Player && PilotKey.LogicKey == LogicKey; });
+	return Found ? Found->Key : FKey();
 }
 
 void FUghKeyboard::Handle(FUghSimulation& Simulation, const FKey& Key, EInputEvent Event)

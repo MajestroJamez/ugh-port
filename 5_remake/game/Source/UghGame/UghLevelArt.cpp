@@ -1,23 +1,16 @@
 #include "UghLevelArt.h"
 
 #include "Dom/JsonObject.h"
-#include "Misc/FileHelper.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
 #include "UghTexture.h"
 
-bool FUghLevelArt::Load(const FString& AssetsDir, FString& OutError)
+bool FUghLevelArt::Load(const FJsonObject& LevelsFile, const FString& Path, FString& OutError)
 {
-	const FString Path = AssetsDir / TEXT("levels.json");
-	FString Text;
-	TSharedPtr<FJsonObject> Root;
 	const TArray<TSharedPtr<FJsonValue>>* Levels = nullptr;
-	if (!FFileHelper::LoadFileToString(Text, *Path) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) ||
-		!Root.IsValid() || !Root->TryGetArrayField(TEXT("levels"), Levels))
+	if (!LevelsFile.TryGetArrayField(TEXT("levels"), Levels))
 	{
-		OutError = FString::Printf(TEXT("cannot read the levels of %s (.\\gradlew.bat :extractor:run)"), *Path);
+		OutError = FString::Printf(TEXT("%s: no levels"), *Path);
 		return false;
 	}
 	Tiles.Reset();

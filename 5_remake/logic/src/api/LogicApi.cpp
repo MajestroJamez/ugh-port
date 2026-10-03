@@ -76,6 +76,16 @@ void addEntity(ugh_logic_view& view, int kind, int index, ugh::units::Fixed x, u
     view.entities[view.entity_count++] = {kind, index, x.raw(), y.raw(), sprite.value_or(-1), bubble.value_or(-1)};
 }
 
+/** The wind as ugh_logic.h gives it. */
+int windDirection(ugh::data::levels::Wind wind) {
+    switch (wind) {
+        case ugh::data::levels::Wind::None: return 0;
+        case ugh::data::levels::Wind::Left: return -1;
+        case ugh::data::levels::Wind::Right: return 1;
+    }
+    return 0;
+}
+
 /** The level and its sprites: copters, passengers, enemies, bonus items, rain. */
 void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     const ugh::world::Level& level = game.level();
@@ -84,6 +94,7 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     view.fade = level.fade().position();
     view.water_level = level.water().level().raw();
     view.water_frame = level.water().surfaceFrame();
+    view.wind = windDirection(level.wind());
     view.copter_count = level.copters().count();
     for (const ugh::world::copter::Copter& c : level.copters().all()) {
         const auto& cargo = c.cabin().cargo();

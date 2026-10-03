@@ -22,8 +22,11 @@ public:
 	AUghCampfire();
 	virtual void Tick(float DeltaSeconds) override;
 
-	/** Puts the fire on the ledge at pixel x, y (its surface); none: hidden. */
-	void Place(const TOptional<FIntPoint>& Where);
+	/**
+	 * Puts the fire on the ledge at pixel x, y (its surface; none: hidden), its flame leaning with the level's wind
+	 * (ugh_logic_view.wind) and flickering more in it.
+	 */
+	void Place(const TOptional<FIntPoint>& Where, int32 Wind);
 	/** The water surface (pixels from the top): the fire burns only while the water is below its ledge. */
 	void SetWater(double Surface);
 
@@ -36,6 +39,7 @@ private:
 	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> FlameMaterial;
 	UPROPERTY() TObjectPtr<UPointLightComponent> Light;
 	TOptional<FIntPoint> Hearth;   // where it stands, pixels
+	float Flicker = 0;   // how much the light flickers, a part of its brightness
 	bool bLit = true;   // shown and flickering, as spawned
 	double Time = 0;
 };

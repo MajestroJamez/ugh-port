@@ -19,7 +19,7 @@ namespace
 	const FLinearColor PassengerColor(0.75f, 0.45f, 0.3f);
 	const FLinearColor EnemyColor(0.45f, 0.5f, 0.12f);
 	const FLinearColor BonusColor(0.9f, 0.75f, 0.1f);
-	const FLinearColor RainColor(0.5f, 0.6f, 0.8f);
+	const FLinearColor RainColor(0.55f, 0.65f, 0.85f);
 
 	/** The figures fill the slab of the play; a bubble is a card in front of it. */
 	constexpr double FigureDepth = 0, FigureThickness = UghShapes::PlaneThickness;
@@ -35,8 +35,8 @@ namespace
 	constexpr double HangingTop = UghShapes::CopterBodyHeight + 1;
 	/** A bubble's card stands this far above its passenger, pixels. */
 	constexpr double BubbleGap = 2;
-	/** A raindrop, pixels. */
-	constexpr double DropWidth = 1, DropHeight = 3;
+	/** A raindrop: a stroke of clay this long and thick (pixels) trailing behind it, along its way (with the wind). */
+	constexpr double DropLength = 4, DropWidth = 1;
 
 	/** A position (1/32 px) in pixels. */
 	FVector2D Pixels(int32 X, int32 Y)
@@ -88,7 +88,7 @@ void AUghFigures::BeginPlay()
 	Passengers = Clay(EShape::Cylinder, PassengerColor);
 	Enemies = Clay(EShape::Sphere, EnemyColor);
 	BonusItems = Clay(EShape::Cone, BonusColor);
-	Raindrops = Clay(EShape::Cube, RainColor);
+	Raindrops = Clay(EShape::Cylinder, RainColor);
 }
 
 void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
@@ -220,11 +220,18 @@ void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites&
 
 void AUghFigures::ShowRain(const ugh_logic_view& Current)
 {
+	// a drop falls as many pixels down as with the wind each step (45 degrees): a cylinder (along Z) laid that way
+	const FVector2D Way = FVector2D(Current.wind, 1).GetSafeNormal();
+	const FVector Along = (UghShapes::ToWorld(Way.X, Way.Y, 0) - UghShapes::ToWorld(0, 0, 0)).GetSafeNormal();
+	const FQuat Turn = FRotationMatrix::MakeFromZY(Along, FVector::YAxisVector).ToQuat();
+	const double Across = DropWidth * UghShapes::UnitsPerPixel / UghShapes::ShapeSize;
+	const FVector Scale(Across, Across, DropLength * UghShapes::UnitsPerPixel / UghShapes::ShapeSize);
 	TArray<FTransform> Drops;
 	for (int32 I = 0; I < Current.raindrop_count; ++I)
 	{
-		Drops.Add(UghShapes::Box(Current.raindrops[I][0], Current.raindrops[I][1], DropWidth, DropHeight, FigureDepth,
-			FigureThickness / 4));
+		const FVector2D Middle = FVector2D(Current.raindrops[I][0] + 0.5, Current.raindrops[I][1] + 0.5) -
+			Way * DropLength / 2;
+		Drops.Add(FTransform(Turn, UghShapes::ToWorld(Middle.X, Middle.Y, FigureDepth), Scale));
 	}
 	UghShapes::SetShapes(Raindrops, Drops);
 }

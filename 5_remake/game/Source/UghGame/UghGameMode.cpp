@@ -1,6 +1,7 @@
 #include "UghGameMode.h"
 
 #include "Camera/PlayerCameraManager.h"
+#include "Dom/JsonObject.h"
 #include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/CommandLine.h"
@@ -10,6 +11,7 @@
 #include "UghCampfire.h"
 #include "UghFigures.h"
 #include "UghHud.h"
+#include "UghJson.h"
 #include "UghKeyboard.h"
 #include "UghPlayerController.h"
 #include "UghRockMesh.h"
@@ -51,7 +53,10 @@ void AUghGameMode::StartPlay()
 	bShooting = Shot.Configure();
 
 	const FString Assets = AssetsDir();
-	if (!Sprites.Load(Assets, Problem) || !LevelArt.Load(Assets, Problem) ||
+	const FString LevelsPath = Assets / UghJson::LevelsFile;
+	TSharedPtr<FJsonObject> Levels;
+	if (!Sprites.Load(Assets, Problem) || !UghJson::ReadObject(LevelsPath, Levels, Problem) ||
+		!LevelArt.Load(*Levels, LevelsPath, Problem) || !Passwords.Load(*Levels, LevelsPath, Problem) ||
 		!Simulation.Load(Assets / TEXT("logic/ugh-data.ugd"), Problem))
 	{
 		UE_LOG(LogTemp, Error, TEXT("UGH no game: %s"), *Problem);
@@ -61,7 +66,8 @@ void AUghGameMode::StartPlay()
 		}
 		return;
 	}
-	Simulation.NewGame();
+	Previewed = Menu.GetChoice();
+	Simulation.Preview(Previewed);
 }
 
 /** The stage (light, air, camera), the level's background, the figures, the campfire. */
@@ -82,11 +88,18 @@ void AUghGameMode::BuildStage()
 void AUghGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	Simulation.Advance(DeltaSeconds);
+	if (!bInMenu)
+	{
+		Simulation.Advance(DeltaSeconds);
+		if (Simulation.IsOver())
+		{
+			OpenMenu();
+		}
+	}
 	ShowFrame();
 	if (bShooting)
 	{
-		switch (Shot.Tick(Simulation, DeltaSeconds))
+		switch (Shot.Tick(*this, DeltaSeconds))
 		{
 		case FUghShot::EAction::TakeShot: FScreenshotRequest::RequestScreenshot(Shot.GetPath(), false, false); break;
 		case FUghShot::EAction::Quit: Quit(); break;
@@ -108,9 +121,13 @@ void AUghGameMode::ShowFrame()
 	Campfire->SetWater(Water / UghShapes::Subpixels);
 	Figures->Show(Previous, Current, Simulation.Alpha(), Sprites);
 
-	// the fade of the play; black around it (the HUD writes the captions)
-	const double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY
+	// the fade of the play; black around it (the HUD writes the captions); dimmed behind the menu
+	double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY
 		? FMath::Clamp(double(Current.fade) / UghShapes::FadeShown, 0.0, 1.0) : 0.0;
+	if (bInMenu && Current.level_id >= 0)
+	{
+		Shown = MenuShown;
+	}
 	if (APlayerController* Controller = GetWorld()->GetFirstPlayerController())
 	{
 		if (Controller->PlayerCameraManager)
@@ -129,11 +146,21 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	Rock.Build(Simulation.GetLogic());
 	Background->Build(Rock, LevelArt.Draw(Background, View.level_id, Sprites));
 	Campfire->Place(View.level_id < 0 ? TOptional<FIntPoint>()
-		: Rock.FindHearth(Simulation.GetLogic(), View.water_level / UghShapes::Subpixels));
+		: Rock.FindHearth(Simulation.GetLogic(), View.water_level / UghShapes::Subpixels), View.wind);
+	Stage->SetWind(View.wind);
 }
 
 bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 {
+	// the menu takes every key (U and G are in passwords)
+	if (bInMenu && Simulation.IsLoaded())
+	{
+		if (Event == IE_Pressed)
+		{
+			HandleMenuKey(Key);
+		}
+		return true;
+	}
 	// the frontend's keys: their releases are not keys of the game either (a caption would take one)
 	if (Key == EKeys::U || Key == EKeys::G)
 	{
@@ -151,20 +178,48 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 	{
 		return false;
 	}
-	if (Simulation.IsOver())
+	if (Event == IE_Released && Key == StartKey)
 	{
-		if (Event == IE_Pressed && Key == EKeys::Enter)
-		{
-			Simulation.NewGame();
-		}
-		else if (Event == IE_Pressed && Key == EKeys::Escape)
-		{
-			Quit();
-		}
+		StartKey = FKey();   // a caption would take it
 		return true;
 	}
 	FUghKeyboard::Handle(Simulation, Key, Event);
 	return true;
+}
+
+void AUghGameMode::HandleMenuKey(const FKey& Key)
+{
+	switch (Menu.HandleKey(Key))
+	{
+	case FUghMenu::EAction::Play:
+		if (Simulation.NewGame(Menu.GetChoice()))
+		{
+			bInMenu = false;
+			StartKey = Key;
+		}
+		break;
+	case FUghMenu::EAction::Quit:
+		Quit();
+		break;
+	default:
+		if (Menu.GetChoice() != Previewed)
+		{
+			Previewed = Menu.GetChoice();
+			Simulation.Preview(Previewed);
+		}
+		break;
+	}
+}
+
+void AUghGameMode::OpenMenu()
+{
+	const ugh_logic_view& View = Simulation.GetCurrent();
+	LastGame = Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE
+		? FString::Printf(TEXT("All levels done! Score %u"), View.score)
+		: FString::Printf(TEXT("Game over in level %d, score %u"), View.level + 1, View.score);
+	bInMenu = true;
+	Previewed = Menu.GetChoice();
+	Simulation.Preview(Previewed);
 }
 
 void AUghGameMode::Quit()

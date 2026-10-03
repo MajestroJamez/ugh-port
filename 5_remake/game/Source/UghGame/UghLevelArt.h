@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 
+class FJsonObject;
 class FUghSprites;
 class UTexture2D;
 
@@ -14,8 +15,8 @@ class UTexture2D;
 class FUghLevelArt
 {
 public:
-	/** Reads levels.json in `AssetsDir`; false and the reason when it cannot. */
-	bool Load(const FString& AssetsDir, FString& OutError);
+	/** Takes the tiles of the levels' file (UghJson::LevelsFile) read from `Path`; false and the reason when not. */
+	bool Load(const FJsonObject& LevelsFile, const FString& Path, FString& OutError);
 
 	/** The drawing of level `LevelId` as a texture of the screen's size (black when the level is unknown). */
 	UTexture2D* Draw(UObject* Outer, int32 LevelId, const FUghSprites& Sprites) const;

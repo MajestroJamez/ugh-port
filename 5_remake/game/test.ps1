@@ -1,8 +1,8 @@
-# Runs the golden replays inside Unreal Engine (automation tests Ugh.Replays.*), without a window. -Filter: other
-# tests (a part of the name; several joined by +). Windows PowerShell 5.1:
+# Runs the automation tests inside Unreal Engine without a window: the golden replays (Ugh.Replays.*) and the menu
+# (Ugh.Menu). -Filter: other tests (a part of the name; several joined by +). Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\test.ps1
 # Needs build.ps1, the data (.\gradlew.bat :extractor:run) and the replays (.\gradlew.bat :verify:replays).
-param([string]$Filter = 'Ugh.Replays')
+param([string]$Filter = 'Ugh.')
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')

@@ -14,7 +14,10 @@ namespace
 	/** In pixels: the logs, the flame above them; the light this high above the ledge. */
 	constexpr double LogLength = 12, LogHeight = 2, FlameWidth = 6, FlameHeight = 10, LightHeight = 8;
 	/** The light: its brightness (candela) and reach (units); how much and how fast it flickers. */
-	constexpr float LightIntensity = 40.f, LightRadius = 900.f, Flicker = 0.25f, FlickerSpeed = 7.f;
+	constexpr float LightIntensity = 40.f, LightRadius = 900.f, FlickerSpeed = 7.f;
+	constexpr float CalmFlicker = 0.25f, WindFlicker = 0.5f;
+	/** In the wind the flame leans (degrees) and its light is blown aside (pixels). */
+	constexpr double WindLean = 30, WindLightShift = 3;
 	constexpr float FlameGlow = 4.f;
 }
 
@@ -41,12 +44,13 @@ void AUghCampfire::BeginPlay()
 	Light->SetAttenuationRadius(LightRadius);
 	Light->RegisterComponent();
 	AddInstanceComponent(Light);
-	Place({});
+	Place({}, 0);
 }
 
-void AUghCampfire::Place(const TOptional<FIntPoint>& Where)
+void AUghCampfire::Place(const TOptional<FIntPoint>& Where, int32 Wind)
 {
 	Hearth = Where;
+	Flicker = Wind == 0 ? CalmFlicker : WindFlicker;
 	SetWater(UghShapes::ScreenHeight);
 	if (!Hearth.IsSet())
 	{
@@ -60,9 +64,16 @@ void AUghCampfire::Place(const TOptional<FIntPoint>& Where)
 	const FVector Scale(Across, Across, Along);
 	UghShapes::SetShapes(Logs,
 		{ FTransform(FRotator(90, 30, 0), Centre, Scale), FTransform(FRotator(90, -30, 0), Centre, Scale) });
-	UghShapes::SetShapes(Flame, { UghShapes::Box(X - FlameWidth / 2, Y - LogHeight - FlameHeight, FlameWidth, FlameHeight,
-		0, FlameWidth * UghShapes::UnitsPerPixel) });
-	Light->SetWorldLocation(UghShapes::ToWorld(X, Y - LightHeight, 0));
+	// the cone (along Z) standing on the logs, leaning with the wind
+	const double Lean = FMath::DegreesToRadians(WindLean * Wind);
+	const FVector Base = UghShapes::ToWorld(X, Y - LogHeight, 0);
+	const FVector Tip = UghShapes::ToWorld(X + FMath::Sin(Lean), Y - LogHeight - FMath::Cos(Lean), 0);
+	const FVector Up = (Tip - Base).GetSafeNormal();
+	const double Width = FlameWidth * UghShapes::UnitsPerPixel / UghShapes::ShapeSize;
+	const double Height = FlameHeight * UghShapes::UnitsPerPixel;
+	UghShapes::SetShapes(Flame, { FTransform(FRotationMatrix::MakeFromZY(Up, FVector::YAxisVector).ToQuat(),
+		Base + Up * Height / 2, FVector(Width, Width, Height / UghShapes::ShapeSize)) });
+	Light->SetWorldLocation(UghShapes::ToWorld(X + WindLightShift * Wind, Y - LightHeight, 0));
 }
 
 void AUghCampfire::Tick(float DeltaSeconds)

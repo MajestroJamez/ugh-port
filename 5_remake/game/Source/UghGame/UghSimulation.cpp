@@ -27,14 +27,17 @@ bool FUghSimulation::Load(const FString& DataPath, FString& OutError)
 	return Logic != nullptr;
 }
 
-void FUghSimulation::NewGame()
+bool FUghSimulation::NewGame(const FUghGameChoice& Choice)
 {
 	if (!Logic)
 	{
-		return;
+		return false;
 	}
 	ugh_logic_settings Settings;
 	ugh_logic_default_settings(&Settings);
+	Settings.players = Choice.Players;
+	Settings.difficulty = Choice.Difficulty;
+	Settings.first_level = Choice.FirstLevel;
 	const int64 Ticks = FDateTime::Now().GetTicks();
 	for (int32 Word = 0; Word < UE_ARRAY_COUNT(Settings.random_seed); ++Word)
 	{
@@ -44,6 +47,23 @@ void FUghSimulation::NewGame()
 	ugh_logic_get_view(Logic, &CurrentView);
 	PreviousView = CurrentView;
 	Waiting = 0;
+	return !IsOver();
+}
+
+void FUghSimulation::Preview(const FUghGameChoice& Choice)
+{
+	if (!NewGame(Choice))
+	{
+		return;
+	}
+	for (int32 Step = 0; Step < MaxPreviewSteps && CurrentView.level_id < 0; ++Step)
+	{
+		ugh_logic_step(Logic);
+		ugh_logic_get_view(Logic, &CurrentView);
+	}
+	ugh_logic_take_events(Logic, [](void*, const ugh_logic_event*) {}, nullptr);
+	PreviousView = CurrentView;
+	Result = UGH_LOGIC_GAME_OVER;
 }
 
 void FUghSimulation::Key(int32 Player, int32 LogicKey, bool bPressed)

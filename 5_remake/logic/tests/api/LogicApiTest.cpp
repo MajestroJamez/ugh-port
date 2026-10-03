@@ -54,6 +54,7 @@ TEST(the_c_api_plays_a_game_and_shows_it) {
     CHECK_EQUAL(4, view.entity_count);   // two passengers with a route, the standing one, the tree
     CHECK_EQUAL(static_cast<int>(UGH_LOGIC_ENTITY_ENEMY), view.entities[3].kind);
     CHECK_EQUAL(0, view.raindrop_count);
+    CHECK_EQUAL(0, view.wind);
     ugh_logic_destroy(logic);
 }
 
@@ -80,5 +81,23 @@ TEST(the_c_api_shows_the_background_of_the_level) {
         for (int x = 0; x < UGH_LOGIC_SCREEN_WIDTH; x++) solid += ugh_logic_solid(logic, x, y);
     CHECK(solid > 0 && solid < UGH_LOGIC_SCREEN_WIDTH * UGH_LOGIC_SCREEN_HEIGHT);
     CHECK_EQUAL(0, ugh_logic_solid(logic, -1, 0));
+    ugh_logic_destroy(logic);
+}
+
+TEST(the_c_api_shows_the_wind_and_its_rain) {
+    char err[200] = "";
+    ugh_logic* logic = ugh_logic_create(ugh::test::dataPath().c_str(), err, sizeof err);
+    CHECK(logic != nullptr);
+    if (!logic) return;
+    ugh_logic_settings settings;
+    ugh_logic_default_settings(&settings);
+    settings.first_level = 42;   // level 43 of one player: the wind blows to the left
+    CHECK_EQUAL(1, ugh_logic_new_game(logic, &settings));
+    for (int frame = 0; frame < 9; frame++) ugh_logic_step(logic);
+    ugh_logic_view view;
+    ugh_logic_get_view(logic, &view);
+    CHECK_EQUAL(44, view.level_id);
+    CHECK_EQUAL(-1, view.wind);
+    CHECK(view.raindrop_count > 0);
     ugh_logic_destroy(logic);
 }

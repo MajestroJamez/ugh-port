@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "ugh_logic.h"
+#include "UghMenu.h"
 
 /**
  * The game logic (its C API) stepped at the original's fixed tick, 70.086 Hz, whatever the frame rate: Advance runs
@@ -24,9 +25,14 @@ public:
 	bool Load(const FString& DataPath, FString& OutError);
 	bool IsLoaded() const { return Logic != nullptr; }
 
-	/** A new one-player game on medium from the first level, its random numbers seeded by the time. */
-	void NewGame();
-	/** The game is over (lost or won) or not started: the logic is not stepped. */
+	/** A new game as chosen, its random numbers seeded by the time; false when the logic refuses the choice. */
+	bool NewGame(const FUghGameChoice& Choice);
+	/**
+	 * The first level of `Choice` without playing it (behind the menu): a new game stepped until the level is loaded;
+	 * then it is over (IsOver) and Advance does nothing.
+	 */
+	void Preview(const FUghGameChoice& Choice);
+	/** The game is over (lost or won), not started or a preview: the logic is not stepped. */
 	bool IsOver() const { return Result != UGH_LOGIC_CONTINUE; }
 	/** UGH_LOGIC_GAME_OVER or UGH_LOGIC_ALL_LEVELS_DONE once over. */
 	int32 GetResult() const { return Result; }
@@ -50,6 +56,8 @@ public:
 
 private:
 	static constexpr int32 MaxStepsPerFrame = 8;
+	/** A new game loads its first level within these steps (with its caption, after 9). */
+	static constexpr int32 MaxPreviewSteps = 100;
 
 	ugh_logic* Logic = nullptr;
 	ugh_logic_view PreviousView;

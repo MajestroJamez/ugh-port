@@ -1,9 +1,11 @@
-// The game: the logic, its keys and its diorama.
+// The game: the menu, the logic, its keys and its diorama.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "UghLevelArt.h"
+#include "UghMenu.h"
+#include "UghPasswords.h"
 #include "UghShot.h"
 #include "UghSimulation.h"
 #include "UghSprites.h"
@@ -16,13 +18,14 @@ class AUghFigures;
 class AUghStage;
 
 /**
- * The remake: runs the logic at its own tick (FUghSimulation), passes it the keys (FUghKeyboard) and shows each frame
- * between two of its steps in the diorama (AUghStage, AUghBackground, AUghFigures, AUghCampfire, the HUD). No map: the
- * scene is built here. Keys of the frontend: U the next upscaler, G the frame generation; when the game is over Enter
- * starts a new one and Esc quits.
+ * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
+ * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground,
+ * AUghFigures, AUghCampfire, the HUD); the end of a game goes back to the menu. Behind the menu the diorama shows the
+ * level the menu would start, dimmed. No map: the scene is built here. Keys of the frontend (in a game): U the next
+ * upscaler, G the frame generation.
  *
  * -UghAssets=<folder> reads the data from elsewhere than assets/ (of the package, else of the repository).
- * -UghShot: the game plays by itself for a screenshot (FUghShot).
+ * -UghShot=<folder>: the game plays by itself for screenshots (FUghShot).
  */
 UCLASS()
 class AUghGameMode : public AGameModeBase
@@ -34,29 +37,46 @@ public:
 	virtual void StartPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	/** A key event from the player controller; true when the game used it. */
+	/** A key event from the player controller (or the autopilot of FUghShot); true when the game used it. */
 	bool HandleKey(const FKey& Key, EInputEvent Event);
-	/** The keys of the frontend (HandleKey), for the HUD: always, and when the game is over. */
+	/** The keys of the frontend (HandleKey), for the HUD. */
 	static const TCHAR* KeysHelp() { return TEXT("U upscaler, G frame generation"); }
-	static const TCHAR* GameOverKeysHelp() { return TEXT("Enter: a new game   Esc: quit"); }
 
 	const FUghSimulation& GetSimulation() const { return Simulation; }
 	const FUghUpscaler& GetUpscaler() const { return Upscaler; }
+	const FUghPasswords& GetPasswords() const { return Passwords; }
+	/** The menu is shown (no game is played). */
+	bool IsInMenu() const { return bInMenu; }
+	const FUghMenu& GetMenu() const { return Menu; }
+	/** How the last game ended, for the menu; empty before the first one. */
+	const FString& GetLastGame() const { return LastGame; }
 	/** Why there is no game (the data cannot be read); empty when there is one. */
 	const FString& GetProblem() const { return Problem; }
 
 private:
+	/** How much of the level the menu lets through, 0 .. 1. */
+	static constexpr double MenuShown = 0.45;
+
 	void BuildStage();
 	void ShowFrame();
 	void BuildLevel(const ugh_logic_view& View);
+	void HandleMenuKey(const FKey& Key);
+	/** Back to the menu after a game: how it ended, the level of the menu's choice behind it. */
+	void OpenMenu();
 	void Quit();
 
 	FUghSimulation Simulation;
 	FUghSprites Sprites;
 	FUghLevelArt LevelArt;
+	FUghPasswords Passwords;
+	FUghMenu Menu{ Passwords };
 	FUghUpscaler Upscaler;
 	FUghShot Shot;
 	bool bShooting = false;   // -UghShot
+	bool bInMenu = true;
+	FUghGameChoice Previewed;   // whose level the diorama shows behind the menu
+	FKey StartKey;              // the key that started the game: its release is not a key of the game
+	FString LastGame;
 	FString Problem;
 
 	UPROPERTY() TObjectPtr<AUghStage> Stage;

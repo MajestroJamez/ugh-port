@@ -537,3 +537,13 @@ plastelínové modely postav místo tvarů.
   `pso.ps1` (nahrání PSO zabalenou hrou, expand jen s klíči `PCD3D_SM6` - smíchané SM5 shodí cook, druhé balení):
   47 PSO předkompilováno při startu. Review agentem: 8 nálezů opraveno. 43 testů + 3 + 161 replayů (CMake) a 161
   replayů v UE zelených. Další: Jan odehraje level 1 (`play.ps1`), pak **krok 12** (zatím nenaplánovaný).
+- 2026-10-03: krok 12 hotový (bez Janova ručního odehrání v okně) - menu před hrou (`FUghMenu`: jeden hráč / tým,
+  obtížnost, heslo z `assets/levels.json` vč. číslic `1983`; za menu ztlumené dioráma levelu, který by spustilo; konec
+  hry zpět do menu s výsledkem), test `Ugh.Menu`. C API má `ugh_logic_view.wind`. Bouřka ve větrných levelech (slabší
+  chladné slunce, hustá šedá mlha), plamen ohniště se kloní po větru, kapky jako plastelínové čárky šikmo po větru;
+  tmavý pruh pod stavovým řádkem (byl nečitelný přes skálu nahoře). Autopilot `FUghShot` startuje levely z menu klávesami
+  hráče (režim, heslo, Enter) a po snímku hru vzdá: `shot.ps1 -Level <n> [-Team]`, `levels.ps1` (všech 69 + 81 levelů
+  za 22 min, kontaktní archy `Saved\Shots\Levels\levels-1p.png` / `levels-team.png`) - v přehledu žádný level nemá vadu
+  (ohniště, voda i stoupající voda, okraje). Review agentem: 6 nálezů opraveno, druhé kolo čisté. CTest logiky
+  a `6_verification` (163, s 161 replayi) a 162 testů v UE zelené. Další: Jan odehraje menu v obou režimech
+  (`play.ps1`), pak **krok 13**.

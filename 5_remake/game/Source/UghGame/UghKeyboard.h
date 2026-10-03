@@ -19,4 +19,6 @@ public:
 	static void Handle(FUghSimulation& Simulation, const FKey& Key, EInputEvent Event);
 	/** The keys above, for the HUD. */
 	static const TCHAR* Help();
+	/** The key pilot `Player` (0 or 1) presses for `LogicKey` (UGH_LOGIC_KEY_...); the first one of two. */
+	static FKey KeyOf(int32 Player, int32 LogicKey);
 };
