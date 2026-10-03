@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 #include "data/ugd/DataFileReader.hpp"
 #include "events/EventQueue.hpp"
@@ -35,6 +36,18 @@ static_assert(eventKind(ugh::events::EventKind::BonusCollected) == UGH_LOGIC_EVE
 
 // every raindrop fits into the view
 static_assert(ugh::world::scenery::Rain::DROPS <= UGH_LOGIC_RAINDROPS);
+
+// the values ugh_logic.h documents: the effect of a collected bonus item, the difficulty
+static_assert(static_cast<int>(ugh::data::kinds::BonusEffect::Energy) == 0 &&
+              static_cast<int>(ugh::data::kinds::BonusEffect::Life) == 1 &&
+              static_cast<int>(ugh::data::kinds::BonusEffect::Multiplier) == 2);
+static_assert(static_cast<int>(ugh::data::Difficulty::Easy) == 0 &&
+              static_cast<int>(ugh::data::Difficulty::Medium) == 1 &&
+              static_cast<int>(ugh::data::Difficulty::Hard) == 2);
+
+// the words of the random numbers
+constexpr size_t SEED_WORDS = std::tuple_size_v<ugh::world::session::RandomNumbers::Words>;
+static_assert(SEED_WORDS == std::extent_v<decltype(ugh_logic_settings::random_seed)>);
 
 int phase(ugh::game::GamePhase p) {
     switch (p) {
@@ -124,7 +137,7 @@ void ugh_logic_default_settings(ugh_logic_settings* settings) {
     settings->players = defaults.players;
     settings->difficulty = static_cast<int>(defaults.difficulty);
     settings->first_level = defaults.firstLevel;
-    for (int i = 0; i < 4; i++) settings->random_seed[i] = defaults.randomSeed[i];
+    for (size_t i = 0; i < SEED_WORDS; i++) settings->random_seed[i] = defaults.randomSeed[i];
     settings->rain_floor_row = defaults.rainFloorRow;
 }
 
@@ -134,7 +147,7 @@ int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings) {
     // any int is a value of the enum (its type is int); newGame refuses one outside the difficulties
     s.difficulty = static_cast<ugh::data::Difficulty>(settings->difficulty);
     s.firstLevel = settings->first_level;
-    for (int i = 0; i < 4; i++) s.randomSeed[i] = settings->random_seed[i];
+    for (size_t i = 0; i < SEED_WORDS; i++) s.randomSeed[i] = settings->random_seed[i];
     s.rainFloorRow = settings->rain_floor_row;
     if (!logic->game.newGame(s)) return 0;
     logic->events.take();

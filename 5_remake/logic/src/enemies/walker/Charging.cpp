@@ -24,11 +24,11 @@ void Charging::update(Walker& walker, const EnemyContext& context) const {
     }
     walker.turnTo(*copter);
     walker.charge().faster(walker.facing());
-    walker.moveToX(walker.x() + walker.chargeSpeed());
+    walker.moveToX(walker.x() + walker.runSpeed());
     world::copter::Copter* hit =
         physics::TouchBox(walker.kind().box, walker.x(), walker.y()).firstCopterIn(level.copters());
     if (!hit) return;
-    hit->throwUp(walker.chargeSpeed());
+    hit->throwUp(walker.runSpeed());
     walker.changeState(Recovering::instance, context);
 }
 

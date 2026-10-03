@@ -12,7 +12,11 @@ void OnPickupPad::update(RoutePassenger& passenger, const PassengerContext& cont
     stay(passenger, context);
 }
 
-/** The water rose to the middle of its body (half the way from its top to its feet): it is in the water. */
+/**
+ * The water rose to the middle of its body (half the way from its top to its feet): it is in the water. Quirk of the
+ * original: it is put with its top box.y below the surface (its feet a body's height under water), not with its feet
+ * at the surface as floatOnSurface and Splash put it; the splash then starts from there.
+ */
 bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
     const data::kinds::Box& box = passenger.kind().box;
     int surface = context.level.water().row();

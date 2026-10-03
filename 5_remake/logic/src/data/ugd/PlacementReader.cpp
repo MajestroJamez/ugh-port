@@ -75,7 +75,7 @@ bool PlacementReader::readStandingPassenger(const UgdRecord&) {
 
 bool PlacementReader::readFlyer(const UgdRecord&) {
     int startDelay = 0, speed = 0;
-    if (!in_.only({"startDelay", "speed"}) || !in_.number("startDelay", startDelay) || !in_.number("speed", speed))
+    if (!in_.only({"startDelay", "speed"}) || !in_.frameCount("startDelay", startDelay) || !in_.number("speed", speed))
         return false;
     level_->enemies.push_back(std::make_unique<levels::FlyerPlacement>(startDelay, Fixed::fromRaw(speed)));
     return true;

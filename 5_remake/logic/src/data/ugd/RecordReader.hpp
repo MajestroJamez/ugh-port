@@ -27,6 +27,8 @@ public:
     bool only(std::initializer_list<const char*> keys);
     bool text(const char* key, std::string& out);
     bool number(const char* key, int& out);
+    /** A number of frames a countdown starts with: above 0 (`units::Countdown` counts only from there). */
+    bool frameCount(const char* key, int& out);
     /** A list `a,b,...`; `count` 0: any length. */
     bool numbers(const char* key, size_t count, std::vector<int>& out);
     /** A range `first..last`. */

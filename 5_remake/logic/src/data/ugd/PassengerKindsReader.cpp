@@ -35,7 +35,7 @@ bool PassengerKindsReader::readSwimmerKind(const UgdRecord& r, const kinds::Box&
     int rescuable = 0;
     if (!in_.only({"type", "box", "standing", "waving", "walk", "animDelay", "fare", "fareMin", "swimTime", "landKind",
                    "rescuable"}) ||
-        !in_.number("swimTime", kind->swimTime) || !in_.number("rescuable", rescuable) || !readAnimated(*kind))
+        !in_.frameCount("swimTime", kind->swimTime) || !in_.number("rescuable", rescuable) || !readAnimated(*kind))
         return false;
     kind->rescuable = rescuable != 0;
     kind->name = r.name;
@@ -57,7 +57,7 @@ bool PassengerKindsReader::readStandingKind(const UgdRecord& r, const kinds::Box
 
 bool PassengerKindsReader::readAnimated(kinds::AnimatedPassengerKind& kind) {
     return animations_.animation("standing", kind.standing) && animations_.animation("waving", kind.waving) &&
-           animations_.pair("walk", kind.walking) && in_.number("animDelay", kind.animDelay) &&
+           animations_.pair("walk", kind.walking) && in_.frameCount("animDelay", kind.animDelay) &&
            in_.number("fare", kind.fare) && in_.number("fareMin", kind.fareMin);
 }
 

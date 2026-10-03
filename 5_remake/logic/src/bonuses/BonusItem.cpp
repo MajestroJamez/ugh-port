@@ -13,7 +13,7 @@ BonusItem::BonusItem(int slot, const data::kinds::BonusKind& kind, Fixed x, Fixe
       StateMachine(Falling::instance),
       kind_(&kind),
       speedX_(speedX),
-      fallSpeed_(-(lift + Fixed::fromRaw(kind.lift))) {
+      fallSpeed_(-(lift + kind.lift)) {
     showSprite(kind.sprite);
 }
 

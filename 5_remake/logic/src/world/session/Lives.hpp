@@ -18,7 +18,10 @@ public:
     bool lose() { return --count_ > 0; }
     /** More lives (a bonus item), at most MAX. */
     void add(int amount) { count_ = count_ + amount > MAX ? MAX : count_ + amount; }
-    /** Esc gives the game up: the attempt that ends is the last one. */
+    /**
+     * Esc gives the game up: no life is left, so the attempt that ends is the last - unless its level is done anyway
+     * (the last passenger was delivered), then the next level is played without a life, as in the original.
+     */
     void giveUp() { count_ = 0; }
 
 private:

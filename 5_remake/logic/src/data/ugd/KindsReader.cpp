@@ -43,15 +43,17 @@ bool KindsReader::readBonusKind(const UgdRecord& r) {
     kind->name = r.name;
     std::string effect;
     std::vector<int> anchor;
+    int lift = 0;
     if (r.name.empty() || bonusKinds_.count(r.name)) return in_.fail("a bonus kind without a name or twice");
     if (!in_.only({"effect", "amount", "lift", "sprite", "anchor"}) || !in_.text("effect", effect) ||
-        !in_.number("amount", kind->amount) || !in_.number("lift", kind->lift) || !in_.number("sprite", kind->sprite) ||
+        !in_.number("amount", kind->amount) || !in_.number("lift", lift) || !in_.number("sprite", kind->sprite) ||
         !in_.numbers("anchor", 2, anchor))
         return false;
     if (effect == "energy") kind->effect = kinds::BonusEffect::Energy;
     else if (effect == "life") kind->effect = kinds::BonusEffect::Life;
     else if (effect == "multiplier") kind->effect = kinds::BonusEffect::Multiplier;
     else return in_.fail("unknown effect " + effect);
+    kind->lift = units::Fixed::fromRaw(lift);
     kind->anchorX = anchor[0];
     kind->anchorY = anchor[1];
     bonusKinds_[r.name] = kind.get();

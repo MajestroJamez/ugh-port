@@ -6,7 +6,7 @@ void GameState::reset(const data::Rules& rules, const NewGameSettings& settings)
     session.emplace(rules, settings.players, settings.difficulty, settings.firstLevel,
                     world::session::RandomNumbers(settings.randomSeed));
     level = world::Level(settings.players);
-    level.rain().setFloorRow(settings.rainFloorRow);
+    level.rain().stopAt(settings.rainFloorRow);
     passengers = passengers::Passengers();
     enemies = enemies::Enemies();
     bonuses.clear();

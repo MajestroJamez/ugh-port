@@ -30,13 +30,16 @@ public:
         return true;
     }
 
-    /** The sprite of the frame in `animation`, from its start again after its end. */
+    /**
+     * The sprite of the frame in `animation`, from its start again after its end. Only after a step: right after
+     * restart() there is no frame yet (the first step after it is due at once, and the states step before they show).
+     */
     int show(const data::kinds::Animation& animation) {
         if (animation.endsAt(frame_)) frame_ = 0;
         return animation.frame(frame_);
     }
 
-    /** The sprite of the frame in `animation` (an animation that runs once). */
+    /** The sprite of the frame in `animation` (an animation that runs once). Only after a step, as show(). */
     int frameOf(const data::kinds::Animation& animation) const { return animation.frame(frame_); }
 
     /** The animation that runs once is over. */

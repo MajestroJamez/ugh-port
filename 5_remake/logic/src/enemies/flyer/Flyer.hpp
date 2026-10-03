@@ -30,7 +30,7 @@ public:
     /** It flies towards `side`: its speed and its flight animation point there. */
     void flyTowards(data::kinds::Facing side);
 
-    /** The player it hunted last (before its first flight: 1, so that it hunts player 0 first). */
+    /** The player it hunts now, or hunted last (before its first flight: 1, so that it hunts player 0 first). */
     int lastTarget() const { return lastTarget_; }
     /** The next target: the other player in the team mode, else player 0. */
     int takeNextTarget(int players);

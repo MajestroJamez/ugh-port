@@ -98,6 +98,10 @@ TEST(broken_files_are_refused_with_the_line) {
                 readError(VALID +
                           "level 0 toDeliver=1 wind=none start0=0,0 start1=0,0 water=0 waterSpeed=0\n"
                           "walker pad=3 x=0 y=0 speed=0\n"));
+    CHECK_EQUAL(std::string("line 11 (flyer): startDelay must be above 0"),
+                readError(VALID +
+                          "level 0 toDeliver=1 wind=none start0=0,0 start1=0,0 water=0 waterSpeed=0\n"
+                          "flyer startDelay=0 speed=1\n"));
     CHECK_EQUAL(std::string("line 10 (level): level 0: 0 mask rows"),
                 readError(VALID +
                           "level 0 toDeliver=1 wind=none start0=0,0 start1=0,0 water=0 waterSpeed=0\n"));

@@ -101,8 +101,8 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
   a table "record type -> its method" (`RecordTable`, like method references in Java): a new record type is one line
   in the table and one method. `LevelReader` reads a level and the parts after it in order, `AnimationsReader` one
   type: they pick by type in their code.
-- **Template Method**: `passengers::route::OnPickupPad`: the states on the pickup pad check the water and the copters
-  every frame, then do their own part (`walk`, `stay`).
+- **Template Method**: `passengers::route::OnPickupPad`: every frame the states on the pickup pad check the water (it
+  may fall in), do their own `walk`, check a copter in the air (it may knock it in), then do their own `stay`.
 
 No exceptions, no RTTI, no macros (the library builds as an Unreal Engine module), templates only where they remove
 copies (`state/`, `RecordTable`): errors come back as values (`DataFileReader::read` returns nullptr and the

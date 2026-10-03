@@ -18,8 +18,8 @@ public:
     world::copter::Copter* carrier() { return carrier_; }
     const world::copter::Copter* carrier() const { return carrier_; }
 
-    /** One frame of the ride. */
-    void tick() { quickDelivery_.tickToZero(); }
+    /** One frame of the ride; true when a delivery is no longer quick (and from then on). */
+    bool tick() { return quickDelivery_.tickToZero(); }
     bool quick() const { return quickDelivery_.remaining() != 0; }
     int quickDeliveryTime() const { return quickDelivery_.remaining(); }
 

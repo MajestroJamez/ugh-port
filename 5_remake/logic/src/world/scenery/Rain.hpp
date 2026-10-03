@@ -32,11 +32,13 @@ public:
     void move(int waterRow, data::levels::Wind wind, session::RandomNumbers& random,
               events::Diagnostics& diagnostics);
 
-    /** The water surface shown this frame becomes the floor row. */
-    void stopAt(int waterRow) { floorRow_ = waterRow; }
+    /**
+     * The drops start again at `row` from now on: the water surface shown this frame, or for a new game the row the
+     * screens before it left (NewGameSettings).
+     */
+    void stopAt(int row) { floorRow_ = row; }
 
     int floorRow() const { return floorRow_; }
-    void setFloorRow(int row) { floorRow_ = row; }
     const std::array<Raindrop, DROPS>& drops() const { return drops_; }
 
 private:

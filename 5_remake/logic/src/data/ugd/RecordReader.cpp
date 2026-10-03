@@ -31,6 +31,10 @@ bool RecordReader::number(const char* key, int& out) {
     return parseInt(value, out) || fail(std::string("bad number ") + key + "=" + value);
 }
 
+bool RecordReader::frameCount(const char* key, int& out) {
+    return number(key, out) && (out > 0 || fail(std::string(key) + " must be above 0"));
+}
+
 bool RecordReader::numbers(const char* key, size_t count, std::vector<int>& out) {
     std::string value;
     if (!text(key, value)) return false;

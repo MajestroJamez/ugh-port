@@ -54,8 +54,8 @@ public:
     /** How much faster than its walk it charges. */
     Charge& charge() { return charge_; }
     const Charge& charge() const { return charge_; }
-    /** Its speed while it charges: its walk and the charge (Fixed per frame). */
-    units::Fixed chargeSpeed() const { return vx_ + charge_.speed(); }
+    /** How fast it runs while it charges: its walk and the charge (Fixed per frame). */
+    units::Fixed runSpeed() const { return vx_ + charge_.speed(); }
 
     /** How long it stays stunned. */
     Stun& stun() { return stun_; }

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "data/kinds/BonusEffect.hpp"
+#include "units/Fixed.hpp"
 
 namespace ugh::data::kinds {
 
@@ -11,8 +12,8 @@ namespace ugh::data::kinds {
 struct BonusKind {
     std::string name;
     BonusEffect effect = BonusEffect::Energy;
-    int amount = 0;   // energy or lives
-    int lift = 0;     // its upward speed when dropped, in 1/32 px per frame
+    int amount = 0;      // energy or lives
+    units::Fixed lift;   // its upward speed when dropped, per frame
     int sprite = 0;
     int anchorX = 0, anchorY = 0;   // from its top left corner to its middle and its bottom, in pixels
 };

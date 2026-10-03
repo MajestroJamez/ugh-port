@@ -296,25 +296,31 @@ v [rewrite-audit.md](../2_reverse_engineering/notes/rewrite-audit.md), kap. 5).
 |---|---|---|
 | 16bitové přetečení poloh a rychlostí | `units/` | `Int16`, `Fixed`, `Speed` přetékají (v replayích se nestane, typ zůstává kvůli věrnosti) | Od N9b jen `Fixed` a `Speed` (s `Int16` uvnitř), zbytek `int`. |
 | Sonda doleva / nahoru zkouší jen pixel vedle vrtulníku | `physics/CollisionProbe` | pojmenovaná větev, komentář „rychlý vrtulník proletí tenkou zdí doleva / nahoru“ (N1: 25× doleva, 242× nahoru) |
-| Mimo masku nic není pevné | `data/CollisionMask::solid(x, y)` | maska 320 × 192; „bod za okrajem čte sousední řádek“ zaniká (sloupce 320..383 jsou v originálu vždy prázdné, N1) |
-| Dotyk se spritem porovnává jen levý horní roh vrtulníku | `physics/TouchBox` | obdélník zvětšený o tělo vrtulníku |
-| Cestující s trasou se rozhodují podle polohy viděné minulý snímek | `passengers/route/RoutePassenger::seen` | obnovuje se na konci snímku, jen když je vidět; skrytý ji drží – první krok ve WalkingAway porovná dveře s polohou viděnou při nástupu |
-| Rotor se točí i při stmívání, kdy vrtulníky stojí | `world/Copter::effort` | `effort` posledního snímku fyziky přežívá do dalšího pokusu; nová hra ho nuluje |
+| Mimo masku nic není pevné | `data/levels/CollisionMask::solid(x, y)` | maska velikosti obrazovky (`data/levels/ScreenSize`, 320 × 192); „bod za okrajem čte sousední řádek“ zaniká (sloupce 320..383 jsou v originálu vždy prázdné, N1) |
+| Dotyk se spritem porovnává jen levý horní roh vrtulníku | `physics/TouchBox` | obdélník zvětšený o tělo vrtulníku (`world/copter/CopterShape`) |
+| Cestující s trasou se rozhodují podle polohy viděné minulý snímek | `passengers/route/RoutePassenger::seenX`, `seenY` | obnovuje se na konci snímku, jen když je vidět; skrytý ji drží – první krok ve WalkingToDoor porovná dveře s polohou viděnou při nástupu |
+| Rotor se točí i při stmívání, kdy vrtulníky stojí | `world/copter/Rotor::effort` | `effort` posledního snímku fyziky přežívá do dalšího pokusu; nová hra ho nuluje |
 | Nástup (i po záchraně z vody) uvolní plošinu vyzvednutí | `passengers/route/Riding` | i když na ní mezitím čeká jiný cestující |
-| Před prvním snímkem hry proběhne jeden update nepřátel, pak cestujících, a vše se skryje | `game/phases/Playing` | pořadí: nepřátelé, cestující |
-| Vrtulník odhozený walkerem má pixelové y o snímek pozadu | `world/Copter::throwUp` | pojmenované |
-| Voda se hýbe každý druhý snímek a po změně řádku jeden snímek stojí | `world/Water` | `evenFrame`, `resting` |
-| Déšť: 193 kapek, sudé 3 px, liché 2 px za snímek, kapka za okrajem stránky 384 px pokračuje na dalším řádku | `world/Rain`, `world/Raindrop` | kapka jako (x, y) s pojmenovaným přetečením řádku (řádek při zrodu je vždy < 192, ořez na bajt zaniká) |
-| Kapky začínají znovu od řádku **poslední vykreslené hladiny** a ten řádek přežívá mezi pokusy; před větrným levelem padá déšť 577 snímků naprázdno | `world/Rain::floorRow`, `NewGameSettings::rainFloorRow` | pravidlo „déšť si pamatuje poslední hladinu“; na začátku hry ho dodá nastavení (hodnota z obrazovky před hrou) |
-| Náhoda: generátor ze 4 slov, stav na začátku hry je vstup | `world/RandomNumbers`, `NewGameSettings::randomSeed` | |
-| Životy: Esc je vynuluje, ztráta pod nulu = konec hry; zbývající cestující nejdou pod nulu | `world/Session`, `world/Level` | pojmenovaná pravidla, ne `& 0x80` |
-| Neznaménková porovnání (energie do plna, jízdné do minima, bublina cíle, dno při potápění) | na místě | `Int16::unsignedLess` se jménem pravidla | Od N9b obyčejná porovnání (audit: rozdíl nenastane). |
+| Před prvním snímkem hry proběhne jeden update nepřátel, pak cestujících, a vše se skryje | `game/Attempts::beforePlay` (z `game/phases/Playing::enter`) | pořadí: nepřátelé, cestující |
+| Vrtulník odhozený walkerem má pixelové y o snímek pozadu | `world/copter/Copter::throwUp`, `world/copter/Motion::throwUp` | pojmenované |
+| Voda se hýbe každý druhý snímek a po změně řádku jeden snímek stojí | `world/scenery/Water` | `evenFrame`, `resting`; zpoždění animace hladiny počítá ručně `SURFACE_DELAY` .. 0 (pole replaye), ne `Countdown` |
+| Déšť: 193 kapek, sudé 3 px, liché 2 px za snímek, kapka za okrajem stránky 384 px pokračuje na dalším řádku | `world/scenery/Rain`, `world/scenery/Raindrop` | kapka jako (x, y) s pojmenovaným přetečením řádku (řádek při zrodu je vždy < 192, ořez na bajt zaniká) |
+| Kapky začínají znovu od řádku **poslední vykreslené hladiny** a ten řádek přežívá mezi pokusy; před větrným levelem padá déšť 577 snímků naprázdno | `world/scenery/Rain::stopAt`, `NewGameSettings::rainFloorRow` | pravidlo „déšť si pamatuje poslední hladinu“; na začátku hry ho dodá nastavení (hodnota z obrazovky před hrou) |
+| Náhoda: generátor ze 4 slov, stav na začátku hry je vstup | `world/session/RandomNumbers`, `NewGameSettings::randomSeed` | |
+| Životy: Esc je vynuluje, ztráta pod nulu = konec hry (Esc po posledním doručení: další level bez života); zbývající cestující nejdou pod nulu | `world/session/Lives::giveUp`, `world/session/Session::loseLife`, `world/Delivery::finishOne` | pojmenovaná pravidla, ne `& 0x80` |
+| Neznaménková porovnání (energie do plna, jízdné do minima, bublina cíle, dno při potápění) | na místě | obyčejná porovnání (audit: rozdíl nenastane) | Od N9b; `Int16::unsignedLess` už není, zbývá energie (další řádek). |
+| Energie je 16bitový čítač: pod nulou klesá dál a přetéká z -32768 na 32767, doplnění pod nulou naplní do plna | `world/Energy` | pojmenovaný quirk (`spend`, `refill`) |
 | Skóre za doručení = jízdné × násobič (32 bitů) | `passengers/route/WalkingToDoor` | |
-| Animace: pozice snímku zůstává při přepnutí na jinou animaci | `world/Animator` | za koncem seznamu se nikdy nečte (N1), UGD 1 bez přetečení |
-| Vrtulníky stojí, dokud fade-in nedojde na tři čtvrtiny; pokus končí, až fade-out dojde do černé | `world/Fade` | |
+| Animace: pozice snímku zůstává při přepnutí na jinou animaci | `world/figure/Animator` | za koncem seznamu se nikdy nečte (N1), UGD 1 bez přetečení |
+| Vrtulníky stojí, dokud fade-in nedojde na tři čtvrtiny; pokus končí, až fade-out dojde do černé | `world/Fade` | fade-in přejde o krok přes `FULL` (258), pokus končí pod nulou (`Fade::advance`) |
 | Časování fází: 8 snímků černé, 65 fade popisku, čekání na změnu skenkódu, 65, 8 | `game/phases` | |
 | 12 bonusů naráz: originál spadne | `bonuses/BonusSlots` | `Diagnostics` |
 | Pauza P | `game/PlayFrame` | `Diagnostics` (nepodporováno) |
+| Šplouchnutí: oba testy odečítají `box.y` od vršku místo přičtení (řádek nad hlavou) | `passengers/route/Splash::update` | komentář „Quirk of the original“ |
+| Plavec se vrací na hladinu podle řádku, kde byl vidět jeho vršek, ne podle místa, kam patří | `passengers/route/RoutePassenger::floatOnSurface` | komentář „Quirk of the original“ |
+| Pád z plošiny do vody posune vršek o `box.y` pod hladinu (nohy celou výšku pod vodou) | `passengers/route/OnPickupPad::fellIntoWater` | komentář „Quirk of the original“ |
+| Padající stojící cestující zasáhne nepřítele v jednom boxu pro všechny druhy, ne v boxu druhu | `passengers/standing/StandingPassenger::fallsOnto` | `ENEMY_WIDTH`, `ENEMY_HEIGHT`; platí i pro nový druh nepřítele |
+| Walker začíná otočený doleva, ať je rychlost jakákoli (všichni v datech jdou doleva) | `enemies/walker/Walker` | komentář u `facing_` |
 
 ## 7. Co se zahazuje (nebude v `logic/` ani v UGR 1)
 
