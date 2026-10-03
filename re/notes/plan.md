@@ -250,3 +250,8 @@ Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků
   pole jen definovaná podle tabulky po stavech z N1). Testovací pilot už nezapisuje stav cestujících: místo
   `injectHit` pouští visícího cestujícího před letícího flyera; zásahy jen vrtulník, energie, životy. Finální tabulka
   polí v kap. 9 [rewrite-design.md](rewrite-design.md). `:verify:test` zelený (14 min). Další: **krok N4**.
+- 2026-10-03: krok N4 hotový - kostra `logic/` (C++20, CMake + Ninja, `logic/build.ps1`): `units/`, `data/` (čtení
+  UGD 1 s kontrolami), `events/`, sezení a náhoda, tok hry po fázi popisku, PC klávesnice, návrh C API
+  `include/ugh_logic.h`, knihovna `ugh_logic_replay` (zápis UGR 1) a nástroj `replay_check`. 11 testů, všech 161
+  replayů souhlasí v `game.*` až do prvního popisku (`-CheckOptions "--only game. --until game.phase=caption"`).
+  Další: **krok N5**.

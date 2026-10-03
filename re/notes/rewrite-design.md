@@ -567,3 +567,13 @@ běhu `replays/*.ugr` (UGR 0) i `replays/ugr1/*.ugr` (UGR 1, 90 MB) a hlídá sh
 adresy ani nepojmenované stavy a jen povolené zásahy. `CheatPilot`: `injectHit` nahrazen `dropOnFlyer` /
 `grabForFlyer`; pokrytí stavů úplné. Odchylky od návrhu: pole entit i ve fázi `setup`; stavy flyera, walkera, blowera
 a stromu jsou jen mezi snímky viditelné stavy (Placed se objeví jen před prvním updatem); `difficulty` jménem.
+
+### N4 (2026-10-03)
+
+Kostra `logic/`: CMake (knihovny `ugh_logic` s `/GR- /EHs-c-` a `ugh_logic_replay`, nástroj `replay_check`, testy,
+CTest test na replay, volby nástroje přes `build.ps1 -CheckOptions`), `units/`, `data/` (`DataFileReader` s kontrolami,
+umístění cestujících a nepřátel přes Visitor), `events/`, `world/Session`, `RandomNumbers`, tok hry s fázemi
+(`GameFlow`, `PhaseId`, `phases/`), `input/PcKeyboard`, `include/ugh_logic.h` + `api/LogicApi.cpp`, `TestFramework`.
+Odchylky od návrhu: `DataFileReader` vrací `std::unique_ptr<const GameData>` (data drží ukazatele na své prvky, nesmí
+se kopírovat); `Wind` a `Difficulty` jsou v `data/` (data je potřebují a jsou před `world/`); `replay_check` má navíc
+`--skip` a `--until <pole>=<hodnota>` (rozjezd po krocích); stav „před hrou“ jako `GamePhase::Start`.
