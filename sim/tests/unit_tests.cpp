@@ -1,26 +1,34 @@
-// Unit tests of the core's services and state machines, next to the golden replays (which check everything
-// against the original). Usage: ugh_sim_tests <ugh-sim.bin>
+// Unit tests of the core's value types, services and state machines, next to the golden replays (which check
+// everything against the original). Usage: ugh_sim_tests <ugh-sim.bin>
 #include <cstdio>
 #include <functional>
 #include <string>
 #include <vector>
 
-#include "bonuses.hpp"
+#include "bonuses/Falling.hpp"
+#include "bonuses/Lying.hpp"
 #include "core/AmigaScale.hpp"
 #include "core/Countdown.hpp"
+#include "core/EventQueue.hpp"
 #include "core/Fixed.hpp"
 #include "core/Random.hpp"
 #include "core/Speed.hpp"
 #include "core/Word.hpp"
-#include "data.hpp"
-#include "game.hpp"
-#include "keyboard.hpp"
-#include "passengers.hpp"
-#include "random.hpp"
+#include "data/CollisionMask.hpp"
+#include "data/GameData.hpp"
+#include "data/GameDataLoader.hpp"
+#include "game/Game.hpp"
+#include "game/LevelLoader.hpp"
+#include "model/Water.hpp"
+#include "passengers/PassengerState.hpp"
+#include "physics/CopterPhysics.hpp"
+#include "ugh_sim.h"
 
 namespace {
 
 using namespace ugh;
+using core::Fixed;
+using core::Word;
 
 int failures = 0;
 
@@ -32,73 +40,60 @@ int failures = 0;
         }                                                                                  \
     } while (false)
 
-const GameData* data = nullptr;
+const data::GameData* gameData = nullptr;
 
 /** A game at the start of a level attempt: one player, level `number` loaded, the copters in the air. */
 struct Setup {
-    Game game{*data};
-    World& w = game.world;
+    game::Game game{*gameData};
+    core::EventQueue events;
+    model::Level& level = game.level();
 
     explicit Setup(int number = 0) {
-        w.players = 1;
-        w.difficulty = 1;
-        w.levelNumber = static_cast<uint16_t>(number);
+        game.addListener(events);
+        model::GameSession::Snapshot session = level.session().snapshot();
+        session.levelNumber = number;
+        level.session().restore(session);
         game.newGame();
-        startLevelAttempt(game);
+        game::LevelLoader::startAttempt(level);
     }
 
-    const char* passengerState(int i) const { return w.passengers[i].state->name; }
+    std::string passengerState(int i) const { return level.passenger(i).state().name(); }
 
     /** Runs the passengers' state machines until passenger i is in the state; false after `frames` frames. */
-    bool runPassengersUntil(int i, const char* state, int frames = 2000) {
+    bool runPassengersUntil(int i, const std::string& state, int frames = 2000) {
         for (int f = 0; f < frames; f++) {
-            if (std::string(passengerState(i)) == state) return true;
-            updatePassengers(game);
-            updatePassengerPixels(w);
+            if (passengerState(i) == state) return true;
+            level.updatePassengers();
+            level.updatePassengerPixels();
         }
-        return std::string(passengerState(i)) == state;
+        return passengerState(i) == state;
     }
 
     /** Lands copter c on a pad, at x. */
-    void land(int c, int pad, int16_t x) {
-        Copter& copter = w.copters[c];
-        copter.landedPad = static_cast<int16_t>(pad);
-        copter.pixelX = x;
-        copter.x = Fixed::fromPixels(x);
-        copter.vx = copter.vy = 0;
+    void land(int c, int pad, Word x) {
+        model::Copter& copter = level.copter(c);
+        copter.moveToX(Fixed::fromPixels(x));
+        copter.land(pad);
     }
 
-    bool reported(EventKind kind) const {
-        for (const Event& e : game.events)
+    /** Puts copter c over the middle of pad 1, `height` px above it. */
+    void hover(int c, int height) {
+        model::Copter& copter = level.copter(c);
+        const model::Pad& pad = level.pad(1);
+        copter.moveToX(Fixed::fromPixels(Word((pad.left().value() + pad.right().value()) / 2) - 0x10));
+        copter.moveToY(Fixed::fromPixels(pad.y() - 0x14 - height));
+    }
+
+    bool reported(core::EventKind kind) const {
+        for (const core::Event& e : events.events())
             if (e.kind == kind) return true;
         return false;
     }
 };
 
-void fixedPoint() {
-    CHECK(Fixed(0x7fff) + Fixed(1) == Fixed(-0x8000));   // wraps like a register
-    CHECK(Fixed(-1).pixels() == -1);                     // SAR rounds down
-    CHECK(Fixed(63).pixels() == 1);
-    CHECK(Fixed(-33).wholePixel() == Fixed(-64));
-    CHECK(Fixed::fromPixels(0x400) == Fixed(-0x8000));
-    CHECK(perFrame(-0x41) == Fixed(-2));
-    CHECK(threeQuarters(-5) == -3);                      // -5 - (-5 >> 2) = -5 + 2
-    CHECK(threeHalves(7) == 10);
-}
-
-void random() {
-    Random r;
-    CHECK(r.next(0x140) == 3);   // worked by hand: the words add up 0x140, 0x140, 0x140, then 0x280
-    CHECK((r.state == std::array<uint16_t, 4>{0x280, 0x140, 0x140, 0x140}));
-    CHECK(r.next(0x140) == 14);
-    r.state = {0xffff, 0xffff, 0, 0};   // the carries run through the chain
-    CHECK(r.next(1) == 0);
-    CHECK((r.state == std::array<uint16_t, 4>{1, 0, 1, 1}));
-    for (int i = 0; i < 1000; i++) CHECK(r.next(7) < 7);
-}
+// ---------------------------------------------------------------- core
 
 void words() {
-    using core::Word;
     CHECK(Word(0x7fff) + 1 == Word(-0x8000));            // wraps like a register
     CHECK(Word(0x12345) == Word(0x2345));                // an int is cut to 16 bits
     CHECK(Word(-1).bits() == 0xffff && Word(-1).value() == -1);
@@ -110,8 +105,7 @@ void words() {
     CHECK(--w == Word(-1));
 }
 
-void coreFixedPoint() {
-    using core::Fixed;
+void fixedPoint() {
     CHECK(Fixed(0x7fff) + Fixed(1) == Fixed(-0x8000));   // wraps like a register
     CHECK(Fixed(-1).pixels() == -1);                     // SAR rounds down
     CHECK(Fixed(63).pixels() == 1);
@@ -123,8 +117,8 @@ void coreFixedPoint() {
 
 void speed() {
     using core::Speed;
-    CHECK(Speed(-0x41).perFrame() == core::Fixed(-2));   // SAR 6 rounds down
-    CHECK(Speed(0x40).perFrame() == core::Fixed(1));
+    CHECK(Speed(-0x41).perFrame() == Fixed(-2));         // SAR 6 rounds down
+    CHECK(Speed(0x40).perFrame() == Fixed(1));
     CHECK(Speed(0x2000).clamped(Speed(0x1800)) == Speed(0x1800));
     CHECK(Speed(-0x2000).clamped(Speed(0x1800)) == Speed(-0x1800));
     CHECK((Speed(-0x3f) >> 1) == Speed(-0x20));
@@ -139,7 +133,7 @@ void countdown() {
     CHECK(!c.tick() && c.remaining() == -1);             // from zero it runs through the whole word
 }
 
-void coreRandom() {
+void random() {
     core::Random r;
     CHECK(r.next(0x140) == 3);   // worked by hand: the words add up 0x140, 0x140, 0x140, then 0x280
     CHECK((r.snapshot() == core::Random::Snapshot{0x280, 0x140, 0x140, 0x140}));
@@ -150,10 +144,12 @@ void coreRandom() {
     for (int i = 0; i < 1000; i++) CHECK(r.next(7) < 7);
 }
 
+// ---------------------------------------------------------------- data
+
 void collisionMask() {
-    std::vector<uint8_t> bits(CollisionMask::WIDTH / 8 * CollisionMask::HEIGHT);
+    std::vector<uint8_t> bits(data::CollisionMask::WIDTH / 8 * data::CollisionMask::HEIGHT);
     bits[4 * 48 + 47] = 0x01;   // pixel 383 of row 4
-    CollisionMask mask(bits);
+    data::CollisionMask mask(bits);
     CHECK(mask.solid(4 * 384 + 383));
     CHECK(mask.solid(5 * 384 - 1));      // a probe running over the right edge reads the next row
     CHECK(!mask.solid(4 * 384 + 382));
@@ -161,155 +157,153 @@ void collisionMask() {
     CHECK(!mask.solid(384 * 192));
 }
 
-void keyboard() {
-    std::array<Copter, 2> copters;
-    Keyboard k(data->keys());
-    k.deliver(0xe0, copters);
-    k.deliver(0x48, copters);   // cursor up: player 0
-    CHECK(copters[0].keys.up && !copters[1].keys.up);
-    k.deliver(0x11, copters);   // W: player 1
-    CHECK(copters[1].keys.up);
-    k.deliver(0xe0, copters);
-    k.deliver(0xc8, copters);   // cursor up released
-    CHECK(!copters[0].keys.up && copters[1].keys.up);
-    k.deliver(0xe0, copters);
-    k.deliver(0x2a, copters);   // the fake shift of an extended key: nothing
-    k.deliver(0x48, copters);   // keypad 8 without the prefix: player 1 up
-    CHECK(!copters[0].keys.up);
-    k.deliver(0xe0, copters);
-    k.deliver(0x1f, copters);   // E0 1F is no key: the sequence starts again
-    k.deliver(0x1f, copters);   // S: player 1 right
-    CHECK(copters[1].keys.right && !copters[0].keys.right);
-    Keyboard::Reading r = k.read();
-    CHECK(r.scancode == 0x1f && r.changed);
-    CHECK(!k.read().changed);
-}
-
-void gameData() {
-    CHECK(data->levelCount(1) == 69 && data->levelCount(2) == 81);
-    CHECK(data->level(1, 69) == nullptr);
-    const LevelDefinition& level = *data->level(1, 0);
+void dataLoaded() {
+    using Type = data::PassengerKind::Type;
+    CHECK(gameData->levelCount(1) == 69 && gameData->levelCount(2) == 81);
+    CHECK(gameData->level(1, 69) == nullptr);
+    const data::LevelDefinition& level = *gameData->level(1, 0);
     CHECK(level.pads.size() == 3 && level.passengers.size() == 3 && level.enemies.size() == 1);
     CHECK(level.startX[0] == Fixed(4608) && level.startY[0] == Fixed(2080));
-    const PassengerKind& walking = *data->passengerKind(0x7720);
-    CHECK(walking.set == PassengerSet::Walking && walking.other->set == PassengerSet::Swimming);
+    const data::PassengerKind& walking = *gameData->passengerKind(0x7720);
+    CHECK(walking.type == Type::Walking && walking.other->type == Type::Swimming);
     CHECK(walking.other->other == &walking);
-    CHECK(!data->passengerKind(0x77fe)->rescuable && walking.other->rescuable);
-    CHECK(data->quickDeliveryBonus().effect == BonusKind::Effect::Multiplier);
-    CHECK(std::string(level.enemies[0].kind->name) == "tree" && level.enemies[0].drops != nullptr);
+    CHECK(!gameData->passengerKind(0x77fe)->rescuable && walking.other->rescuable);
+    CHECK(gameData->quickDeliveryBonus().effect == data::BonusKind::Effect::Multiplier);
+    CHECK(level.enemies[0].kind->type == data::EnemyKind::Type::Tree && level.enemies[0].drops != nullptr);
+    CHECK(gameData->rotorEnd(0) == gameData->rotorFirst(1));
+}
+
+// ---------------------------------------------------------------- model, physics, input
+
+void keyboard() {
+    Setup s;
+    auto& p0 = s.level.copter(0).controls();
+    auto& p1 = s.level.copter(1).controls();
+    s.game.key(0xe0);
+    s.game.key(0x48);   // cursor up: player 0
+    CHECK(p0.up && !p1.up);
+    s.game.key(0x11);   // W: player 1
+    CHECK(p1.up);
+    s.game.key(0xe0);
+    s.game.key(0xc8);   // cursor up released
+    CHECK(!p0.up && p1.up);
+    s.game.key(0xe0);
+    s.game.key(0x2a);   // the fake shift of an extended key: nothing
+    s.game.key(0x48);   // keypad 8 without the prefix: player 1 up
+    CHECK(!p0.up);
+    s.game.key(0xe0);
+    s.game.key(0x1f);   // E0 1F is no key: the sequence starts again
+    s.game.key(0x1f);   // S: player 1 right
+    CHECK(p1.right && !p0.right);
 }
 
 void waterMovesEverySecondFrame() {
-    World w;
-    w.water.level = Fixed(0x100);
-    w.water.row = w.water.level.pixels();
-    moveWater(w);   // toggle 1: no movement
-    CHECK(w.water.level == Fixed(0x100));
-    moveWater(w);   // toggle 0: moves by the level's speed (none without a level)
-    CHECK(w.water.toggle == 0 && w.water.hold == 0);
+    model::Water w;
+    w.fillTo(Fixed(0x100));
+    w.move(-0x40);   // toggle 1: no movement
+    CHECK(w.level() == Fixed(0x100));
+    w.move(-0x40);   // toggle 0: moves by the speed
+    CHECK(w.level() == Fixed(0xc0));
+    CHECK(w.snapshot().hold == 0xff);   // the row changed: the next frame holds
+    w.move(-0x40);
+    CHECK(w.level() == Fixed(0xc0) && w.snapshot().hold == 0);
 }
 
 void copterFallsOntoPad() {
     Setup s;
-    Copter& c = s.w.copters[0];
-    const Pad& pad = s.w.pads[1];
-    // over the middle of pad 1, a little above it
-    c.pixelX = static_cast<int16_t>((pad.left + pad.right) / 2 - 0x10);
-    c.x = Fixed::fromPixels(c.pixelX);
-    c.pixelY = static_cast<int16_t>(pad.y - 0x14 - 8);
-    c.y = Fixed::fromPixels(c.pixelY);
-    for (int f = 0; f < 200 && !c.landed(); f++) flyCopter(s.game, 0);
-    CHECK(c.landedPad == 1);
-    CHECK(c.vx == 0 && c.vy == 0);
-    CHECK(!s.w.fade.fadingOut());   // a soft touch-down
+    model::Copter& c = s.level.copter(0);
+    s.hover(0, 8);
+    physics::CopterPhysics physics(s.level);
+    for (int f = 0; f < 200 && !c.landed(); f++) physics.fly(0);
+    CHECK(c.landedOn(1));
+    CHECK(c.speedX() == core::Speed(0) && c.speedY() == core::Speed(0));
+    CHECK(!s.level.fade().fadingOut());   // a soft touch-down
 }
 
 void hardImpactCrashes() {
     Setup s;
-    Copter& c = s.w.copters[0];
-    const Pad& pad = s.w.pads[1];
-    c.pixelX = static_cast<int16_t>((pad.left + pad.right) / 2 - 0x10);
-    c.x = Fixed::fromPixels(c.pixelX);
-    c.pixelY = static_cast<int16_t>(pad.y - 0x14 - 1);
-    c.y = Fixed::fromPixels(c.pixelY);
-    c.vy = 0x1800;
-    flyCopter(s.game, 0);
-    CHECK(s.w.fade.fadingOut());
-    CHECK(s.reported(EventKind::CopterCrashed));
+    model::Copter& c = s.level.copter(0);
+    s.hover(0, 1);
+    c.setSpeed(core::Speed(0), core::Speed(0x1800));
+    physics::CopterPhysics(s.level).fly(0);
+    CHECK(s.level.fade().fadingOut());
+    CHECK(s.reported(core::EventKind::CopterCrashed));
 }
+
+// ---------------------------------------------------------------- state machines
 
 void passengerRidesAndPays() {
     Setup s;
-    CHECK(std::string(s.passengerState(0)) == "NextStop");
+    CHECK(s.passengerState(0) == "NextStop");
     CHECK(s.runPassengersUntil(0, "Waiting"));
-    Passenger& p = s.w.passengers[0];
-    int16_t pickup = p.pickupPad, target = p.targetPad;
-    CHECK(s.w.pads[pickup].waiting == 0);
+    model::Passenger& p = s.level.passenger(0);
+    int pickup = p.pickupPad(), target = p.targetPad();
+    CHECK(!s.level.pad(pickup).free());
     // a copter lands next to the passenger: it calls, then walks to it and boards
-    s.land(0, pickup, static_cast<int16_t>(s.w.pads[pickup].waitX - 0x20));
+    s.land(0, pickup, s.level.pad(pickup).waitX() - 0x20);
     CHECK(s.runPassengersUntil(0, "Calling", 600));
-    CHECK(p.bubble != NO_SPRITE);
+    CHECK(p.snapshot().bubble != data::NO_SPRITE);
     CHECK(s.runPassengersUntil(0, "Riding", 2000));
-    CHECK(s.w.copters[0].carrying == p.kind->look);
-    CHECK(s.w.copters[0].targetPad == s.w.pads[target].number);
-    CHECK(s.w.pads[pickup].waiting == -1);
-    CHECK(s.reported(EventKind::PassengerBoarded));
+    const model::Copter::Snapshot& copter = s.level.copter(0).snapshot();
+    CHECK(copter.carrying == p.kind().look);
+    CHECK(copter.targetPad == s.level.pad(target).number());
+    CHECK(s.level.pad(pickup).free());
+    CHECK(s.reported(core::EventKind::PassengerBoarded));
     // at the target it pays the fare (one less after this frame, times the multiplier 1)
-    int16_t fare = s.w.copters[0].fare;
-    s.land(0, target, s.w.copters[0].pixelX);
-    updatePassengers(s.game);
-    CHECK(std::string(s.passengerState(0)) == "WalkingAway");
-    CHECK(s.w.score == static_cast<uint32_t>(fare - 1));
-    CHECK(s.w.copters[0].carrying == 0);
-    CHECK(s.reported(EventKind::PassengerPaid));
+    Word fare = s.level.copter(0).fare();
+    s.land(0, target, s.level.copter(0).pixelX());
+    s.level.updatePassengers();
+    CHECK(s.passengerState(0) == "WalkingAway");
+    CHECK(s.level.session().snapshot().score == static_cast<uint32_t>(fare.value() - 1));
+    CHECK(s.level.copter(0).hasRoom());
+    CHECK(s.reported(core::EventKind::PassengerPaid));
     // a quick delivery drops a bonus item for the multiplier
-    CHECK(s.w.bonuses[11].used() && s.w.bonuses[11].kind == &data->quickDeliveryBonus());
+    const model::BonusItem& bonus = s.level.bonuses()[11];
+    CHECK(bonus.inUse() && &bonus.kind() == &gameData->quickDeliveryBonus());
 }
 
 void passengerKnockedIntoWater() {
     Setup s;
     CHECK(s.runPassengersUntil(0, "Waiting"));
-    Passenger& p = s.w.passengers[0];
+    model::Passenger& p = s.level.passenger(0);
     // a copter flies right through it
-    Copter& c = s.w.copters[0];
-    c.landedPad = -1;
-    c.x = p.x - Fixed::fromPixels(8);
-    c.y = p.y - Fixed::fromPixels(8);
-    updatePassengers(s.game);
-    CHECK(std::string(s.passengerState(0)) == "Splash");
-    CHECK(p.kind->set == PassengerSet::Swimming);
-    CHECK(s.reported(EventKind::PassengerInWater));
+    model::Copter& c = s.level.copter(0);
+    c.takeOff();
+    c.moveToX(p.x() - Fixed::fromPixels(8));
+    c.moveToY(p.y() - Fixed::fromPixels(8));
+    s.level.updatePassengers();
+    CHECK(s.passengerState(0) == "Splash");
+    CHECK(p.kind().type == data::PassengerKind::Type::Swimming);
+    CHECK(s.reported(core::EventKind::PassengerInWater));
 }
 
 void bonusCollectedOnce() {
     Setup s;
-    s.w.energy = 0x5a00;
-    const BonusKind* energy = nullptr;
-    for (const BonusKind* k : data->level(1, 0)->enemies[0].drops->items)   // the tree's
-        if (k->effect == BonusKind::Effect::Energy) { energy = k; break; }
+    s.level.energy() = model::Energy(0x5a00);
+    const data::BonusKind* energy = nullptr;
+    for (const data::BonusKind* k : gameData->level(1, 0)->enemies[0].drops->items)   // the tree's
+        if (k->effect == data::BonusKind::Effect::Energy) { energy = k; break; }
     CHECK(energy != nullptr);
     if (!energy) return;
-    Copter& c = s.w.copters[0];
-    dropBonus(s.game, *energy, c.x, c.y, 0, 0);
-    BonusItem& b = s.w.bonuses[11];
-    CHECK(b.used());
+    model::Copter& c = s.level.copter(0);
+    bonuses::Falling::drop(s.level, *energy, c.x(), c.y(), Fixed(0), 0);
+    model::BonusItem& b = s.level.bonuses()[11];
+    CHECK(b.inUse());
     // lying at the copter
-    for (const BonusState* state : bonusStates())
-        if (std::string(state->name) == "Lying") b.state = state;
-    b.x = c.x + Fixed::fromPixels(8);
-    b.y = c.y;
-    b.vx = 100;
-    updateBonuses(s.game);
-    CHECK(!b.used());
-    CHECK(s.w.energy == 0x5a3b);   // filled up to the maximum, not over it
-    CHECK(s.reported(EventKind::BonusCollected));
+    b.changeState(bonuses::Lying::instance, s.level);
+    b.moveToX(c.x() + Fixed::fromPixels(8));
+    b.moveToY(c.y());
+    s.level.bonuses().update(s.level);
+    CHECK(!b.inUse());
+    CHECK(s.level.energy().value() == model::Energy::FULL);   // filled up to the maximum, not over it
+    CHECK(s.reported(core::EventKind::BonusCollected));
 }
+
+// ---------------------------------------------------------------- the game
 
 void wholeGameEndsWithEsc() {
     Setup s;
     s.game.reset();
-    s.w.players = 1;
-    s.w.difficulty = 1;
     int frames = 0, result = UGH_SIM_CONTINUE;
     for (; frames < 5000 && result == UGH_SIM_CONTINUE; frames++) {
         if (frames == 300) s.game.key(0x39);   // space: past the caption
@@ -317,7 +311,7 @@ void wholeGameEndsWithEsc() {
         result = s.game.step();
     }
     CHECK(result == UGH_SIM_GAME_OVER);
-    CHECK(s.reported(EventKind::LevelCaption));
+    CHECK(s.reported(core::EventKind::LevelCaption));
 }
 
 }  // namespace
@@ -328,23 +322,21 @@ int main(int argc, char** argv) {
         return 2;
     }
     std::string error;
-    auto loaded = GameData::load(argv[1], error);
+    auto loaded = data::GameDataLoader::load(argv[1], error);
     if (!loaded) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 2;
     }
-    data = loaded.get();
+    gameData = loaded.get();
     const std::vector<std::pair<const char*, std::function<void()>>> tests = {
         {"words", words},
-        {"core fixed point", coreFixedPoint},
+        {"fixed point", fixedPoint},
         {"speed", speed},
         {"countdown", countdown},
-        {"core random", coreRandom},
-        {"fixed point", fixedPoint},
         {"random numbers", random},
         {"collision mask", collisionMask},
+        {"game data", dataLoaded},
         {"keyboard", keyboard},
-        {"game data", gameData},
         {"water", waterMovesEverySecondFrame},
         {"copter lands on a pad", copterFallsOntoPad},
         {"hard impact crashes", hardImpactCrashes},

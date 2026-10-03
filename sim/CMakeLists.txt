@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(ugh_sim LANGUAGES CXX)
 
-# UGH! game logic core: C++20, no dependencies (re/notes/plan.md, steps 5-9).
+# UGH! game logic core: C++20, no dependencies (re/notes/plan.md, steps 5-9; re/notes/core-design.md).
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -11,8 +11,39 @@ else()
     add_compile_options(-Wall -Wextra)
 endif()
 
-add_library(ugh_sim STATIC src/core/Random.cpp src/api.cpp src/bonuses.cpp src/copter.cpp src/data.cpp src/enemies.cpp src/game.cpp
-            src/keyboard.cpp src/level.cpp src/passengers.cpp src/replay_projection.cpp src/water.cpp)
+# the sources by module: a folder is a module and a namespace (ugh::core, ugh::data ...)
+set(UGH_CORE src/core/Random.cpp)
+set(UGH_DATA src/data/CollisionMask.cpp src/data/GameData.cpp src/data/GameDataLoader.cpp)
+set(UGH_MODEL src/model/BonusItem.cpp src/model/BonusSlots.cpp src/model/Copter.cpp src/model/Enemy.cpp
+    src/model/GameSession.cpp src/model/Level.cpp src/model/Passenger.cpp src/model/Rain.cpp src/model/Water.cpp)
+set(UGH_PHYSICS src/physics/CopterPhysics.cpp)
+set(UGH_PASSENGERS src/passengers/Gone.cpp src/passengers/PassengerState.cpp src/passengers/PassengerStates.cpp
+    src/passengers/walking/Appearing.cpp src/passengers/walking/Arriving.cpp src/passengers/walking/Boarding.cpp
+    src/passengers/walking/Calling.cpp src/passengers/walking/Entering.cpp src/passengers/walking/Impatient.cpp
+    src/passengers/walking/NextStop.cpp src/passengers/walking/OnPickupPad.cpp src/passengers/walking/Riding.cpp
+    src/passengers/walking/Waiting.cpp src/passengers/walking/WalkingAway.cpp
+    src/passengers/swimming/Sinking.cpp src/passengers/swimming/Splash.cpp src/passengers/swimming/SwimBoarding.cpp
+    src/passengers/swimming/SwimCalling.cpp src/passengers/swimming/SwimWaving.cpp src/passengers/swimming/Swimming.cpp
+    src/passengers/standing/Falling.cpp src/passengers/standing/Hanging.cpp src/passengers/standing/Standing.cpp
+    src/passengers/standing/StartStanding.cpp)
+set(UGH_ENEMIES src/enemies/EnemyBehavior.cpp src/enemies/EnemyState.cpp src/enemies/EnemyStates.cpp
+    src/enemies/flyer/FlyerBehavior.cpp src/enemies/flyer/FlyerFalling.cpp src/enemies/flyer/FlyerInit.cpp
+    src/enemies/flyer/FlyerWait.cpp src/enemies/flyer/FlyerWait2.cpp src/enemies/flyer/Flying.cpp
+    src/enemies/walker/Charging.cpp src/enemies/walker/Recovering.cpp src/enemies/walker/Stunned.cpp
+    src/enemies/walker/WalkerBehavior.cpp src/enemies/walker/WalkerInit.cpp src/enemies/walker/WalkerState.cpp
+    src/enemies/walker/Walking.cpp src/enemies/walker/Watching.cpp
+    src/enemies/blower/BlowerBehavior.cpp src/enemies/blower/BlowerInit.cpp src/enemies/blower/BlowerWait.cpp
+    src/enemies/blower/Blowing.cpp
+    src/enemies/tree/Inactive.cpp src/enemies/tree/TreeBehavior.cpp src/enemies/tree/TreeInit.cpp
+    src/enemies/tree/TreeSwaying.cpp src/enemies/tree/TreeWait.cpp)
+set(UGH_BONUSES src/bonuses/BonusState.cpp src/bonuses/BonusStates.cpp src/bonuses/Falling.cpp src/bonuses/Lying.cpp)
+set(UGH_INPUT src/input/Keyboard.cpp)
+set(UGH_GAME src/game/Game.cpp src/game/LevelLoader.cpp)
+set(UGH_REPLAY src/replay/ReplayProjection.cpp)
+set(UGH_API src/api/SimApi.cpp)
+
+add_library(ugh_sim STATIC ${UGH_CORE} ${UGH_DATA} ${UGH_MODEL} ${UGH_PHYSICS} ${UGH_PASSENGERS} ${UGH_ENEMIES}
+            ${UGH_BONUSES} ${UGH_INPUT} ${UGH_GAME} ${UGH_REPLAY} ${UGH_API})
 target_include_directories(ugh_sim PUBLIC include PRIVATE src)
 
 add_executable(ugh_replay tools/ugh_replay.cpp)

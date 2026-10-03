@@ -245,9 +245,25 @@ pole replaye → `replay/…Fields.cpp`, nová událost → `core/Event.hpp` + `
    pojmenované konstanty. Adaptér zatím přes Memento upravit jen tolik, aby prošel.
 5. `passengers/`, `enemies/`, `bonuses/`: stavy jako třídy s `enter/update`, `Animator`, `EnemyBehavior`.
 
+**Jak dopadl krok 9b** (2026-10-03): etapa 1 zvlášť, etapy 2–5 jedním krokem (přesun a přepis by jinak psaly stavy
+dvakrát); po něm všech 323 testů zelených a výstup přehrávače (počty porovnaných hodnot, „not known“, „taken over“)
+shodný s výchozím stavem v obou režimech. Odchylky od návrhu výše:
+- Memento se jmenuje `Snapshot` / `snapshot()` / `restore()` – `state()` cestujícího a nepřítele je stav automatu.
+- Etapa 6 je hotová napůl: `physics/CopterPhysics` s pojmenovanými kroky a konstantami; sonda je jeho soukromá
+  metoda, dotyk se spritem je `Level::copterTouching` (samostatné `CollisionProbe` / `TouchBox` zbývají na 9c).
+- Druh nepřítele nese `EnemyKind::Type`, chování vybírá `EnemyBehavior::of(type)` – data nevědí nic o logice.
+- Podsložky (`walking/`, `flyer/` …) jen třídí soubory, namespace je jeden na modul (`ugh::passengers`).
+  `Gone` je v kořeni `passengers/` (končí v něm všechny tři automaty); společné kontroly jsou v základních třídách
+  `OnPickupPad` (pád do vody) a `WalkerState` (omráčení), vodní stavy volají vstupní akce stavů na plošině.
+- Hranice dat: továrna navíc kontroluje plošiny tras, animace druhů, vítr a tři obtížnosti; adaptér odmítne
+  index plošiny mimo sloty, obtížnost mimo 0–2 a neznámý vítr a vzorky pro neznámou paměť volí platné
+  (indexy 0 / 1, obtížnost 0 / 1, vítr 0 / 2) – logika tak indexuje bez kontrol.
+- `Diagnostics` je obyčejná třída (sbírá problémy), události jdou přes `EventBroadcast` posluchačům (C API má
+  `EventQueue`).
+
 **Krok 9c** (další session):
-6. `physics/`: `CopterPhysics`, `CollisionProbe`, `TouchBox`.
-7. `game/`: `GameFlow` jako automat fází, `PlayFrame`, `LevelLoader`; smazat `flow.hpp`.
+6. `physics/`: `CollisionProbe`, `TouchBox` vyčlenit z `CopterPhysics` a `Level` (zbytek etapy je hotový).
+7. `game/`: `GameFlow` jako automat fází, `PlayFrame`; smazat `game/Flow.hpp` (`LevelLoader` už je).
 8. `replay/`: Visitor, jeden seznam polí na entitu.
 9. `tools/ugh_replay/` rozdělený, `tests/` po modulech s `TestFramework.hpp`.
 10. `sim/README.md`.

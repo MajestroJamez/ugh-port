@@ -105,7 +105,7 @@ třídy s Mementem, stavy jako třídy (State) s `enter/update`. Hotovo když: 3
 
 ## Krok 9c - C++ jádro: fyzika, tok hry, adaptér, průvodce
 
-Podle [core-design.md](core-design.md), etapy 6-11: `CopterPhysics`, tok hry jako automat fází místo korutin,
+Podle [core-design.md](core-design.md), etapy 6-11: zbytek `physics/`, tok hry jako automat fází místo korutin,
 adaptér replayů jako Visitor, rozdělený přehrávač a testy, `sim/README.md`. Hotovo když: splněna sekce
 „Hotovo když“ v core-design.md.
 
@@ -193,3 +193,10 @@ adaptér replayů jako Visitor, rozdělený přehrávač a testy, `sim/README.md
 - 2026-10-03: analýza čitelnosti jádra hotová - cílový návrh v [core-design.md](core-design.md) (složky a namespaces,
   jedna třída na soubor, entity s Mementem, stavy jako třídy, automat fází místo korutin, adaptér jako Visitor,
   průvodce `sim/README.md`). Další: **krok 9b**.
+- 2026-10-03: krok 9b hotový - jádro ve složkách a namespaces (`core/`, `data/`, `model/`, `physics/`, `passengers/`,
+  `enemies/`, `bonuses/`, `input/`, `game/`, `replay/`, `api/`, 182 souborů): hodnotové typy `Word` / `Fixed` /
+  `Speed` / `Countdown`, továrna `GameDataLoader` oddělená od `GameData` (kontroluje i plošiny tras), entity jako třídy
+  se `Snapshot` (Memento) a sdílenými slovy jako malými třídami, `GameSession` + `Level` s dotazy, 41 stavů jako
+  třídy s `enter/update`, `EnemyBehavior` jako Strategy, `CopterPhysics` s pojmenovanými kroky. V logice není
+  `static_cast<int16_t>`, šablona ani `std::function`. 323 testů zelených, výstup přehrávače shodný s výchozím
+  (stejné počty porovnaných hodnot). Odchylky od návrhu v [core-design.md](core-design.md). Další: **krok 9c**.
