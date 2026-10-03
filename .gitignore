@@ -29,3 +29,8 @@ build/
 5_remake/game/*.sln
 # written by the engine with its defaults (the game takes raw key events, no input settings)
 5_remake/game/Config/DefaultInput.ini
+# the materials: made by the commandlet UghMakeAssets on every build.ps1
+5_remake/game/Content/Generated/
+# packaged game and the PSO cache recorded for it (package.ps1, pso.ps1)
+5_remake/game/Packaged/
+5_remake/game/Build/Windows/PipelineCaches/

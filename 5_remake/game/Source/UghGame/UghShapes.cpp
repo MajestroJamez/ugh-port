@@ -3,13 +3,10 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
+#include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
-
-namespace
-{
-	/** The engine's shapes are 100 units across. */
-	constexpr double ShapeSize = 100.0;
-}
+#include "Misc/PackageName.h"
+#include "UghMaterials.h"
 
 FVector UghShapes::ToWorld(double X, double Y, double Depth)
 {
@@ -23,26 +20,42 @@ FTransform UghShapes::Box(double Left, double Top, double Width, double Height, 
 	return FTransform(FQuat::Identity, Centre, Scale);
 }
 
-UInstancedStaticMeshComponent* UghShapes::AddBoxes(AActor* Owner, const FLinearColor& Color)
+UMaterialInstanceDynamic* UghShapes::Material(UObject* Outer, const TCHAR* Path)
 {
-	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
-	UMaterialInterface* Material =
-		LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
-
-	UInstancedStaticMeshComponent* Boxes = NewObject<UInstancedStaticMeshComponent>(Owner);
-	Boxes->SetMobility(EComponentMobility::Movable);
-	Boxes->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Boxes->SetStaticMesh(Cube);
-	UMaterialInstanceDynamic* Colored = UMaterialInstanceDynamic::Create(Material, Boxes);
-	Colored->SetVectorParameterValue(TEXT("Color"), Color);
-	Boxes->SetMaterial(0, Colored);
-	Boxes->SetupAttachment(Owner->GetRootComponent());
-	Boxes->RegisterComponent();
-	Owner->AddInstanceComponent(Boxes);
-	return Boxes;
+	const FString Object = FString::Printf(TEXT("%s.%s"), Path, *FPackageName::GetShortName(Path));
+	UMaterialInterface* Parent = LoadObject<UMaterialInterface>(nullptr, *Object);
+	if (!Parent)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UGH no material %s: run build.ps1 (it makes them)"), Path);
+		Parent = UMaterial::GetDefaultMaterial(MD_Surface);
+	}
+	return UMaterialInstanceDynamic::Create(Parent, Outer);
 }
 
-void UghShapes::SetBoxes(UInstancedStaticMeshComponent* Component, const TArray<FTransform>& Boxes)
+UMaterialInstanceDynamic* UghShapes::Clay(UObject* Outer, const FLinearColor& Color)
+{
+	UMaterialInstanceDynamic* Clay = Material(Outer, UghMaterials::Clay);
+	Clay->SetVectorParameterValue(UghMaterials::ColorParameter, Color);
+	return Clay;
+}
+
+UInstancedStaticMeshComponent* UghShapes::AddShapes(AActor* Owner, EShape Shape, UMaterialInterface* Material)
+{
+	static const TCHAR* const Meshes[] = { TEXT("/Engine/BasicShapes/Cube.Cube"),
+		TEXT("/Engine/BasicShapes/Cylinder.Cylinder"), TEXT("/Engine/BasicShapes/Sphere.Sphere"),
+		TEXT("/Engine/BasicShapes/Cone.Cone") };
+	UInstancedStaticMeshComponent* Shapes = NewObject<UInstancedStaticMeshComponent>(Owner);
+	Shapes->SetMobility(EComponentMobility::Movable);
+	Shapes->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Shapes->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, Meshes[static_cast<int32>(Shape)]));
+	Shapes->SetMaterial(0, Material);
+	Shapes->SetupAttachment(Owner->GetRootComponent());
+	Shapes->RegisterComponent();
+	Owner->AddInstanceComponent(Shapes);
+	return Shapes;
+}
+
+void UghShapes::SetShapes(UInstancedStaticMeshComponent* Component, const TArray<FTransform>& Boxes)
 {
 	if (Component->GetInstanceCount() == Boxes.Num())
 	{

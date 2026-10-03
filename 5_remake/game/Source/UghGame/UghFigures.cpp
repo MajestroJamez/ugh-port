@@ -1,23 +1,29 @@
 #include "UghFigures.h"
 
 #include "Components/InstancedStaticMeshComponent.h"
-#include "UghBackground.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "UghMaterials.h"
 #include "UghShapes.h"
-#include "UghSpriteSizes.h"
+#include "UghSprites.h"
+#include "UghTexture.h"
 
 namespace
 {
-	const FLinearColor CopterColors[] = { FLinearColor(0.9f, 0.45f, 0.05f), FLinearColor(0.05f, 0.6f, 0.8f) };
-	const FLinearColor RotorColor(0.6f, 0.6f, 0.6f);
-	const FLinearColor PassengerColor(0.2f, 0.7f, 0.2f);
-	const FLinearColor BubbleColor(0.95f, 0.95f, 0.95f);
-	const FLinearColor EnemyColor(0.75f, 0.1f, 0.1f);
-	const FLinearColor BonusColor(0.95f, 0.8f, 0.1f);
-	const FLinearColor RainColor(0.6f, 0.7f, 0.9f);
+	using UghShapes::EShape;
 
-	/** The figures stand in front of the background's face, this deep (units). */
-	constexpr double Depth = -AUghBackground::Thickness / 2 - 40;
-	constexpr double FigureThickness = 60;
+	const FLinearColor CopterColors[] = { FLinearColor(0.9f, 0.35f, 0.03f), FLinearColor(0.03f, 0.5f, 0.6f) };
+	const FLinearColor RotorColor(0.35f, 0.22f, 0.1f);
+	const FLinearColor PassengerColor(0.75f, 0.45f, 0.3f);
+	const FLinearColor EnemyColor(0.45f, 0.5f, 0.12f);
+	const FLinearColor BonusColor(0.9f, 0.75f, 0.1f);
+	const FLinearColor RainColor(0.5f, 0.6f, 0.8f);
+
+	/** The figures fill the slab of the play; a bubble is a card in front of it. */
+	constexpr double FigureDepth = 0, FigureThickness = UghShapes::PlaneThickness;
+	constexpr double CardDepth = -FigureThickness / 2 - 2, CardThickness = 1;
 
 	/** A figure that moves further in one step jumped (a new attempt, a passenger getting in): not interpolated. */
 	constexpr double MaxStepPixels = 8;
@@ -27,8 +33,8 @@ namespace
 	constexpr double RotorWidth = 28, RotorHeight = 1.5;
 	constexpr double RiderSize = 8;
 	constexpr double HangingTop = UghShapes::CopterBodyHeight + 1;
-	/** A bubble above a passenger, pixels. */
-	constexpr double BubbleWidth = 8, BubbleHeight = 6;
+	/** A bubble's card stands this far above its passenger, pixels. */
+	constexpr double BubbleGap = 2;
 	/** A raindrop, pixels. */
 	constexpr double DropWidth = 1, DropHeight = 3;
 
@@ -70,20 +76,23 @@ AUghFigures::AUghFigures()
 void AUghFigures::BeginPlay()
 {
 	Super::BeginPlay();
+	auto Clay = [this](EShape Shape, const FLinearColor& Color)
+	{
+		return UghShapes::AddShapes(this, Shape, UghShapes::Clay(this, Color));
+	};
 	for (const FLinearColor& Color : CopterColors)
 	{
-		CopterBodies.Add(UghShapes::AddBoxes(this, Color));
+		CopterBodies.Add(Clay(EShape::Cube, Color));
 	}
-	Rotors = UghShapes::AddBoxes(this, RotorColor);
-	Passengers = UghShapes::AddBoxes(this, PassengerColor);
-	Bubbles = UghShapes::AddBoxes(this, BubbleColor);
-	Enemies = UghShapes::AddBoxes(this, EnemyColor);
-	BonusItems = UghShapes::AddBoxes(this, BonusColor);
-	Raindrops = UghShapes::AddBoxes(this, RainColor);
+	Rotors = Clay(EShape::Cube, RotorColor);
+	Passengers = Clay(EShape::Cylinder, PassengerColor);
+	Enemies = Clay(EShape::Sphere, EnemyColor);
+	BonusItems = Clay(EShape::Cone, BonusColor);
+	Raindrops = Clay(EShape::Cube, RainColor);
 }
 
 void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-	const FUghSpriteSizes& Sizes)
+	const FUghSprites& Sprites)
 {
 	if (Current.phase != UGH_LOGIC_PHASE_PLAY || Current.level_id < 0)
 	{
@@ -95,7 +104,7 @@ void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Cur
 		? Previous : Current;
 	TArray<FTransform> Riders;
 	ShowCopters(From, Current, Alpha, Riders);
-	ShowEntities(From, Current, Alpha, Sizes, Riders);
+	ShowEntities(From, Current, Alpha, Sprites, Riders);
 	ShowRain(Current);
 }
 
@@ -113,27 +122,28 @@ void AUghFigures::ShowCopters(const ugh_logic_view& Previous, const ugh_logic_vi
 			const FVector2D At = Between(P.x, P.y, C.x, C.y, Alpha);
 			Body.Add(UghShapes::Box(At.X + UghShapes::CopterBodyLeft, At.Y + RotorHeight,
 				UghShapes::CopterBodyRight - UghShapes::CopterBodyLeft + 1, UghShapes::CopterBodyHeight - RotorHeight,
-				Depth, FigureThickness));
+				FigureDepth, FigureThickness));
 			// the rotor's sprites turn it: a blade that gets shorter and longer
 			const double Blade = RotorWidth * (1 + C.rotor_sprite % 3) / 3;
-			RotorBoxes.Add(UghShapes::Box(At.X + CopterMiddle - Blade / 2, At.Y, Blade, RotorHeight, Depth,
+			RotorBoxes.Add(UghShapes::Box(At.X + CopterMiddle - Blade / 2, At.Y, Blade, RotorHeight, FigureDepth,
 				FigureThickness / 2));
 			if (C.cargo_look != 0)
 			{
 				const double Top = C.destination < 0 ? HangingTop : (UghShapes::CopterBodyHeight - RiderSize) / 2;
 				OutRiders.Add(UghShapes::Box(At.X + CopterMiddle - RiderSize / 2, At.Y + Top, RiderSize, RiderSize,
-					Depth - FigureThickness / 2, FigureThickness / 2));
+					FigureDepth - FigureThickness / 2, FigureThickness / 2));
 			}
 		}
-		UghShapes::SetBoxes(CopterBodies[Player], Body);
+		UghShapes::SetShapes(CopterBodies[Player], Body);
 	}
-	UghShapes::SetBoxes(Rotors, RotorBoxes);
+	UghShapes::SetShapes(Rotors, RotorBoxes);
 }
 
 void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-	const FUghSpriteSizes& Sizes, const TArray<FTransform>& Riders)
+	const FUghSprites& Sprites, const TArray<FTransform>& Riders)
 {
-	TArray<FTransform> PassengerBoxes = Riders, BubbleBoxes, EnemyBoxes, BonusBoxes;
+	TArray<FTransform> PassengerShapes = Riders, EnemyShapes, BonusShapes;
+	TArray<FBubble> Bubbles;
 	for (int32 I = 0; I < Current.entity_count; ++I)
 	{
 		const ugh_logic_entity& E = Current.entities[I];
@@ -143,32 +153,69 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 		}
 		const ugh_logic_entity* P = FindEntity(Previous, E.kind, E.index);
 		const FVector2D At = P && P->sprite >= 0 ? Between(P->x, P->y, E.x, E.y, Alpha) : Pixels(E.x, E.y);
-		const FIntPoint Size = Sizes.Size(E.sprite);
-		const FTransform Box = UghShapes::Box(At.X, At.Y, Size.X, Size.Y, Depth, FigureThickness);
+		const FIntPoint Size = Sprites.Size(E.sprite);
+		const FTransform Shape = UghShapes::Box(At.X, At.Y, Size.X, Size.Y, FigureDepth, FigureThickness);
 		switch (E.kind)
 		{
 		case UGH_LOGIC_ENTITY_PASSENGER:
-			PassengerBoxes.Add(Box);
+			PassengerShapes.Add(Shape);
 			if (E.bubble >= 0)
 			{
-				BubbleBoxes.Add(UghShapes::Box(At.X + (Size.X - BubbleWidth) / 2, At.Y - BubbleHeight - 2, BubbleWidth,
-					BubbleHeight, Depth, FigureThickness / 2));
+				const FIntPoint Bubble = Sprites.Size(E.bubble);
+				Bubbles.Add({ E.bubble, FVector2D(At.X + (Size.X - Bubble.X) / 2.0, At.Y - Bubble.Y - BubbleGap) });
 			}
 			break;
 		case UGH_LOGIC_ENTITY_ENEMY:
-			EnemyBoxes.Add(Box);
+			EnemyShapes.Add(Shape);
 			break;
 		case UGH_LOGIC_ENTITY_BONUS_ITEM:
-			BonusBoxes.Add(Box);
+			BonusShapes.Add(Shape);
 			break;
 		default:
 			break;
 		}
 	}
-	UghShapes::SetBoxes(Passengers, PassengerBoxes);
-	UghShapes::SetBoxes(Bubbles, BubbleBoxes);
-	UghShapes::SetBoxes(Enemies, EnemyBoxes);
-	UghShapes::SetBoxes(BonusItems, BonusBoxes);
+	UghShapes::SetShapes(Passengers, PassengerShapes);
+	UghShapes::SetShapes(Enemies, EnemyShapes);
+	UghShapes::SetShapes(BonusItems, BonusShapes);
+	ShowBubbles(Bubbles, Sprites);
+}
+
+/** Each bubble on a card of its own (the cards differ in their sprite), the cards made as they are needed. */
+void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites& Sprites)
+{
+	for (int32 I = 0; I < FMath::Max(Bubbles.Num(), BubbleCards.Num()); ++I)
+	{
+		if (I >= Bubbles.Num())
+		{
+			BubbleCards[I]->SetVisibility(false);
+			continue;
+		}
+		if (I >= BubbleCards.Num())
+		{
+			UStaticMeshComponent* Card = NewObject<UStaticMeshComponent>(this);
+			Card->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
+			Card->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Card->SetCastShadow(false);
+			Card->SetMaterial(0, UghShapes::Material(Card, UghMaterials::Sprite));
+			Card->SetupAttachment(RootComponent);
+			Card->RegisterComponent();
+			AddInstanceComponent(Card);
+			BubbleCards.Add(Card);
+		}
+		const FBubble& Bubble = Bubbles[I];
+		TObjectPtr<UTexture2D>& Texture = SpriteTextures.FindOrAdd(Bubble.Sprite);
+		const FIntPoint Size = Sprites.Size(Bubble.Sprite);
+		if (!Texture)
+		{
+			Texture = UghTexture::Create(this, Size.X, Size.Y, Sprites.Pixels(Bubble.Sprite), true);
+		}
+		UStaticMeshComponent* Card = BubbleCards[I];
+		Cast<UMaterialInstanceDynamic>(Card->GetMaterial(0))->SetTextureParameterValue(UghMaterials::ArtParameter, Texture);
+		// a thin box as big as the sprite: its front face shows the sprite
+		Card->SetWorldTransform(UghShapes::Box(Bubble.At.X, Bubble.At.Y, Size.X, Size.Y, CardDepth, CardThickness));
+		Card->SetVisibility(true);
+	}
 }
 
 void AUghFigures::ShowRain(const ugh_logic_view& Current)
@@ -176,20 +223,24 @@ void AUghFigures::ShowRain(const ugh_logic_view& Current)
 	TArray<FTransform> Drops;
 	for (int32 I = 0; I < Current.raindrop_count; ++I)
 	{
-		Drops.Add(UghShapes::Box(Current.raindrops[I][0], Current.raindrops[I][1], DropWidth, DropHeight, Depth,
+		Drops.Add(UghShapes::Box(Current.raindrops[I][0], Current.raindrops[I][1], DropWidth, DropHeight, FigureDepth,
 			FigureThickness / 4));
 	}
-	UghShapes::SetBoxes(Raindrops, Drops);
+	UghShapes::SetShapes(Raindrops, Drops);
 }
 
 void AUghFigures::Clear()
 {
 	for (UInstancedStaticMeshComponent* Body : CopterBodies)
 	{
-		UghShapes::SetBoxes(Body, {});
+		UghShapes::SetShapes(Body, {});
 	}
-	for (UInstancedStaticMeshComponent* Boxes : { Rotors, Passengers, Bubbles, Enemies, BonusItems, Raindrops })
+	for (UInstancedStaticMeshComponent* Shapes : { Rotors, Passengers, Enemies, BonusItems, Raindrops })
 	{
-		UghShapes::SetBoxes(Boxes, {});
+		UghShapes::SetShapes(Shapes, {});
+	}
+	for (UStaticMeshComponent* Card : BubbleCards)
+	{
+		Card->SetVisibility(false);
 	}
 }

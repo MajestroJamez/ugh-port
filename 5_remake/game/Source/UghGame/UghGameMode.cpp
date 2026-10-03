@@ -1,40 +1,25 @@
 #include "UghGameMode.h"
 
-#include "Camera/CameraActor.h"
-#include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
-#include "Components/DirectionalLightComponent.h"
-#include "Components/SkyAtmosphereComponent.h"
-#include "Components/SkyLightComponent.h"
-#include "Engine/DirectionalLight.h"
-#include "Engine/Engine.h"
-#include "Engine/GameViewportClient.h"
-#include "Engine/SkyLight.h"
 #include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "UghBackground.h"
+#include "UghCampfire.h"
 #include "UghFigures.h"
 #include "UghHud.h"
 #include "UghKeyboard.h"
 #include "UghPlayerController.h"
+#include "UghRockMesh.h"
 #include "UghShapes.h"
+#include "UghShot.h"
+#include "UghStage.h"
 #include "UnrealClient.h"
 
 namespace
 {
-	/** The camera's horizontal field of view (degrees): narrow, so the boxes look nearly flat. */
-	constexpr float FieldOfView = 30.f;
-	/** Room around the screen of the original. */
-	constexpr double ScreenMargin = 1.08;
-
-	/** -UghShot: when it skips the caption, pedals, takes the picture and quits (seconds of the fully shown play). */
-	constexpr double ShotCaptionKeyEvery = 0.5;
-	constexpr double ShotLiftFrom = 0, ShotLiftTo = 0.8, ShotAt = 1.6, ShotQuitAt = 2.2;
-	constexpr double ShotTimeLimit = 120;
-
 	FString AssetsDir()
 	{
 		FString Dir;
@@ -42,7 +27,10 @@ namespace
 		{
 			return Dir;
 		}
-		return FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../../assets"));   // 5_remake/game
+		// a packaged game has its own copy (package.ps1); the project 5_remake/game reads the repository's
+		const FString Packaged = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("assets"));
+		return FPaths::DirectoryExists(Packaged) ? Packaged
+			: FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../../assets"));
 	}
 }
 
@@ -60,19 +48,14 @@ void AUghGameMode::StartPlay()
 	BuildStage();
 	Upscaler.ChooseBest();
 
-	const TCHAR* CommandLine = FCommandLine::Get();
-	if (FParse::Value(CommandLine, TEXT("-UghShot="), ShotPath) || FParse::Param(CommandLine, TEXT("UghShot")))
-	{
-		ShotPath = FPaths::ConvertRelativePathToFull(
-			ShotPath.IsEmpty() ? FPaths::ProjectSavedDir() / TEXT("Shots/level1.png") : ShotPath);
-	}
+	bShooting = Shot.Configure();
 
 	const FString Assets = AssetsDir();
-	if (!SpriteSizes.Load(Assets / TEXT("sprites.json"), Problem) ||
+	if (!Sprites.Load(Assets, Problem) || !LevelArt.Load(Assets, Problem) ||
 		!Simulation.Load(Assets / TEXT("logic/ugh-data.ugd"), Problem))
 	{
 		UE_LOG(LogTemp, Error, TEXT("UGH no game: %s"), *Problem);
-		if (!ShotPath.IsEmpty())
+		if (bShooting)
 		{
 			Quit();   // no screenshot: shot.ps1 reports it
 		}
@@ -81,38 +64,19 @@ void AUghGameMode::StartPlay()
 	Simulation.NewGame();
 }
 
-/** The light (a sun from the front above, the sky), the camera, the background and the figures. */
+/** The stage (light, air, camera), the level's background, the figures, the campfire. */
 void AUghGameMode::BuildStage()
 {
 	UWorld* World = GetWorld();
-	ADirectionalLight* Sun = World->SpawnActor<ADirectionalLight>(FVector::ZeroVector, FRotator(-35, -100, 0));
-	Sun->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-	Sun->GetLightComponent()->SetIntensity(5.f);
-	// no shadows: on the stretched boxes they fall as long streaks; the grey boxes are shaded by their faces only
-	Sun->GetLightComponent()->SetCastShadows(false);
-	Cast<UDirectionalLightComponent>(Sun->GetLightComponent())->SetAtmosphereSunLight(true);
-
-	AActor* Atmosphere = World->SpawnActor<AActor>();
-	USkyAtmosphereComponent* Sky = NewObject<USkyAtmosphereComponent>(Atmosphere);
-	Sky->RegisterComponent();
-
-	ASkyLight* SkyLight = World->SpawnActor<ASkyLight>();
-	SkyLight->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-	SkyLight->GetLightComponent()->bRealTimeCapture = true;
-	SkyLight->GetLightComponent()->SetIntensity(1.f);
-	SkyLight->GetLightComponent()->RecaptureSky();
-
+	Stage = World->SpawnActor<AUghStage>();
 	Background = World->SpawnActor<AUghBackground>();
 	Figures = World->SpawnActor<AUghFigures>();
-
-	Camera = World->SpawnActor<ACameraActor>(FVector::ZeroVector, FRotator(0, -90, 0));   // looking along -Y
-	Camera->GetCameraComponent()->SetFieldOfView(FieldOfView);
-	Camera->GetCameraComponent()->SetConstraintAspectRatio(false);
+	Campfire = World->SpawnActor<AUghCampfire>();
 	if (APlayerController* Controller = World->GetFirstPlayerController())
 	{
-		Controller->SetViewTarget(Camera);
+		Controller->SetViewTarget(Stage);
 	}
-	FitCamera();
+	Stage->FitCamera();
 }
 
 void AUghGameMode::Tick(float DeltaSeconds)
@@ -120,9 +84,14 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	Simulation.Advance(DeltaSeconds);
 	ShowFrame();
-	if (!ShotPath.IsEmpty())
+	if (bShooting)
 	{
-		TickShot(DeltaSeconds);
+		switch (Shot.Tick(Simulation, DeltaSeconds))
+		{
+		case FUghShot::EAction::TakeShot: FScreenshotRequest::RequestScreenshot(Shot.GetPath(), false, false); break;
+		case FUghShot::EAction::Quit: Quit(); break;
+		default: break;
+		}
 	}
 }
 
@@ -132,12 +101,12 @@ void AUghGameMode::ShowFrame()
 	const ugh_logic_view& Current = Simulation.GetCurrent();
 	if (Current.level_id != BackgroundLevel)
 	{
-		Background->Build(Simulation.GetLogic());
-		BackgroundLevel = Current.level_id;
+		BuildLevel(Current);
 	}
 	const double Water = FMath::Lerp(double(Previous.water_level), double(Current.water_level), Simulation.Alpha());
 	Background->SetWater(Water / UghShapes::Subpixels);
-	Figures->Show(Previous, Current, Simulation.Alpha(), SpriteSizes);
+	Campfire->SetWater(Water / UghShapes::Subpixels);
+	Figures->Show(Previous, Current, Simulation.Alpha(), Sprites);
 
 	// the fade of the play; black around it (the HUD writes the captions)
 	const double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY
@@ -149,23 +118,18 @@ void AUghGameMode::ShowFrame()
 			Controller->PlayerCameraManager->SetManualCameraFade(1.f - float(Shown), FLinearColor::Black, false);
 		}
 	}
-	FitCamera();
+	Stage->FitCamera();
 }
 
-/** The whole screen of the original in view, whatever the window's aspect. */
-void AUghGameMode::FitCamera()
+/** The diorama of the level the view shows: the rock coloured by its drawing, the campfire where it fits. */
+void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
-	FVector2D Viewport(16, 9);
-	if (GEngine && GEngine->GameViewport)
-	{
-		GEngine->GameViewport->GetViewportSize(Viewport);
-	}
-	const double Aspect = Viewport.Y > 0 ? Viewport.X / Viewport.Y : 16.0 / 9.0;
-	const double HalfTan = FMath::Tan(FMath::DegreesToRadians(FieldOfView / 2));
-	const double Width = UghShapes::ScreenWidth * UghShapes::UnitsPerPixel * ScreenMargin;
-	const double Height = UghShapes::ScreenHeight * UghShapes::UnitsPerPixel * ScreenMargin;
-	const double Distance = FMath::Max(Width / 2 / HalfTan, Height / 2 * Aspect / HalfTan);
-	Camera->SetActorLocation(UghShapes::ToWorld(UghShapes::ScreenWidth / 2.0, UghShapes::ScreenHeight / 2.0, -Distance));
+	BackgroundLevel = View.level_id;
+	FUghRockMesh Rock;
+	Rock.Build(Simulation.GetLogic());
+	Background->Build(Rock, LevelArt.Draw(Background, View.level_id, Sprites));
+	Campfire->Place(View.level_id < 0 ? TOptional<FIntPoint>()
+		: Rock.FindHearth(Simulation.GetLogic(), View.water_level / UghShapes::Subpixels));
 }
 
 bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
@@ -201,64 +165,6 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 	}
 	FUghKeyboard::Handle(Simulation, Key, Event);
 	return true;
-}
-
-/**
- * -UghShot: skips the caption, pedals up as soon as the level is shown (the copter starts in the air and falls), saves
- * the screenshot and quits; gives up after ShotTimeLimit.
- */
-void AUghGameMode::TickShot(float DeltaSeconds)
-{
-	const ugh_logic_view& View = Simulation.GetCurrent();
-	ShotTotalTime += DeltaSeconds;
-	if (ShotTotalTime > ShotTimeLimit)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UGH shot: no screenshot after %.0f s (phase %d)"), ShotTimeLimit, View.phase);
-		Quit();
-		return;
-	}
-	if (View.phase != ShotPhase)
-	{
-		UE_LOG(LogTemp, Display, TEXT("UGH shot: phase %d, %.0f fps"), View.phase, DeltaSeconds > 0 ? 1 / DeltaSeconds : 0.f);
-		ShotPhase = View.phase;
-		ShotPhaseTime = 0;
-	}
-	if (View.phase == UGH_LOGIC_PHASE_CAPTION)
-	{
-		ShotPhaseTime += DeltaSeconds;
-		if (ShotPhaseTime >= ShotCaptionKeyEvery)
-		{
-			FUghKeyboard::Handle(Simulation, EKeys::Enter, IE_Pressed);
-			FUghKeyboard::Handle(Simulation, EKeys::Enter, IE_Released);
-			ShotPhaseTime = 0;
-		}
-		return;
-	}
-	if (View.phase != UGH_LOGIC_PHASE_PLAY || View.fade < UghShapes::FadeShown)
-	{
-		return;
-	}
-	const double Before = ShotPhaseTime;
-	ShotPhaseTime += DeltaSeconds;
-	auto Reached = [&](double Moment) { return Before <= Moment && ShotPhaseTime > Moment; };
-	if (Reached(ShotLiftFrom))
-	{
-		FUghKeyboard::Handle(Simulation, EKeys::Up, IE_Pressed);
-	}
-	if (Reached(ShotLiftTo))
-	{
-		FUghKeyboard::Handle(Simulation, EKeys::Up, IE_Released);
-	}
-	if (Reached(ShotAt))
-	{
-		UE_LOG(LogTemp, Display, TEXT("UGH shot %s (level_id %d, copter %d,%d)"), *ShotPath, View.level_id,
-			View.copters[0].x, View.copters[0].y);
-		FScreenshotRequest::RequestScreenshot(ShotPath, false, false);
-	}
-	if (Reached(ShotQuitAt))
-	{
-		Quit();
-	}
 }
 
 void AUghGameMode::Quit()

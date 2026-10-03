@@ -514,3 +514,14 @@ Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/l
   mimo git), `build.ps1`, `test.ps1`, `shot.ps1` (level 1 sám bez okna do PNG), `play.ps1`. Review agentem: 8 nálezů
   opraveno. 43 testů + 3 + 161 replayů (CMake) a 161 replayů v UE zelených, Jan level 1 odehrál
   (`play.ps1`). Další: **krok 11**.
+- 2026-10-03: krok 11 - vizuální směr „Pravěké dioráma“ (`docs/visual-concept.md`), level 1 hotový (bez Janova
+  ručního odehrání). Útes v řezu z kolizní masky (`FUghRockMesh`: řez, podlahy, stropy a stěny po pixelech, hrbolatá
+  zadní stěna jeskyně), obarvený původní kresbou levelu složenou za běhu z dlaždic (`FUghLevelArt`, data jen z
+  `assets/`), průsvitná voda, mlha, dřevěný rám, ohniště na nejdelší suché římse bez plošiny (zhasne pod vodou),
+  postavy z plastelíny, bubliny cestujících jako kartičky s původním spritem; světla, mlha a kamera v `AUghStage`
+  (slunce bez zabarvení atmosférou, expozice -1). Materiály dělá commandlet `UghMakeAssets` (modul `UghEditor`) při
+  `build.ps1` do `Content/Generated` - v gitu žádné binární assety. Autopilot screenshotu `FUghShot` (vznášení,
+  `-UghShotAt=`). Balení `package.ps1` (UAT přes `cmd`, `NO_PROXY += ::1`, data vedle hry, zip bez `.pdb`, 609 MB) a
+  `pso.ps1` (nahrání PSO zabalenou hrou, expand jen s klíči `PCD3D_SM6` - smíchané SM5 shodí cook, druhé balení):
+  47 PSO předkompilováno při startu. Review agentem: 8 nálezů opraveno. 43 testů + 3 + 161 replayů (CMake) a 161
+  replayů v UE zelených. Další: Jan odehraje level 1 (`play.ps1`), pak **krok 12** (zatím nenaplánovaný).

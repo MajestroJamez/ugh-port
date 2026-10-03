@@ -1,26 +1,28 @@
-// The game: the logic, its keys and its grey boxes.
+// The game: the logic, its keys and its diorama.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "UghLevelArt.h"
+#include "UghShot.h"
 #include "UghSimulation.h"
-#include "UghSpriteSizes.h"
+#include "UghSprites.h"
 #include "UghUpscaler.h"
 #include "UghGameMode.generated.h"
 
-class ACameraActor;
 class AUghBackground;
+class AUghCampfire;
 class AUghFigures;
+class AUghStage;
 
 /**
- * The remake in grey boxes: runs the logic at its own tick (FUghSimulation), passes it the keys (FUghKeyboard) and
- * shows each frame between two of its steps (AUghBackground, AUghFigures, the HUD). No map: the scene is built here.
- * Keys of the frontend: U the next upscaler, G the frame generation; when the game is over Enter starts a new one
- * and Esc quits.
+ * The remake: runs the logic at its own tick (FUghSimulation), passes it the keys (FUghKeyboard) and shows each frame
+ * between two of its steps in the diorama (AUghStage, AUghBackground, AUghFigures, AUghCampfire, the HUD). No map: the
+ * scene is built here. Keys of the frontend: U the next upscaler, G the frame generation; when the game is over Enter
+ * starts a new one and Esc quits.
  *
- * -UghAssets=<folder> reads the data from elsewhere than the repository's assets/. -UghShot[=<file.png>] plays by
- * itself (it skips the caption, lifts off) and saves one screenshot of level 1, then quits: a check without a window
- * (with -RenderOffscreen).
+ * -UghAssets=<folder> reads the data from elsewhere than assets/ (of the package, else of the repository).
+ * -UghShot: the game plays by itself for a screenshot (FUghShot).
  */
 UCLASS()
 class AUghGameMode : public AGameModeBase
@@ -46,23 +48,20 @@ public:
 private:
 	void BuildStage();
 	void ShowFrame();
-	void FitCamera();
-	void TickShot(float DeltaSeconds);
+	void BuildLevel(const ugh_logic_view& View);
 	void Quit();
 
 	FUghSimulation Simulation;
-	FUghSpriteSizes SpriteSizes;
+	FUghSprites Sprites;
+	FUghLevelArt LevelArt;
 	FUghUpscaler Upscaler;
+	FUghShot Shot;
+	bool bShooting = false;   // -UghShot
 	FString Problem;
 
+	UPROPERTY() TObjectPtr<AUghStage> Stage;
 	UPROPERTY() TObjectPtr<AUghBackground> Background;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
-	UPROPERTY() TObjectPtr<ACameraActor> Camera;
+	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;
 	int32 BackgroundLevel = -1;   // the level_id the background shows
-
-	/** -UghShot: where the screenshot goes (empty: no shot); the phase it is in, since when; how long it runs. */
-	FString ShotPath;
-	int32 ShotPhase = -1;
-	double ShotPhaseTime = 0;
-	double ShotTotalTime = 0;
 };

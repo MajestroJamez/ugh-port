@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"EngineAssociation": "5.8",
 	"Category": "",
-	"Description": "UGH! remake - grey boxes over the C++ game logic",
+	"Description": "UGH! remake - the prehistoric diorama over the C++ game logic",
 	"Modules": [
 		{
 			"Name": "UghLogic",
@@ -12,6 +12,11 @@
 		{
 			"Name": "UghGame",
 			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UghEditor",
+			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}
 	],
@@ -26,6 +31,10 @@
 		},
 		{
 			"Name": "FSR",
+			"Enabled": true
+		},
+		{
+			"Name": "ProceduralMeshComponent",
 			"Enabled": true
 		}
 	]

@@ -6,12 +6,14 @@
 #include "UghBackground.generated.h"
 
 class UInstancedStaticMeshComponent;
-class UTextRenderComponent;
-struct ugh_logic;
+class UMaterialInstanceDynamic;
+class UProceduralMeshComponent;
+class UTexture2D;
+class FUghRockMesh;
 
 /**
- * The background of the level being played as grey boxes: its solid pixels (the collision mask, the plane of the
- * play exactly), its pads with their numbers, the water and a wall behind the screen.
+ * The diorama of the level being played: the rock cut in the plane of the play (FUghRockMesh, coloured by the
+ * original's drawing of the level), the water, and the wooden box around the screen.
  */
 UCLASS()
 class AUghBackground : public AActor
@@ -19,13 +21,10 @@ class AUghBackground : public AActor
 	GENERATED_BODY()
 
 public:
-	/** The depth of the background around the plane of the play (units): the figures are in front of it. */
-	static constexpr double Thickness = 400.0;
-
 	AUghBackground();
 
-	/** Builds the level being played; nothing before the first one is loaded. */
-	void Build(const ugh_logic* Logic);
+	/** Shows the rock of a level (empty: none) coloured by `Art`, the level's drawing (FUghLevelArt). */
+	void Build(const FUghRockMesh& Mesh, UTexture2D* Art);
 	/** The water surface, pixels from the top of the screen. */
 	void SetWater(double Surface);
 
@@ -33,12 +32,9 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void BuildRock(const ugh_logic* Logic);
-	void BuildPads(const ugh_logic* Logic);
-
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Wall;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Rock;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Pads;
+	UPROPERTY() TObjectPtr<UProceduralMeshComponent> Rock;
+	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> RockMaterial;
+	UPROPERTY() TObjectPtr<UTexture2D> RockArt;
+	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Frame;
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Water;
-	UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> PadNumbers;
 };
