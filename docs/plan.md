@@ -1,0 +1,357 @@
+# Plán: UGH! remake v UE 5.8 - krok za krokem (1 krok = 1 session)
+
+Kontext a výsledky zkušebního průchodu: [phase4-modernization.md](../2_reverse_engineering/notes/phase4-modernization.md).
+Pravidla platná pro všechny kroky:
+
+- Fyzika a logika **přesně jako originál**. Kotlin port (`core/`) je jen reference a generátor testů, nepřepisuje se.
+- Testy jsou data: golden replays (`verify/src/test/kotlin/ugh/verify/replay/`), každá nová implementace musí projít
+  všemi replayi pole po poli. Od kroku N8 jen sémantické `UGR 1` (pojmy hry, žádné adresy; `UGR 0` zaniklo se
+  starým jádrem `sim/`), podle nich se ověřuje jádro `logic/`.
+- Herní data se necommitují (jen kód); C++ jádro čte data vytažená extractorem do `assets/`.
+- Nic viditelného na notebooku bez souhlasu (okno hry, editor se scénou, Blender); příkazy pro Jana jen PowerShell 5.1.
+- Na konci každého kroku: testy zelené, krátký zápis do tohoto souboru (sekce Stav), commit po Janově souhlasu.
+
+## Krok 1 - Úklid a commit dosavadní práce
+
+- Projít necommitované změny (`verify/.../replay/*`, `Lockstep.kt` posluchač kláves, `re/notes/phase4-*.md`,
+  `re/notes/plan.md`); smazat nepoužitý `setup/install-dev.ps1`.
+- Golden replays generovat Gradle úlohou (např. `:verify:replays`) do `verify/build/replays`, ne jen jako vedlejší
+  produkt testu.
+- Hotovo když: `.\gradlew.bat :verify:test` zelený, změny commitnuté.
+
+## Krok 2 - Replays napříč všemi levely
+
+- Problém: náhodný i cheat pilot zůstávají v levelu 1.
+- Start z libovolného levelu přes heslo (F2 v menu, hesla v DGROUP od `00ee` / `0492`) - stále jen vstupy z klávesnice.
+- Sada: pro každý level (69 jeden hráč, 81 team) krátký cheat záznam (~2000 snímků) + několik dlouhých
+  náhodných záznamů na různých obtížnostech; dokončení levelu (doručit všechny) aspoň v několika levelech.
+- Hotovo když: každý level má replay, ve všech 0 rozdílů, pokryté všechny pojmenované stavy cestujících,
+  objektů i bonusů (test to vyhodnotí a vypíše chybějící).
+
+## Krok 3 - Audit úplnosti stavu
+
+- Instrumentovat zápisy do paměti portu během hraní a vypsat proměnné DGROUP/CS, které se mění, ale projekce je
+  nezahrnuje (animace vrtulníku, stavový řádek, déšť, časovače, ...).
+- U každé rozhodnout: patří do stavu (ovlivňuje logiku nebo ji potřebuje renderer), nebo je čistě vnitřní/VGA.
+- Doplnit `StateProjection`, přegenerovat replays.
+- Hotovo když: seznam neprojektovaných proměnných je prázdný nebo každá má zdůvodnění v kódu.
+
+## Krok 4 - Export dat pro C++ jádro
+
+- Extractor vyexportuje z UGH.EXE do `assets/sim/` vše, co logika potřebuje: mapy levelů, záznamy levelů
+  (26 B), seznamy A-D, deskriptory cestujících/objektů/bonusů, tabulky animací, hesla, a hlavně
+  **pixelovou kolizní masku** (kolize jsou po pixelech, bit 7 barvy pozadí, `113b:1457`).
+- Formát jednoduchý pro C++ (binární s hlavičkou nebo text), popsat v `phase2-data.md`.
+- Hotovo když: test v `verify` ověří, že kolizní maska z exportu = pozadí ve VGA portu pro všechny levely.
+
+## Krok 5 - C++ jádro: kostra a vrtulník
+
+- `sim/` v repu: C++20, CMake (Build Tools 2026), bez závislostí; C API (`ugh_sim_*`).
+- Přehrávač replayů (`UGR 0`, včetně `I` řádků) jako konzolový program + CTest.
+- Implementovat: načtení levelu, start pozice, fyzika vrtulníku (`113b:1095`), přistání, náraz/crash, energie, RNG.
+- Porovnávat jen pole `game.*` a `copter.*` (filtr v přehrávači), zbytek zatím přeskočit.
+- Každá funkce s odkazem na adresu originálu a funkci Kotlin portu.
+- Hotovo když: všechny replays projdou pro `copter.*` a odpovídající `game.*`.
+
+## Krok 6 - C++ jádro: cestující a plošiny
+
+- Stavový automat cestujících (`113b:1486..2276`), plošiny, nástup, jízda, platba, bonusy za rychlé doručení.
+- Hotovo když: projdou `passenger.*` a `pad.*`.
+
+## Krok 7 - C++ jádro: nepřátelé, stromy, foukače, bonusové předměty
+
+- `113b:2363..2b7e` a `2b7f..2d1b`.
+- Hotovo když: projdou `object.*` a `bonus.*`.
+
+## Krok 8 - C++ jádro: průběh hry
+
+- Fáze (`setup`, `caption`, `play`, `betweenLevels`, ...), fade, konec levelu, ztráta života, game over, skóre,
+  multiplikátor, team mode.
+- Hotovo když: **všechny replays projdou celé**. Volitelně FFM most do `verify` pro lockstep ladění C++ vs Kotlin.
+
+## Krok 9 - C++ jádro: přepis do čisté architektury
+
+Současné jádro je věrný přepis assembleru (paměť DGROUP na adresách, registry `Regs`, skoky přes adresy
+obslužných rutin). Je přesné, ale nečitelné. Cíl: kód, který je radost číst. Logika zůstává bit po bitu stejná,
+replays jsou záchranná síť.
+
+- **Typovaný model místo paměti:** `World` (level, hráči, voda, déšť, skóre), `Copter`, `Pad`, `Passenger`,
+  `Enemy`, `BonusItem`. Žádné offsety DGROUP v logice; zůstanou jen ve dvou okrajových vrstvách (načtení dat
+  a projekce pro replays).
+- **Data levelu a deskriptory jako typy:** `LevelDefinition`, `PassengerKind`, `EnemyKind`, `BonusKind`,
+  `Animation` (snímky + prodleva), načtené z `ugh-sim.bin` továrnou (Factory). Logika nečte syrová slova.
+- **Stavové automaty jako vzor State:** stav cestujícího / nepřítele / bonusu je objekt s jasnými přechody,
+  ne adresa rutiny a `jumpVia(r, 0x24)`. Sloty deskriptoru (+08 … +2c) se stanou pojmenovanými přechody
+  (`onLanded`, `onHit`, `onDone` …).
+- **Druhy nepřátel jako Strategy:** pterodaktyl, walker, foukač a strom sdílí rozhraní `EnemyBehavior`.
+- **Hodnotové typy pro aritmetiku originálu:** `Fixed` (1/32 px, 16bit wrap), `Velocity`, `Int16` se stejným
+  přetečením a posuny, aby se v kódu nemuselo všude psát `w16(s16(...))`.
+- **Oddělené služby:** `CollisionMask` (sonda `1457`), `Random` (`4f09`), `Input` (klávesová tabulka →
+  `Controls` hráče), `Rain`, `Water`.
+- **Události místo vedlejších efektů (Observer):** zvuky, sebrání bonusu, doručení, havárie jako události pro
+  frontend (UE si podle nich přehraje zvuk nebo efekt), ne zápisy do proměnných stavového řádku.
+- **Pryč s balastem:** nic z vykreslování VGA (pozice „kreslil jsem minule“, stavový řádek, scratch
+  proměnné, `prepare()`). Zvláštnosti originálu (třeba neposouvaná sonda při pohybu doleva) pojmenované
+  a zdokumentované v kódu, ne schované v přepisu instrukcí.
+- **Adaptér pro replays:** `ReplayProjection` převádí model na pole replayů a zpět. Je to jediné místo se jmény
+  a formáty `UGR 0`.
+- Testy jednotek pro služby a automaty vedle replayů. Rozhraní C API zůstane (UE ho používá od kroku 10).
+- Hotovo když: všech 161 replayů projde celých, v logice nejsou offsety DGROUP ani `Regs` a kód projde code
+  review (`/code-review`) bez nálezů na čitelnost.
+
+## Krok 9b - C++ jádro: čitelná struktura (model, stavy, data)
+
+Podle [core-design.md](../2_reverse_engineering/notes/core-design.md), etapy 1-5: hodnotové typy, složky a namespaces, rozdělená data, entity jako
+třídy s Mementem, stavy jako třídy (State) s `enter/update`. Hotovo když: 323 testů zelených po každé etapě.
+
+## Krok 9c - C++ jádro: fyzika, tok hry, adaptér, průvodce
+
+Podle [core-design.md](../2_reverse_engineering/notes/core-design.md), etapy 6-11: zbytek `physics/`, tok hry jako automat fází místo korutin,
+adaptér replayů jako Visitor, rozdělený přehrávač a testy, `sim/README.md`. Hotovo když: splněna sekce
+„Hotovo když“ v core-design.md.
+
+## Nové jádro `logic/` (kroky N1–N8)
+
+Review 2026-10-03: `sim/` je přesné, ale model pořád kopíruje paměť originálu (sdílená slova, jedna třída pro čtyři
+nepřátele, sloty se zbytky, DGROUP za běhu, jména podle adres). Rozhodnutí: **nová, čistě napsaná C++ aplikace
+`logic/`**, totožná s originálem 1:1, bez čehokoli z paměti staré aplikace; všechno o paměti DOSu jen v Kotlinu.
+Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků, architektura, formáty a „Hotovo když“:
+[rewrite-design.md](rewrite-design.md). `sim/` se do N8 nemění (reference, UGR 0 dál prochází).
+
+- **N1 – Průzkum** (kap. 11 N1): na `sim/` dočasně změřit, zda známý stav závisí na zbytcích paměti, zda se sdílená
+  slova čtou v jiném významu, čtení animací za koncem, definovanost polí po stavech, zvláštnosti. Výstup
+  `rewrite-audit.md`. Hotovo když má každý nález rozhodnutí a `sim/` je beze změny.
+- **N2 – Data UGD 1**: `extractor` (`Names.kt`, `LogicData.kt`) → `assets/sim/ugh-data.ugd`, test proti paměti portu
+  pro všech 81 levelů, popis v `phase2-data.md`.
+- **N3 – Replaye UGR 1**: `SemanticProjection.kt`, `ReplayWriter` pro UGR 1, oba formáty z jednoho běhu,
+  `CheatPilot` bez zápisu stavu cestujících. Hotovo když 161 replayů v obou formátech a `sim/` dál zelené.
+- **N4 – Kostra `logic/`**: CMake, `units/`, `data/` (parser UGD 1), `events/`, nástroj `replay_check`, návrh C API.
+  Hotovo když `game.*` souhlasí až do prvního popisku.
+- **N5 – Tok hry, načtení levelu, vrtulník**: `world/`, `physics/`, `input/`, `game/`. Hotovo když v levelu 1
+  souhlasí hra, vrtulníky a plošiny do prvního nástupu.
+- **N6 – Cestující a bonusy**: oba automaty cestujících, `Ballistics`, `bonuses/`. Hotovo když level 1 souhlasí ve
+  všem kromě nepřátel.
+- **N7 – Nepřátelé**: flyer, walker, foukač, strom. Hotovo když **všech 161 replayů projde celých**.
+- **N8 – Dokončení**: README, `logic-map.md`, pohled pro vykreslení v C API, `/code-review high`, junior test,
+  smazat `sim/`, UGR 0 a `ugh-sim.bin`.
+
+## Krok N9 - Repo po krocích, C++ jádro bez kompromisů
+
+Review 2026-10-03 po N8: `logic/` je čitelné, ale ne vzorové (zdvojený stavový automat, tlusté třídy, PC scancody
+a 16bitová aritmetika DOSu v API a modelu, 565řádkový `DataFileReader`). **Kotlin se nepřepisuje ani neuklízí** -
+je to jen reference a generátor testů. Upravuje se jen C++ a umístění složek. Po každé etapě testy jednotek
+a všech 161 replayů zelené (každé pole, každý snímek).
+
+### N9a - Složky podle kroků projektu (obsah Kotlinu beze změny)
+
+Číslo = krok řetězu; odkazy vedou jen dozadu (pozdější krok používá dřívější), uvnitř kroku mezi sousedy.
+
+```
+1_original/             UGH.EXE (dnes OLD/, necommituje se)
+2_reverse_engineering/  dnešní re/: Ghidra skripty, JS nástroje, poznámky k originálu
+3_kotlin_port/          core/, oracle/ (emulátor originálu), desktop/ (hratelný port)
+4_test_data/            extractor/ (-> assets/logic/ugh-data.ugd), verify/ (-> golden replaye UGR 1)
+5_remake/
+  logic/                C++ pravidla hry: knihovna + testy jednotek (o replayích neví)
+  game/                 UE projekt (krok 10), logiku přibalí jako modul z ../logic
+6_verification/         přehraje replaye ze 4 proti logice z 5, pole po poli
+docs/                   plán, návrh a mapa C++ jádra
+assets/                 vygenerovaná data (necommitují se)
+```
+
+- `git mv` podle stromu. Gradle wrapper, `settings.gradle.kts` a `build.gradle.kts` zůstanou v kořeni, takže
+  `.\gradlew.bat :extractor:run` a `:verify:replays` se nemění.
+- `docs/`: z `re/notes/` vytáhnout `plan.md`, `rewrite-design.md`, `logic-map.md`; zbytek (`phase*`, `core-design.md`,
+  `rewrite-audit.md`) zůstane v `2_reverse_engineering/notes/`.
+- `6_verification/`: sem z `logic/` přejde `replay/` (zápis stavu do polí UGR 1) a `tools/replay_check/`; vlastní
+  `CMakeLists.txt` (logiku přidá `add_subdirectory(../5_remake/logic)`), `build.ps1` (logika + testy jednotek +
+  161 replayů) a `README.md`. `5_remake/logic/build.ps1` staví jen knihovnu a testy jednotek.
+- Úpravy jen mimo Kotlin kód: `settings.gradle.kts` (`project(":core").projectDir = file("3_kotlin_port/core")` ...),
+  cesty `OLD/` -> `1_original/` v `build.gradle.kts` extractoru, oracle a verify, cesta k `package/README.txt`
+  v `build.gradle.kts` desktopu, `.gitignore`, `release.yml`, odkazy v C++ a v `docs/`. Odkazy na `re/notes`
+  v komentářích Kotlinu zůstanou (Kotlin se nemění).
+- `README.md` v kořeni: co je který krok a v jakém pořadí číst; krátké `README.md` v každé číslované složce.
+- Hotovo když: `.\gradlew.bat :extractor:run :verify:replays` projde, `6_verification\build.ps1` zelený a `git status`
+  ukazuje u Kotlinu jen přejmenování (a výše uvedené `.kts`).
+
+### N9b - C++ jádro (etapy, po každé zelené)
+
+1. **Jeden stavový automat (DRY):** šablona `state/StateMachine<Entity, Context>` + `state/State<Entity, Context>`
+   (`enter`, `update`, `name`) místo 7 kopií `changeState` / `continueIn` / `state_` a 7 skoro stejných rozhraní
+   `*State`. Pravidlo „žádné vlastní šablony“ padá (UE šablony nevadí); dál platí bez výjimek, RTTI a maker.
+2. **Zapouzdření entit:** `Passenger` a `Enemy` bez `protected` dat. `RoutePassenger` (~35 veřejných metod) rozdělit
+   na malé části s vlastním chováním - `PassengerCall` (volání / mávání), `Swim` (rychlost, čas na hladině),
+   `Ride` (nosič, čas rychlého doručení), `Route` (zastávky, zpoždění) - stavy volají záměry
+   (`passenger.ride().start(copter)`), ne settery. Totéž u `Walker` a `Flyer` (časovače).
+3. **Druhy cestujících po jednom:** `PassengerKind` s `Type` a poli platnými jen pro část typů nahradit třídami
+   `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`; přepnutí do vody a zpět jako dvojice druhů. V `data/`
+   jedno pravidlo pro všechny záznamy: neměnné struktury s veřejnými poli; umístění (Visitor) stejně, jen s `accept`.
+4. **Vstup bez DOSu:** C API `ugh_logic_key(player, key, pressed)` a `ugh_logic_menu_key(key)` (Esc, P, „jiná klávesa“
+   pro popisek) místo scancodů. `PcKeyboard` (scancody, rozšířené klávesy, falešné shifty) se přesune do `6_verification/` jako
+   adaptér, který z kláves replayů dělá tyto vstupy. Logika o PC klávesnici neví.
+5. **Typy hry místo registrů:** podle `rewrite-audit.md` 16bitové přetečení ani neznaménkové porovnání v replayích
+   nenastane, takže jízdné, vzhled, číslo plošiny, životy, skóre a časovače budou `int`, `unsignedLess` zmizí
+   a 16bitová sémantika zůstane jen uvnitř `Fixed` / `Speed`. Nutné zvláštnosti originálu (sonda doleva / nahoru,
+   pixelová poloha vrtulníku po hodu, kapky přes okraj stránky) jen uvnitř své třídy, pojmenované a popsané. C API
+   dává kapky v souřadnicích obrazovky (bez „stránky 384 px“).
+6. **Zbytek DRY a čitelnost:**
+   - prodleva animace walkera jednou (dnes 4×),
+   - `RoutePassenger::stepTowards(x)` místo 3 kopií chůze,
+   - stavy na plošině se společnou kontrolou pádu do vody (dnes ve 4 stavech),
+   - zóna foukače přes stejnou třídu jako `TouchBox`,
+   - `copterOnWater(true, false)` -> pojmenované dotazy (`copterOnWaterWithRoom()` ...),
+   - metody `Game` pro fáze (`startAttempt`, `endAttempt` ...) do vlastní třídy, kterou dostane jen `GameFlow`,
+     takže na fasádě zůstane jen veřejné API,
+   - smazat mrtvou `PcKeyboard::LONGEST_SEQUENCE`.
+7. **Čtení dat:** `DataFileReader` (565 ř.) rozdělit na `UgdTokenizer` (řádky -> záznamy), `RecordReader` (klíče,
+   čísla, chyby s číslem řádku) a čtenáře po částech (`KindsReader`, `LevelReader`, `KeysReader`); `DataFileReader`
+   je jen skládá.
+8. **Dokumentace a kontrola:** `5_remake/logic/README.md`, `6_verification/README.md` (vzory, „kam sáhnout“), `docs/rewrite-design.md` (pravidla),
+   `docs/logic-map.md`; `/code-review high` bez nálezů; junior test (3 vymyšlené požadavky, u každého jeden soubor).
+   Vlastní testovací framework (68 ř., bez závislostí) zůstává.
+
+Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/logic/src`: žádné `scancode`, `unsignedLess`,
+`changeState` mimo `state/`, `protected:` s daty. Žádná třída nad ~15 veřejnými metodami (kromě fasády `Game`)
+a žádný soubor nad 200 řádků.
+
+## Krok 10 - UE projekt v repu, šedé kostky
+
+- `5_remake/game/` (UE 5.8 C++ projekt), C++ jádro `5_remake/logic/` jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
+  (FSR jen upscaler: `r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0`; offscreen oprava FSR).
+- Level z mapy dlaždic a kolizní masky jako jednoduché kostky; vrtulník, cestující, nepřátelé jako tvary.
+- Pevný tik 70,086 Hz + interpolace pro vykreslení; ovládání klávesnicí (písmena, kvůli české klávesnici).
+- Replays jako UE automatické testy (`UnrealEditor-Cmd -nullrhi`).
+- Hotovo když: level 1 jde odehrát a replays projdou i uvnitř UE.
+
+## Krok 11 - Vizuální směr „Pravěké dioráma“
+
+- Krátký koncept (paleta, materiály, světlo, kamera), pak první level: útes v řezu generovaný z mapy dlaždic,
+  ohniště s Lumen/RT, voda, mlha; herní rovina zůstává přesně podle kolizní masky.
+- PSO cache pro balení (bez trhání na startu), skript na balení (`NO_PROXY += ::1`).
+
+## Průběžně
+
+- MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
+  a `rider` (jiný port než IDEA 64342), pak restart Claude Code.
+
+## Stav
+
+- 2026-10-02: zkušební průchod hotový (vč. DLSS SR + Frame Generation doma na RTX 5060 Ti: ~150 → ~450 fps),
+  první verze projekce stavu a golden replays (5 záznamů, level 1). Další: **krok 1**.
+- 2026-10-02: krok 1 hotový - replays generuje `.\gradlew.bat :verify:replays` (~30 s) do `verify/build/replays`
+  (celý `:verify:test` je nahraje taky, ~4,5 min, zelený); `setup/install-dev.ps1` smazán. Další: **krok 2**.
+- 2026-10-02: krok 2 hotový - 161 replayů (434 tis. snímků, 41 MB, ~2 min paralelně): každý level obou režimů
+  přes heslo s cheat pilotem (2000 snímků), 4 dlouhé cheat (30 000) a 7 náhodných do game over na všech
+  obtížnostech od různých levelů; meta navíc `level=` a `password=`. Level dokončen 9× v 7 replayích. Pokrytí se
+  měří spuštěním obslužných rutin stavů (Start* stavy na hranici snímku vidět nejsou); nedosažitelné
+  `passenger.Idle` a `object.Recovering2` jsou zdůvodněné v `GoldenReplayTest.UNREACHABLE`. Cheat pilot umí
+  uletět nabíhajícímu walkerovi (`StartRecovering`). Další: **krok 3**.
+- 2026-10-02: krok 3 hotový - `StateAudit` na každé hranici snímku porovná paměť portu (obraz programu až po
+  konec DGROUP, bez zásobníku) s předchozí a se čtením projekce. Do projekce přibylo: zbývající cestující,
+  hladina vody (jemná pozice, pauza, přepínač, animace hladiny), kontrolní součet deště (respawn kapek bere RNG),
+  pixelové pozice a animace vrtulníků a cestujících, další pole plošin, cestujících a objektů. Zbytek je
+  v `StateProjection.NOT_PROJECTED` s důvodem (co se kde kreslilo minulý snímek, stavový řádek, VGA stránky
+  a paleta, klávesnice, data levelu, pomocné proměnné, zvuk); `audit.txt` v `build/replays`. Replays 87 MB.
+  Další: **krok 4**.
+- 2026-10-02: krok 4 hotový - `assets/sim/ugh-sim.bin` (`UGHSIM01`, 815 kB, popis v `phase2-data.md`): bloky
+  DGROUP, mapy, tabulka spritů na původních adresách a kolizní maska 384 × 192 pro každý z 81 levelů.
+  `GoldenReplayTest` porovnává masku se stránkou pozadí portu při vstupu do levelu a každý 64. snímek (81/81 shoda)
+  a hlídá, že sonda mimo stránku nikdy nenarazí na pevný pixel. Cheat pilot teď drží vrtulník v rozsahu
+  fyziky (předtím ho stavěl nad okraj, kde sonda četla kreslicí stránku). Další: **krok 5**.
+- 2026-10-02: krok 5 hotový - `sim/` (C++20, CMake + Ninja z Build Tools 2026, C API `ugh_sim.h`, přehrávač
+  `ugh_replay` + CTest, `sim/build.ps1`). Nová hra, start levelu (bez cestujících a objektů), konec levelu
+  a snímek hry s fyzikou vrtulníku, vodou, deštěm, klávesnicí a RNG: všech 161 replayů projde (`game.*`,
+  `copter.*`, `pad.*`), 7 s. Přehrávač kontroluje každý přechod zvlášť ze zaznamenaného stavu. Aby šlo jádro
+  ověřovat po fázích, replay má nové řádky `B` (co cestující / objekty / bonusy změnily mimo svou skupinu).
+  Do projekce přibylo `game.rainFloor` (skrytý vstup deště při načtení levelu); `game.rain` je `none` bez větru.
+  Další: **krok 6**.
+- 2026-10-02: krok 6 hotový - jádro přestavěné na stav jako paměť DGROUP na původních adresách (pole replayů
+  jsou pohled na ni, skryté odvozené proměnné doplní `prepare()`), logika převedená z Kotlinu řádek po řádku.
+  Cestující (všech 37 rutin `113b:1486..2276`), jejich seznam při načtení levelu, kreslené pozice, platba
+  a bonus za rychlé doručení (`bonusSpawn`). Načtení levelu už plní i objekty (seznam C). Všech 161 replayů
+  projde i pro `passenger.*` a `pad.*` (např. 1,7 mil. porovnaných hodnot cestujících v `1p-L01-cheat-long`);
+  přehrávač vrací jen fáze, které jádro nemá (`ugh_sim_has_stage`). Další: **krok 7**.
+- 2026-10-02: krok 7 hotový - objekty (`objects.cpp`: pterodaktyl, walker, foukač, strom, 27 rutin
+  `113b:2363..2b7e`, testy blízkosti `2196`, `22f1`) a bonusové předměty (`bonuses.cpp`: `2b7f..2d1b`, `2207`).
+  Snímek hry je v jádře celý; všech 161 replayů projde pro všechna pole včetně `game.rng` a `game.rain`
+  (celkem 7,9 mil. porovnaných hodnot objektů, 125 tis. bonusů, 21,7 mil. cestujících). Zvuky jsou vynechané
+  (handle smyčky mávání `2d61`, který replay nemá, je v jádře 0). Další: **krok 8**.
+- 2026-10-02: krok 8 hotový - průběh hry jako C++20 korutiny (`flow.hpp`, `co_await vsync()` na místech, kde
+  originál čeká na paprsek): nová hra, černá paleta, popisek (fade in, čekání na klávesu, fade out), nastavení
+  levelu, smyčka hry s fade, konec levelu, ztráta života, game over; C API `ugh_sim_step` = jeden snímek.
+  **Všech 161 replayů projde celých** od tiku 0 jen z kláves a injekcí: 434 tis. snímků, 0 rozdílů, 82 mil.
+  porovnaných hodnot. Převzato 8 808 hodnot, které jádro nikdy nezapsalo (paměť attract módu: cestující
+  a `copter.effort/impact/fareMin` na první popisce, pole objektů, která load u daného druhu nepíše).
+  CTest: plný běh + `--each` (každý přechod zvlášť), 322 testů, 15 s. FFM most nebyl potřeba. Další: **krok 9**.
+- 2026-10-02: krok 9 hotový - jádro přepsané nad typovaný model (`world.hpp`: `World`, `Copter`, `Pad`, `Passenger`,
+  `Enemy`, `BonusItem`, `Water`, `Rain`, `Fade`) a datové typy z továrny (`data.cpp`: `LevelDefinition`,
+  `PassengerKind`, `EnemyKind`, `BonusKind`, `Animation`, `Route`, `CollisionMask`, tabulka kláves; kontroluje i sloty
+  stavů v deskriptorech). Offsety DGROUP zůstaly jen v továrně a v `replay_projection.cpp`, `Regs` ani `jumpVia`
+  nejsou. Stavy jako objekty (`PassengerState`, `EnemyState`, `BonusState`) s pojmenovanými přechody, druhy nepřátel
+  jako `EnemyBehavior`, `Fixed` (1/32 px, 16bit wrap), služby `Random`, `Keyboard`, `CollisionMask`, voda a déšť,
+  události pro frontend (`ugh_sim_take_events`: zvuky originálu, havárie, doručení, bonusy). Zvláštnosti pojmenované
+  (sonda doleva / nahoru jen o pixel, sdílená slova slotů, 77fe, 7926). Neznámou paměť (attract mód) pozná přehrávač
+  tak, že pouští dvě jádra s různou výplní (`ugh_sim_reset/clear(sim, fill)`) a věří jen shodným polím - jádro samo
+  žádné příznaky „známé“ nemá. Všech 161 replayů projde celých i po přechodech se stejným počtem porovnaných hodnot
+  jako dřív, 12 testů jednotek (`tests/unit_tests.cpp`), CTest 323 testů, ~28 s. `/code-review`: 6 nálezů opraveno
+  (mj. `ugh_sim_create` teď dává výchozí stav programu), zdvojený čas testů ponechán. Další: **krok 10**.
+- 2026-10-03: analýza čitelnosti jádra hotová - cílový návrh v [core-design.md](../2_reverse_engineering/notes/core-design.md) (složky a namespaces,
+  jedna třída na soubor, entity s Mementem, stavy jako třídy, automat fází místo korutin, adaptér jako Visitor,
+  průvodce `sim/README.md`). Další: **krok 9b**.
+- 2026-10-03: krok 9b hotový - jádro ve složkách a namespaces (`core/`, `data/`, `model/`, `physics/`, `passengers/`,
+  `enemies/`, `bonuses/`, `input/`, `game/`, `replay/`, `api/`, 182 souborů): hodnotové typy `Word` / `Fixed` /
+  `Speed` / `Countdown`, továrna `GameDataLoader` oddělená od `GameData` (kontroluje i plošiny tras), entity jako třídy
+  se `Snapshot` (Memento) a sdílenými slovy jako malými třídami, `GameSession` + `Level` s dotazy, 41 stavů jako
+  třídy s `enter/update`, `EnemyBehavior` jako Strategy, `CopterPhysics` s pojmenovanými kroky. V logice není
+  `static_cast<int16_t>`, šablona ani `std::function`. 323 testů zelených, výstup přehrávače shodný s výchozím
+  (stejné počty porovnaných hodnot). Odchylky od návrhu v [core-design.md](../2_reverse_engineering/notes/core-design.md). Další: **krok 9c**.
+- 2026-10-03: krok 9c hotový - `physics/CollisionProbe` + `TouchBox`, tok hry jako automat fází (`GameFlow`,
+  `phases/`, `PlayFrame`; korutiny pryč), adaptér replayů jako Visitor (jeden seznam polí na entitu, bez šablon
+  a `std::function`), přehrávač rozdělený (`tools/ugh_replay/`), testy po modulech (`TestFramework.hpp`, 25 testů),
+  průvodce `sim/README.md`. 323 testů zelených, výstup přehrávače shodný s výchozím. `/code-review high`: 8 nálezů,
+  7 opraveno, 1 ponechán (viz [core-design.md](../2_reverse_engineering/notes/core-design.md)). Další: **krok 10**.
+- 2026-10-03: review celého jádra `sim/`: přesné, ale ne čisté (paměť originálu v modelu). Rozhodnuto napsat nové
+  jádro `logic/` bez čehokoli ze staré aplikace, ověřené sémantickými replayi `UGR 1`; zadání v
+  [rewrite-design.md](rewrite-design.md), kroky N1–N8 výše. Krok 10 až po N8. Další: **krok N1**.
+- 2026-10-03: krok N1 hotový - [rewrite-audit.md](../2_reverse_engineering/notes/rewrite-audit.md): měření na `sim/` (větev `audit/n1`, `main` beze
+  změny). Přehrávač bez převzetí neznámých hodnot, který po každém snímku „otráví“ všechna pole, jež navržená tabulka
+  UGR 1 nepovažuje za definovaná: všech 161 replayů projde, logika zbytky paměti nečte. Sdílená slova originál nikdy
+  nečte v jiném významu, animace za koncem nikdy, 16bitové přetečení ani rozdíl neznaménkového porovnání se nestane;
+  zvláštnost sondy doleva / nahoru změní výsledek 267×, kapky přes okraj stránky 20 tis.×. Opravy návrhu: `impact`
+  a `water.row` nejsou stav, `effort` přežívá mezi pokusy, poloha viděná minulý snímek jen u cestujících s trasou,
+  maska 320 px. Další: **krok N2**.
+- 2026-10-03: krok N2 hotový - `.\gradlew.bat :extractor:run` zapíše `assets/sim/ugh-data.ugd` (UGD 1, 1,4 MB):
+  pravidla, sprity, klávesy, animace, druhy, 81 levelů s plošinami, cestujícími, nepřáteli a maskou 320 × 192, pořadí
+  obou režimů; vše přepočtené a pojmenované (`Names.kt`, `LogicData.kt`). `LogicDataTest` porovná každý level obou
+  režimů po načtení portem a masky se stránkami pozadí - zelený. Popis v `phase2-data.md`. Další: **krok N3**.
+- 2026-10-03: krok N3 hotový - `.\gradlew.bat :verify:replays` zapíše 161 replayů ve dvou formátech: `UGR 0` pro
+  `sim/` (CTest dál zelený) a sémantické `UGR 1` (`replays/ugr1/`, `SemanticProjection.kt`: pojmy hry, žádné adresy,
+  pole jen definovaná podle tabulky po stavech z N1). Testovací pilot už nezapisuje stav cestujících: místo
+  `injectHit` pouští visícího cestujícího před letícího flyera; zásahy jen vrtulník, energie, životy. Finální tabulka
+  polí v kap. 9 [rewrite-design.md](rewrite-design.md). `:verify:test` zelený (14 min). Další: **krok N4**.
+- 2026-10-03: krok N4 hotový - kostra `logic/` (C++20, CMake + Ninja, `logic/build.ps1`): `units/`, `data/` (čtení
+  UGD 1 s kontrolami), `events/`, sezení a náhoda, tok hry po fázi popisku, PC klávesnice, návrh C API
+  `include/ugh_logic.h`, knihovna `ugh_logic_replay` (zápis UGR 1) a nástroj `replay_check`. 11 testů, všech 161
+  replayů souhlasí v `game.*` až do prvního popisku (`-CheckOptions "--only game. --until game.phase=caption"`).
+  Další: **krok N5**.
+- 2026-10-03: krok N5 hotový - svět levelu (vrtulníky, plošiny, voda, déšť, energie, fade), fyzika vrtulníku se sondou
+  a dotykem spritu, snímek hry, zásahy pilota (`Cheats`). Replaye levelu 1 souhlasí ve hře, vrtulnících a plošinách
+  do prvního nástupu (náhodné celé), 142 ze 161 replayů do prvního nástupu; zbylých 19 rozhodí chybějící nepřátelé.
+  24 testů. Další: **krok N6**.
+- 2026-10-03: krok N6 hotový - cestující (s trasou i stojící), společný balistický pád, bonusy. 6 z 8 replayů levelu 1
+  souhlasí ve všem kromě nepřátel celé (týmový dlouhý 26 tis. snímků), zbylé dva do odrazu od stromu. Oprava UGR 1:
+  `pad.waiting` je index cestujícího. 28 testů. Další: **krok N7**.
+- 2026-10-03: krok N7 hotový - nepřátelé (flyer, walker, foukač, strom) jako samostatné třídy se stavy. **Všech 161
+  replayů UGR 1 projde celých** (každé pole, každý snímek, stejná množina polí); `logic/build.ps1`: 32 testů + 161
+  replayů, 16 s. Další: **krok N8**.
+- 2026-10-03: krok N8 hotový - nové jádro `logic/` je jediné: `sim/`, zápis `UGR 0`, řádky `B` (`StageRecorder`)
+  a `ugh-sim.bin` (`Sim.kt`) smazané; masky počítá `Masks.kt`, data jsou v `assets/logic/ugh-data.ugd`, replaye UGR 1
+  přímo ve `verify/build/replays`. C API má pohled pro vykreslení (`ugh_logic_get_view`), průvodce
+  `logic/README.md`, mapa na originál `logic-map.md`. `/code-review high`: 10 nálezů, všechny opravené. Kontroly
+  kap. 12 (grep, jedna třída na soubor, složka = namespace, závislosti jedním směrem) splněné. 35 testů + 161
+  replayů za 10 s. Další: **krok 10**.
+- 2026-10-03: krok N9a hotový - repo ve složkách podle kroků (`1_original/` … `6_verification/`, `docs/`), Kotlin jen
+  přesunutý (`projectDir` v `settings.gradle.kts`, cesty `1_original/` v `.kts`; `:desktop:run` běží v `1_original/`,
+  kde `GameFile` najde `UGH.EXE`). `5_remake/logic/build.ps1` staví knihovnu a testy jednotek, `6_verification/build.ps1`
+  přidá logiku přes `add_subdirectory`, pole replayů a `replay_check`: 162 testů zelených. README v kořeni a v každé
+  číslované složce. Další: **N9b etapa 1**.

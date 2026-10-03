@@ -1,6 +1,7 @@
 # Original game files and everything derived from them are NEVER committed
 # (copyrighted by Play Byte / Bones Park; the port uses a "bring your own UGH.EXE" model)
-OLD/
+1_original/*
+!1_original/README.md
 *.EXE
 *.exe
 *.COM
@@ -8,8 +9,8 @@ OLD/
 assets/
 
 # Ghidra project, decompiled code and dumps derived from UGH.EXE
-re/ghidra-project/
-re/out/
+2_reverse_engineering/ghidra-project/
+2_reverse_engineering/out/
 
 # Gradle / IDE
 .gradle/

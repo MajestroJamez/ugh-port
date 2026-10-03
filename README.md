@@ -20,7 +20,7 @@ with old DOS games). Check the SHA-256 above: the port only works with exactly t
 Requirements: JDK 25 (the Gradle wrapper downloads everything else).
 
 ```powershell
-# put the original game into OLD\UGH.EXE, then:
+# put the original game into 1_original\UGH.EXE, then:
 .\gradlew.bat :extractor:test
 .\gradlew.bat :extractor:run
 ```
@@ -47,8 +47,8 @@ For comparison, `--original` runs the original `UGH.EXE` in the project's determ
 .\gradlew.bat :desktop:packageZip
 ```
 
-builds `desktop\build\jpackage\UGH-port\` (`UGH-port.exe` with its own Java runtime, no Java needed on the
-target machine) and `desktop\build\distributions\UGH-port-windows.zip`. The original game is not part of it:
+builds `3_kotlin_port\desktop\build\jpackage\UGH-port\` (`UGH-port.exe` with its own Java runtime, no Java needed
+on the target machine) and `3_kotlin_port\desktop\build\distributions\UGH-port-windows.zip`. The original game is not part of it:
 put `UGH.EXE` next to `UGH-port.exe`, or start it and pick `UGH.EXE` once (the path is remembered in
 `%APPDATA%\ugh-port`).
 
@@ -58,18 +58,24 @@ pushed; the release text is `.github/release-notes.md`.
 Player 1: arrow keys (up = pedal), player 2: W / Z / A / S. F1 starts, F3 difficulty, F4 one player / team.
 The high score table is kept in `%APPDATA%\ugh-port`.
 
-## Layout
+## Layout: the steps of the project
 
-| Path | Content |
+The folders are numbered in the order the project was made, which is also the order to read it in; a later step
+uses only earlier ones. Each numbered folder has a short `README.md`.
+
+| Folder | Step |
 |---|---|
-| `extractor/` | reads `UGH.EXE`: Pack-Ice depacker, sprites, palette, levels, pictures, AdLib blocks |
-| `core/` | the port: shared address space, VGA model, ported game routines, sound driver, OPL2 synthesizer |
-| `oracle/` | deterministic 286/VGA/DOS emulator running the original as the reference |
-| `verify/` | differential tests: every ported routine against the original, byte for byte |
-| `desktop/` | Windows window (Swing) and sound output (Java Sound) |
-| `re/notes/` | reverse-engineering notes (Czech): executable map, data formats |
-| `re/tools/` | Node.js helper scripts used during analysis |
-| `re/ghidra-scripts/` | Ghidra headless export scripts |
+| `1_original/` | your own `UGH.EXE` (never committed) |
+| `2_reverse_engineering/` | the analysis of the original: notes (Czech, `notes/`), Node.js tools (`tools/`), Ghidra scripts (`ghidra-scripts/`) |
+| `3_kotlin_port/` | the Kotlin port: `core/` (the ported program, OPL2 synthesizer), `oracle/` (deterministic 286/VGA/DOS emulator running the original), `desktop/` (Windows window and sound) |
+| `4_test_data/` | `extractor/` (reads `UGH.EXE` into `assets/`, also the data of the C++ logic), `verify/` (the port against the original in lockstep, golden replays UGR 1) |
+| `5_remake/` | the remake: `logic/` (C++ game logic, library and unit tests), `game/` (Unreal Engine project, step 10) |
+| `6_verification/` | the C++ logic against the golden replays, field by field (`build.ps1`) |
+| `docs/` | the plan of the project (`plan.md`), the design and the map of the C++ logic |
+| `assets/` | data extracted from `UGH.EXE` (never committed) |
+
+The Gradle wrapper and build scripts stay in the root: `.\gradlew.bat :extractor:run`, `:verify:replays` or
+`:desktop:run` work from there.
 
 ## Status
 

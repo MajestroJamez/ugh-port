@@ -1,0 +1,194 @@
+# UGH! — fáze 3: disassembly, vstupy a emulátor originálu
+
+Stav k 2026-09-30.
+
+## Doplnění disassembly
+
+Herní logika je řízená **tabulkami obslužných rutin** (stavové automaty, kde rutina přepisuje ukazatel na další
+stav), takže je flow analýza Ghidry nenašla:
+
+| Tabulka | Kdo ji prochází | Zdroj adres |
+|---|---|---|
+| `DGROUP:2a0d[i]` | pasažéři, `113b:1486` | `[deskriptor+8]` / `[deskriptor+0x10]`, stavy v tabulkách deskriptorů `DGROUP:772a…` |
+| `DGROUP:2cf3[i]` | objekty, `113b:2363` | `2a87`, `2379`, `295b`, `25b1` (loader `3b21`) a stavy v `DGROUP:763a…`, `7676…`, `76c4…` |
+| `DGROUP:2d83[i]` | další skupina, `113b:2b7f` | stavy v `DGROUP:78ec…`, `7976…` |
+| `CS:2db3` | voda, `113b:2dfe` | `2e03`, `31cd`, `3597` (3 kompilované snímky) |
+
+Postup: `2_reverse_engineering/tools/find-code-pointers.js` sbírá kandidáty (konstanty zapisované do tabulek a slova v deskriptorech
+ukazující do nepokrytého kódu, s kontrolou, že před nimi je `RET`/`JMP`). `2_reverse_engineering/ghidra-scripts/DisassembleAt.java`
+je disassembluje (a umí vyčistit chybně disassemblovaný rozsah). `2_reverse_engineering/tools/coverage.js` hlásí nepokryté bajty.
+
+Výsledek: segment 113b je pokrytý celý kromě tří potvrzených datových oblastí (`460a–4634` CS proměnné,
+`4690–4c81` buffery palety, `4dea–4e19` tabulky ICE). Ve zvukovém driveru 1664 zbývá ~5 kB, doplní se se zvukem.
+
+## Vstupy
+
+- **INT 9** `113b:4567`: uloží syrový scancode do `CS:4509` (menu, pauza, `113b:44f1`), porovná sekvence
+  s tabulkou `DGROUP:281c` (6 B: scancode, druhý bajt/0xFF, 0xFF, slot, hodnota, stav) a zapíše
+  `DGROUP:278c + slot` = 0xFF (stisk) / 0x00 (puštění). Sloty se sudým bitem 1 patří hráči 1, s lichým hráči 2
+  (a platí jen s ovládáním klávesnicí, `DGROUP:263f`).
+- **Hráč 1:** šipky (s prefixem E0) + pravý Ctrl / Ins. **Hráč 2:** W / Z / A / S + levý Ctrl / Enter na numerické
+  klávesnici (šipky na numerické klávesnici bez E0 také hráč 2).
+- Menu čte změnu posledního scancode (`44f1`: `AH` = změna, `AL` = scancode).
+
+## Náhoda a čas
+
+- **RNG** `113b:4f09`: aditivní generátor nad 4 slovy v `CS:4ef7–4efe`, počáteční stav je v EXE a nikde se
+  nepřenastavuje. Výsledek = `(stav * AX) >> 16`, tedy číslo 0 až AX−1.
+- Herní smyčka čeká na vertikální zatemnění (`44c3` = počkat na konec zatemnění `44d2` a pak na začátek `44c9`).
+  **1 herní snímek = 1 volání `44c3`.** Průběh hry závisí jen na vstupech po snímcích.
+- Hra vyžaduje **286+** (`113b:4f5e` testuje horní bity FLAGS).
+
+## Emulátor originálu (`:oracle`)
+
+Kotlin modul, který spouští originální `UGH.EXE` deterministicky a bez okna:
+
+- `Cpu`: interpret 80286 v reálném režimu (sada 80186, chování FLAGS jako 286).
+- `Vga`: planární paměť Mode X, latche, zápisové režimy 0–3 s rotací, ALU a bit mask, čtecí režimy 0–1, DAC,
+  CRTC (start address, offset, line compare → split screen), vykreslení snímku.
+- `Machine`: 1 MB RAM, načtení MZ na segment 0x1000 s relokacemi (**stejné adresy jako v Ghidře**), PSP
+  a prostředí, PIC, PIT kanál 0, klávesnice (fronta scancode → IRQ1), BIOS (INT 8, 9, 10h, 16h, 1Ah) a DOS
+  (INT 21h: vektory, paměť, soubory ve virtuálním disku) v Kotlinu. Zvuková karta chybí, takže hra běží bez zvuku.
+- **Čas = počet instrukcí** (20 M/s). VGA 70,086 Hz a zatemnění 2 řádky, PIT podle děliče. Nic nezávisí na
+  hodinách hostitele. Čekací smyčky na VGA (`44c9`, `44d5`) se přeskakují, takže 1 herní snímek při čekání stojí
+  jen pár instrukcí. Celá hra běží ~30× rychleji než reálný čas.
+- `OriginalUgh`: počítá herní snímky, `runGameFrames`, `runUntil(seg, off)`, `tap(scancode)`, `startGame()`
+  (menu → F1 → přeskočení animace a popisku → první snímek levelu), přístup k DGROUP a screenshot.
+
+Ověřeno: intro (4 obrázky), menu, úvodní animace, popisek levelu i hra v levelu 1 vypadají správně.
+Od zapnutí po první snímek levelu 1 je to 11 728 herních snímků (intro 11 427).
+
+## Přesné pokrytí disassembly
+
+Ghidra na několika místech vynechala i krátké úseky (např. `113b:1a06–1a0c` uprostřed rutiny `19fb`), které
+dřívější odhad pokrytí přehlédl. `ExportListing.java` proto u každé instrukce zapisuje délku a bajty
+a `2_reverse_engineering/tools/coverage.js` počítá pokrytí přesně na bajt. Segment 113b je teď pokrytý celý kromě dat
+(`2db3` skoková tabulka vody, `4509`, `45fb–4634` CS proměnné, `4681–4c81` palety, `4ddd–4e19` tabulky ICE)
+a tří nedosažitelných zarovnávacích `NOP`.
+
+## Port a rozdílové testy
+
+- `:core` obsahuje sdílený adresní prostor (`Memory`, loader MZ) a VGA, takže port pracuje se stejnou pamětí
+  jako originál. `Game` = přepsané rutiny.
+- `:verify`/`CallDiff`: při každém volání originální rutiny zkopíruje celý stav do portu, spustí port a po
+  návratu originálu porovná RAM (kromě zásobníku) a VGA. Přerušení se během kontrolovaného volání odkládají.
+  Test s úmyslně pokaženým portem ověřuje, že rozdíly opravdu hlásí.
+- `Pilot`: deterministický náhodný pilot. `CheatPilot`: kvůli pokrytí logiky pasažérů zapisuje mezi snímky polohu
+  vrtulníku přímo do paměti (přistání na plošině s pasažérem, doručení, přelet přes pasažéra, hladina, shození)
+  a mezerníkem pokračuje do dalších levelů.
+
+| Rutina | Port | Ověřeno |
+|---|---|---|
+| `1095` fyzika vrtulníku, `1457` test kolize | `Game.copterUpdate` | 3 průběhy, 6 000+ volání |
+| `1486` pasažéři (36 stavových rutin), `2276` dotyk s vrtulníkem | `Passengers.kt` | levely 1–3, 1 hráč i team, 116 000+ volání |
+| `2b7f` bonusy, `2b96` spawn, `2207` sebrání | `Bonuses.kt` | spolu s pasažéry |
+| `2363` objekty (4 typy, 27 stavových rutin), `2196`, `22f1` | `Objects.kt` | 20 levelů zadaných heslem, 170 000+ volání, všechny uložitelné stavy |
+
+| `0c7d–0fa4` celý herní snímek vč. kreslení | `Frame.kt`, `Draw.kt` | `FrameDiff`: 17 000+ snímků (levely 1, 2 team, 4, 5, 43 s deštěm), RAM + celá VGA |
+
+| `0c61–0fe7` nová hra, start levelu (`3d66`, `3976`, popisek `0664`), hraní, konec levelu | `Level.kt`, `GameFlow.kt`, `Host.kt` | lockstep: 40 000+ snímků, přechod na další level, ztráta životů, game over |
+
+### Obrazovky mimo hru
+
+Port `Meta.kt` pokrývá celý program od 113b:0008: start (4f5e), intro (0bb8, čtyři obrázky ICE!, Esc přeskočí,
+Q ukončí), hlavní menu (0063: F1 hra, F2 heslo, F3 obtížnost, F4 jeden hráč / tým, F5 ovládání, C attract,
+Q konec, po 0x834 snímcích bez klávesy attract), attract sekvenci (úvodní scéna 088d, titulky 07f6, druhá
+scéna 08cf, tabulka rekordů 01b1), zadání hesla a jména (společný řádkový editor nad klávesnicí BIOSu,
+Backspace, velká písmena, číslice), úvodní scénu hry, „bad luck“ po konci hry, závěrečnou scénu po posledním
+levelu, zápis rekordu a soubor `UGH!.HI` (0x6b bajtů XOR 0xFF) a ukončení (4ee6).
+
+- Snímek mimo hru je stejně jako ve hře jedno čekání na začátek zpětného běhu (44c6); návratová adresa na
+  vrcholu zásobníku originálu určuje, která smyčka čeká (test tím řídí klávesy).
+- Detekce zvukové karty při startu čeká na tiky časovače bez čekání na zpětný běh: lockstep pak originálu
+  obslouží zadržená přerušení (`runGameFrames(1, vgaSlack = 20)`).
+- Start ukládá původní vektor INT 9 do `DGROUP:93`, port ho čte ze synchronizované IVT.
+- `MetaLockstepTest`: celý program (intro, attract, menu, heslo, hra do game over, rekord se jménem, Q)
+  13 814 snímků; časové smyčky, týmový režim, poslední level (dokončení vynucené v obou pamětech), závěrečná
+  scéna a existující `UGH!.HI` 41 542 snímků; Q v intru / scéně / titulcích a Esc ve scéně. Vše 0 neshod,
+  obsah zapsaného `UGH!.HI` shodný, originál dojde až k ukončení programu.
+
+### Start a konec levelu, lockstep
+
+- **Běh portu:** originál je psaný blokujícím stylem (popisek levelu, stmívání, pauza, menu čekají ve smyčkách na
+  zatemnění). Port volá na těch místech `Host.frame()` a hostitel rozhoduje, co je snímek. V okně to bude tik
+  70 Hz, v testu jeden snímek originálu. Tok hry je tak převedený 1:1.
+- **Start levelu** (`3d66`): vynuluje stav (`2648–27cf`), energie `0x5a3b`, „rozbije“ uložené hodnoty stavového řádku,
+  aby se překreslil celý, rozmístí prvky stavového řádku podle počtu hráčů, načte level (`3976`: záznam levelu,
+  **znovu rozbalí ICE s mapami** do bufferu `1a67:0000`, hráči, hladina, plošiny, pasažéři, objekty, déšť
+  předpočítaný 577 kroky), popisek (`0664`), černá paleta, dlaždice do kreslicí stránky → pozadí, přepnutí stránek,
+  ikony stavového řádku a první krok objektů a pasažérů.
+- **Popisek levelu:** smazání celé videopaměti, „LEVEL nn“, text levelu, heslo; text `077c` (znaky = sprite
+  `0x237 + znak`, `0xFE` centruje, `0x0D` a `0xFD` nový řádek, `0x8E`/`0x99`/`0x9A` jsou přehlásky), roztmívání,
+  čekání na klávesu, ztmavení.
+- **Konec levelu** (`0fa7`): příznak `27cf` (nastavený posledním doručeným pasažérem) = další level, po posledním
+  levelu konec hry. Jinak ztráta života: zbývá-li nějaký, level se opakuje s násobitelem 1, jinak game over.
+- **Klávesnice portu:** port obsluhy `4567` (`keyboardInterrupt`). Joystick se bere jako nepřipojený
+  (`51ec` vrací „nic“, polohy `[3343]`), jako v emulátoru bez joysticku.
+- **`Lockstep` harness:** port běží od kopie stavu originálu a udává tempo. Při každém `Host.frame()` se originál
+  posune na další čekání na zatemnění (`44c6`) a porovná se celá RAM (kromě zásobníku) a VGA. Na hranici snímku
+  se obslouží odložená přerušení a klávesy dostanou obě strany (originál přes IRQ 1, port přes svou obsluhu).
+  Stav, který port zatím nemodeluje (zvuková knihovna, plánovač časovače, data BIOSu), se kopíruje z originálu.
+- Oprava emulátoru: po zastavení na breakpointu se při dalším rozběhu stejný breakpoint znovu nespouští. Dřív se
+  snímek na `44c6` počítal dvakrát a krokování po jednom snímku originál nikdy neposunulo.
+
+### Kreslení a celý snímek
+
+- Snímek: stmívání palety (`4e36`) nebo čekání na zatemnění, stavový řádek (`3f55`), mazání hráčů, pasažérů,
+  bublin, objektů, bonusů a kapek obnovou z pozadí (`43ea`, write mode 1), voda (`2d1c`), klávesy (`0fe8`),
+  logika, kreslení (pasažéři, stromy a foukače, vrtulníky, ostatní objekty, bonusy, bubliny, déšť), animace
+  hladiny (`2db9`) a přepnutí stránky (`4ebb`).
+- Sprite (`41fd`): po sloupcích, barva 0 průhledná, řádky pod hladinou `| 0x40`, sprity ve výšce stavového
+  řádku jdou na stránku `CS:4604`. Šířka nebo výška 0 znamená 256 (smyčky `DEC`/`JNZ`).
+- Stavový řádek se překresluje jen při změně: životy; skóre (max 999 999, jen změněné číslice), nebo náklad,
+  nebo jízdné a násobitel; vždy ukazatel energie (1 px na `DGROUP:c5` jednotek, prázdná energie = konec života).
+- Voda: hladina se mění každý druhý snímek. Nově zatopený řádek pozadí se zabarví hardwarovým OR (bit mask 0x40,
+  funkce OR) a oba buffery se opraví ve dvou po sobě jdoucích snímcích.
+- **Déšť** (příznak levelu `+0c`, 1 = zprava, 2 = zleva): 384 kapek barvy `0x5b`, nové kapky rodí RNG `4f09`.
+- Animace hladiny jsou kompilované zapisovače v kódu originálu. Port je „přehrává“ malým interpretem přímo
+  z bajtů v paměti (4 roviny × 80 bajtů jednoho řádku).
+- Pauza (P): port vrátí `PAUSE`. Volající počká jako originál a pokračuje `frameAfterKeys` s klávesou, která
+  pauzu ukončila. Ovládání joystickem (`51ec`) se neportuje.
+- `FrameDiff`: na hranici snímku (`113b:0c7d`) porovná předchozí snímek portu s originálem, obslouží odložená
+  přerušení (`Machine.serviceInterruptsNow`), zkopíruje stav a spustí v portu celý další snímek. Během snímku
+  se přerušení odkládají, klávesy tak dorazí mezi snímky oběma stranám stejně. Test se záměrně změněným
+  pixelem a barvou ověřuje, že rozdíly hlásí.
+
+### Objekty (nepřátelé)
+
+Stejný princip jako u pasažérů: stav `2cf3[i]` je adresa rutiny, deskriptor `2cad[i]` určuje typ.
+- `0x7630` **létající nepřítel**: po prodlevě zakřičí, vybere dalšího hráče a přiletí z opačného okraje v jeho
+  výšce (omezené hladinou vody). Mávání křídel je zvuk ve smyčce, jeho handle se ukládá do `2d61` (bez karty
+  `0xFFFF`), takže port bude muset vracet stejná čísla kanálů jako originální zvuková knihovna. Dotyk
+  s vrtulníkem cílového hráče = havárie.
+- `0x766c` **chodící nepřítel** na plošině: otočí se k přistálému vrtulníku, rozběhne se (zrychluje) a vrtulník
+  vyhodí do vzduchu.
+- `0x76a8` **foukač**: podle fáze animace posouvá vrtulníky v oblasti před sebou do stran (±0x29).
+- `0x76e4` **strom**: odrazí padajícího pasažéra a pustí další bonus ze svého seznamu (`2cd5`).
+- Pasažér typu `0x78dc` shozený na nepřítele ho omráčí (body z `+3a`).
+
+Rutina `28a3` (varianta zotavení s tabulkou `+32`) se z žádného deskriptoru nezdá dosažitelná, převedená je i tak.
+Pokrytí zajišťuje `CheatPilot` (chycení a shození stojícího pasažéra nad nepřítelem, u letícího nepřítele
+přímým „vstříknutím“ pádu pasažéra do paměti originálu).
+
+### Pasažéři
+
+Stav pasažéra je adresa rutiny v `DGROUP:2a0d[i]`. Rutiny pochází z deskriptoru typu (`29ad[i]`: `0x7720`,
+`0x77b4`, `0x7848`, `0x78dc` stojící) a navzájem si předávají řízení `JMP [SI+n]` i s registry (hlavně DI = hráč).
+Deskriptor: `+0/+2` posun postavy, `+4/+6` polovina šířky a výšky (dotyk s vrtulníkem), `+8…+2c` stavové rutiny,
+`+2e…+38` animační tabulky, `+3e` zpoždění animace, `+40/+42` počáteční a minimální jízdné, `+44` čas plavání,
+`+46` typ nákladu, `+48` sada stavů pro vodu. Výplata = jízdné × násobitel `263d` do 32bitového skóre `261e`.
+Rychlé doručení (časovač `2c8d`) pustí bonus (deskriptor `7a38`).
+
+### Bonusy
+
+12 slotů (`2d6b…`), padají s gravitací 3, na plošině leží 0x230 snímků. Sebrání: typ 0 = energie `2622`
+(max 0x5a3b), typ 1 = životy `263c` (max 99), jinak násobitel `263d` (max podle obtížnosti `2628`).
+**Chyba originálu:** když je všech 12 slotů plných, `2b96` vynechá `POP BX` a `RET` skočí na `CS:BX`.
+Port v tom případě hlásí výjimku.
+
+## Další kroky
+
+1. Zápis stavu DGROUP po každém snímku a přehrávání vstupů po snímcích (replay).
+2. Návrh jádra portu a porovnání s emulátorem: po funkcích (stejný stav → originální rutina vs. port)
+   i po snímcích.
+3. DOSBox-X jako nezávislá kontrola samotného emulátoru na několika replayích.

@@ -25,6 +25,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: >
           gh release create "$env:GITHUB_REF_NAME"
-          desktop/build/distributions/UGH-port-windows.zip
+          3_kotlin_port/desktop/build/distributions/UGH-port-windows.zip
           --title "UGH! port $env:GITHUB_REF_NAME"
           --notes-file .github/release-notes.md
