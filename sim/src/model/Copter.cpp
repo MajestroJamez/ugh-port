@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "core/Audit.hpp"
+
 namespace ugh::model {
 
 namespace {
@@ -52,6 +54,7 @@ void Copter::land(int pad) {
 }
 
 void Copter::throwUp(core::Word speed) {
+    core::audit::count("Q5 copter thrown up (pixelY behind)");
     s_.y -= core::Fixed::fromPixels(1);   // the pixel position stays: the physics catches up next frame
     s_.vx = core::Speed(speed << 5);   // the original shifts the walker's speed: 5 bits sideways, 4 bits up
     s_.vy = core::Speed(speed << 4);

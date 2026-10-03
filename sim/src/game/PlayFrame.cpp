@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "core/Audit.hpp"
+
 namespace ugh::game {
 
 namespace {
@@ -14,19 +16,31 @@ PlayFrame::PlayFrame(const data::GameData& data, model::Level& level, input::Key
     : data_(data), level_(level), keyboard_(keyboard), physics_(level) {}
 
 void PlayFrame::run() {
+    using core::audit::setContext;
+    setContext("water");
     level_.water().move(level_.waterSpeed());
+    setContext("keys");
     readKeys();
+    setContext("copters");
     flyCopters();
+    setContext("passengers");
     level_.updatePassengers();
+    setContext("enemies");
     level_.updateEnemies();
+    setContext("bonuses");
     level_.bonuses().update(level_);
 
+    setContext("pixels");
     level_.updatePassengerPixels();
+    setContext("rotors");
     spinRotors();
+    setContext("rain");
     if (level_.windy()) level_.rain().move(level_.water().row(), level_.wind(), level_.session().random(),
                                            level_.diagnostics());
+    setContext("water surface");
     level_.water().animateSurface();
     level_.rain().stopAt(level_.water().row());
+    setContext("-");
 }
 
 void PlayFrame::readKeys() {

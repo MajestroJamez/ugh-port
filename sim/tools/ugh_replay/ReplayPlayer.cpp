@@ -1,6 +1,9 @@
 #include "ReplayPlayer.hpp"
 
 #include <cctype>
+#include <map>
+
+#include "AuditTable.hpp"
 #include <cstdio>
 #include <utility>
 
@@ -19,6 +22,7 @@ bool ReplayPlayer::play(const std::string& path, Mode mode) {
     while (file.next(current)) {
         if (started) {
             if (mode == Mode::EachTransition) playTransition(previous, current);
+            else if (mode == Mode::Audit) playAudit(previous, path);
             else playWhole(previous, false);
         }
         previous = std::move(current);
@@ -29,7 +33,106 @@ bool ReplayPlayer::play(const std::string& path, Mode mode) {
         return false;
     }
     if (started && mode == Mode::WholeGame) playWhole(previous, true);
+    if (started && mode == Mode::Audit) playAudit(previous, path);
     return true;
+}
+
+namespace {
+
+std::map<std::string, std::pair<long long, std::string>>& violations() {
+    static std::map<std::string, std::pair<long long, std::string>> v;
+    return v;
+}
+
+struct Name {
+    std::string group, index, field;   // index empty for game.*
+};
+
+Name split(const std::string& name) {
+    size_t a = name.find('.');
+    std::string group = name.substr(0, a);
+    if (group == "game") return {group, "", name.substr(a + 1)};
+    size_t b = name.find('.', a + 1);
+    return {group, name.substr(a + 1, b - a - 1), name.substr(b + 1)};
+}
+
+std::string value(const Fields& f, const std::string& name) {
+    auto it = f.find(name);
+    return it == f.end() ? "" : it->second;
+}
+
+bool isDefined(const Fields& state, const Name& n) {
+    if (n.group == "pad") return true;
+    std::string prefix = n.group + "." + n.index + ".";
+    std::string kind = n.group == "object" ? value(state, prefix + "kind") : "*";
+    std::string st = n.group == "game" || n.group == "copter" ? "*" : value(state, prefix + "state");
+    std::string phase = value(state, "game.phase");
+    if (n.group == "copter" && n.field == "fareMin") {
+        std::string target = value(state, prefix + "targetPad");
+        return target != "0" && target != "7";
+    }
+    return audit::definedFields(n.group, kind, st, phase).count(n.field) > 0;
+}
+
+std::string describe(const Fields& state, const Name& n) {
+    std::string prefix = n.group + "." + n.index + ".";
+    std::string d = n.group;
+    if (n.group == "object") d += " " + value(state, prefix + "kind");
+    if (n.group != "game" && n.group != "copter" && n.group != "pad") d += " " + value(state, prefix + "state");
+    return d + " [" + value(state, "game.phase") + "] " + n.field;
+}
+
+}  // namespace
+
+void printAuditViolations() {
+    for (const auto& [key, v] : violations()) std::printf("VIOLATION %lld\t%s\tfirst %s\n", v.first, key.c_str(), v.second.c_str());
+}
+
+void ReplayPlayer::playAudit(const Tick& tick, const std::string& path) {
+    if (tick.number == 0) {
+        for (const auto& [name, value] : tick.state) set(name, value);
+    } else {
+        int end = cores_.step();
+        if (end < 0) problem(tick.number, "frame", "the cores disagree whether the game ended");
+        compareAudit(tick, path);
+    }
+    poison(tick);
+    for (const auto& [name, value] : tick.inject) set(name, value);
+    for (int key : tick.keys) cores_.key(key);
+    takeProblems();
+}
+
+void ReplayPlayer::compareAudit(const Tick& tick, const std::string& path) {
+    report_.checked("frame");
+    Fields actual = cores_.known();
+    for (const auto& [name, expected] : tick.state) {
+        if (name == "game.phase") continue;
+        Name n = split(name);
+        bool d = isDefined(tick.state, n);
+        auto it = actual.find(name);
+        std::string kind;
+        if (it == actual.end()) {
+            if (d) kind = "unknown";
+        } else {
+            report_.compared(n.group);
+            if (it->second != expected) kind = d ? "mismatch" : "mismatch-of-undefined";
+        }
+        if (kind.empty()) continue;
+        auto& v = violations()[describe(tick.state, n) + " " + kind];
+        if (v.first++ == 0) v.second = path + "@" + std::to_string(tick.number);
+        set(name, expected);
+    }
+}
+
+void ReplayPlayer::poison(const Tick& tick) {
+    for (const auto& [name, expected] : tick.state) {
+        if (name == "game.phase") continue;
+        Name n = split(name);
+        if (isDefined(tick.state, n)) continue;
+        auto [a, b] = audit::poison(n.group, n.field);
+        if (a.empty()) continue;
+        if (cores_.setEach(name, a, b) < 0) problem(tick.number, "poison", "bad poison " + name);
+    }
 }
 
 /** Tick 0 sets the start, every later tick is one step of the core. */

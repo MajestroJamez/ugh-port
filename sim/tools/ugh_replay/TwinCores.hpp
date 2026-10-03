@@ -30,6 +30,11 @@ public:
     void clear();
     /** As ugh_sim_set: -1 when either core refuses the value. */
     int set(const std::string& name, const std::string& value);
+    /** Different values for the two cores. */
+    int setEach(const std::string& name, const std::string& a, const std::string& b) {
+        int ra = ugh_sim_set(a_, name.c_str(), a.c_str()), rb = ugh_sim_set(b_, name.c_str(), b.c_str());
+        return ra < 0 || rb < 0 ? -1 : ra;
+    }
     void key(int scancode);
     /** How the cores end the game; -1 when they disagree (the end depends on memory they were never given). */
     int step();

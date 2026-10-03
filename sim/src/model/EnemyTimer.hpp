@@ -16,23 +16,25 @@ public:
     EnemyTimer() = default;
     explicit EnemyTimer(core::Word word) : SharedWord(word) {}
 
-    void startCountdown(core::Word frames) { word_ = frames; }
+    void startCountdown(core::Word frames) { word_ = frames; wrote("countdown"); }
     /** One frame of the countdown: true when it just reached zero. */
-    bool tick() { return --word_ == 0; }
+    bool tick() { reading("EnemyTimer", "countdown"); wrote("countdown"); return --word_ == 0; }
 
     /** A hit flyer starts to fall, or a walker to charge, from standstill. */
-    void startFromStandstill() { word_ = 0; }
+    void startFromStandstill() { word_ = 0; wrote("speed"); }
 
     /** 113b:255e - the falling flyer gets faster, up to 0x28 (1/32 px per frame). */
     void fallFaster() {
+        reading("EnemyTimer", "speed");
+        wrote("speed");
         if (word_ < MAX_FALL_SPEED) ++word_;
     }
 
     /** 113b:2748 - the charging walker gets faster by one in the direction it faces (1/32 px per frame). */
-    void speedUpBy(core::Word step) { word_ = step + word_; }
+    void speedUpBy(core::Word step) { reading("EnemyTimer", "speed"); wrote("speed"); word_ = step + word_; }
 
     /** The fall or the extra charge speed, per frame. */
-    core::Fixed speed() const { return core::Fixed(word_); }
+    core::Fixed speed() const { reading("EnemyTimer", "speed"); return core::Fixed(word_); }
 
 
 private:

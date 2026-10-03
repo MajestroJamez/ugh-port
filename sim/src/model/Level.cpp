@@ -51,7 +51,7 @@ void Level::loadLists(const data::LevelDefinition& definition) {
 
 void Level::passengerFinished() {
     auto left = static_cast<uint8_t>(s_.passengersLeft - 1);
-    if (left & 0x80) return;   // the original does not count below zero
+    if (left & 0x80) { core::audit::count("Q5 passengersLeft would go below zero"); return; }
     s_.passengersLeft = left;
     if (left != 0) return;
     // the last one: the level is done

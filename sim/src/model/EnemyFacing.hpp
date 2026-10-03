@@ -18,24 +18,26 @@ public:
     static constexpr core::Word LEFT = 0, RIGHT = 2;
 
     // ------------------------------------------------------------ a walker
-    void faceLeft() { word_ = LEFT; }
-    void faceRight() { word_ = RIGHT; }
-    void turnAround() { word_ = word_ ^ RIGHT; }
-    bool right() const { return word_ != LEFT; }
+    void faceLeft() { word_ = LEFT; wrote("facing"); }
+    void faceRight() { word_ = RIGHT; wrote("facing"); }
+    void turnAround() { reading("EnemyFacing", "facing"); wrote("facing"); word_ = word_ ^ RIGHT; }
+    bool right() const { reading("EnemyFacing", "facing"); return word_ != LEFT; }
     /** -1 facing left, 1 facing right. */
-    core::Word direction() const { return word_ - 1; }
+    core::Word direction() const { reading("EnemyFacing", "facing"); return word_ - 1; }
 
     // ------------------------------------------------------------ a flyer
     /** The first flight goes for player 0. */
-    void beforeFirstFlight() { word_ = 1; }
+    void beforeFirstFlight() { word_ = 1; wrote("target"); }
     /** 113b:23ea - the other player is the next target (player 0 without a second player). */
     int targetNextPlayer(core::Word players) {
+        reading("EnemyFacing", "target");
+        wrote("target");
         core::Word target = word_ ^ 1;
         if (target >= players) target = 0;
         word_ = target;
         return target.value();
     }
-    int target() const { return word_.value(); }
+    int target() const { reading("EnemyFacing", "target"); return word_.value(); }
 };
 
 }  // namespace ugh::model

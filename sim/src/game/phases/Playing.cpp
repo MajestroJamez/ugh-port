@@ -1,5 +1,6 @@
 #include "game/phases/Playing.hpp"
 
+#include "core/Audit.hpp"
 #include "game/Game.hpp"
 #include "game/GameFlow.hpp"
 
@@ -8,6 +9,7 @@ namespace ugh::game::phases {
 /** The game palette, the tiles and the background page are drawn here; then the lists get their first update. */
 void Playing::enter(GameFlow& flow) {
     model::Level& level = flow.game().level();
+    core::audit::Scope scope("playing enter");
     level.updateEnemies();
     level.updatePassengers();
     level.hideSprites();

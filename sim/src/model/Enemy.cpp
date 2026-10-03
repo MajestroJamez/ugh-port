@@ -1,5 +1,8 @@
 #include "model/Enemy.hpp"
 
+#include <string>
+
+#include "core/Audit.hpp"
 #include "enemies/EnemyState.hpp"
 #include "model/Copter.hpp"
 
@@ -15,7 +18,10 @@ void Enemy::moveTo(core::Fixed x, core::Fixed y) {
     s_.y = y;
 }
 
-void Enemy::update(Level& level) { s_.state->update(*this, level); }
+void Enemy::update(Level& level) {
+    core::audit::Scope scope(core::audit::intern(std::string("enemy ") + s_.state->name()));
+    s_.state->update(*this, level);
+}
 
 void Enemy::changeState(const enemies::EnemyState& next, Level& level) {
     s_.state = &next;

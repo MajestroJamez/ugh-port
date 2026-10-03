@@ -13,12 +13,12 @@ public:
     BonusTimer() = default;
     explicit BonusTimer(core::Word word) : SharedWord(word) {}
 
-    void setSpeedX(core::Fixed speed) { word_ = speed.raw(); }
-    core::Fixed speedX() const { return core::Fixed(word_); }
+    void setSpeedX(core::Fixed speed) { word_ = speed.raw(); wrote("speedX"); }
+    core::Fixed speedX() const { reading("BonusTimer", "speedX"); return core::Fixed(word_); }
 
-    void startLying(core::Word frames) { word_ = frames; }
+    void startLying(core::Word frames) { word_ = frames; wrote("lying"); }
     /** One frame on the pad: true when its time is up. */
-    bool lyingOver() { return --word_ == 0; }
+    bool lyingOver() { reading("BonusTimer", "lying"); wrote("lying"); return --word_ == 0; }
 };
 
 }  // namespace ugh::model

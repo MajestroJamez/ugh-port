@@ -12,7 +12,11 @@ else()
 endif()
 
 # the sources by module: a folder is a module and a namespace (ugh::core, ugh::data ...)
-set(UGH_CORE src/core/Random.cpp)
+set(UGH_CORE src/core/Random.cpp src/core/Audit.cpp)
+option(UGH_AUDIT "N1 audit counters" ON)
+if(UGH_AUDIT)
+    add_compile_definitions(UGH_AUDIT)
+endif()
 set(UGH_DATA src/data/CollisionMask.cpp src/data/GameData.cpp src/data/GameDataLoader.cpp)
 set(UGH_MODEL src/model/BonusItem.cpp src/model/BonusSlots.cpp src/model/Copter.cpp src/model/Enemy.cpp
     src/model/GameSession.cpp src/model/Level.cpp src/model/Passenger.cpp src/model/Rain.cpp src/model/Water.cpp)

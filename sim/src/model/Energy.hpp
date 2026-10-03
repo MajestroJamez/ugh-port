@@ -17,7 +17,10 @@ public:
     explicit Energy(core::Word value) : value_(value) {}
 
     void fill() { value_ = FULL; }
-    void spend(core::Word amount) { value_ -= amount; }
+    void spend(core::Word amount) {
+        if (value_ < amount) core::audit::count("Q5 energy below amount spent");
+        value_ -= amount;
+    }
 
     /** 113b:2ca9 - adds a bonus item's energy, up to FULL (compared unsigned, as the original does). */
     void refill(core::Word amount) {

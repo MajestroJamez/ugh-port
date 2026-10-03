@@ -29,6 +29,7 @@ void WalkingAway::enter(model::Passenger& passenger, model::Level& level) const 
     passenger.moveToX(copter.x() + Fixed::fromPixels(COPTER_DOOR - passenger.kind().box.x));
     // the original multiplies with the multiplier as a word, with the zero byte after it
     uint32_t points = static_cast<uint32_t>(copter.fare().bits()) * session.multiplier();
+    if (points > 0xffff) core::audit::count("Q5 delivery points > 16 bits");
     session.addScore(points);
     level.report({core::EventKind::PassengerPaid, player, passenger.index(), static_cast<int>(points)});
     if (passenger.deliveredQuickly() && session.multiplierBelowLimit()) {

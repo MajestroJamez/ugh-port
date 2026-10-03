@@ -1,5 +1,6 @@
 #include "model/Rain.hpp"
 
+#include "core/Audit.hpp"
 #include "data/CollisionMask.hpp"
 
 namespace ugh::model {
@@ -18,6 +19,7 @@ int direction(uint8_t wind) { return wind == WIND_TO_THE_LEFT ? -1 : 1; }
 }  // namespace
 
 void Rain::start(core::Word waterRow, uint8_t wind, core::Random& random, core::Diagnostics& diagnostics) {
+    core::audit::count(s_.floorRow == waterRow.value() ? "Q5 rain start floor = water" : "Q5 rain start floor != water row");
     for (int i = DROPS - 1; i >= 0; i--) spawn(i, waterRow, wind, random);
     for (int i = 0; i < PREFALL_FRAMES; i++) move(waterRow, wind, random, diagnostics);
 }
@@ -32,6 +34,11 @@ void Rain::move(core::Word waterRow, uint8_t wind, core::Random& random, core::D
     for (int i = last; i >= 0; i--) {
         int step = i % 2 == 0 ? EVEN_DROP_STEP : ODD_DROP_STEP;
         int drop = s_.drops[i] + step * ROW + step * direction(wind);
+        {
+            int xb = s_.drops[i] % ROW, xa = xb + step * direction(wind);
+            if (xa < 0 || xa >= ROW) core::audit::count("Q5 raindrop crosses row edge");
+            if (xa >= SCREEN_WIDTH && xb < SCREEN_WIDTH) core::audit::count("Q5 raindrop leaves screen right");
+        }
         if (static_cast<uint16_t>(drop >> 2) >= floor) spawn(i, waterRow, wind, random);
         else s_.drops[i] = drop;
     }
@@ -46,6 +53,7 @@ void Rain::spawn(int i, core::Word waterRow, uint8_t wind, core::Random& random)
         y = place - SCREEN_WIDTH;
         x = wind == WIND_TO_THE_LEFT ? SCREEN_WIDTH - 1 : 0;
     }
+    if (y > 0xff) core::audit::count("Q5 raindrop spawn row > 255");
     s_.drops[i] = (y & 0xff) * ROW + x;   // the original keeps the row in a byte
 }
 

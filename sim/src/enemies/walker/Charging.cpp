@@ -33,7 +33,7 @@ void Charging::update(model::Enemy& enemy, model::Level& level) const {
     enemy.moveToX(enemy.x() + (enemy.timer().speed() + enemy.speedX()));
     int hit = physics::TouchBox(enemy.kind().box, enemy.x(), enemy.y()).firstCopterIn(level);
     if (hit == model::Level::NONE) return;
-    level.copter(hit).throwUp(enemy.speedX().raw() + enemy.timer().word());
+    level.copter(hit).throwUp(enemy.speedX().raw() + enemy.timer().speed().raw());
     enemy.changeState(Recovering::instance, level);
 }
 

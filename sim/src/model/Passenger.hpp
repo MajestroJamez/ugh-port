@@ -1,6 +1,7 @@
 // A passenger (level list B).
 #pragma once
 
+#include "core/Audit.hpp"
 #include "core/Fixed.hpp"
 #include "core/Speed.hpp"
 #include "core/Word.hpp"
@@ -43,6 +44,8 @@ public:
         data::Sprite sprite = data::NO_SPRITE;
         data::Sprite bubble = data::NO_SPRITE;   // the speech bubble over the passenger
         core::Word bonusTimer;      // a delivery before it runs out drops a bonus item
+        const char* vyMeaning = "unset";
+        bool bonusTimerSet = false;
     };
 
     Passenger() = default;
@@ -126,12 +129,13 @@ public:
     // ------------------------------------------------------------ falling and swimming
 
     /** The speed of the dropped standing passenger: 1/32 px per frame. */
-    core::Word fallSpeed() const { return s_.vy; }
-    void setFallSpeed(core::Word speed) { s_.vy = speed; }
+    core::Word fallSpeed() const { vyReading("fall"); return s_.vy; }
+    void setFallSpeed(core::Word speed) { s_.vy = speed; s_.vyMeaning = "fall"; }
 
     /** The speed of a swimmer going under and up: 1/64 Fixed per frame. */
-    core::Speed swimSpeed() const { return core::Speed(s_.vy); }
-    void setSwimSpeed(core::Speed speed) { s_.vy = speed.raw(); }
+    core::Speed swimSpeed() const { vyReading("swim"); return core::Speed(s_.vy); }
+    void setSwimSpeed(core::Speed speed) { s_.vy = speed.raw(); s_.vyMeaning = "swim"; }
+    void vyReading(const char* meaning) const;
 
     /** A standing passenger dropped from a copter on its way down (113b:2196: descriptor 78dc in its falling state). */
     bool fallingDown() const;
@@ -164,7 +168,10 @@ public:
     void startQuickDeliveryTime();
     /** 113b:1a42 - one frame of the ride. */
     void tickQuickDeliveryTime();
-    bool deliveredQuickly() const { return s_.bonusTimer != 0; }
+    bool deliveredQuickly() const {
+        if (!s_.bonusTimerSet) core::audit::count("Q2 Passenger.bonusTimer read unset");
+        return s_.bonusTimer != 0;
+    }
 
     const Snapshot& snapshot() const { return s_; }
     void restore(const Snapshot& snapshot) { s_ = snapshot; }

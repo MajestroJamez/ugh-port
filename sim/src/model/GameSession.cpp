@@ -1,5 +1,7 @@
 #include "model/GameSession.hpp"
 
+#include "core/Audit.hpp"
+
 namespace ugh::model {
 
 namespace {
@@ -27,6 +29,7 @@ bool GameSession::nextLevel() {
 
 bool GameSession::loseLife() {
     s_.lives--;
+    if (s_.lives & 0x80) core::audit::count("Q5 lives below zero");
     if (s_.lives == 0 || (s_.lives & 0x80)) return false;   // none left, or below zero after Esc
     s_.multiplier = 1;
     return true;

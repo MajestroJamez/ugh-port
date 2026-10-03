@@ -18,16 +18,16 @@ public:
     PassengerTimer() = default;
     explicit PassengerTimer(core::Word word) : SharedWord(word) {}
 
-    void startArrivalDelay(core::Word frames) { word_ = frames; }
+    void startArrivalDelay(core::Word frames) { word_ = frames; wrote("arrival"); }
     /** 113b:1509 - one frame of the delay before appearing: true when it is over (a delay of 0 is none). */
-    bool arrivalDue() { return word_ == 0 || --word_ == 0; }
+    bool arrivalDue() { reading("PassengerTimer", "arrival"); wrote("arrival"); return word_ == 0 || --word_ == 0; }
 
-    void setDropSpeed(core::Fixed speedX) { word_ = speedX.raw(); }
-    core::Fixed dropSpeed() const { return core::Fixed(word_); }
+    void setDropSpeed(core::Fixed speedX) { word_ = speedX.raw(); wrote("dropSpeed"); }
+    core::Fixed dropSpeed() const { reading("PassengerTimer", "dropSpeed"); return core::Fixed(word_); }
 
-    void startSwimTime(core::Word frames) { word_ = frames; }
+    void startSwimTime(core::Word frames) { word_ = frames; wrote("swim"); }
     /** One frame afloat: true when the time is up. */
-    bool swimTimeUp() { return --word_ == 0; }
+    bool swimTimeUp() { reading("PassengerTimer", "swim"); wrote("swim"); return --word_ == 0; }
 };
 
 }  // namespace ugh::model

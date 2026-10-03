@@ -5,6 +5,7 @@
 #include <optional>
 #include <variant>
 
+#include "core/Audit.hpp"
 #include "data/Animation.hpp"
 #include "data/DropList.hpp"
 
@@ -26,13 +27,22 @@ public:
     /** The flyer's flight animation; nullptr when the word is something else. */
     const data::Animation* flightAnimation() const {
         auto a = std::get_if<const data::Animation*>(&value_);
+        core::audit::count(a ? "Q2ok EnemyTable flight" : "Q2 EnemyTable read-as=flight but not");
         return a ? *a : nullptr;
     }
     bool isFlightAnimation() const { return std::holds_alternative<const data::Animation*>(value_); }
 
     /** The tree's next bonus item; nullptr when the word is something else. */
-    const data::DropCursor* dropCursor() const { return std::get_if<data::DropCursor>(&value_); }
-    data::DropCursor* dropCursor() { return std::get_if<data::DropCursor>(&value_); }
+    const data::DropCursor* dropCursor() const {
+        auto d = std::get_if<data::DropCursor>(&value_);
+        core::audit::count(d ? "Q2ok EnemyTable drops" : "Q2 EnemyTable read-as=drops but not");
+        return d;
+    }
+    data::DropCursor* dropCursor() {
+        auto d = std::get_if<data::DropCursor>(&value_);
+        core::audit::count(d ? "Q2ok EnemyTable drops" : "Q2 EnemyTable read-as=drops but not");
+        return d;
+    }
 
     std::optional<uint16_t> leftoverWord() const {
         auto w = std::get_if<uint16_t>(&value_);

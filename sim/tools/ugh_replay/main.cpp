@@ -10,12 +10,20 @@
 #include "ReplayReport.hpp"
 #include "TwinCores.hpp"
 
+namespace ugh::tool {
+void printAuditViolations();
+}
+
 int main(int argc, char** argv) {
     using ugh::tool::ReplayPlayer;
     int first = 1;
     ReplayPlayer::Mode mode = ReplayPlayer::Mode::WholeGame;
     if (argc > 1 && std::strcmp(argv[1], "--each") == 0) {
         mode = ReplayPlayer::Mode::EachTransition;
+        first = 2;
+    }
+    if (argc > 1 && std::strcmp(argv[1], "--audit") == 0) {
+        mode = ReplayPlayer::Mode::Audit;
         first = 2;
     }
     if (argc < first + 2) {
@@ -37,5 +45,6 @@ int main(int argc, char** argv) {
         report.print(argv[i]);
         if (!report.passed()) ok = false;
     }
+    if (mode == ReplayPlayer::Mode::Audit) ugh::tool::printAuditViolations();
     return ok ? 0 : 1;
 }

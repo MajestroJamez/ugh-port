@@ -1,6 +1,9 @@
 #include "model/BonusItem.hpp"
 
+#include <string>
+
 #include "bonuses/BonusState.hpp"
+#include "core/Audit.hpp"
 
 namespace ugh::model {
 
@@ -13,7 +16,10 @@ void BonusItem::spawn(const data::BonusKind& kind, core::Fixed x, core::Fixed y,
     s_.sprite = kind.sprite;
 }
 
-void BonusItem::update(Level& level) { s_.state->update(*this, level); }
+void BonusItem::update(Level& level) {
+    core::audit::Scope scope(core::audit::intern(std::string("bonus ") + s_.state->name()));
+    s_.state->update(*this, level);
+}
 
 void BonusItem::changeState(const bonuses::BonusState& next, Level& level) {
     s_.state = &next;

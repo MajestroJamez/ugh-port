@@ -1,5 +1,7 @@
 #include "TwinCores.hpp"
 
+extern "C" void ugh_sim_audit_enable(int on);
+
 namespace ugh::tool {
 
 TwinCores::TwinCores(const char* dataPath) {
@@ -34,7 +36,13 @@ void TwinCores::key(int scancode) {
     ugh_sim_key(b_, scancode);
 }
 
-int TwinCores::step() { return agreed(ugh_sim_step(a_), ugh_sim_step(b_)); }
+int TwinCores::step() {
+    int a = ugh_sim_step(a_);
+    ugh_sim_audit_enable(0);
+    int b = ugh_sim_step(b_);
+    ugh_sim_audit_enable(1);
+    return agreed(a, b);
+}
 
 void TwinCores::newGame() {
     ugh_sim_new_game(a_);

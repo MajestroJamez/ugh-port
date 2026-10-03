@@ -2,6 +2,9 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
+
+#include "core/Audit.hpp"
 
 #include "data/DataImage.hpp"
 #include "data/Sprite.hpp"
@@ -19,7 +22,17 @@ public:
     /** The offset of the animation in the original's data (its identity in the replays). */
     uint16_t origin() const { return origin_; }
 
-    Sprite frame(int index) const { return image_->word(origin_ + 2 * index); }
+    Sprite frame(int index) const {
+        int length = 0;
+        while (image_->word(origin_ + 2 * length) != DataImage::LIST_END && length < 1000) length++;
+        if (index < 0 || index > length) {
+            char buf[96];
+            std::snprintf(buf, sizeof buf, "Q3 anim %04x length %d index %d -> %04x", origin_, length, index,
+                          image_->word(origin_ + 2 * index));
+            core::audit::count(buf);
+        }
+        return image_->word(origin_ + 2 * index);
+    }
 
     /** Frame `index` is the end of the list. */
     bool endsAt(int index) const { return frame(index) == DataImage::LIST_END; }

@@ -29,7 +29,7 @@ namespace ugh::tool {
  */
 class ReplayPlayer {
 public:
-    enum class Mode { WholeGame, EachTransition };
+    enum class Mode { WholeGame, EachTransition, Audit };
 
     ReplayPlayer(TwinCores& cores, ReplayReport& report) : cores_(cores), report_(report) {}
 
@@ -46,6 +46,9 @@ private:
     ReplayReport& report_;
 
     void playWhole(const Tick& tick, bool last);
+    void playAudit(const Tick& tick, const std::string& path);
+    void compareAudit(const Tick& tick, const std::string& path);
+    void poison(const Tick& tick);
     void playTransition(const Tick& before, const Tick& after);
     void checkLevelStart(const Tick& before, const Tick& after);
 

@@ -17,18 +17,18 @@ public:
     PassengerCounter() = default;
     explicit PassengerCounter(core::Word word) : SharedWord(word) {}
 
-    void startCountdown(core::Word frames) { word_ = frames; }
+    void startCountdown(core::Word frames) { word_ = frames; wrote("countdown"); }
     /** One frame of the countdown: true when it just reached zero. */
-    bool tick() { return --word_ == 0; }
+    bool tick() { reading("PassengerCounter", "countdown"); wrote("countdown"); return --word_ == 0; }
 
     /** The passenger starts to wait: it walks to its waiting spot first. */
-    void startWaiting() { word_ = -1; }
-    void walkingToSpot() { word_ = 0; }
-    void atSpot() { word_ = 1; }
-    bool isAtSpot() const { return word_ == 1; }
+    void startWaiting() { word_ = -1; wrote("spot"); }
+    void walkingToSpot() { word_ = 0; wrote("spot"); }
+    void atSpot() { word_ = 1; wrote("spot"); }
+    bool isAtSpot() const { reading("PassengerCounter", "spot"); return word_ == 1; }
 
-    void setCarrier(int player) { word_ = player * 2; }
-    int carrier() const { return word_.value() / 2; }
+    void setCarrier(int player) { word_ = player * 2; wrote("carrier"); }
+    int carrier() const { reading("PassengerCounter", "carrier"); return word_.value() / 2; }
 };
 
 }  // namespace ugh::model

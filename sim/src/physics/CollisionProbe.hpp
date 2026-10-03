@@ -33,6 +33,7 @@ public:
 
 private:
     const model::Level& level_;
+    mutable int auditX_ = 0;
 
     /** A point of the outline around `origin` (a pixel index of the mask) is solid. */
     bool hits(int origin) const;

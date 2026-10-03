@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "core/Audit.hpp"
+
 #include "enemies/EnemyBehavior.hpp"
 #include "passengers/standing/StartStanding.hpp"
 #include "passengers/walking/NextStop.hpp"
@@ -15,6 +17,7 @@ void LevelLoader::startAttempt(model::Level& level) {
 
 /** 113b:3976 - Level.kt loadLevel. */
 void LevelLoader::load(model::Level& level) {
+    core::audit::Scope scope("level load");
     const data::LevelDefinition* definition = level.definition();
     model::GameSession& session = level.session();
     if (!definition) {
