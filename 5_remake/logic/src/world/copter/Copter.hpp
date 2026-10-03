@@ -2,23 +2,22 @@
 #pragma once
 
 #include "units/Fixed.hpp"
-#include "world/Cabin.hpp"
-#include "world/Controls.hpp"
-#include "world/Motion.hpp"
-#include "world/Pad.hpp"
-#include "world/Rotor.hpp"
+#include "world/copter/Cabin.hpp"
+#include "world/copter/Controls.hpp"
+#include "world/copter/CopterShape.hpp"
+#include "world/copter/Motion.hpp"
+#include "world/copter/Rotor.hpp"
+#include "world/scenery/Pad.hpp"
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 /**
  * A copter of player 0 or 1: where it is and how fast it goes (`Motion`), the pad it stands on, the keys of its pilot,
- * its rotor and its cabin. The physics flies it; passengers board it, a walker throws it, a blower pushes it.
+ * its rotor and its cabin. The physics flies it; passengers board it, a walker throws it, a blower pushes it. Its
+ * shape (where its door, its skids, its body are): `CopterShape`.
  */
 class Copter {
 public:
-    /** From the top of the copter to its waterline, in pixels. */
-    static constexpr int WATERLINE = 18;
-
     explicit Copter(int player = 0) : player_(player) {}
 
     /** Whose copter it is: the events, the rotor sprites and the replays name it so. */
@@ -39,15 +38,19 @@ public:
     const Cabin& cabin() const { return cabin_; }
 
     bool landed() const { return landedOn_ != nullptr; }
-    bool landedOn(const Pad& pad) const { return landedOn_ == &pad; }
+    bool landedOn(const scenery::Pad& pad) const { return landedOn_ == &pad; }
     /** The pad it stands on; nullptr in the air. */
-    const Pad* landedPad() const { return landedOn_; }
+    const scenery::Pad* landedPad() const { return landedOn_; }
     /** Standing on a pad: no speed. */
-    void land(const Pad& pad);
+    void land(const scenery::Pad& pad);
     void takeOff() { landedOn_ = nullptr; }
 
     /** How deep its waterline is below the water surface at `waterRow` (pixels; 0: it floats, negative: above). */
-    int depthIn(int waterRow) const { return motion_.pixelY() - waterRow + WATERLINE; }
+    int depthIn(int waterRow) const { return motion_.pixelY() - waterRow + CopterShape::WATERLINE; }
+
+    /** Where what it lets go starts to fall (`CopterShape::DROP`). */
+    units::Fixed dropX() const { return motion_.x() + units::Fixed::fromPixels(CopterShape::DROP.x); }
+    units::Fixed dropY() const { return motion_.y() + units::Fixed::fromPixels(CopterShape::DROP.y); }
 
     /**
      * A charging walker hits it: a pixel up and into the air with the walker's speed (sideways 32 times, up 16 times
@@ -58,10 +61,10 @@ public:
 private:
     int player_;
     Motion motion_;
-    const Pad* landedOn_ = nullptr;
+    const scenery::Pad* landedOn_ = nullptr;
     Controls controls_;
     Rotor rotor_;
     Cabin cabin_;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

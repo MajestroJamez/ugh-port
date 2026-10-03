@@ -1,6 +1,6 @@
-#include "world/Copter.hpp"
+#include "world/copter/Copter.hpp"
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 void Copter::placeAtStart(units::Fixed x, units::Fixed y, int firstRotorSprite) {
     motion_.moveToX(x);
@@ -11,7 +11,7 @@ void Copter::placeAtStart(units::Fixed x, units::Fixed y, int firstRotorSprite) 
     cabin_.clear();
 }
 
-void Copter::land(const Pad& pad) {
+void Copter::land(const scenery::Pad& pad) {
     landedOn_ = &pad;
     motion_.stop();
 }
@@ -21,4 +21,4 @@ void Copter::throwUp(units::Fixed walkerSpeed) {
     landedOn_ = nullptr;
 }
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

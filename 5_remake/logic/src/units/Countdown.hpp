@@ -7,7 +7,7 @@ namespace ugh::units {
  * Frames left until something happens: each tick counts one down, and the tick that reaches zero is the one that
  * acts. A countdown started at n acts on its n-th tick. One started at 0, or never started, does not act (the
  * original's 16-bit countdown would, after 65536 frames - a quarter of an hour): the logic starts every countdown above
- * 0 before it ticks it (the states in their entry actions, `world::Animator::restart`).
+ * 0 before it ticks it (the states in their entry actions, `world::figure::Animator::restart`).
  *
  * `tickToZero` is the other kind of countdown of the original: it stops at zero and stays there, and zero means
  * "due" (a delay of 0 is none).

@@ -4,16 +4,18 @@
 #include "enemies/flyer/Flyer.hpp"
 #include "enemies/flyer/Placed.hpp"
 #include "physics/TouchBox.hpp"
-#include "world/Screen.hpp"
+#include "world/scenery/Screen.hpp"
 
 namespace ugh::enemies::flyer {
 
 namespace {
 
 using units::Fixed;
+using world::scenery::Screen;
 
-constexpr Fixed SCREEN_MIDDLE = Fixed::fromPixels(160);
-constexpr Fixed START_RIGHT = Fixed::fromPixels(319), START_LEFT = Fixed::fromPixels(-31);   // just off the screen
+// where it comes in: a pixel short of the edge past which it is gone
+constexpr Fixed START_RIGHT = Screen::RIGHT - Fixed::fromPixels(1);
+constexpr Fixed START_LEFT = Screen::FLYER_LEFT + Fixed::fromPixels(1);
 constexpr Fixed HEIGHT = Fixed::fromPixels(26);        // it flies no lower than this above the water
 constexpr Fixed CEILING = Fixed::fromPixels(-4);       // and no higher than this
 constexpr int FLAP_DELAY = 4;
@@ -25,12 +27,12 @@ const Flying Flying::instance{};
 /** It takes its next target and comes in from the side away from the target's copter. */
 void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
     world::Level& level = context.level;
-    const world::Copter& copter = level.copters()[flyer.takeNextTarget(context.session.players())];
-    if (copter.motion().x() < SCREEN_MIDDLE) {
-        flyer.flyTowards(world::Facing::Left);
+    const world::copter::Copter& copter = level.copters()[flyer.takeNextTarget(context.session.players())];
+    if (copter.motion().x() < Screen::MIDDLE) {
+        flyer.flyTowards(world::figure::Facing::Left);
         flyer.moveToX(START_RIGHT);
     } else {
-        flyer.flyTowards(world::Facing::Right);
+        flyer.flyTowards(world::figure::Facing::Right);
         flyer.moveToX(START_LEFT);
     }
     Fixed y = copter.motion().y() + HEIGHT;
@@ -43,24 +45,22 @@ void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
 
 void Flying::update(Flyer& flyer, const EnemyContext& context) const {
     Fixed x = flyer.x() + flyer.speedX();
-    if (world::Screen::pastSide(x, world::Screen::FLYER_LEFT)) {
+    if (Screen::pastSide(x, Screen::FLYER_LEFT)) {
         context.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
         flyer.continueIn(Placed::instance, context);
         return;
     }
     flyer.moveToX(x);
     if (!flyer.animate(FLAP_DELAY)) return;
-    flyer.show(flyer.kind().flight.towards(flyer.flight() == world::Facing::Right));
-    if (flyer.bounceFallingPassenger(context, true)) {
+    flyer.show(flyer.kind().flight.towards(flyer.flight() == world::figure::Facing::Right));
+    if (flyer.bounceFallingPassenger(context)) {
         context.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
         flyer.changeState(Falling::instance, context);
         return;
     }
-    const world::Copter* copter =
+    const world::copter::Copter* copter =
         physics::TouchBox(flyer.kind().box, flyer.x(), flyer.y()).firstCopterIn(context.level.copters());
-    if (!copter || copter->player() != flyer.lastTarget() || context.level.fade().fadingOut()) return;
-    context.level.fade().startFadeOut();
-    context.report({events::EventKind::CopterCrashed, copter->player()});
+    if (copter && copter->player() == flyer.lastTarget()) context.level.crash(*copter, context.events);
 }
 
 }  // namespace ugh::enemies::flyer

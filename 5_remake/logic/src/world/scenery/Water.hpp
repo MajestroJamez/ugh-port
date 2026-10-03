@@ -3,7 +3,7 @@
 
 #include "units/Fixed.hpp"
 
-namespace ugh::world {
+namespace ugh::world::scenery {
 
 /**
  * The water at the bottom of a level. Its surface moves every second frame; in the frame after its pixel row
@@ -40,4 +40,4 @@ private:
     int surfaceDelay_ = 0;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::scenery

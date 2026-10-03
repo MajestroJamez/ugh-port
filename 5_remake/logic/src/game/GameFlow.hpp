@@ -47,9 +47,12 @@ public:
 
 private:
     Attempts attempts_;
-    std::array<std::unique_ptr<Phase>, 6> phases_;   // by PhaseId
-    Phase* current_ = nullptr;                       // nullptr: not started, or over
+    std::array<std::unique_ptr<Phase>, static_cast<int>(PhaseId::Count)> phases_;   // by PhaseId
+    Phase* current_ = nullptr;   // nullptr: not started, or over
     GameResult result_ = GameResult::Continue;
+
+    /** Where phase `id` is kept. */
+    std::unique_ptr<Phase>& slot(PhaseId id) { return phases_[static_cast<int>(id)]; }
 };
 
 }  // namespace ugh::game

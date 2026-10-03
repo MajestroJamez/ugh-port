@@ -3,9 +3,9 @@
 
 #include <optional>
 
-#include "world/Cargo.hpp"
+#include "world/copter/Cargo.hpp"
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 /** Whom a copter carries - a passenger of a route inside, or the standing passenger hanging below - and the fare. */
 class Cabin {
@@ -38,4 +38,4 @@ private:
     int fare_ = 0;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

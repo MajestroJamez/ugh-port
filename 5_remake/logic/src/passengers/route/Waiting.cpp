@@ -9,7 +9,7 @@ const Waiting Waiting::instance{};
 
 void Waiting::enter(RoutePassenger& passenger, const PassengerContext&) const {
     passenger.restartAnimation();
-    passenger.call().startWaiting();
+    passenger.pickupWait().startWaiting();
     passenger.hideBubble();
 }
 
@@ -18,10 +18,10 @@ void Waiting::walk(RoutePassenger& passenger, const PassengerContext&) const {
     if (!passenger.animate()) return;
     int spot = passenger.route().pickupPad().place().wait;
     if (!passenger.stepTowards(spot)) {
-        passenger.call().walkToSpot();
+        passenger.pickupWait().walkToSpot();
         return;
     }
-    if (passenger.call().reachSpot()) passenger.rewindAnimation();   // it just got there
+    if (passenger.pickupWait().reachSpot()) passenger.rewindAnimation();   // it just got there
     passenger.show(*passenger.kind().standing);
 }
 

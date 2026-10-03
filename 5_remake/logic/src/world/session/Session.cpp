@@ -1,6 +1,6 @@
-#include "world/Session.hpp"
+#include "world/session/Session.hpp"
 
-namespace ugh::world {
+namespace ugh::world::session {
 
 void Session::startGame() {
     lives_ = Lives(Lives::START);
@@ -18,4 +18,4 @@ bool Session::loseLife() {
     return true;
 }
 
-}  // namespace ugh::world
+}  // namespace ugh::world::session

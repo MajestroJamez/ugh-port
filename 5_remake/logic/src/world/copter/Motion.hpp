@@ -4,7 +4,7 @@
 #include "units/Fixed.hpp"
 #include "units/Speed.hpp"
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 /**
  * Where a copter is and how fast it moves. The pixel position is what the collision probe sees: it follows x and y,
@@ -52,4 +52,4 @@ private:
     units::Speed vx_, vy_;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

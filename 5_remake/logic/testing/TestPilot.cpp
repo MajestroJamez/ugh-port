@@ -10,13 +10,13 @@ void TestPilot::placeCopter(int player, units::Fixed x, units::Fixed y, int pixe
 
 void TestPilot::setEnergy(int energy) { game_.state_.level.energy() = world::Energy(energy); }
 
-void TestPilot::setLives(int lives) { game_.state_.session->lives() = world::Lives(lives); }
+void TestPilot::setLives(int lives) { game_.state_.session->lives() = world::session::Lives(lives); }
 
-void TestPilot::placeCopter(world::Copter& copter, units::Fixed x, units::Fixed y, int pixelX, int pixelY,
-                            units::Speed vx, units::Speed vy, const world::Pad* landedOn) {
+void TestPilot::placeCopter(world::copter::Copter& copter, units::Fixed x, units::Fixed y, int pixelX, int pixelY,
+                            units::Speed vx, units::Speed vy, const world::scenery::Pad* landedOn) {
     if (landedOn) copter.land(*landedOn);
     else copter.takeOff();
-    copter.motion() = world::Motion(x, y, pixelX, pixelY, vx, vy);
+    copter.motion() = world::copter::Motion(x, y, pixelX, pixelY, vx, vy);
 }
 
 }  // namespace ugh::testing

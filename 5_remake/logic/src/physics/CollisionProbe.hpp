@@ -4,15 +4,15 @@
 #include <optional>
 
 #include "units/Fixed.hpp"
-#include "world/Copter.hpp"
 #include "world/Level.hpp"
+#include "world/copter/Copter.hpp"
 
 namespace ugh::physics {
 
 /**
- * Ten points of the copter's outline tested against the collision mask of the level. The physics moves a copter
- * pixel by pixel along one axis and stops it at the first pixel where a point of its outline would be in something
- * solid.
+ * Ten points of the copter's outline (`world::copter::CopterShape::OUTLINE`) tested against the collision mask of the
+ * level. The physics moves a copter pixel by pixel along one axis and stops it at the first pixel where a point of its
+ * outline would be in something solid.
  *
  * Quirk of the original: moving left or up, only the pixel next to the copter is probed, however far the copter
  * moves in the frame. A fast copter can fly through a thin wall to the left or upwards, never to the right or down.
@@ -27,12 +27,13 @@ public:
      * The copter moves along `axis` from `from` (its position on that axis now) to `to`: where it stops when it hits
      * something on the way; nothing when it gets there.
      */
-    std::optional<units::Fixed> stopOnTheWay(const world::Copter& copter, Axis axis, units::Fixed from, units::Fixed to) const;
+    std::optional<units::Fixed> stopOnTheWay(const world::copter::Copter& copter, Axis axis, units::Fixed from,
+                                             units::Fixed to) const;
 
 private:
     const world::Level& level_;
 
-    /** A point of the outline is solid with the copter's probe origin at x, y (pixels). */
+    /** A point of the outline is solid with the outline starting at x, y (pixels). */
     bool hits(int x, int y) const;
 };
 

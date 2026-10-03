@@ -9,7 +9,7 @@ namespace ugh::passengers::standing {
 const Standing Standing::instance{};
 
 void Standing::update(StandingPassenger& passenger, const PassengerContext& context) const {
-    world::Copter* copter =
+    world::copter::Copter* copter =
         physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.level.copters());
     if (copter && copter->cabin().hasRoom()) {
         passenger.hangBelow(*copter);

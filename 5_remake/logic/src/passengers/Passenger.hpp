@@ -6,15 +6,16 @@
 #include "passengers/PassengerContext.hpp"
 #include "passengers/PassengerVisitor.hpp"
 #include "units/Fixed.hpp"
-#include "world/Figure.hpp"
+#include "world/figure/Figure.hpp"
 
 namespace ugh::passengers {
 
 /**
- * A passenger: what all have - what they show (`world::Figure`, with their place in the level's list) and their speech
- * bubble. A passenger with a route and the standing passenger are its two kinds, each with its own state machine.
+ * A passenger: what all have - what they show (`world::figure::Figure`, with their place in the level's list) and
+ * their speech bubble. A passenger with a route and the standing passenger are its two kinds, each with its own state
+ * machine.
  */
-class Passenger : public world::Figure {
+class Passenger : public world::figure::Figure {
 public:
     explicit Passenger(int index) : Figure(index) {}
     Passenger(int index, units::Fixed x, units::Fixed y) : Figure(index, x, y) {}

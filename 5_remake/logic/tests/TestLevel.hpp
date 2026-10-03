@@ -9,7 +9,7 @@
 #include "events/EventQueue.hpp"
 #include "world/Level.hpp"
 #include "world/PlayContext.hpp"
-#include "world/Session.hpp"
+#include "world/session/Session.hpp"
 
 namespace ugh::test {
 
@@ -27,7 +27,7 @@ public:
     void start();
 
     world::Level& level() { return level_; }
-    world::Session& session() { return session_; }
+    world::session::Session& session() { return session_; }
     world::PlayContext context() { return {level_, session_, gameData(), events, diagnostics}; }
 
     events::EventQueue events;
@@ -39,7 +39,7 @@ private:
     data::levels::LevelDefinition definition_;
     std::vector<uint8_t> mask_;
     world::Level level_;
-    world::Session session_;
+    world::session::Session session_;
 };
 
 }  // namespace ugh::test

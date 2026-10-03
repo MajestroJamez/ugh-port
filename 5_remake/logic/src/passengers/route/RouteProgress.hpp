@@ -4,7 +4,7 @@
 #include "data/levels/Route.hpp"
 #include "units/Countdown.hpp"
 #include "world/Level.hpp"
-#include "world/Pad.hpp"
+#include "world/scenery/Pad.hpp"
 
 namespace ugh::passengers::route {
 
@@ -20,8 +20,8 @@ public:
     int stop() const { return stop_; }
     bool finished() const { return stop_ >= static_cast<int>(route_->stops.size()); }
     /** The pad of the stop where it is picked up, and the one it wants to go to. */
-    world::Pad& pickupPad() const { return level_->pad(route_->stops[stop_].pickupPad); }
-    world::Pad& targetPad() const { return level_->pad(route_->stops[stop_].targetPad); }
+    world::scenery::Pad& pickupPad() const { return level_->pad(route_->stops[stop_].pickupPad); }
+    world::scenery::Pad& targetPad() const { return level_->pad(route_->stops[stop_].targetPad); }
     /** On to the next stop. */
     void next() { stop_++; }
 

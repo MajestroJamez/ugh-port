@@ -4,11 +4,17 @@
 
 namespace ugh::enemies {
 
-bool Enemy::bounceFallingPassenger(const EnemyContext& context, bool showHit) const {
+bool Enemy::bounceFallingPassenger(const EnemyContext& context) const {
     passengers::standing::StandingPassenger* passenger = context.passengers.fallingOnto(x(), y());
     if (!passenger) return false;
-    if (showHit) passenger->bounce(-passenger->fallSpeed(), context.data.sprites().bouncedPassenger);
-    else passenger->bounceUnseen(-passenger->fallSpeed());
+    passenger->bounce(-passenger->fallSpeed(), context.data.sprites().bouncedPassenger);
+    return true;
+}
+
+bool Enemy::bounceFallingPassengerUnseen(const EnemyContext& context) const {
+    passengers::standing::StandingPassenger* passenger = context.passengers.fallingOnto(x(), y());
+    if (!passenger) return false;
+    passenger->bounceUnseen(-passenger->fallSpeed());
     return true;
 }
 

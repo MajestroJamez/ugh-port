@@ -1,6 +1,6 @@
-#include "world/Copters.hpp"
+#include "world/copter/Copters.hpp"
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 void Copters::placeAtStart(const data::levels::LevelDefinition& definition, const data::SpriteIds& sprites) {
     for (Copter& copter : copters_) {
@@ -10,24 +10,30 @@ void Copters::placeAtStart(const data::levels::LevelDefinition& definition, cons
     }
 }
 
-Copter* Copters::landedOn(const Pad& pad) {
+Copter* Copters::landedOn(const scenery::Pad& pad) {
     for (Copter& copter : all())
         if (copter.landedOn(pad)) return &copter;
     return nullptr;
 }
 
-bool Copters::emptyLandedOn(const Pad& pad) const {
+bool Copters::emptyLandedOn(const scenery::Pad& pad) const {
     for (const Copter& copter : all())
         if (copter.landedOn(pad) && copter.cabin().hasRoom()) return true;
     return false;
 }
 
-Copter* Copters::firstOnWater(const Water& water, bool withRoom, bool still) {
+Copter* Copters::firstOnWater(const scenery::Water& water, Wanted wanted) {
     for (Copter& copter : all()) {
-        if ((still && copter.motion().speedY() != units::Speed()) || (withRoom && !copter.cabin().hasRoom())) continue;
+        if (!fits(copter, wanted)) continue;
         if (copter.depthIn(water.row()) == 0) return &copter;
     }
     return nullptr;
 }
 
-}  // namespace ugh::world
+bool Copters::fits(const Copter& copter, Wanted wanted) {
+    bool still = copter.motion().speedY() == units::Speed();
+    if (wanted == Wanted::StillWithRoom && !still) return false;
+    return wanted == Wanted::Any || copter.cabin().hasRoom();
+}
+
+}  // namespace ugh::world::copter

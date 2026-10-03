@@ -4,16 +4,16 @@
 #include "enemies/EnemyContext.hpp"
 #include "enemies/EnemyVisitor.hpp"
 #include "units/Fixed.hpp"
-#include "world/Facing.hpp"
-#include "world/Figure.hpp"
+#include "world/figure/Facing.hpp"
+#include "world/figure/Figure.hpp"
 
 namespace ugh::enemies {
 
 /**
- * An enemy: what all have - what they show (`world::Figure`, with their place in the level's list). The flyer, the
- * walker, the blower and the tree are its kinds, each with its own state machine.
+ * An enemy: what all have - what they show (`world::figure::Figure`, with their place in the level's list). The
+ * flyer, the walker, the blower and the tree are its kinds, each with its own state machine.
  */
-class Enemy : public world::Figure {
+class Enemy : public world::figure::Figure {
 public:
     explicit Enemy(int index) : Figure(index) {}
     Enemy(int index, units::Fixed x, units::Fixed y) : Figure(index, x, y) {}
@@ -28,17 +28,19 @@ public:
     // ------------------------------------------------------------ for the states
 
     /**
-     * A standing passenger falling onto the enemy bounces off it (back up as fast as it fell), shown hit when
-     * `showHit`; true when one did.
+     * A standing passenger falling onto the enemy bounces off it (back up as fast as it fell), shown hit; true when one
+     * did.
      */
-    bool bounceFallingPassenger(const EnemyContext& context, bool showHit) const;
+    bool bounceFallingPassenger(const EnemyContext& context) const;
+    /** The same, but the passenger shows no hit (it bounces off a blower). */
+    bool bounceFallingPassengerUnseen(const EnemyContext& context) const;
     /** A passenger stunned it: its score. */
     void scoreStun(int score, const EnemyContext& context) const;
 
     /** A speed turned to point towards `side` (its size stays). */
-    static units::Fixed headed(units::Fixed speed, world::Facing side) {
+    static units::Fixed headed(units::Fixed speed, world::figure::Facing side) {
         bool left = speed < units::Fixed();
-        return (side == world::Facing::Left) == left ? speed : -speed;
+        return (side == world::figure::Facing::Left) == left ? speed : -speed;
     }
 };
 

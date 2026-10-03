@@ -11,8 +11,10 @@ class Swim {
 public:
     /** It falls into the water, or starts to sink: no speed yet. */
     void plunge() { speed_ = units::Speed(); }
-    /** One frame of the splash: falling while above the surface, then braked and up again; the new speed. */
-    units::Speed splash(bool aboveSurface);
+    /** One frame of the splash above the surface: it falls faster; the new speed. */
+    units::Speed fallInAir();
+    /** One frame of the splash under the surface: braked while it still goes down, then up again; the new speed. */
+    units::Speed brakeInWater();
     /** One frame of sinking, faster and faster; the new speed. */
     units::Speed sink();
     /** 1/64 Fixed per frame; positive: down. */

@@ -7,7 +7,7 @@
 #include "passengers/standing/StandingState.hpp"
 #include "state/StateMachine.hpp"
 #include "units/Fixed.hpp"
-#include "world/Copter.hpp"
+#include "world/copter/Copter.hpp"
 
 namespace ugh::passengers::standing {
 
@@ -26,9 +26,9 @@ public:
     const data::kinds::StandingPassengerKind& kind() const { return *kind_; }
 
     /** The copter it hangs below (or last hung below); nullptr before. */
-    world::Copter* carrier() const { return carrier_; }
+    world::copter::Copter* carrier() const { return carrier_; }
     /** A copter with room picked it up. */
-    void hangBelow(world::Copter& copter) { carrier_ = &copter; }
+    void hangBelow(world::copter::Copter& copter) { carrier_ = &copter; }
 
     // ------------------------------------------------------------ falling
 
@@ -52,7 +52,7 @@ public:
 
 private:
     const data::kinds::StandingPassengerKind* kind_;
-    world::Copter* carrier_ = nullptr;
+    world::copter::Copter* carrier_ = nullptr;
     units::Fixed dropSpeedX_;
     units::Fixed fallSpeed_;
 };

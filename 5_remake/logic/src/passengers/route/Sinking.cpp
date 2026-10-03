@@ -2,7 +2,7 @@
 
 #include "passengers/route/Gone.hpp"
 #include "passengers/route/RoutePassenger.hpp"
-#include "world/Screen.hpp"
+#include "world/scenery/Screen.hpp"
 
 namespace ugh::passengers::route {
 
@@ -19,7 +19,7 @@ void Sinking::update(RoutePassenger& passenger, const PassengerContext& context)
     passenger.show(*passenger.kind().standing);
     units::Speed speed = passenger.swim().sink();
     units::Fixed y = passenger.y() + speed.perFrame();
-    if (y < world::Screen::BOTTOM) {
+    if (y < world::scenery::Screen::BOTTOM) {
         passenger.moveToY(y);
         return;
     }

@@ -4,7 +4,7 @@
 
 namespace ugh::replay {
 
-void CopterFields::write(const world::Copter& copter, int player, Fields& f) {
+void CopterFields::write(const world::copter::Copter& copter, int player, Fields& f) {
     std::string c = "copter." + std::to_string(player) + ".";
     f[c + "x"] = std::to_string(copter.motion().x().raw());
     f[c + "y"] = std::to_string(copter.motion().y().raw());
@@ -15,7 +15,7 @@ void CopterFields::write(const world::Copter& copter, int player, Fields& f) {
     f[c + "landedPad"] = copter.landedPad() ? std::to_string(copter.landedPad()->index()) : "none";
     f[c + "rotorSprite"] = std::to_string(copter.rotor().sprite());
     f[c + "rotorCounter"] = std::to_string(copter.rotor().counter());
-    const world::Controls& keys = copter.controls();
+    const world::copter::Controls& keys = copter.controls();
     std::string held;
     if (keys.up) held += 'U';
     if (keys.down) held += 'D';

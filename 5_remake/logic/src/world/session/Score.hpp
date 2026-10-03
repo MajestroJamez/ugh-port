@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace ugh::world {
+namespace ugh::world::session {
 
 /**
  * The score of a game and its multiplier: a quick delivery raises the multiplier up to a limit, a lost life resets
@@ -35,4 +35,4 @@ private:
     int multiplier_ = 0;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::session

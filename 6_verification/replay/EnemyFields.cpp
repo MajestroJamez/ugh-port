@@ -68,7 +68,7 @@ const FieldRules& treeRules() {
 
 // ------------------------------------------------------------ the values of the fields
 
-std::string side(world::Facing facing) { return facing == world::Facing::Left ? "left" : "right"; }
+std::string side(world::figure::Facing facing) { return facing == world::figure::Facing::Left ? "left" : "right"; }
 
 const FieldTable<Enemy>& commonValues() {
     static const FieldTable<Enemy> values{

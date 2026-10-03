@@ -26,7 +26,7 @@ bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContex
 
 /** A copter in the air touched it: it is knocked into the water. */
 bool OnPickupPad::knockedIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
-    const world::Copter* copter =
+    const world::copter::Copter* copter =
         physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.level.copters());
     if (!copter || copter->landed()) return false;
     intoWater(passenger, context);
@@ -34,7 +34,7 @@ bool OnPickupPad::knockedIntoWater(RoutePassenger& passenger, const PassengerCon
 }
 
 void OnPickupPad::intoWater(RoutePassenger& passenger, const PassengerContext& context) {
-    passenger.kinds().intoWater();
+    passenger.form().intoWater();
     passenger.changeState(Splash::instance, context);
 }
 

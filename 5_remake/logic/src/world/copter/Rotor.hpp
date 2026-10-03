@@ -1,7 +1,7 @@
 // The rotor of a copter.
 #pragma once
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 /** The rotor of a copter: the harder the pilot works it this frame (effort), the faster its sprites turn. */
 class Rotor {
@@ -29,4 +29,4 @@ private:
     int counter_ = 0;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

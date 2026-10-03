@@ -3,7 +3,7 @@
 
 #include <optional>
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 /** Who a copter carries: a passenger of a route inside, or the standing passenger hanging below. */
 struct Cargo {
@@ -12,4 +12,4 @@ struct Cargo {
     int fareMin = 0;                  // the fare drops to this (a passenger of a route)
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

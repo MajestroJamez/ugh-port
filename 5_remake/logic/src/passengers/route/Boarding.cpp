@@ -9,13 +9,10 @@ namespace ugh::passengers::route {
 const Boarding Boarding::instance{};
 
 /** The bubble goes (also on the water: SwimBoarding). */
-void Boarding::enter(RoutePassenger& passenger, const PassengerContext&) const {
-    passenger.restartAnimation();
-    passenger.hideBubble();
-}
+void Boarding::enter(RoutePassenger& passenger, const PassengerContext&) const { passenger.startBoarding(); }
 
 void Boarding::stay(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Copter* copter = context.level.copters().landedOn(passenger.route().pickupPad());
+    world::copter::Copter* copter = context.level.copters().landedOn(passenger.route().pickupPad());
     if (!copter) {
         passenger.changeState(Impatient::instance, context);
         return;

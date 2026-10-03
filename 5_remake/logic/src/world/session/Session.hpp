@@ -3,11 +3,11 @@
 
 #include "data/Difficulty.hpp"
 #include "data/Rules.hpp"
-#include "world/Lives.hpp"
-#include "world/RandomNumbers.hpp"
-#include "world/Score.hpp"
+#include "world/session/Lives.hpp"
+#include "world/session/RandomNumbers.hpp"
+#include "world/session/Score.hpp"
 
-namespace ugh::world {
+namespace ugh::world::session {
 
 /** The game being played: the players, the difficulty, the level number, lives, score, multiplier, random numbers. */
 class Session {
@@ -54,4 +54,4 @@ private:
     RandomNumbers random_;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::session

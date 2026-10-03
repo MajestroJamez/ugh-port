@@ -9,14 +9,13 @@
 namespace ugh::game {
 
 GameFlow::GameFlow(Attempts attempts) : attempts_(attempts) {
-    phases_[static_cast<int>(PhaseId::BlackBeforeCaption)] =
+    slot(PhaseId::BlackBeforeCaption) =
         std::make_unique<phases::BlackScreen>(PhaseId::CaptionFadeIn, GamePhase::BetweenLevels);
-    phases_[static_cast<int>(PhaseId::CaptionFadeIn)] = std::make_unique<phases::CaptionFadeIn>();
-    phases_[static_cast<int>(PhaseId::CaptionWaitKey)] = std::make_unique<phases::CaptionWaitKey>();
-    phases_[static_cast<int>(PhaseId::CaptionFadeOut)] = std::make_unique<phases::CaptionFadeOut>();
-    phases_[static_cast<int>(PhaseId::BlackBeforePlay)] =
-        std::make_unique<phases::BlackScreen>(PhaseId::Playing, GamePhase::Setup);
-    phases_[static_cast<int>(PhaseId::Playing)] = std::make_unique<phases::Playing>();
+    slot(PhaseId::CaptionFadeIn) = std::make_unique<phases::CaptionFadeIn>();
+    slot(PhaseId::CaptionWaitKey) = std::make_unique<phases::CaptionWaitKey>();
+    slot(PhaseId::CaptionFadeOut) = std::make_unique<phases::CaptionFadeOut>();
+    slot(PhaseId::BlackBeforePlay) = std::make_unique<phases::BlackScreen>(PhaseId::Playing, GamePhase::Setup);
+    slot(PhaseId::Playing) = std::make_unique<phases::Playing>();
 }
 
 void GameFlow::restart() {
@@ -36,7 +35,7 @@ GameResult GameFlow::step() {
 }
 
 void GameFlow::goTo(PhaseId next) {
-    current_ = phases_[static_cast<int>(next)].get();
+    current_ = slot(next).get();
     current_->enter(*this);
 }
 

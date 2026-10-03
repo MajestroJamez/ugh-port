@@ -9,9 +9,9 @@
 #include "enemies/walker/WalkerState.hpp"
 #include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
-#include "world/Copter.hpp"
-#include "world/Facing.hpp"
-#include "world/Pad.hpp"
+#include "world/copter/Copter.hpp"
+#include "world/figure/Facing.hpp"
+#include "world/scenery/Pad.hpp"
 
 namespace ugh::enemies::walker {
 
@@ -24,7 +24,8 @@ public:
     static constexpr int FRAME_DELAY = 4;   // frames per animation frame
 
     /** The walker of `placement` on `pad` (the pad the placement names). */
-    Walker(int index, const data::kinds::WalkerKind& kind, const data::levels::WalkerPlacement& placement, world::Pad& pad);
+    Walker(int index, const data::kinds::WalkerKind& kind, const data::levels::WalkerPlacement& placement,
+           world::scenery::Pad& pad);
 
     void update(const EnemyContext& context) override;
     void accept(EnemyVisitor& visitor) const override;
@@ -32,16 +33,18 @@ public:
     const data::kinds::WalkerKind& kind() const { return *kind_; }
 
     /** The pad it walks on. */
-    world::Pad& pad() const { return *pad_; }
+    world::scenery::Pad& pad() const { return *pad_; }
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
-    world::Facing facing() const { return facing_; }
+    world::figure::Facing facing() const { return facing_; }
     /** It reached the end of its pad: back the other way. */
     void turnAround();
     /** It faces the copter and runs towards it. */
-    void turnTo(const world::Copter& copter);
+    void turnTo(const world::copter::Copter& copter);
     /** Shows the frame of the variant of `pair` it faces. */
-    void showFacing(const data::kinds::AnimationPair& pair) { show(pair.towards(facing_ == world::Facing::Right)); }
+    void showFacing(const data::kinds::AnimationPair& pair) {
+        show(pair.towards(facing_ == world::figure::Facing::Right));
+    }
     /** One frame of its animation delay (4 frames per animation frame; watching a copter: animate(5)). */
     bool animate() { return Figure::animate(FRAME_DELAY); }
     using Figure::animate;
@@ -62,9 +65,9 @@ public:
 
 private:
     const data::kinds::WalkerKind* kind_;
-    world::Pad* pad_;
+    world::scenery::Pad* pad_;
     units::Fixed vx_;
-    world::Facing facing_ = world::Facing::Left;
+    world::figure::Facing facing_ = world::figure::Facing::Left;
     units::Countdown watchTime_;
     Stun stun_;
     Charge charge_;

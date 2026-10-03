@@ -2,9 +2,9 @@
 #pragma once
 
 #include "data/levels/PadDefinition.hpp"
-#include "world/Figure.hpp"
+#include "world/figure/Figure.hpp"
 
-namespace ugh::world {
+namespace ugh::world::scenery {
 
 /** A pad of the running level: where it is, its place in the level's list, and the passenger who waits on it. */
 class Pad {
@@ -17,14 +17,14 @@ public:
 
     bool free() const { return waiting_ == nullptr; }
     /** The passenger who waits on it; nullptr if none. */
-    const Figure* waiting() const { return waiting_; }
-    void occupy(const Figure& passenger) { waiting_ = &passenger; }
+    const figure::Figure* waiting() const { return waiting_; }
+    void occupy(const figure::Figure& passenger) { waiting_ = &passenger; }
     void vacate() { waiting_ = nullptr; }
 
 private:
     int index_;
     const data::levels::PadDefinition* place_;
-    const Figure* waiting_ = nullptr;
+    const figure::Figure* waiting_ = nullptr;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::scenery

@@ -1,6 +1,6 @@
-#include "world/RandomNumbers.hpp"
+#include "world/session/RandomNumbers.hpp"
 
-namespace ugh::world {
+namespace ugh::world::session {
 
 uint16_t RandomNumbers::next(uint16_t range) {
     uint32_t sum = static_cast<uint32_t>(range) + words_[0];
@@ -18,4 +18,4 @@ uint16_t RandomNumbers::next(uint16_t range) {
     return static_cast<uint16_t>((first * range) >> 16);
 }
 
-}  // namespace ugh::world
+}  // namespace ugh::world::session

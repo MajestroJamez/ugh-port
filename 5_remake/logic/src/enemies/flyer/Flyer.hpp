@@ -7,7 +7,7 @@
 #include "enemies/flyer/FlyerState.hpp"
 #include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
-#include "world/Facing.hpp"
+#include "world/figure/Facing.hpp"
 
 namespace ugh::enemies::flyer {
 
@@ -28,7 +28,7 @@ public:
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
     /** It flies towards `side`: its speed and its flight animation point there. */
-    void flyTowards(world::Facing side);
+    void flyTowards(world::figure::Facing side);
 
     /** The player it hunted last (before its first flight: 1, so that it hunts player 0 first). */
     int lastTarget() const { return lastTarget_; }
@@ -36,7 +36,7 @@ public:
     int takeNextTarget(int players);
 
     /** The side it flies towards (its flight animation). */
-    world::Facing flight() const { return flight_; }
+    world::figure::Facing flight() const { return flight_; }
 
     int startDelay() const { return startDelay_; }
     /** It stays in its state (hidden, screeching) for `frames` before the next one. */
@@ -57,7 +57,7 @@ private:
     int startDelay_ = 0;
     units::Fixed vx_;
     int lastTarget_ = 1;
-    world::Facing flight_ = world::Facing::Left;
+    world::figure::Facing flight_ = world::figure::Facing::Left;
     units::Countdown waitTime_;
     units::Fixed fallSpeed_;
 };

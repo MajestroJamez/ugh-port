@@ -10,14 +10,12 @@ const Impatient Impatient::instance{};
 
 /** The impatient bubble (also on the water: SwimWaving). */
 void Impatient::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    passenger.restartAnimation();
-    passenger.showBubble(context.data.sprites().impatientBubble);
-    passenger.call().start(WAVE_TIME);
+    passenger.startWaving(context.data.sprites());
 }
 
 void Impatient::stay(RoutePassenger& passenger, const PassengerContext& context) const {
-    if (passenger.animate()) passenger.show(*passenger.kind().waving);
-    if (!passenger.call().over()) return;
+    passenger.wave();
+    if (!passenger.pickupWait().over()) return;
     if (context.level.copters().emptyLandedOn(passenger.route().pickupPad())) {
         passenger.changeState(Calling::instance, context);
     } else {

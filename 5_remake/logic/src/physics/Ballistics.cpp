@@ -1,6 +1,6 @@
 #include "physics/Ballistics.hpp"
 
-#include "world/Screen.hpp"
+#include "world/scenery/Screen.hpp"
 
 namespace ugh::physics {
 
@@ -8,7 +8,7 @@ using units::Fixed;
 
 Ballistics::Result Ballistics::fall(Body& body, const world::Level& level) const {
     Fixed x = body.x + body.speedX;
-    if (world::Screen::pastSide(x)) return Result::Gone;
+    if (world::scenery::Screen::pastSide(x)) return Result::Gone;
     body.x = x;
     body.fallSpeed += gravity_;
     if (body.fallSpeed < Fixed()) {   // still on its way up
@@ -17,11 +17,11 @@ Ballistics::Result Ballistics::fall(Body& body, const world::Level& level) const
     }
     Fixed before = body.y;
     Fixed y = before + body.fallSpeed;
-    if (y >= world::Screen::BOTTOM) return Result::Gone;
+    if (y >= world::scenery::Screen::BOTTOM) return Result::Gone;
     body.y = y;
     int bottom = y.pixels() + body.anchorY, bottomBefore = before.pixels() + body.anchorY;
     int middle = body.x.pixels() + body.anchorX;
-    for (const world::Pad& pad : level.pads()) {
+    for (const world::scenery::Pad& pad : level.pads()) {
         if (landsOn(pad.place(), bottomBefore, bottom, middle)) {
             body.y = Fixed::fromPixels(pad.place().y - body.anchorY);
             return Result::Landed;

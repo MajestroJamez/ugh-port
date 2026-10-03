@@ -3,8 +3,8 @@
 
 #include "units/Fixed.hpp"
 #include "units/Speed.hpp"
-#include "world/Copter.hpp"
 #include "world/PlayContext.hpp"
+#include "world/copter/Copter.hpp"
 
 namespace ugh::physics {
 
@@ -19,7 +19,7 @@ public:
     explicit CopterPhysics(const world::PlayContext& context) : context_(context) {}
 
     /** One frame of the copter's flight. */
-    void fly(world::Copter& copter);
+    void fly(world::copter::Copter& copter);
 
 private:
     /** Where the copter is against the water surface. */
@@ -28,18 +28,18 @@ private:
     const world::PlayContext& context_;
     int impact_ = 0;   // the hardest bounce of this frame
 
-    Depth depthOf(const world::Copter& copter) const {
+    Depth depthOf(const world::copter::Copter& copter) const {
         int depth = copter.depthIn(context_.level.water().row());
         return depth < 0 ? Depth::Above : depth == 0 ? Depth::Surface : Depth::Below;
     }
-    void blowWithWind(world::Copter& copter, Depth depth);
-    void steer(world::Copter& copter);
-    void moveHorizontally(world::Copter& copter);
-    void liftAndFall(world::Copter& copter, Depth depth);
-    void moveVertically(world::Copter& copter, Depth depth);
-    void bounceVertically(world::Copter& copter, units::Fixed y);
-    void touchDownOnPad(world::Copter& copter, units::Fixed y);
-    void checkCrash(const world::Copter& copter);
+    void blowWithWind(world::copter::Copter& copter, Depth depth);
+    void steer(world::copter::Copter& copter);
+    void moveHorizontally(world::copter::Copter& copter);
+    void liftAndFall(world::copter::Copter& copter, Depth depth);
+    void moveVertically(world::copter::Copter& copter, Depth depth);
+    void bounceVertically(world::copter::Copter& copter, units::Fixed y);
+    void touchDownOnPad(world::copter::Copter& copter, units::Fixed y);
+    void checkCrash(const world::copter::Copter& copter);
 
     /** A bounce: half the speed back; the impact is the speed it had (twice the half, as the original computes). */
     static int bounce(units::Speed& speed);

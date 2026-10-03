@@ -15,7 +15,7 @@
 #include "input/PlayerKey.hpp"
 #include "passengers/Passengers.hpp"
 #include "world/Level.hpp"
-#include "world/Session.hpp"
+#include "world/session/Session.hpp"
 
 namespace ugh::testing {
 class TestPilot;   // the test pilot of the replays (5_remake/logic/testing)
@@ -52,7 +52,7 @@ public:
 
     GamePhase phase() const { return flow_.phase(); }
     /** The session of the game; only after newGame(). */
-    const world::Session& session() const { return *state_.session; }
+    const world::session::Session& session() const { return *state_.session; }
     const world::Level& level() const { return state_.level; }
     const passengers::Passengers& passengers() const { return state_.passengers; }
     const enemies::Enemies& enemies() const { return state_.enemies; }

@@ -7,7 +7,7 @@ namespace ugh::passengers::route {
 
 const Riding Riding::instance{};
 
-void Riding::board(RoutePassenger& passenger, world::Copter& copter, const PassengerContext& context) {
+void Riding::board(RoutePassenger& passenger, world::copter::Copter& copter, const PassengerContext& context) {
     passenger.ride().start(copter, QUICK_DELIVERY_TIME);
     passenger.changeState(instance, context);
 }
@@ -18,18 +18,18 @@ void Riding::board(RoutePassenger& passenger, world::Copter& copter, const Passe
  * passenger may wait there by now.
  */
 void Riding::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Copter& copter = *passenger.ride().carrier();
+    world::copter::Copter& copter = *passenger.ride().carrier();
     int fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
-    passenger.kinds().outOfWater();   // a rescued swimmer is itself again
+    passenger.form().outOfWater();   // a rescued swimmer is itself again
     int destination = passenger.route().targetPad().place().number;
-    copter.cabin().takeOnBoard(passenger.kinds().land().look, destination, fare, fareMin);
+    copter.cabin().takeOnBoard(passenger.form().land().look, destination, fare, fareMin);
     passenger.hide();
     passenger.route().pickupPad().vacate();
     context.report({events::EventKind::PassengerBoarded, copter.player(), passenger.index()});
 }
 
 void Riding::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Copter& copter = *passenger.ride().carrier();
+    world::copter::Copter& copter = *passenger.ride().carrier();
     copter.cabin().lowerFare();
     passenger.ride().tick();
     if (copter.landedOn(passenger.route().targetPad())) passenger.changeState(WalkingToDoor::instance, context);

@@ -8,7 +8,7 @@ const data::GameData& TestLevel::gameData() { return test::gameData(); }
 
 TestLevel::TestLevel(int waterRow, data::levels::Wind wind)
     : mask_(data::levels::CollisionMask::WIDTH / 8 * data::levels::CollisionMask::HEIGHT),
-      session_(gameData().rules(), 1, data::Difficulty::Medium, 0, world::RandomNumbers({1, 2, 3, 4})) {
+      session_(gameData().rules(), 1, data::Difficulty::Medium, 0, world::session::RandomNumbers({1, 2, 3, 4})) {
     definition_.wind = wind;
     definition_.water = units::Fixed::fromPixels(waterRow);
     definition_.startX = {units::Fixed::fromPixels(140), units::Fixed::fromPixels(40)};

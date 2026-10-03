@@ -8,7 +8,7 @@ void Attempts::startGame() { state_.session->startGame(); }
 
 /** The level exists: the game starts at one (newGame checks it) and ends after the last (end). */
 void Attempts::start() {
-    world::Session& session = *state_.session;
+    world::session::Session& session = *state_.session;
     const data::levels::LevelDefinition& definition = *data_.level(session.players(), session.levelNumber());
     state_.level.startAttempt(definition, data_.sprites(), session.random(), diagnostics_);
     state_.passengers.load(definition, state_.level);
@@ -37,7 +37,7 @@ void Attempts::playFrame() {
 bool Attempts::over() const { return state_.level.fade().over(); }
 
 GameResult Attempts::end() {
-    world::Session& session = *state_.session;
+    world::session::Session& session = *state_.session;
     if (state_.level.delivery().done())
         return session.nextLevel(data_.levelCount(session.players())) ? GameResult::Continue
                                                                       : GameResult::AllLevelsDone;

@@ -2,15 +2,14 @@
 
 #include "passengers/route/GoingIn.hpp"
 #include "passengers/route/RoutePassenger.hpp"
+#include "world/copter/CopterShape.hpp"
 
 namespace ugh::passengers::route {
 
 namespace {
 
 using units::Fixed;
-
-// where a quick delivery's bonus item drops: from the copter's top left corner, in pixels
-constexpr int BONUS_DROP_X = 16, BONUS_DROP_Y = 10;
+using world::copter::CopterShape;
 
 }  // namespace
 
@@ -18,16 +17,16 @@ const WalkingToDoor WalkingToDoor::instance{};
 
 /** It pays the fare times the score multiplier; a quick delivery drops a bonus item that raises the multiplier. */
 void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Copter& copter = *passenger.ride().carrier();
-    world::Session& session = context.session;
+    world::copter::Copter& copter = *passenger.ride().carrier();
+    world::session::Session& session = context.session;
     copter.cabin().unload();
-    passenger.moveToX(copter.motion().x() + Fixed::fromPixels(RoutePassenger::COPTER_DOOR - passenger.kind().box.x));
+    passenger.moveToX(copter.motion().x() + Fixed::fromPixels(CopterShape::DOOR_X - passenger.kind().box.x));
     uint32_t points = static_cast<uint32_t>(copter.cabin().fare()) * static_cast<uint32_t>(session.score().multiplier());
     session.score().add(points);
     context.report({events::EventKind::PassengerPaid, copter.player(), passenger.index(), static_cast<int>(points)});
     if (passenger.ride().quick() && session.score().multiplierBelowLimit()) {
-        context.bonuses.drop(*context.data.rules().quickDeliveryBonus, copter.motion().x() + Fixed::fromPixels(BONUS_DROP_X),
-                             copter.motion().y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), Fixed(), context.diagnostics);
+        context.bonuses.drop(*context.data.rules().quickDeliveryBonus, copter.dropX(), copter.dropY(), Fixed(), Fixed(),
+                             context.diagnostics);
         context.report({events::EventKind::QuickDelivery, copter.player(), passenger.index()});
     }
     const data::levels::PadDefinition& target = passenger.route().targetPad().place();

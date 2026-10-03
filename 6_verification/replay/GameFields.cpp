@@ -48,9 +48,9 @@ uint32_t crc32(const std::vector<uint8_t>& bytes) {
 }
 
 /** The raindrops 0 .. 192 as little-endian int16 pairs x, y, CRC-32 in 8 hex digits. */
-std::string rainChecksum(const world::Rain& rain) {
+std::string rainChecksum(const world::scenery::Rain& rain) {
     std::vector<uint8_t> bytes;
-    for (const world::Raindrop& drop : rain.drops()) {
+    for (const world::scenery::Raindrop& drop : rain.drops()) {
         for (int v : {drop.x, drop.y}) {
             bytes.push_back(static_cast<uint8_t>(v));
             bytes.push_back(static_cast<uint8_t>(v >> 8));
@@ -64,7 +64,7 @@ std::string rainChecksum(const world::Rain& rain) {
 }  // namespace
 
 void GameFields::write(const game::Game& game, Fields& f) {
-    const world::Session& session = game.session();
+    const world::session::Session& session = game.session();
     f["game.phase"] = phaseName(game.phase());
     f["game.level"] = std::to_string(session.levelNumber());
     f["game.players"] = std::to_string(session.players());
@@ -72,7 +72,7 @@ void GameFields::write(const game::Game& game, Fields& f) {
     f["game.lives"] = std::to_string(session.lives().count());
     f["game.multiplier"] = std::to_string(session.score().multiplier());
     f["game.score"] = std::to_string(session.score().points());
-    const world::RandomNumbers::Words& words = session.random().words();
+    const world::session::RandomNumbers::Words& words = session.random().words();
     char rng[20];
     std::snprintf(rng, sizeof rng, "%04x%04x%04x%04x", words[3], words[2], words[1], words[0]);
     f["game.rng"] = rng;
@@ -85,7 +85,7 @@ void GameFields::write(const game::Game& game, Fields& f) {
     f["game.levelDone"] = level.delivery().done() ? "1" : "0";
     f["game.wind"] = windName(level.wind());
     f["game.passengersLeft"] = std::to_string(level.delivery().left());
-    const world::Water& water = level.water();
+    const world::scenery::Water& water = level.water();
     f["game.water.level"] = std::to_string(water.level().raw());
     f["game.water.resting"] = water.resting() ? "1" : "0";
     f["game.water.evenFrame"] = std::to_string(water.evenFrame());

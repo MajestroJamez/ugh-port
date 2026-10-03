@@ -6,8 +6,8 @@
 #include "game/Game.hpp"
 #include "units/Fixed.hpp"
 #include "units/Speed.hpp"
-#include "world/Copter.hpp"
-#include "world/Pad.hpp"
+#include "world/copter/Copter.hpp"
+#include "world/scenery/Pad.hpp"
 
 namespace ugh::testing {
 
@@ -31,8 +31,8 @@ public:
     void setLives(int lives);
 
     /** The same for a copter without a game (the tests of the physics): standing on `landedOn`, or in the air. */
-    static void placeCopter(world::Copter& copter, units::Fixed x, units::Fixed y, int pixelX, int pixelY,
-                            units::Speed vx, units::Speed vy, const world::Pad* landedOn);
+    static void placeCopter(world::copter::Copter& copter, units::Fixed x, units::Fixed y, int pixelX, int pixelY,
+                            units::Speed vx, units::Speed vy, const world::scenery::Pad* landedOn);
 
 private:
     game::Game& game_;

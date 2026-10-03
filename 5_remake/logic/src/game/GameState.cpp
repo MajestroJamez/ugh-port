@@ -4,7 +4,7 @@ namespace ugh::game {
 
 void GameState::reset(const data::Rules& rules, const NewGameSettings& settings) {
     session.emplace(rules, settings.players, settings.difficulty, settings.firstLevel,
-                    world::RandomNumbers(settings.randomSeed));
+                    world::session::RandomNumbers(settings.randomSeed));
     level = world::Level(settings.players);
     level.rain().setFloorRow(settings.rainFloorRow);
     passengers = passengers::Passengers();

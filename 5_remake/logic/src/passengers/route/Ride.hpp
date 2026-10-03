@@ -2,7 +2,7 @@
 #pragma once
 
 #include "units/Countdown.hpp"
-#include "world/Copter.hpp"
+#include "world/copter/Copter.hpp"
 
 namespace ugh::passengers::route {
 
@@ -10,12 +10,12 @@ namespace ugh::passengers::route {
 class Ride {
 public:
     /** It gets into `copter`; a delivery within `quickFrames` drops a bonus item. */
-    void start(world::Copter& copter, int quickFrames) {
+    void start(world::copter::Copter& copter, int quickFrames) {
         carrier_ = &copter;
         quickDelivery_.start(quickFrames);
     }
     /** The copter that carries it; nullptr before its first ride. */
-    world::Copter* carrier() const { return carrier_; }
+    world::copter::Copter* carrier() const { return carrier_; }
 
     /** One frame of the ride. */
     void tick() { quickDelivery_.tickToZero(); }
@@ -23,7 +23,7 @@ public:
     int quickDeliveryTime() const { return quickDelivery_.remaining(); }
 
 private:
-    world::Copter* carrier_ = nullptr;
+    world::copter::Copter* carrier_ = nullptr;
     units::Countdown quickDelivery_;
 };
 

@@ -8,7 +8,7 @@ namespace ugh::passengers::standing {
 const Hanging Hanging::instance{};
 
 void Hanging::enter(StandingPassenger& passenger, const PassengerContext& context) const {
-    world::Copter& copter = *passenger.carrier();
+    world::copter::Copter& copter = *passenger.carrier();
     copter.cabin().pickUpHanging(passenger.kind().look);
     passenger.hide();
     context.report({events::EventKind::PassengerBoarded, copter.player(), passenger.index()});

@@ -11,7 +11,7 @@ v `4_test_data/verify/.../replay/SemanticProjection.kt`.
 | `logic/` | Kotlin port | Originál |
 |---|---|---|
 | `game::GameFlow::step` | `GameFlow.kt` `playGame` | `113b:0c61 .. 0fe7` |
-| `game::Attempts::startGame` / `world::Session::startGame` | `GameFlow.kt` `newGame` | `113b:3961` |
+| `game::Attempts::startGame` / `world::session::Session::startGame` | `GameFlow.kt` `newGame` | `113b:3961` |
 | `game::phases::BlackScreen` | `Host.kt` `blackPalette` | `113b:4e9b` |
 | `game::phases::CaptionFadeIn` (`Attempts::start`) | `Level.kt` `levelSetup`, `loadLevel`, `levelCaption`; `Host.kt` `fadeIn` | `113b:3d66`, `3976`, `0664`, `4e19` |
 | `game::phases::CaptionWaitKey` | `Host.kt` `waitKey` | `113b:44db` |
@@ -22,7 +22,7 @@ v `4_test_data/verify/.../replay/SemanticProjection.kt`.
 | `game::GameFlow::endAttempt`, `Attempts::end` | `GameFlow.kt` `playGame` (po `playLevel`) | `113b:0fa7` |
 | `keyboard::PcKeyboard::deliver` (adaptér v `6_verification`) | `Host.kt` `keyboardInterrupt` | `113b:4567` |
 | `input::MenuInput` (`keyboard::PcKeyboard::beforeFrame`) | `Frame.kt` `readScancode` | `113b:44f1` |
-| `world::RandomNumbers::next` | `Draw.kt` `random` | `113b:4f09` |
+| `world::session::RandomNumbers::next` | `Draw.kt` `random` | `113b:4f09` |
 | `world::Fade` | `Frame.kt` `frameFade` | `113b:0c7d` |
 
 ## Svět levelu a fyzika
@@ -31,14 +31,14 @@ v `4_test_data/verify/.../replay/SemanticProjection.kt`.
 |---|---|---|
 | `world::Level::startAttempt` | `Level.kt` `loadLevel`, `levelSetup` (nulování 2648 .. 27cf) | `113b:3976`, `3d66` |
 | `world::Level::passengerFinished` | `Passengers.kt` `p149cNextStop` | `113b:149c` |
-| `world::Water::move` | `Draw.kt` `updateWater` | `113b:2d1c` |
-| `world::Water::animateSurface`, `world::Rain::stopAt` | `Draw.kt` `drawWaterSurface` | `113b:2db9` |
-| `world::Rain::move` | `Draw.kt` `moveRain` | `113b:3c78` |
-| `world::Rain::spawn` | `Draw.kt` `spawnRaindrop` | `113b:3c35` |
-| `world::Rain::start` | `Level.kt` `loadLevel` (konec) | `113b:3976` |
-| `world::Rotor::spin` | `Draw.kt` `drawCopter` | `113b:418d` |
-| `world::Copter::throwUp` | `Objects.kt` `o2748Charging` | `113b:2748` |
-| `world::Cabin::takeOnBoard` / `pickUpHanging` / `lowerFare` | `Passengers.kt` `p19e0Board` / `p1c48Grabbed` / `p1a42Riding` | `113b:19fb`, `1c48`, `1a42` |
+| `world::scenery::Water::move` | `Draw.kt` `updateWater` | `113b:2d1c` |
+| `world::scenery::Water::animateSurface`, `world::scenery::Rain::stopAt` | `Draw.kt` `drawWaterSurface` | `113b:2db9` |
+| `world::scenery::Rain::move` | `Draw.kt` `moveRain` | `113b:3c78` |
+| `world::scenery::Rain::spawn` | `Draw.kt` `spawnRaindrop` | `113b:3c35` |
+| `world::scenery::Rain::start` | `Level.kt` `loadLevel` (konec) | `113b:3976` |
+| `world::copter::Rotor::spin` | `Draw.kt` `drawCopter` | `113b:418d` |
+| `world::copter::Copter::throwUp` | `Objects.kt` `o2748Charging` | `113b:2748` |
+| `world::copter::Cabin::takeOnBoard` / `pickUpHanging` / `lowerFare` | `Passengers.kt` `p19e0Board` / `p1c48Grabbed` / `p1a42Riding` | `113b:19fb`, `1c48`, `1a42` |
 | `world::Energy::refill` | `Bonuses.kt` `b2ca9Lying` | `113b:2ca9` |
 | `physics::CopterPhysics::fly` | `Game.kt` `copterUpdate` | `113b:1095` |
 | `physics::CopterPhysics::moveHorizontally` | `Game.kt` `moveHorizontally` | `113b:1095` |
@@ -82,7 +82,7 @@ v `4_test_data/verify/.../replay/SemanticProjection.kt`.
 |---|---|---|
 | `enemies::Enemies::update` | `Objects.kt` `objectsUpdate` | `113b:2363` |
 | `enemies::EnemyFactory` | `Level.kt` `loadLevel` (seznam C) | `113b:3b21` |
-| `enemies::Enemy::bounceFallingPassenger` | `passengerHitsObject`, `fallingPassengerNear` | `113b:2196` |
+| `enemies::Enemy::bounceFallingPassenger`, `bounceFallingPassengerUnseen` | `passengerHitsObject`, `fallingPassengerNear` | `113b:2196` |
 | `flyer::Placed`, `flyer::Hidden` | `o2379FlyerInit` / `o239fFlyerWait` | `113b:2379` / `239f` |
 | `flyer::Screeching` | `o23b0FlyerScreech` / `o23d9FlyerWait2` | `113b:23b0` / `23d9` |
 | `flyer::Flying` | `o23eaFlyerStart` / `o2493Flying`; `stopFlap` | `113b:23ea` / `2493` |

@@ -2,7 +2,7 @@
 #pragma once
 
 #include "data/Difficulty.hpp"
-#include "world/RandomNumbers.hpp"
+#include "world/session/RandomNumbers.hpp"
 
 namespace ugh::game {
 
@@ -14,7 +14,7 @@ struct NewGameSettings {
     int players = 1;   // 2: team mode
     data::Difficulty difficulty = data::Difficulty::Medium;
     int firstLevel = 0;   // from 0, in the order of the mode (a password starts later)
-    world::RandomNumbers::Words randomSeed{};
+    world::session::RandomNumbers::Words randomSeed{};
     int rainFloorRow = 180;   // as after the program start
 };
 

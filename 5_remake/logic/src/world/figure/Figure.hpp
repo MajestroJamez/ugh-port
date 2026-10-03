@@ -5,9 +5,9 @@
 
 #include "data/kinds/Animation.hpp"
 #include "units/Fixed.hpp"
-#include "world/Animator.hpp"
+#include "world/figure/Animator.hpp"
 
-namespace ugh::world {
+namespace ugh::world::figure {
 
 /**
  * An entity of the play as it is shown: its place in its list, where it is (its top left corner), the sprite it shows
@@ -56,4 +56,4 @@ private:
     Animator animator_;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::figure

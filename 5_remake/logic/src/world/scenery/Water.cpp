@@ -1,6 +1,6 @@
-#include "world/Water.hpp"
+#include "world/scenery/Water.hpp"
 
-namespace ugh::world {
+namespace ugh::world::scenery {
 
 void Water::fill(units::Fixed level) {
     level_ = level;
@@ -30,4 +30,4 @@ void Water::animateSurface() {
     if (--surfaceFrame_ < 0) surfaceFrame_ = SURFACE_LAST_FRAME;
 }
 
-}  // namespace ugh::world
+}  // namespace ugh::world::scenery

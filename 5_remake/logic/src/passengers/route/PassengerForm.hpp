@@ -1,4 +1,4 @@
-// The kind of a passenger with a route, on land and in the water.
+// What a passenger with a route is now: on land or in the water.
 #pragma once
 
 #include "data/kinds/AnimatedPassengerKind.hpp"
@@ -7,10 +7,13 @@
 
 namespace ugh::passengers::route {
 
-/** The kind of a passenger with a route: its kind on land, and the swimmer kind of it while it is in the water. */
-class RouteKinds {
+/**
+ * The form of a passenger with a route: its kind on land, and the swimmer kind of it while it is in the water. Its
+ * kind as it is now (`current()`) is the one or the other.
+ */
+class PassengerForm {
 public:
-    explicit RouteKinds(const data::kinds::RoutePassengerKind& land) : land_(&land) {}
+    explicit PassengerForm(const data::kinds::RoutePassengerKind& land) : land_(&land) {}
 
     /** The kind as it is now. */
     const data::kinds::AnimatedPassengerKind& current() const {

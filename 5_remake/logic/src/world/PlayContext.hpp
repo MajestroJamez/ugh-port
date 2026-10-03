@@ -5,14 +5,14 @@
 #include "events/Diagnostics.hpp"
 #include "events/EventListener.hpp"
 #include "world/Level.hpp"
-#include "world/Session.hpp"
+#include "world/session/Session.hpp"
 
 namespace ugh::world {
 
 /** What the update of every entity gets (Parameter Object): the world, the session, the data and where to report. */
 struct PlayContext {
     Level& level;
-    Session& session;
+    session::Session& session;
     const data::GameData& data;
     events::EventListener& events;
     events::Diagnostics& diagnostics;

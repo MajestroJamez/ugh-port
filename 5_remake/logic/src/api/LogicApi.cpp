@@ -57,7 +57,7 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     view.water_level = level.water().level().raw();
     view.water_frame = level.water().surfaceFrame();
     view.copter_count = level.copters().count();
-    for (const ugh::world::Copter& c : level.copters().all()) {
+    for (const ugh::world::copter::Copter& c : level.copters().all()) {
         const auto& cargo = c.cabin().cargo();
         int destination = !cargo ? 0 : cargo->destination ? *cargo->destination : -1;
         view.copters[c.player()] = {c.motion().x().raw(), c.motion().y().raw(), c.rotor().sprite(), cargo ? cargo->look : 0,
@@ -76,7 +76,7 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
         if (item) addEntity(view, UGH_LOGIC_ENTITY_BONUS_ITEM, slot, item->x(), item->y(), item->sprite(), std::nullopt);
     }
     if (!level.windy()) return;
-    for (const ugh::world::Raindrop& drop : level.rain().drops()) {
+    for (const ugh::world::scenery::Raindrop& drop : level.rain().drops()) {
         if (!drop.onScreen()) continue;
         view.raindrops[view.raindrop_count][0] = drop.x;
         view.raindrops[view.raindrop_count][1] = drop.y;
@@ -162,7 +162,7 @@ void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view) {
     if (!logic->started) return;
     const ugh::game::Game& game = logic->game;
     view->phase = phase(game.phase());
-    const ugh::world::Session& session = game.session();
+    const ugh::world::session::Session& session = game.session();
     view->level = session.levelNumber();
     view->lives = session.lives().count();
     view->multiplier = session.score().multiplier();

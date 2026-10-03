@@ -57,7 +57,7 @@ const FieldRules& standingRules() {
 
 std::string orNone(std::optional<int> value) { return value ? std::to_string(*value) : "none"; }
 
-std::string playerOf(const world::Copter* copter) { return copter ? std::to_string(copter->player()) : "none"; }
+std::string playerOf(const world::copter::Copter* copter) { return copter ? std::to_string(copter->player()) : "none"; }
 
 const char* spotName(passengers::route::WaitingSpot spot) {
     switch (spot) {
@@ -90,8 +90,8 @@ const FieldTable<RoutePassenger>& routeValues() {
         {"seenX", [](const RoutePassenger& p) { return std::to_string(p.seenX()); }},
         {"seenY", [](const RoutePassenger& p) { return std::to_string(p.seenY()); }},
         {"arrivalDelay", [](const RoutePassenger& p) { return std::to_string(p.route().arrivalDelay()); }},
-        {"callTime", [](const RoutePassenger& p) { return std::to_string(p.call().time()); }},
-        {"waitingSpot", [](const RoutePassenger& p) { return std::string(spotName(p.call().spot())); }},
+        {"callTime", [](const RoutePassenger& p) { return std::to_string(p.pickupWait().time()); }},
+        {"waitingSpot", [](const RoutePassenger& p) { return std::string(spotName(p.pickupWait().spot())); }},
         {"carrier", [](const RoutePassenger& p) { return playerOf(p.ride().carrier()); }},
         {"quickDeliveryTime", [](const RoutePassenger& p) { return std::to_string(p.ride().quickDeliveryTime()); }},
         {"swimSpeed", [](const RoutePassenger& p) { return std::to_string(p.swim().speed().raw()); }},

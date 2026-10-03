@@ -5,7 +5,7 @@
 #include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
 #include "units/Fixed.hpp"
-#include "world/Figure.hpp"
+#include "world/figure/Figure.hpp"
 
 namespace ugh::world {
 struct PlayContext;
@@ -15,9 +15,9 @@ namespace ugh::bonuses {
 
 /**
  * A bonus item: dropped by a tree or for a quick delivery, it falls onto a pad and lies there until a copter
- * collects it or its time is up. It shows the sprite of its kind (`world::Figure`, its index is its slot).
+ * collects it or its time is up. It shows the sprite of its kind (`world::figure::Figure`, its index is its slot).
  */
-class BonusItem : public world::Figure, public state::StateMachine<BonusItem, world::PlayContext> {
+class BonusItem : public world::figure::Figure, public state::StateMachine<BonusItem, world::PlayContext> {
 public:
     /**
      * A new item of `kind` in `slot` with its middle and bottom at x, y, thrown sideways with `speedX` and up with its

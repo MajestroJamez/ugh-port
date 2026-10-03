@@ -10,7 +10,7 @@
 #include "input/MenuInput.hpp"
 #include "passengers/Passengers.hpp"
 #include "world/Level.hpp"
-#include "world/Session.hpp"
+#include "world/session/Session.hpp"
 
 namespace ugh::game {
 
@@ -20,7 +20,7 @@ namespace ugh::game {
  * (`Attempts`) works on it.
  */
 struct GameState {
-    std::optional<world::Session> session;   // from newGame() on
+    std::optional<world::session::Session> session;   // from newGame() on
     world::Level level;
     passengers::Passengers passengers;
     enemies::Enemies enemies;

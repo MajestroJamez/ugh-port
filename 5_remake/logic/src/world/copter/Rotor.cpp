@@ -1,6 +1,6 @@
-#include "world/Rotor.hpp"
+#include "world/copter/Rotor.hpp"
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 namespace {
 
@@ -16,4 +16,4 @@ void Rotor::spin(int firstSprite, int lastSprite) {
     sprite_ = sprite_ + 1 > lastSprite ? firstSprite : sprite_ + 1;
 }
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

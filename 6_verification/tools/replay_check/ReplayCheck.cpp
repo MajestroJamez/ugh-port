@@ -121,7 +121,7 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
     testing::TestPilot pilot(game);
     for (int player = 0; player < game.level().copters().count(); player++) {
         std::string c = "copter." + std::to_string(player) + ".";
-        const world::Copter& copter = game.level().copters()[player];
+        const world::copter::Copter& copter = game.level().copters()[player];
         bool moved = false;
         auto value = [&](const char* field, int current) {
             auto it = tick.inject.find(c + field);

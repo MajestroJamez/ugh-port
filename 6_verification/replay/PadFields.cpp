@@ -4,7 +4,7 @@
 
 namespace ugh::replay {
 
-void PadFields::write(const world::Pad& pad, int index, Fields& f) {
+void PadFields::write(const world::scenery::Pad& pad, int index, Fields& f) {
     std::string c = "pad." + std::to_string(index) + ".";
     const data::levels::PadDefinition& place = pad.place();
     f[c + "left"] = std::to_string(place.left);

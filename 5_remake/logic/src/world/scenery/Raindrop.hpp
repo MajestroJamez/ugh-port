@@ -1,17 +1,18 @@
 // A raindrop.
 #pragma once
 
-namespace ugh::world {
+#include "data/levels/ScreenSize.hpp"
+
+namespace ugh::world::scenery {
 
 /** A raindrop: its pixel in the background page, which is 384 px wide (64 px more than the screen). */
 struct Raindrop {
-    static constexpr int PAGE_WIDTH = 384;     // the page the original draws on
-    static constexpr int SCREEN_WIDTH = 320;   // what of it is shown
+    static constexpr int PAGE_WIDTH = 384;   // the page the original draws on; the screen is what of it is shown
 
     int x = 0, y = 0;
 
     /** The drop is on the visible part of the page. */
-    bool onScreen() const { return x < SCREEN_WIDTH; }
+    bool onScreen() const { return x < data::levels::ScreenSize::WIDTH; }
 
     /**
      * The drop `step` px further down and `step` px with the wind (`direction` -1 or 1). A drop blown past the edge
@@ -23,4 +24,4 @@ struct Raindrop {
     }
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::scenery

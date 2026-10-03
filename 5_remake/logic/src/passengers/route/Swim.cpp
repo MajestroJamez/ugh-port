@@ -14,9 +14,14 @@ constexpr Speed MAX_SPEED = Speed::fromRaw(6144);
 
 }  // namespace
 
-Speed Swim::splash(bool aboveSurface) {
-    if (aboveSurface) speed_ += GRAVITY;
-    else if (speed_ > Speed()) speed_ -= WATER_BRAKE;
+Speed Swim::fallInAir() {
+    speed_ += GRAVITY;
+    speed_ = speed_.clamped(MAX_SPEED);
+    return speed_;
+}
+
+Speed Swim::brakeInWater() {
+    if (speed_ > Speed()) speed_ -= WATER_BRAKE;
     else speed_ -= BUOYANCY;
     speed_ = speed_.clamped(MAX_SPEED);
     return speed_;

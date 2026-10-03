@@ -1,30 +1,19 @@
 #include "physics/CollisionProbe.hpp"
 
-#include <array>
-
 namespace ugh::physics {
 
 namespace {
 
 using units::Fixed;
-
-struct Point {
-    int x, y;
-};
-
-/** The points of the copter's outline, in pixels from the probe origin: the corners and the sides. */
-constexpr std::array<Point, 10> OUTLINE = {
-    {{0, 0}, {12, 0}, {20, 0}, {0, 19}, {12, 19}, {20, 19}, {0, 6}, {20, 6}, {0, 12}, {20, 12}}};
-
-/** The probe origin is 5 px right of the copter's left edge. */
-constexpr int ORIGIN_OFFSET_X = 5;
+using world::copter::CopterShape;
 
 constexpr Fixed ONE_PIXEL = Fixed::fromPixels(1);
 
 }  // namespace
 
-std::optional<Fixed> CollisionProbe::stopOnTheWay(const world::Copter& copter, Axis axis, Fixed from, Fixed to) const {
-    int x = copter.motion().pixelX() + ORIGIN_OFFSET_X, y = copter.motion().pixelY();
+std::optional<Fixed> CollisionProbe::stopOnTheWay(const world::copter::Copter& copter, Axis axis, Fixed from,
+                                                 Fixed to) const {
+    int x = copter.motion().pixelX() + CopterShape::OUTLINE_LEFT, y = copter.motion().pixelY();
     int dx = axis == Axis::Horizontal ? 1 : 0, dy = axis == Axis::Vertical ? 1 : 0;
     if (to <= from) {
         // left or up: only the pixel next to the copter (the quirk above)
@@ -40,7 +29,7 @@ std::optional<Fixed> CollisionProbe::stopOnTheWay(const world::Copter& copter, A
 }
 
 bool CollisionProbe::hits(int x, int y) const {
-    for (Point point : OUTLINE)
+    for (CopterShape::Point point : CopterShape::OUTLINE)
         if (level_.solid(x + point.x, y + point.y)) return true;
     return false;
 }

@@ -5,26 +5,24 @@ namespace ugh::physics {
 namespace {
 
 using units::Fixed;
-
-// the body of a copter, in pixels from its top left corner: 5 .. 26 across, 20 high
-constexpr int COPTER_BODY_LEFT = 5, COPTER_BODY_RIGHT = 26, COPTER_HEIGHT = 20;
+using world::copter::CopterShape;
 
 }  // namespace
 
 TouchBox::TouchBox(const data::kinds::Box& box, Fixed x, Fixed y)
-    : left_(x + Fixed::fromPixels(box.x - box.halfWidth) - Fixed::fromPixels(COPTER_BODY_RIGHT)),
-      right_(x + Fixed::fromPixels(box.x + box.halfWidth) - Fixed::fromPixels(COPTER_BODY_LEFT)),
-      top_(y + Fixed::fromPixels(box.y - 2 * box.halfHeight) - Fixed::fromPixels(COPTER_HEIGHT)),
+    : left_(x + Fixed::fromPixels(box.x - box.halfWidth) - Fixed::fromPixels(CopterShape::BODY_RIGHT)),
+      right_(x + Fixed::fromPixels(box.x + box.halfWidth) - Fixed::fromPixels(CopterShape::BODY_LEFT)),
+      top_(y + Fixed::fromPixels(box.y - 2 * box.halfHeight) - Fixed::fromPixels(CopterShape::BODY_HEIGHT)),
       bottom_(y + Fixed::fromPixels(box.y)) {}
 
 TouchBox TouchBox::between(Fixed left, Fixed right, Fixed top, Fixed bottom) { return {left, right, top, bottom}; }
 
-bool TouchBox::touches(const world::Copter& copter) const {
+bool TouchBox::touches(const world::copter::Copter& copter) const {
     return bottom_ >= copter.motion().y() && top_ <= copter.motion().y() && right_ >= copter.motion().x() && left_ <= copter.motion().x();
 }
 
-world::Copter* TouchBox::firstCopterIn(world::Copters& copters) const {
-    for (world::Copter& copter : copters.all())
+world::copter::Copter* TouchBox::firstCopterIn(world::copter::Copters& copters) const {
+    for (world::copter::Copter& copter : copters.all())
         if (touches(copter)) return &copter;
     return nullptr;
 }

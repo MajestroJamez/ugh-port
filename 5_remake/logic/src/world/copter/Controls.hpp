@@ -3,7 +3,7 @@
 
 #include "input/PlayerKey.hpp"
 
-namespace ugh::world {
+namespace ugh::world::copter {
 
 /** The keys a pilot holds down. */
 struct Controls {
@@ -21,4 +21,4 @@ struct Controls {
     }
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::copter

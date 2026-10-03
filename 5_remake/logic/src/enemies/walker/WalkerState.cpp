@@ -6,7 +6,7 @@
 namespace ugh::enemies::walker {
 
 bool WalkerState::stunnedByPassenger(Walker& walker, const EnemyContext& context) {
-    if (!walker.bounceFallingPassenger(context, true)) return false;
+    if (!walker.bounceFallingPassenger(context)) return false;
     walker.changeState(Stunned::instance, context);
     return true;
 }

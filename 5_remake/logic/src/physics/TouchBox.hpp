@@ -3,14 +3,15 @@
 
 #include "data/kinds/Box.hpp"
 #include "units/Fixed.hpp"
-#include "world/Copter.hpp"
-#include "world/Copters.hpp"
+#include "world/copter/Copter.hpp"
+#include "world/copter/Copters.hpp"
 
 namespace ugh::physics {
 
 /**
  * The touch box of a sprite (a passenger, an enemy, a bonus item): a copter touches it when the copter's body
- * overlaps it. The original compares only the copter's top left corner, so the box is grown by the copter's body.
+ * overlaps it. The original compares only the copter's top left corner, so the box is grown by the copter's body
+ * (`world::copter::CopterShape`).
  */
 class TouchBox {
 public:
@@ -19,10 +20,10 @@ public:
     /** The area the copter's top left corner touches when it is between these corners (a blower's zone). */
     static TouchBox between(units::Fixed left, units::Fixed right, units::Fixed top, units::Fixed bottom);
 
-    bool touches(const world::Copter& copter) const;
+    bool touches(const world::copter::Copter& copter) const;
 
     /** The first copter that touches the box; nullptr if none. */
-    world::Copter* firstCopterIn(world::Copters& copters) const;
+    world::copter::Copter* firstCopterIn(world::copter::Copters& copters) const;
 
 private:
     TouchBox(units::Fixed left, units::Fixed right, units::Fixed top, units::Fixed bottom)

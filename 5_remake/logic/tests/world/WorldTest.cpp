@@ -1,12 +1,12 @@
 #include "TestFramework.hpp"
 #include "TestLevel.hpp"
-#include "world/Raindrop.hpp"
-#include "world/Water.hpp"
+#include "world/scenery/Raindrop.hpp"
+#include "world/scenery/Water.hpp"
 
 using namespace ugh;
 
 TEST(the_water_moves_every_second_frame_and_rests_after_a_new_row) {
-    world::Water water;
+    world::scenery::Water water;
     water.fill(units::Fixed::fromRaw(100 * 32));
     water.move(units::Fixed::fromRaw(-20));   // first frame: no move
     CHECK_EQUAL(1, water.evenFrame());
@@ -20,7 +20,7 @@ TEST(the_water_moves_every_second_frame_and_rests_after_a_new_row) {
 }
 
 TEST(the_water_surface_animation_runs_two_one_zero) {
-    world::Water water;
+    world::scenery::Water water;
     water.fill(units::Fixed());
     water.animateSurface();
     CHECK_EQUAL(2, water.surfaceFrame());
@@ -30,11 +30,11 @@ TEST(the_water_surface_animation_runs_two_one_zero) {
 }
 
 TEST(a_raindrop_blown_past_the_page_goes_on_in_the_next_row) {
-    world::Raindrop drop{382, 10};
-    world::Raindrop next = drop.blown(3, 1);
+    world::scenery::Raindrop drop{382, 10};
+    world::scenery::Raindrop next = drop.blown(3, 1);
     CHECK_EQUAL(1, next.x);
     CHECK_EQUAL(14, next.y);
-    next = world::Raindrop{1, 10}.blown(2, -1);
+    next = world::scenery::Raindrop{1, 10}.blown(2, -1);
     CHECK_EQUAL(383, next.x);
     CHECK_EQUAL(11, next.y);
 }
@@ -43,7 +43,7 @@ TEST(the_rain_starts_again_at_the_floor_row) {
     test::TestLevel t(100, data::levels::Wind::Right);
     t.level().rain().setFloorRow(100);
     t.start();
-    for (const world::Raindrop& drop : t.level().rain().drops()) CHECK(drop.y < 100);
+    for (const world::scenery::Raindrop& drop : t.level().rain().drops()) CHECK(drop.y < 100);
 }
 
 TEST(the_last_passenger_ends_the_level) {

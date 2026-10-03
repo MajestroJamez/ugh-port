@@ -24,7 +24,7 @@ void Lying::update(BonusItem& item, const world::PlayContext& context) const {
     }
     const data::kinds::BonusKind& kind = item.kind();
     physics::TouchBox box({kind.anchorX, kind.anchorY, TOUCH_HALF_SIZE, TOUCH_HALF_SIZE}, item.x(), item.y());
-    const world::Copter* copter = box.firstCopterIn(context.level.copters());
+    const world::copter::Copter* copter = box.firstCopterIn(context.level.copters());
     if (!copter) return;
     switch (kind.effect) {
         case data::kinds::BonusEffect::Energy: context.level.energy().refill(kind.amount); break;

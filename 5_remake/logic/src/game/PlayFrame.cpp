@@ -24,7 +24,7 @@ void PlayFrame::readKeys() {
     if (key == input::MenuKey::Pause) context_.diagnostics.report("pause (P) is not supported");
     if (key == input::MenuKey::Escape) {
         context_.session.lives().giveUp();
-        if (!context_.level.fade().fadingOut()) context_.level.fade().startFadeOut();
+        context_.level.fadeOut();
     }
 }
 
@@ -32,12 +32,12 @@ void PlayFrame::readKeys() {
 void PlayFrame::flyCopters() {
     if (context_.level.fade().coptersWaiting()) return;
     physics::CopterPhysics physics(context_);
-    for (world::Copter& copter : context_.level.copters().all()) physics.fly(copter);
+    for (world::copter::Copter& copter : context_.level.copters().all()) physics.fly(copter);
 }
 
 void PlayFrame::spinRotors() {
     const data::SpriteIds& sprites = context_.data.sprites();
-    for (world::Copter& copter : context_.level.copters().all())
+    for (world::copter::Copter& copter : context_.level.copters().all())
         copter.rotor().spin(sprites.firstRotor[copter.player()], sprites.lastRotor[copter.player()]);
 }
 

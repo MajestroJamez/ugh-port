@@ -4,7 +4,7 @@
 #include "data/kinds/Animation.hpp"
 #include "units/Countdown.hpp"
 
-namespace ugh::world {
+namespace ugh::world::figure {
 
 /**
  * The frame of an animation an entity shows and the countdown to the next one. The animation itself is not kept: a
@@ -54,4 +54,4 @@ private:
     units::Countdown delay_;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::figure

@@ -1,4 +1,4 @@
-// A passenger waiting for a copter and calling it.
+// A passenger waiting to be picked up.
 #pragma once
 
 #include "passengers/route/WaitingSpot.hpp"
@@ -6,9 +6,17 @@
 
 namespace ugh::passengers::route {
 
-/** A passenger waiting on its pad (or in the water) for a copter: where it waits, and how long it calls or waves. */
-class PassengerCall {
+/**
+ * A passenger waiting on its pad (or in the water) to be picked up by a copter: where it waits, and how long it calls
+ * the copter or waves at it.
+ */
+class PickupWait {
 public:
+    /** How long a passenger calls before it walks (or swims) to the copter. */
+    static constexpr int CALL_TIME = 140;
+    /** How long it waves impatiently (no copter with room) before it waits again (or sinks). */
+    static constexpr int WAVE_TIME = 140;
+
     /** It starts to wait: on its way to its spot on the pad. */
     void startWaiting() { spot_ = WaitingSpot::Starting; }
     /** It walks towards its spot. */
@@ -21,9 +29,11 @@ public:
     }
     WaitingSpot spot() const { return spot_; }
 
-    /** It calls a copter (or waves at it) for `frames`. */
-    void start(int frames) { time_.start(frames); }
-    /** One frame of calling; true when the time is up. */
+    /** It calls a copter for CALL_TIME. */
+    void startCalling() { time_.start(CALL_TIME); }
+    /** It waves impatiently for WAVE_TIME. */
+    void startWaving() { time_.start(WAVE_TIME); }
+    /** One frame of calling or waving; true when the time is up. */
     bool over() { return time_.tick(); }
     int time() const { return time_.remaining(); }
 

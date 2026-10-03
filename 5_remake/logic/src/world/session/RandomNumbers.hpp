@@ -4,7 +4,7 @@
 #include <array>
 #include <cstdint>
 
-namespace ugh::world {
+namespace ugh::world::session {
 
 /**
  * The random number generator of the original: four 16-bit words, each added to the next with carry, the last fed
@@ -26,4 +26,4 @@ private:
     Words words_{};
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::session

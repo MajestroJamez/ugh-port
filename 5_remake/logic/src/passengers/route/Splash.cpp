@@ -20,7 +20,8 @@ void Splash::update(RoutePassenger& passenger, const PassengerContext& context) 
     int surface = context.level.water().row();
     passenger.animate();
     passenger.show(*kind.standing);
-    units::Speed speed = passenger.swim().splash(passenger.seenY() - kind.box.y - surface < 0);
+    bool aboveSurface = passenger.seenY() - kind.box.y - surface < 0;
+    units::Speed speed = aboveSurface ? passenger.swim().fallInAir() : passenger.swim().brakeInWater();
     passenger.moveToY(passenger.y() + speed.perFrame());
     if (speed >= units::Speed()) return;
     if (passenger.y().pixels() - kind.box.y > surface) return;

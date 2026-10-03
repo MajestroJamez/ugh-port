@@ -2,7 +2,7 @@
 #pragma once
 
 #include "passengers/route/RouteState.hpp"
-#include "world/Copter.hpp"
+#include "world/copter/Copter.hpp"
 
 namespace ugh::passengers::route {
 
@@ -14,7 +14,7 @@ public:
     static constexpr int QUICK_DELIVERY_TIME = 200;
 
     /** The passenger gets into `copter`. */
-    static void board(RoutePassenger& passenger, world::Copter& copter, const PassengerContext& context);
+    static void board(RoutePassenger& passenger, world::copter::Copter& copter, const PassengerContext& context);
 
     const char* name() const override { return "Riding"; }
     void enter(RoutePassenger& passenger, const PassengerContext& context) const override;

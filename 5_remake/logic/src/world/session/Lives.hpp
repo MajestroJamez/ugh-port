@@ -1,7 +1,7 @@
 // The lives of a game.
 #pragma once
 
-namespace ugh::world {
+namespace ugh::world::session {
 
 /** The lives of a game: a failed attempt costs one, a life bonus item brings more, Esc takes them all. */
 class Lives {
@@ -25,4 +25,4 @@ private:
     int count_ = 0;
 };
 
-}  // namespace ugh::world
+}  // namespace ugh::world::session

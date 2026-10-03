@@ -3,7 +3,7 @@
 
 #include "TestFramework.hpp"
 #include "ugh_logic.h"
-#include "world/Session.hpp"
+#include "world/session/Session.hpp"
 
 TEST(the_c_api_refuses_a_missing_data_file) {
     char err[200] = "";
@@ -48,7 +48,7 @@ TEST(the_c_api_plays_a_game_and_shows_it) {
     ugh_logic_get_view(logic, &view);
     CHECK_EQUAL(static_cast<int>(UGH_LOGIC_PHASE_CAPTION), view.phase);
     CHECK_EQUAL(0, view.level_id);
-    CHECK_EQUAL(ugh::world::Lives::START, view.lives);
+    CHECK_EQUAL(ugh::world::session::Lives::START, view.lives);
     CHECK_EQUAL(1, view.copter_count);
     CHECK_EQUAL(4608, view.copters[0].x);
     CHECK_EQUAL(4, view.entity_count);   // two passengers with a route, the standing one, the tree
