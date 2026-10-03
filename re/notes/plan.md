@@ -234,3 +234,10 @@ Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků
 - 2026-10-03: review celého jádra `sim/`: přesné, ale ne čisté (paměť originálu v modelu). Rozhodnuto napsat nové
   jádro `logic/` bez čehokoli ze staré aplikace, ověřené sémantickými replayi `UGR 1`; zadání v
   [rewrite-design.md](rewrite-design.md), kroky N1–N8 výše. Krok 10 až po N8. Další: **krok N1**.
+- 2026-10-03: krok N1 hotový - [rewrite-audit.md](rewrite-audit.md): měření na `sim/` (větev `audit/n1`, `main` beze
+  změny). Přehrávač bez převzetí neznámých hodnot, který po každém snímku „otráví“ všechna pole, jež navržená tabulka
+  UGR 1 nepovažuje za definovaná: všech 161 replayů projde, logika zbytky paměti nečte. Sdílená slova originál nikdy
+  nečte v jiném významu, animace za koncem nikdy, 16bitové přetečení ani rozdíl neznaménkového porovnání se nestane;
+  zvláštnost sondy doleva / nahoru změní výsledek 267×, kapky přes okraj stránky 20 tis.×. Opravy návrhu: `impact`
+  a `water.row` nejsou stav, `effort` přežívá mezi pokusy, poloha viděná minulý snímek jen u cestujících s trasou,
+  maska 320 px. Další: **krok N2**.

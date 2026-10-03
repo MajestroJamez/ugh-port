@@ -238,24 +238,28 @@ jako modul Unreal Engine (krok 10).
 ## 6. Zvláštnosti originálu, které zůstávají (pojmenované chování)
 
 Tohle **není** paměť – je to chování, které hráč pozná, nebo které mění další průběh (náhoda, časování).
-Každá zvláštnost má v kódu jméno a komentář u místa, kde se projevuje. Krok N1 seznam ověří a doplní.
+Každá zvláštnost má v kódu jméno a komentář u místa, kde se projevuje. Seznam ověřil krok N1 (počty výskytů
+v [rewrite-audit.md](rewrite-audit.md), kap. 5).
 
 | Zvláštnost | Kde v `logic/` | Jak |
 |---|---|---|
-| 16bitové přetečení poloh a rychlostí | `units/` | `Int16`, `Fixed`, `Speed` přetékají |
-| Sonda doleva / nahoru zkouší jen pixel vedle vrtulníku | `physics/CollisionProbe` | pojmenovaná větev, komentář „rychlý vrtulník proletí tenkou zdí doleva / nahoru“ |
-| Bod sondy za pravým okrajem čte další řádek masky, mimo masku nic není pevné | `data/CollisionMask::solid(x, y)` | přepočet x mimo 0..383 na sousední řádek, pojmenovaný |
+| 16bitové přetečení poloh a rychlostí | `units/` | `Int16`, `Fixed`, `Speed` přetékají (v replayích se nestane, typ zůstává kvůli věrnosti) |
+| Sonda doleva / nahoru zkouší jen pixel vedle vrtulníku | `physics/CollisionProbe` | pojmenovaná větev, komentář „rychlý vrtulník proletí tenkou zdí doleva / nahoru“ (N1: 25× doleva, 242× nahoru) |
+| Mimo masku nic není pevné | `data/CollisionMask::solid(x, y)` | maska 320 × 192; „bod za okrajem čte sousední řádek“ zaniká (sloupce 320..383 jsou v originálu vždy prázdné, N1) |
 | Dotyk se spritem porovnává jen levý horní roh vrtulníku | `physics/TouchBox` | obdélník zvětšený o tělo vrtulníku |
-| Cestující se rozhodují podle polohy z minulého snímku | `passengers/Passenger::positionSeenLastFrame` | aktualizuje se na konci snímku v kroku „cestující se ukážou“ |
+| Cestující s trasou se rozhodují podle polohy viděné minulý snímek | `passengers/route/RoutePassenger::seen` | obnovuje se na konci snímku, jen když je vidět; skrytý ji drží – první krok ve WalkingAway porovná dveře s polohou viděnou při nástupu |
+| Rotor se točí i při stmívání, kdy vrtulníky stojí | `world/Copter::effort` | `effort` posledního snímku fyziky přežívá do dalšího pokusu; nová hra ho nuluje |
+| Nástup (i po záchraně z vody) uvolní plošinu vyzvednutí | `passengers/route/Riding` | i když na ní mezitím čeká jiný cestující |
+| Před prvním snímkem hry proběhne jeden update nepřátel, pak cestujících, a vše se skryje | `game/phases/Playing` | pořadí: nepřátelé, cestující |
 | Vrtulník odhozený walkerem má pixelové y o snímek pozadu | `world/Copter::throwUp` | pojmenované |
 | Voda se hýbe každý druhý snímek a po změně řádku jeden snímek stojí | `world/Water` | `evenFrame`, `resting` |
-| Déšť: 193 kapek, sudé 3 px, liché 2 px za snímek, kapka za pravým okrajem pokračuje na dalším řádku, řádek kapky se při vzniku bere jen 0..255 | `world/Rain`, `world/Raindrop` | kapka jako (x, y) s pojmenovaným přetečením řádku |
+| Déšť: 193 kapek, sudé 3 px, liché 2 px za snímek, kapka za okrajem stránky 384 px pokračuje na dalším řádku | `world/Rain`, `world/Raindrop` | kapka jako (x, y) s pojmenovaným přetečením řádku (řádek při zrodu je vždy < 192, ořez na bajt zaniká) |
 | Kapky začínají znovu od řádku **poslední vykreslené hladiny** a ten řádek přežívá mezi pokusy; před větrným levelem padá déšť 577 snímků naprázdno | `world/Rain::floorRow`, `NewGameSettings::rainFloorRow` | pravidlo „déšť si pamatuje poslední hladinu“; na začátku hry ho dodá nastavení (hodnota z obrazovky před hrou) |
 | Náhoda: generátor ze 4 slov, stav na začátku hry je vstup | `world/RandomNumbers`, `NewGameSettings::randomSeed` | |
 | Životy: Esc je vynuluje, ztráta pod nulu = konec hry; zbývající cestující nejdou pod nulu | `world/Session`, `world/Level` | pojmenovaná pravidla, ne `& 0x80` |
 | Neznaménková porovnání (energie do plna, jízdné do minima, bublina cíle, dno při potápění) | na místě | `Int16::unsignedLess` se jménem pravidla |
 | Skóre za doručení = jízdné × násobič (32 bitů) | `passengers/route/WalkingToDoor` | |
-| Animace: pozice snímku zůstává při přepnutí na jinou animaci; čtení za koncem seznamu | `world/Animator`, `data/Animation` | podle výsledku N1: buď se nikdy neděje (pak pryč), nebo „přetečení“ exportuje extractor jako pojmenované snímky |
+| Animace: pozice snímku zůstává při přepnutí na jinou animaci | `world/Animator` | za koncem seznamu se nikdy nečte (N1), UGD 1 bez přetečení |
 | Vrtulníky stojí, dokud fade-in nedojde na tři čtvrtiny; pokus končí, až fade-out dojde do černé | `world/Fade` | |
 | Časování fází: 8 snímků černé, 65 fade popisku, čekání na změnu skenkódu, 65, 8 | `game/phases` | |
 | 12 bonusů naráz: originál spadne | `bonuses/BonusSlots` | `Diagnostics` |
@@ -338,33 +342,39 @@ I <pole>=<hodnota> ...
   (`SemanticProjection.kt`) jako tabulka po stavech a stejná pravidla má C++ `StateWriter`. Nástroj vyžaduje
   **stejnou množinu polí** i stejné hodnoty – tím se hlídá i shoda pravidel.
 
-### Pole (návrh; N1 ověří definovanost, N3 doplní finální tabulku sem)
+### Pole (ověřeno v N1 otrávením nedefinovaných polí; N3 doplní finální tabulku sem)
 
 **game** (vždy): `phase` (`start`, `betweenLevels`, `caption`, `setup`, `play` – N3 sjednotí s fázemi C++), `level`
 (pořadí v režimu od 0), `players`, `difficulty`, `lives`, `multiplier`, `score`, `rng` (16 hex číslic = 4 slova
 generátoru, poslední první), `rainFloor` (řádek). **V `caption` a `play`:** `energy`, `fade` (0..256),
 `fadeDirection` (`in`/`out`), `levelDone`, `wind`, `passengersLeft`, `water.level` (Fixed), `water.resting`,
 `water.evenFrame`, `water.surfaceFrame`, `water.surfaceDelay`, `rain` (`none` bez větru, jinak CRC-32 kapek jako
-dvojic int16 LE `x, y` v pořadí 0..192, 8 hex číslic). **Jen v `play`:** `water.row`.
+dvojic int16 LE `x, y` v pořadí 0..192, 8 hex číslic). Totéž v `setup`. `water.row` není (= `water.level >> 5`, N1).
 
-**copter.N** (N < hráči; `caption`, `play`): `x`, `y`, `pixelX`, `pixelY`, `vx`, `vy`, `landedPad` (index / `none`),
-`rotorSprite`, `rotorCounter`, `keys` (`UDLRF` / `-`), `cargoLook` (`none` / číslo), `destination` (číslo plošiny,
-`hanging`, `none`), `fare`. Jen v `play`: `effort`, `impact`. Jen s cestujícím s trasou na palubě: `fareMin`.
+**copter.N** (N < hráči; `caption`, `setup`, `play`): `x`, `y`, `pixelX`, `pixelY`, `vx`, `vy`, `landedPad` (index /
+`none`), `rotorSprite`, `rotorCounter`, `keys` (`UDLRF` / `-`), `cargoLook` (`none` / číslo), `destination` (číslo
+plošiny, `hanging`, `none`), `fare`, `effort`. Jen s cestujícím s trasou na palubě: `fareMin`. `impact` není (pomocná
+hodnota jednoho snímku fyziky, N1).
 
 **pad.N**: `left`, `right`, `y`, `door`, `wait`, `stand`, `number`, `waiting` (index cestujícího / `none`).
 
-**passenger.N** (všichni): `kind`, `state`. Viditelný: `x`, `y`, `pixelX`, `pixelY`, `sprite`, `bubble`, a když stav
-animuje: `animFrame`, `animDelay`. Cestující s trasou od první zastávky: `pickupPad`, `targetPad`, `routeStop`.
-Podle stavu: `arrivalDelay` (BehindDoor), `callTime` (Calling, Impatient, SwimCalling, SwimWaving), `waitingSpot`
-(Waiting: `starting`/`walking`/`reached`), `carrier` (Riding; stojící: Hanging), `quickDeliveryTime` (Riding),
-`dropSpeedX` a `fallSpeed` (stojící: Falling), `swimSpeed` (Splash, Sinking), `swimTime` (Swimming).
+**passenger.N** (všichni): `kind`, `state`, `sprite`, `bubble`. Poloha `x`, `y`: všechny stavy kromě NextStop,
+BehindDoor, Riding, Hanging, Gone. Cestující s trasou: `routeStop` (kromě Gone), `pickupPad`, `targetPad` (pohled na
+zastávku; kromě NextStop a Gone), `seenX`, `seenY` (poloha viděná minulý snímek; od ComingOut po GoingIn, ve vodě
+i v Riding). Animující stavy: `animFrame`, `animDelay`. Podle stavu: `arrivalDelay` (BehindDoor), `callTime`
+(Calling, Impatient, SwimCalling, SwimWaving), `waitingSpot` (Waiting: `starting`/`walking`/`reached`), `carrier`
+(Riding; stojící: Hanging), `quickDeliveryTime` (Riding), `dropSpeedX` a `fallSpeed` (stojící: Falling), `swimSpeed`
+(Splash, Sinking), `swimTime` (Swimming).
 
-**enemy.N**: `kind` (`flyer`/`walker`/`blower`/`tree`), `state`, `sprite`; viditelný: `x`, `y`, a když animuje:
-`animFrame`, `animDelay`. Flyer: `vx`, `lastTarget`, v Flying `flight` (`left`/`right`), v Hidden `waitTime`,
-v Screeching `screechTime`, ve Falling `fallSpeed`. Walker: `vx`, `facing`, ve Watching `watchTime`, v Charging
-`chargeSpeed`, ve Stunned `stunTime`. Blower: ve Stunned `stunTime`. Tree: `nextDrop`, v Resting `restTime`.
+**enemy.N**: `kind` (`flyer`/`walker`/`blower`/`tree`), `state`; `sprite` ve všech stavech kromě Placed (tam drží
+originál zbytek paměti, N1); `x`, `y` (flyer jen ve Flying a Falling), a když stav animuje nebo animace pokračuje
+v dalším stavu: `animFrame`, `animDelay` (flyer: Hidden, Screeching, Flying; walker: všechny kromě Placed; blower:
+Blowing; tree: Swaying, Resting). Flyer: `vx`, `lastTarget`, v Flying `flight` (`left`/`right`), v Hidden
+`waitTime`, v Screeching `screechTime`, ve Falling `fallSpeed`. Walker: `vx`, `facing`, ve Watching `watchTime`,
+v Charging `chargeSpeed`, ve Stunned `stunTime`. Blower: ve Stunned `stunTime`. Tree: `nextDrop`, v Resting
+`restTime`.
 
-**bonus.N** (slot 0..11, jen obsazený): `kind`, `state`, `x`, `y`, `vy`, `sprite`; ve Falling `vx`, v Lying
+**bonus.N** (slot 0..11, jen obsazený): `kind`, `state`, `x`, `y`, `sprite`; ve Falling `vx`, `vy`, v Lying
 `lyingTime`.
 
 ### Jména stavů (UGR 0 → UGR 1 = třída v `logic/`)
@@ -516,3 +526,11 @@ lokálně nebo ve větvi).
 ## Jak dopadly kroky
 
 (sem se po každém kroku zapíšou odchylky od návrhu)
+
+### N1 (2026-10-03)
+
+Výsledky a rozhodnutí v [rewrite-audit.md](rewrite-audit.md); měření ve větvi `audit/n1`, `sim/` na `main` beze změny.
+Odchylky od návrhu: `copter.impact` a `water.row` nejsou stav (vypadly z kap. 9), `copter.effort` je stav i mezi
+pokusy, poloha cestujícího „viděná minulý snímek“ je jen u cestujících s trasou a jmenuje se `seenX/Y`, nepřítel
+v Placed nemá sprite, maska v UGD 1 jen 320 px (sousední řádek nikdy nenarazí), animace bez přetečení, nové
+zvláštnosti v kap. 6.
