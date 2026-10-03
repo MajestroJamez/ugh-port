@@ -9,6 +9,9 @@ void PlayFrame::run() {
     level.water().move(level.definition()->waterSpeed);
     readKeys();
     flyCopters();
+    passengers_.update({context_, bonuses_});
+    bonuses_.update(context_);
+    passengers_.frameShown();
     spinRotors();
     if (level.windy()) level.rain().move(level.water().row(), level.wind(), context_.session.random(), context_.diagnostics);
     level.water().animateSurface();

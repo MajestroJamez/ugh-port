@@ -12,6 +12,8 @@ void Game::newGame(const NewGameSettings& settings) {
     session_.emplace(data_.rules(), settings.players, settings.difficulty, settings.firstLevel,
                      world::RandomNumbers(settings.randomSeed));
     level_ = world::Level(settings.players);
+    passengers_ = passengers::Passengers();
+    bonuses_.clear();
     level_.rain().setFloorRow(settings.rainFloorRow);
     keyboard_ = input::PcKeyboard(data_.keys());
     flow_.restart();
@@ -36,14 +38,21 @@ void Game::startAttempt() {
         return;
     }
     level_.startAttempt(*definition, data_.sprites(), session_->random(), diagnostics_);
+    passengers_.load(*definition);
 }
 
-void Game::beforePlay() {}
+/** The play starts: the passengers get their first update before anything is shown; then nothing is shown. */
+void Game::beforePlay() {
+    world::PlayContext c = context();
+    passengers_.update({c, bonuses_});
+    passengers_.hideAll();
+    bonuses_.clear();
+}
 
 void Game::playFrame() {
     level_.fade().advance();
     world::PlayContext c = context();
-    PlayFrame(c, keyboard_).run();
+    PlayFrame(c, keyboard_, passengers_, bonuses_).run();
 }
 
 GameResult Game::endAttempt() {

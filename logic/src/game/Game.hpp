@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "bonuses/BonusSlots.hpp"
 #include "data/GameData.hpp"
 #include "events/Diagnostics.hpp"
 #include "events/EventBroadcast.hpp"
@@ -13,6 +14,7 @@
 #include "game/GameResult.hpp"
 #include "game/NewGameSettings.hpp"
 #include "input/PcKeyboard.hpp"
+#include "passengers/Passengers.hpp"
 #include "world/Level.hpp"
 #include "world/PlayContext.hpp"
 #include "world/Session.hpp"
@@ -51,6 +53,8 @@ public:
     /** The session of the game; only after newGame(). */
     const world::Session& session() const { return *session_; }
     const world::Level& level() const { return level_; }
+    const passengers::Passengers& passengers() const { return passengers_; }
+    const bonuses::BonusSlots& bonuses() const { return bonuses_; }
     /** A level is loaded: its world and its entities are there (caption, setup, play). */
     bool levelLoaded() const;
     events::Diagnostics& diagnostics() { return diagnostics_; }
@@ -80,6 +84,8 @@ private:
     events::Diagnostics diagnostics_;
     std::optional<world::Session> session_;
     world::Level level_;
+    passengers::Passengers passengers_;
+    bonuses::BonusSlots bonuses_;   // they stay from the end of an attempt until the play of the next one
     input::PcKeyboard keyboard_;
     GameFlow flow_;
 

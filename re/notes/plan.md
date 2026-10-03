@@ -259,3 +259,6 @@ Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků
   a dotykem spritu, snímek hry, zásahy pilota (`Cheats`). Replaye levelu 1 souhlasí ve hře, vrtulnících a plošinách
   do prvního nástupu (náhodné celé), 142 ze 161 replayů do prvního nástupu; zbylých 19 rozhodí chybějící nepřátelé.
   24 testů. Další: **krok N6**.
+- 2026-10-03: krok N6 hotový - cestující (s trasou i stojící), společný balistický pád, bonusy. 6 z 8 replayů levelu 1
+  souhlasí ve všem kromě nepřátel celé (týmový dlouhý 26 tis. snímků), zbylé dva do odrazu od stromu. Oprava UGR 1:
+  `pad.waiting` je index cestujícího. 28 testů. Další: **krok N7**.

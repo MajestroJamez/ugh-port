@@ -123,7 +123,8 @@ class SemanticProjection(private val read16: (seg: Int, off: Int) -> Int) {
         m[c + "wait"] = s(0x295d + si).toString()
         m[c + "stand"] = s(0x2971 + si).toString()
         m[c + "number"] = s(0x2985 + si).toString()
-        m[c + "waiting"] = s(0x2999 + si).let { if (it < 0) "none" else it.toString() }
+        // the original keeps the offset of the passenger in its arrays (index * 2)
+        m[c + "waiting"] = s(0x2999 + si).let { if (it < 0) "none" else (it / 2).toString() }
     }
 
     // ---------------------------------------------------------------- passengers

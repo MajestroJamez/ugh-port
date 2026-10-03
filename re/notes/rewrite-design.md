@@ -588,3 +588,15 @@ prvního nástupu, náhodné replaye celé; ze zbylých 153 replayů jich 134 so
 chybějícím nepřátelům (foukač ±41 v `vx`, walker odhodí vrtulník, flyer ukončí pokus). Odchylky od návrhu: `LevelLoader`
 není samostatná třída světa (svět načte `world::Level`, entity přidá N6/N7); `impact` je jen v `CopterPhysics`;
 vrtulník drží `fare` mimo `Cargo` (originál ho po vystoupení nemaže).
+
+### N6 (2026-10-03)
+
+`passengers/` (Passenger, Passengers, PassengerFactory, PassengerContext, PassengerVisitor; `route/` 17 stavů
++ OnPickupPad, `standing/` 5 stavů), `physics/Ballistics` (pád stojícího cestujícího i bonusu, pravidlo dopadu jako
+`Landing`), `bonuses/` (BonusItem, BonusSlots, Falling, Lying), zápis polí cestujících a bonusů (`FieldRules` = stejné
+tabulky jako v Kotlinu). Oprava UGR 1: `pad.N.waiting` je index cestujícího (projekce brala offset originálu = index ×
+2), replaye přegenerované. 28 testů (scénáře: jízda a platba, rychlé doručení, stojící cestující, utonutí). 6 z 8
+replayů levelu 1 souhlasí ve všem kromě `enemy.*` až do konce (týmový dlouhý 26 tis. snímků); dva se rozejdou při
+odrazu cestujícího od stromu. Odchylky od návrhu: kontext cestujících a nepřátel je vlastní struktura modulu
+(`PassengerContext`, `EnemyContext`) nad `world::PlayContext`; pořadí modulů `bonuses` ← `passengers` ← `enemies`
+(doručení shodí bonus, nepřítel odrazí cestujícího); bonus v neplatném slotu hlídá `BonusSlots` (zmizí po updatu).
