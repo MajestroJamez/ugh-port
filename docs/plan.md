@@ -9,7 +9,8 @@ Pravidla platná pro všechny kroky:
   starým jádrem `sim/`), podle nich se ověřuje jádro `logic/`.
 - Herní data se necommitují (jen kód); C++ jádro čte data vytažená extractorem do `assets/`.
 - Nic viditelného na notebooku bez souhlasu (okno hry, editor se scénou, Blender); příkazy pro Jana jen PowerShell 5.1.
-- Na konci každého kroku: testy zelené, krátký zápis do tohoto souboru (sekce Stav), commit po Janově souhlasu.
+- Na konci každého kroku: testy zelené, krátký zápis do tohoto souboru (sekce Stav), commit po Janově souhlasu
+  (kroky 13+ v noci 2026-10-04: commit a push rovnou, schváleno).
 
 ## Krok 1 - Úklid a commit dosavadní práce
 
@@ -274,8 +275,97 @@ Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/l
   pilot (W A S D); konec hry zpět do menu.
 - Hotovo když: v přehledu žádný level nemá vadu, celou hru jde spustit z menu v obou režimech, replays zelené.
 
-Výhled (pořadí se může změnit): krok 13 zvuk a hudba (události logiky, původní ADLX z `assets/adlx`), krok 14
-plastelínové modely postav místo tvarů.
+## Kroky 13-23 - Hra plně ve 3D v moderní kvalitě
+
+Zadání (Jan, 2026-10-04): hra plně ve 3D, pěkné modely v moderní kvalitě, postavička vidět v kabině vrtulníku, ohně,
+louky, palmy a další dekorace. Herní rovina zůstává pixelově podle kolizní masky, kamera z boku (2,5D), logika beze
+změny. Pravidla navíc:
+
+- **Assety jen lokálně, nikdy v gitu:** volně použitelné (CC0 nebo zdarma i pro komerční použití bez přihlášení: Poly
+  Haven, ambientCG, Kenney, Quaternius ...) do `assets/3d/` (gitignore), celkem do 100 GB. Stahuje je skript
+  `5_remake/game/fetch-assets.ps1` podle manifestu v gitu (`5_remake/game/Assets.json`: zdroj, licence, cesta), takže jdou
+  kdykoli stáhnout znovu. Co vznikne v Blenderu, dělají skripty v gitu (`5_remake/game/Blender/*.py`, `blender -b`).
+- **Import do UE commandletem** (jako materiály): `build.ps1` naimportuje assety do `Content/Imported` (gitignore).
+  Chybí-li asset, hra spadne zpět na dnešní tvar a zaloguje to (repo bez assetů se dál přeloží a testy projdou).
+- Po každém kroku: testy logiky, `6_verification` a UE zelené, `levels.ps1` a kontrola archů, zápis do Stavu, commit
+  a push (v noci 2026-10-04 předem schváleno Janem).
+
+## Krok 13 - Zvuk a hudba
+
+- Původní zvuky a hudba z `assets/adlx` vyrenderované emulátorem OPL2 Kotlin portu (`Opl2.kt`, `SoundTimeline.kt`) do
+  WAV v `assets/sound/` (Gradle úloha); UE je přehrává podle událostí logiky (`ugh_logic_take_events`), hudba v menu
+  a ve hře, hlasitost.
+- Hotovo když: každá událost se zvukem originálu má zvuk (test: tabulka událost -> soubor, všechny soubory existují),
+  hudba hraje, replays zelené.
+
+## Krok 14 - Knihovna assetů a cesta do UE
+
+- `fetch-assets.ps1` + `Assets.json`, Blender skripty, importní commandlet (Interchange: glTF/FBX, textury, PBR
+  materiály), `Content/Imported`, fallback na tvary. První várka: skály, textury skal a trávy, HDRI oblohy, jedna palma.
+- Hotovo když: `fetch-assets.ps1` + `build.ps1` na čistém stroji vyrobí `Content/Imported`, palma je vidět ve shotu,
+  bez assetů se vše přeloží a testy projdou.
+
+## Krok 15 - Útes a jeskyně ve 3D
+
+- Místo vytaženého řezu tvarovaná skála: řez zůstane přesně v rovině hry, ale hrany a plochy dostanou hloubku,
+  zaoblení a šum (vyhlazená síť, displacement, Nanite), PBR materiály skály (Poly Haven / ambientCG) míchané podle
+  původní kresby (tráva nahoře, kámen, hlína), krápníky, zadní stěna jeskyně v hloubce, svět pokračuje i za okraji
+  obrazovky (útes, džungle v dálce, obloha HDRI) místo dřevěné krabice.
+- Hotovo když: ve všech levelech je hrana skály v herní rovině přesně na kolizní masce (test: síť v rovině hry vs.
+  maska), archy bez vad.
+
+## Krok 16 - Vrtulník
+
+- 3D model pravěkého vrtulníku (dřevo, kůže, kámen; pedály, rotor z kostí / listů), pilot jeskynní muž, který šlape,
+  animovaný rotor podle `rotor_sprite`, cestující sedí v kabině viditelně, visící cestující visí na laně. Druhý vrtulník
+  týmu jinou barvou.
+- Hotovo když: vrtulník má tělo v herní rovině v rozměrech `COPTER_BODY_*`, postava v kabině je ve shotu vidět.
+
+## Krok 17 - Cestující a nepřátelé
+
+- Jeskynní lidé (riggované modely s animacemi chůze, mávání, stání, plavání, pádu) místo válců; podle stavu
+  a spritu logiky vybraná animace. Nepřátelé: pterodaktyl (let), dinosaurus walker (chůze, omráčení), foukač, strom
+  (padající ovoce = bonus). Bonusové předměty jako 3D předměty.
+- Hotovo když: každý druh entity má model a každý stav, který replaye pokrývají, má animaci (tabulka stav -> animace,
+  test), archy bez vad.
+
+## Krok 18 - Příroda a dekorace
+
+- Louky (instancovaná tráva a květiny na horních plochách mimo dráhu postav), palmy, kapradiny, keře, kameny, kosti,
+  totemy, chýše, ohně na římsách (víc než jeden, s Lumen světlem), liány z krápníků; rozmístění z mapy dlaždic
+  a masky deterministicky (stejný level = stejné dekorace), nic nezasahuje do herní roviny před postavami.
+- Hotovo když: každý level má dekorace, nic nezakrývá vrtulník, cestující, plošiny ani čísla plošin (test: průnik
+  dekorací s herní rovinou), archy bez vad.
+
+## Krok 19 - Voda, déšť, obloha, světlo
+
+- Voda jako moderní vodní plocha (Single Layer Water: vlny, lom, pěna u skály) se stoupající hladinou podle logiky,
+  déšť a mlha jako Niagara podle větru, mraky a obloha, nálada levelu (den, soumrak, noc) podle čísla levelu, Lumen.
+- Hotovo když: archy bez vad, ve větrných levelech déšť ve směru větru, voda přesně na `water_level`.
+
+## Krok 20 - Efekty událostí
+
+- Niagara: šplouchnutí cestujícího a vrtulníku, výbuch a kouř při havárii, prach při přistání, jiskry bonusu, peníze
+  při platbě, křik ptáka (peří), foukač (vítr), padající ovoce.
+- Hotovo když: každá událost logiky má efekt (tabulka, test), zvuk i efekt ze stejné události.
+
+## Krok 21 - Menu a HUD
+
+- UMG: titulní obrazovka s 3D scénou za ní, menu, stavový řádek s ikonami (životy, energie jako ukazatel, skóre),
+  popisky levelů v pravěkém stylu, konec hry.
+- Hotovo když: snímek menu a hry ve shotu, test `Ugh.Menu` dál zelený.
+
+## Krok 22 - Nastavení a ovládání
+
+- Gamepad, přiřazení kláves, nastavení grafiky (upscaler, kvalita, rozlišení), hlasitost, tabulka nejlepších skóre,
+  poslední heslo; uložení do `Saved`.
+- Hotovo když: test nastavení (uložit / načíst), ovládání gamepadem projde automatický test vstupu.
+
+## Krok 23 - Vydání
+
+- Balení s PSO cache, výkon (cíl 60+ fps na Radeonu 890M v nízkém nastavení, DLSS na RTX), zip s assety vedle hry
+  (jen pro vlastní použití), test doma na RTX 5060 Ti (Jan).
+- Hotovo když: zabalená hra projde `levels.ps1` z balíčku, fps v logu nad cílem.
 
 ## Průběžně
 
