@@ -3,11 +3,14 @@
 //
 //   ugh_replay [--each] <ugh-sim.bin> <replay.ugr> ...
 //
+// Two cores run side by side, the memory they were never given filled with different patterns (ugh_sim_reset,
+// ugh_sim_clear); a field counts as known when both have it with the same value.
+//
 // Default: the whole game. The core starts from the state of tick 0 (the start of a new game) and runs on its
 // own (ugh_sim_step), getting only the keys and the injections (I lines) of the recording; after every tick all
-// fields are compared with the recording. A field the core has never written (memory left by the screens
-// before the game, e.g. passengers of the attract mode) is taken over the first time the recording shows it;
-// a mismatch is reported and the recorded value taken over, so one error does not hide the next ones.
+// fields are compared with the recording. A field the core does not know (memory left by the screens before the
+// game, e.g. passengers of the attract mode) is taken over the first time the recording shows it; a mismatch is
+// reported and the recorded value taken over, so one error does not hide the next ones.
 //
 // --each: every transition on its own, from the recorded state before the tick (T line, I line, keys);
 // stages the core does not have are undone on the expected state (B lines):
@@ -67,21 +70,72 @@ struct Result {
 /** What to do with a recorded field the core does not know. */
 enum class Unknown { COUNT, ERROR, ADOPT };
 
+/** The two cores, fed the same; a field is known when they agree on it. */
+class Twins {
+public:
+    Twins(ugh_sim* a, ugh_sim* b) : a_(a), b_(b) {}
+
+    void reset() { ugh_sim_reset(a_, 0x0000); ugh_sim_reset(b_, 0xffff); }
+    void clear() { ugh_sim_clear(a_, 0x0000); ugh_sim_clear(b_, 0xffff); }
+    int set(const std::string& name, const std::string& value) {
+        int a = ugh_sim_set(a_, name.c_str(), value.c_str()), b = ugh_sim_set(b_, name.c_str(), value.c_str());
+        return a < 0 || b < 0 ? -1 : a;
+    }
+    void key(int scancode) { ugh_sim_key(a_, scancode); ugh_sim_key(b_, scancode); }
+    /** How the cores end the game or the level; -1 when they disagree (the end depends on memory they were never given). */
+    int step() { return agreed(ugh_sim_step(a_), ugh_sim_step(b_)); }
+    void newGame() { ugh_sim_new_game(a_); ugh_sim_new_game(b_); }
+    int levelEnd() { return agreed(ugh_sim_level_end(a_), ugh_sim_level_end(b_)); }
+    void levelStart() { ugh_sim_level_start(a_); ugh_sim_level_start(b_); }
+    void playFrame() { ugh_sim_play_frame(a_); ugh_sim_play_frame(b_); }
+
+    /** The fields both cores have with the same value. */
+    Fields known() const {
+        Fields a = fields(a_), b = fields(b_), both;
+        for (const auto& [name, value] : a) {
+            auto it = b.find(name);
+            if (it != b.end() && it->second == value) both.emplace(name, value);
+        }
+        return both;
+    }
+
+    /** The problems of the first core (the second meets the same); the events are for a frontend. */
+    void takeProblems(void (*callback)(void* ctx, const char* problem), void* ctx) {
+        ugh_sim_take_problems(a_, callback, ctx);
+        ugh_sim_take_problems(b_, [](void*, const char*) {}, nullptr);
+        ugh_sim_take_events(a_, [](void*, const ugh_sim_event*) {}, nullptr);
+        ugh_sim_take_events(b_, [](void*, const ugh_sim_event*) {}, nullptr);
+    }
+
+private:
+    ugh_sim* a_;
+    ugh_sim* b_;
+
+    static int agreed(int a, int b) { return a == b ? a : -1; }
+
+    static Fields fields(const ugh_sim* sim) {
+        Fields f;
+        ugh_sim_fields(sim, [](void* ctx, const char* name, const char* value) { (*static_cast<Fields*>(ctx))[name] = value; }, &f);
+        return f;
+    }
+};
+
 class Player {
 public:
-    Player(ugh_sim* sim, Result& result) : sim_(sim), r_(result) {}
+    Player(Twins& sim, Result& result) : sim_(sim), r_(result) {}
 
     /** The whole game: tick 0 sets the start, every later tick is one step of the core. */
     void whole(const Tick& t, bool last) {
         if (t.number == 0) {
             for (const auto& [name, value] : t.state) set(name, value);
         } else {
-            int end = ugh_sim_step(sim_);
-            if (end != UGH_SIM_CONTINUE && !last) report(t, "frame", "the core ended the game (" + std::to_string(end) + ")");
+            int end = sim_.step();
+            if (end < 0) report(t, "frame", "the cores disagree whether the game ended");
+            else if (end != UGH_SIM_CONTINUE && !last) report(t, "frame", "the core ended the game (" + std::to_string(end) + ")");
             compare("frame", t, t.state, groups(), Unknown::ADOPT, true);
         }
         for (const auto& [name, value] : t.inject) set(name, value);
-        for (int k : t.keys) ugh_sim_key(sim_, k);
+        for (int k : t.keys) sim_.key(k);
         takeProblems();
     }
 
@@ -91,16 +145,16 @@ public:
         const std::string& to = phase(cur);
         if (from == "start" && to == "betweenLevels") {
             load(prev);
-            ugh_sim_new_game(sim_);
+            sim_.newGame();
             compare("new game", cur, cur.state, {"game."}, Unknown::COUNT, false);
         } else if (to == "caption" && (from == "betweenLevels" || from == "play")) {
             load(prev);
             if (from == "play") {
                 // the last frame of the level ran before the loop saw the end of the fade-out
-                ugh_sim_play_frame(sim_);
-                if (ugh_sim_level_end(sim_) != UGH_SIM_CONTINUE) { report(cur, "level start", "the core ended the game"); return; }
+                sim_.playFrame();
+                if (sim_.levelEnd() != UGH_SIM_CONTINUE) { report(cur, "level start", "the core ended the game"); return; }
             }
-            ugh_sim_level_start(sim_);
+            sim_.levelStart();
             // what missing stages changed in that last frame is partly overwritten by the load: not compared here
             Fields expected = cur.state;
             for (const auto& [stage, fields] : cur.before)
@@ -108,7 +162,7 @@ public:
             compare("level start", cur, expected, groups(), Unknown::COUNT, false);
         } else if (from == "play" && to == "play") {
             load(prev);
-            ugh_sim_play_frame(sim_);
+            sim_.playFrame();
             compare("play frame", cur, undoStages(cur), groups(), Unknown::ERROR, false);
         } else {
             r_.skipped++;
@@ -117,7 +171,7 @@ public:
     }
 
 private:
-    ugh_sim* sim_;
+    Twins& sim_;
     Result& r_;
 
     /** The field groups of the stages the core has (passengers: their pads too). */
@@ -162,14 +216,14 @@ private:
     }
 
     void load(const Tick& prev) {
-        ugh_sim_clear(sim_);
+        sim_.clear();
         for (const auto& [name, value] : prev.state) set(name, value);
         for (const auto& [name, value] : prev.inject) set(name, value);
-        for (int k : prev.keys) ugh_sim_key(sim_, k);
+        for (int k : prev.keys) sim_.key(k);
     }
 
     void set(const std::string& name, const std::string& value) {
-        if (ugh_sim_set(sim_, name.c_str(), value.c_str()) < 0) report(Tick{}, "set", "bad value " + name + "=" + value);
+        if (sim_.set(name, value) < 0) report(Tick{}, "set", "bad value " + name + "=" + value);
     }
 
     void report(const Tick& t, const std::string& what, const std::string& text) {
@@ -178,14 +232,13 @@ private:
     }
 
     void takeProblems() {
-        ugh_sim_take_problems(sim_, [](void* ctx, const char* p) { static_cast<Player*>(ctx)->report(Tick{}, "core", p); }, this);
+        sim_.takeProblems([](void* ctx, const char* p) { static_cast<Player*>(ctx)->report(Tick{}, "core", p); }, this);
     }
 
     void compare(const std::string& what, const Tick& cur, const Fields& expected, const std::vector<const char*>& groups,
                  Unknown unknown, bool takeOver) {
         r_.checked[what]++;
-        Fields actual;
-        ugh_sim_fields(sim_, [](void* ctx, const char* f, const char* v) { (*static_cast<Fields*>(ctx))[f] = v; }, &actual);
+        Fields actual = sim_.known();
         std::string diffs;
         int n = 0;
         for (const auto& [name, value] : expected) {
@@ -213,12 +266,12 @@ private:
     }
 };
 
-bool play(ugh_sim* sim, const std::string& path, bool each, Result& result) {
+bool play(Twins& sim, const std::string& path, bool each, Result& result) {
     std::ifstream in(path);
     if (!in) { std::fprintf(stderr, "cannot open %s\n", path.c_str()); return false; }
     std::string line;
     if (!std::getline(in, line) || line != "UGR 0") { std::fprintf(stderr, "%s: not a UGR 0 file\n", path.c_str()); return false; }
-    ugh_sim_reset(sim);
+    sim.reset();
     Player player(sim, result);
     Fields state;
     std::vector<Tick> window;  // ticks still waiting for their B / I lines
@@ -278,8 +331,10 @@ int main(int argc, char** argv) {
         return 2;
     }
     char err[256];
-    ugh_sim* sim = ugh_sim_create(argv[first], err, sizeof err);
-    if (!sim) { std::fprintf(stderr, "%s\n", err); return 2; }
+    ugh_sim* a = ugh_sim_create(argv[first], err, sizeof err);
+    ugh_sim* b = a ? ugh_sim_create(argv[first], err, sizeof err) : nullptr;
+    if (!b) { std::fprintf(stderr, "%s\n", err); return 2; }
+    Twins sim(a, b);
     bool ok = true;
     for (int i = first + 1; i < argc; i++) {
         Result r;
@@ -303,6 +358,7 @@ int main(int argc, char** argv) {
         }
         if (r.mismatches > 0) ok = false;
     }
-    ugh_sim_destroy(sim);
+    ugh_sim_destroy(a);
+    ugh_sim_destroy(b);
     return ok ? 0 : 1;
 }
