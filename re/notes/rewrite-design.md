@@ -347,40 +347,50 @@ I <pole>=<hodnota> ...
   (`SemanticProjection.kt`) jako tabulka po stavech a stejná pravidla má C++ `StateWriter`. Nástroj vyžaduje
   **stejnou množinu polí** i stejné hodnoty – tím se hlídá i shoda pravidel.
 
-### Pole (ověřeno v N1 otrávením nedefinovaných polí; N3 doplní finální tabulku sem)
+### Pole (finální tabulka, N3; pravidla v `SemanticProjection.kt` a stejná v C++ `StateWriter`)
 
-**game** (vždy): `phase` (`start`, `betweenLevels`, `caption`, `setup`, `play` – N3 sjednotí s fázemi C++), `level`
-(pořadí v režimu od 0), `players`, `difficulty`, `lives`, `multiplier`, `score`, `rng` (16 hex číslic = 4 slova
-generátoru, poslední první), `rainFloor` (řádek). **V `caption` a `play`:** `energy`, `fade` (0..256),
-`fadeDirection` (`in`/`out`), `levelDone`, `wind`, `passengersLeft`, `water.level` (Fixed), `water.resting`,
-`water.evenFrame`, `water.surfaceFrame`, `water.surfaceDelay`, `rain` (`none` bez větru, jinak CRC-32 kapek jako
-dvojic int16 LE `x, y` v pořadí 0..192, 8 hex číslic). Totéž v `setup`. `water.row` není (= `water.level >> 5`, N1).
+Fáze `game.phase`: `start`, `betweenLevels` (jen na začátku hry), `caption`, `setup` (černá před hrou), `play`.
+Entity (vrtulníky, plošiny, cestující, nepřátelé, bonusy) jsou ve stavu jen v `caption`, `setup` a `play`.
+Hodnoty: celá čísla desítkově (polohy v 1/32 px, rychlosti vrtulníku a plavce v 1/64 z toho, ostatní rychlosti
+v 1/32 px za snímek, časy ve snímcích), sprity čísly `assets/sprites/NNN.png`, jména pro výčty, `none` = nic.
 
-**copter.N** (N < hráči; `caption`, `setup`, `play`): `x`, `y`, `pixelX`, `pixelY`, `vx`, `vy`, `landedPad` (index /
-`none`), `rotorSprite`, `rotorCounter`, `keys` (`UDLRF` / `-`), `cargoLook` (`none` / číslo), `destination` (číslo
-plošiny, `hanging`, `none`), `fare`, `effort`. Jen s cestujícím s trasou na palubě: `fareMin`. `impact` není (pomocná
-hodnota jednoho snímku fyziky, N1).
+| Skupina | Stav / fáze | Pole |
+|---|---|---|
+| `game` | vždy | `phase`, `level` (pořadí v režimu od 0), `players`, `difficulty` (`easy`/`medium`/`hard`), `lives`, `multiplier`, `score`, `rng` (4 slova generátoru hex, poslední první), `rainFloor` (řádek) |
+| `game` | `caption`, `setup`, `play` | `energy`, `fade` (0..256), `fadeDirection` (`in`/`out`), `levelDone`, `wind` (`none`/`left`/`right`), `passengersLeft`, `water.level`, `water.resting`, `water.evenFrame`, `water.surfaceFrame`, `water.surfaceDelay`, `rain` (`none` bez větru, jinak CRC-32 kapek 0..192 jako dvojic int16 LE x, y) |
+| `copter.N` | vždy (N < hráči) | `x`, `y`, `pixelX`, `pixelY`, `vx`, `vy`, `landedPad` (index / `none`), `rotorSprite`, `rotorCounter`, `keys` (`UDLRF` / `-`), `cargoLook` (`none` / číslo), `destination` (číslo plošiny / `hanging` / `none`), `fare`, `effort` |
+| `copter.N` | cíl je plošina | `fareMin` |
+| `pad.N` | vždy | `left`, `right`, `y`, `door`, `wait`, `stand`, `number`, `waiting` (index cestujícího / `none`) |
+| `passenger.N` s trasou | všechny | `kind` (`kind1` …, ve vodě `kind1-water` …), `state`, `sprite`, `bubble` |
+| | kromě Gone | `routeStop` |
+| | kromě NextStop a Gone | `pickupPad`, `targetPad` (indexy plošin zastávky) |
+| | ComingOut, Waiting, Calling, Impatient, Boarding, WalkingToDoor, GoingIn, Splash, Swimming, SwimCalling, SwimWaving, SwimBoarding, Sinking | `x`, `y`, `seenX`, `seenY`, `animFrame`, `animDelay` |
+| | Riding | `seenX`, `seenY`, `carrier`, `quickDeliveryTime` |
+| | BehindDoor / Waiting / Splash, Sinking / Swimming | `arrivalDelay` / `waitingSpot` (`starting`/`walking`/`reached`) / `swimSpeed` / `swimTime` |
+| | Calling, Impatient, SwimCalling, SwimWaving | `callTime` |
+| `passenger.N` stojící | Placed, Standing, Hanging, Falling, Gone | `kind` (`standing`), `state`, `sprite`, `bubble` |
+| | Placed, Standing, Falling | `x`, `y` |
+| | Hanging / Falling | `carrier` / `dropSpeedX`, `fallSpeed` |
+| `enemy.N` flyer | Placed, Hidden, Screeching, Flying, Falling | `kind`, `state`, `vx`, `lastTarget` (hráč, na kterého letěl naposledy) |
+| | kromě Placed | `sprite` |
+| | Flying, Falling | `x`, `y` |
+| | Hidden, Screeching, Flying | `animFrame`, `animDelay` |
+| | Flying / Hidden / Screeching / Falling | `flight` (`left`/`right`) / `waitTime` / `screechTime` / `fallSpeed` |
+| `enemy.N` walker | Placed, Walking, Watching, Charging, Recovering, Stunned | `kind`, `state`, `x`, `y`, `vx`, `facing` (`left`/`right`) |
+| | kromě Placed | `sprite`, `animFrame`, `animDelay` |
+| | Watching / Charging / Stunned | `watchTime` / `chargeSpeed` / `stunTime` |
+| `enemy.N` blower | Placed, Blowing, Stunned | `kind`, `state`, `x`, `y` |
+| | Blowing, Stunned | `sprite` |
+| | Blowing / Stunned | `animFrame`, `animDelay` / `stunTime` |
+| `enemy.N` tree | Placed, Swaying, Resting, Bare | `kind`, `state`, `x`, `y`, `nextDrop` (index v seznamu bonusů) |
+| | kromě Placed | `sprite` |
+| | Swaying, Resting / Resting | `animFrame`, `animDelay` / `restTime` |
+| `bonus.N` (slot 0..11, obsazený) | Falling, Lying | `kind`, `state`, `x`, `y`, `sprite` |
+| | Falling / Lying | `vx`, `vy` / `lyingTime` |
 
-**pad.N**: `left`, `right`, `y`, `door`, `wait`, `stand`, `number`, `waiting` (index cestujícího / `none`).
-
-**passenger.N** (všichni): `kind`, `state`, `sprite`, `bubble`. Poloha `x`, `y`: všechny stavy kromě NextStop,
-BehindDoor, Riding, Hanging, Gone. Cestující s trasou: `routeStop` (kromě Gone), `pickupPad`, `targetPad` (pohled na
-zastávku; kromě NextStop a Gone), `seenX`, `seenY` (poloha viděná minulý snímek; od ComingOut po GoingIn, ve vodě
-i v Riding). Animující stavy: `animFrame`, `animDelay`. Podle stavu: `arrivalDelay` (BehindDoor), `callTime`
-(Calling, Impatient, SwimCalling, SwimWaving), `waitingSpot` (Waiting: `starting`/`walking`/`reached`), `carrier`
-(Riding; stojící: Hanging), `quickDeliveryTime` (Riding), `dropSpeedX` a `fallSpeed` (stojící: Falling), `swimSpeed`
-(Splash, Sinking), `swimTime` (Swimming).
-
-**enemy.N**: `kind` (`flyer`/`walker`/`blower`/`tree`), `state`; `sprite` ve všech stavech kromě Placed (tam drží
-originál zbytek paměti, N1); `x`, `y` (flyer jen ve Flying a Falling), a když stav animuje nebo animace pokračuje
-v dalším stavu: `animFrame`, `animDelay` (flyer: Hidden, Screeching, Flying; walker: všechny kromě Placed; blower:
-Blowing; tree: Swaying, Resting). Flyer: `vx`, `lastTarget`, v Flying `flight` (`left`/`right`), v Hidden
-`waitTime`, v Screeching `screechTime`, ve Falling `fallSpeed`. Walker: `vx`, `facing`, ve Watching `watchTime`,
-v Charging `chargeSpeed`, ve Stunned `stunTime`. Blower: ve Stunned `stunTime`. Tree: `nextDrop`, v Resting
-`restTime`.
-
-**bonus.N** (slot 0..11, jen obsazený): `kind`, `state`, `x`, `y`, `sprite`; ve Falling `vx`, `vy`, v Lying
-`lyingTime`.
+`I` řádky smí obsahovat jen `copter.N.x/y/pixelX/pixelY/vx/vy/landedPad`, `game.energy`, `game.lives`
+(`SemanticProjection.INJECTABLE`; `GoldenReplayTest` hlásí jiné). Test také hlídá, že žádná hodnota není adresa
+(`0x…`) ani nepojmenovaný stav (`?…`) a že projekce paměti originálu a portu jsou v každém snímku stejné.
 
 ### Jména stavů (UGR 0 → UGR 1 = třída v `logic/`)
 
@@ -400,9 +410,10 @@ v Charging `chargeSpeed`, ve Stunned `stunTime`. Blower: ve Stunned `stunTime`. 
 
 ### Testovací pilot
 
-`CheatPilot.injectHit` (zápis stavu cestujícího do paměti) se nahradí skutečnou akcí: vrtulník s visícím
-cestujícím nad letícím flyerem a fire (jako dnešní `dropOnEnemy`, jen s lepším předstihem). Zásahy pak zůstanou jen
-tři: přemístění vrtulníku, energie, životy. Pokrytí stavů (`GoldenReplayTest`) musí zůstat úplné.
+`CheatPilot.injectHit` (zápis stavu cestujícího do paměti) je pryč (N3). Místo něj `dropOnFlyer`: vrtulník
+s visícím stojícím cestujícím se postaví 22 px před letícího flyera těsně nad jeho výšku a pustí ho (fire); když
+nikdo nevisí, `grabForFlyer` ho nejdřív sebere. Zásahy zůstaly jen tři: přemístění vrtulníku, energie, životy.
+Pokrytí stavů (`GoldenReplayTest`) je dál úplné.
 
 ## 10. Nástroj `replay_check` a C API
 
@@ -548,3 +559,11 @@ cestujících `kind1` … `kind3` (vzhled z dat nejde poznat), bonusy `energy1` 
 `flyerKind` má jen první snímky zásahu (`hitSprite`), `blowerKind` `stunnedSprite`; zpoždění za poslední zastávkou
 trasy a nečtené plošiny umístění v souboru nejsou; vodní druh má `landKind`. Čísla spritů z kódu originálu jsou
 konstanty extractoru s adresou rutiny.
+
+### N3 (2026-10-03)
+
+`SemanticProjection.kt` (pravidla jako tabulky po stavech), `ReplayWriter` s verzí 1, `GoldenReplayTest` píše z jednoho
+běhu `replays/*.ugr` (UGR 0) i `replays/ugr1/*.ugr` (UGR 1, 90 MB) a hlídá shodu projekce originálu a portu, žádné
+adresy ani nepojmenované stavy a jen povolené zásahy. `CheatPilot`: `injectHit` nahrazen `dropOnFlyer` /
+`grabForFlyer`; pokrytí stavů úplné. Odchylky od návrhu: pole entit i ve fázi `setup`; stavy flyera, walkera, blowera
+a stromu jsou jen mezi snímky viditelné stavy (Placed se objeví jen před prvním updatem); `difficulty` jménem.

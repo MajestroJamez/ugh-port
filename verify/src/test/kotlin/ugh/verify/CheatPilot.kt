@@ -82,6 +82,26 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
         // a passenger hanging below the copter: carry it over an enemy and drop it there
         val hanging = passengers.firstOrNull { r(0x2a0d + it) == 0x1c6b && r(0x2a2d + it) == 0 }
         val targets = (0 until 5).map { it * 2 }.takeWhile { r(0x2cad + it) != 0xffff }.filter { r(0x2d43 + it) != 0xffff }
+        // a flyer on its way across: drop the hanging passenger right in front of it (from just above its height, so
+        // that it falls into the flyer before the flyer reaches the copter), or first grab the standing passenger
+        val flyer = targets.firstOrNull { r(0x2cad + it) == 0x7630 && r(0x2cf3 + it) == 0x2493 }
+        if (flyer != null && rnd.nextInt(10) < 7) {
+            val ahead = if (rs(0x2ce9 + flyer) > 0) 22 shl 5 else -(22 shl 5)
+            if (hanging != null) {
+                place(rs(0x2cc1 + flyer) + ahead, rs(0x2ccb + flyer) - 0x110, landed = -1)
+                keys(0xe0, 0x1d); fireFrames = 3
+                wait = 30
+                count("dropOnFlyer")
+                return
+            }
+            val standing = passengers.firstOrNull { r(0x2a0d + it) == 0x1c27 }
+            if (standing != null && !carrying) {
+                place(rs(0x2aed + standing) - 0x100, rs(0x2b0d + standing) - 0x200, landed = -1)
+                wait = 3
+                count("grabForFlyer")
+                return
+            }
+        }
         if (hanging != null && targets.isNotEmpty() && rnd.nextInt(10) < 7) {
             val o = targets[rnd.nextInt(targets.size)]
             // lead a moving target: the passenger needs ~20 frames to fall to it
@@ -90,20 +110,6 @@ class CheatPilot(private val ugh: OriginalUgh, seed: Long) {
             keys(0xe0, 0x1d); fireFrames = 3
             wait = 30 + rnd.nextInt(40)
             count("dropOnEnemy")
-            return
-        }
-        // state injection: make the standing passenger fall right onto a flying enemy
-        val flyer = targets.firstOrNull { r(0x2cad + it) == 0x7630 && r(0x2cf3 + it) == 0x2493 }
-        val standingAny = passengers.firstOrNull { r(0x29ad + it) == 0x78dc && r(0x2a0d + it) in setOf(0x1c27, 0x1c6b) }
-        if (flyer != null && standingAny != null && rnd.nextInt(10) < 5) {
-            if (r(0x2a0d + standingAny) == 0x1c6b) { w(0x27fc + r(0x2a2d + standingAny), 0); w(0x2804 + r(0x2a2d + standingAny), 0) }
-            w(0x2a0d + standingAny, 0x1cee)
-            w(0x2aed + standingAny, rs(0x2cc1 + flyer) + rs(0x2ce9 + flyer) * 4 - 0x80)
-            w(0x2b0d + standingAny, rs(0x2ccb + flyer) - 0x180)
-            w(0x2acd + standingAny, 0)
-            w(0x2c6d + standingAny, 4)
-            wait = 20
-            count("injectHit")
             return
         }
         // grab a standing passenger

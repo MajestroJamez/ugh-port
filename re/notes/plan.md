@@ -245,3 +245,8 @@ Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků
   pravidla, sprity, klávesy, animace, druhy, 81 levelů s plošinami, cestujícími, nepřáteli a maskou 320 × 192, pořadí
   obou režimů; vše přepočtené a pojmenované (`Names.kt`, `LogicData.kt`). `LogicDataTest` porovná každý level obou
   režimů po načtení portem a masky se stránkami pozadí - zelený. Popis v `phase2-data.md`. Další: **krok N3**.
+- 2026-10-03: krok N3 hotový - `.\gradlew.bat :verify:replays` zapíše 161 replayů ve dvou formátech: `UGR 0` pro
+  `sim/` (CTest dál zelený) a sémantické `UGR 1` (`replays/ugr1/`, `SemanticProjection.kt`: pojmy hry, žádné adresy,
+  pole jen definovaná podle tabulky po stavech z N1). Testovací pilot už nezapisuje stav cestujících: místo
+  `injectHit` pouští visícího cestujícího před letícího flyera; zásahy jen vrtulník, energie, životy. Finální tabulka
+  polí v kap. 9 [rewrite-design.md](rewrite-design.md). `:verify:test` zelený (14 min). Další: **krok N4**.

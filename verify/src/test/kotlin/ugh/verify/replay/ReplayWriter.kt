@@ -29,8 +29,12 @@ import java.io.Writer
  * An I line (only in recordings with a cheating pilot) lists fields the test harness set between the
  * preceding frame and the next one: a replaying implementation sets them in its state before running the
  * next frame. The next T line is still a delta against the preceding T line (the state before injection).
+ *
+ * Format "UGR 1" ([version] 1) is the same without w= and without B lines, with the semantic state of
+ * [SemanticProjection] (no addresses); its I lines contain only the copter's position, speed and pad, the energy
+ * and the lives ([SemanticProjection.INJECTABLE]).
  */
-class ReplayWriter(file: File, meta: Map<String, String>) : AutoCloseable {
+class ReplayWriter(file: File, meta: Map<String, String>, private val version: Int = 0) : AutoCloseable {
     private val out: Writer = file.also { it.parentFile.mkdirs() }.bufferedWriter()
     private var previous: Map<String, String> = emptyMap()
 
@@ -38,14 +42,16 @@ class ReplayWriter(file: File, meta: Map<String, String>) : AutoCloseable {
         private set
 
     init {
-        out.write("UGR 0\n")
-        out.write("# UGH! golden replay - state after every frame, recorded in lockstep with the original\n")
+        out.write("UGR $version\n")
+        out.write(if (version == 0) "# UGH! golden replay - state after every frame, recorded in lockstep with the original\n"
+            else "# UGH! golden replay - semantic state after every frame, recorded in lockstep with the original\n")
         out.write("meta " + meta.entries.joinToString(" ") { "${it.key}=${it.value}" } + "\n")
     }
 
     fun tick(tick: Long, wait: Int, keys: List<Int>, state: Map<String, String>) {
         val line = StringBuilder()
-        line.append("T ").append(tick).append(" w=").append("%04x".format(wait))
+        line.append("T ").append(tick)
+        if (version == 0) line.append(" w=").append("%04x".format(wait))
         line.append(" k=").append(if (keys.isEmpty()) "-" else keys.joinToString(",") { "%02x".format(it) })
         line.append(" |")
         for ((k, v) in state) if (previous[k] != v) line.append(' ').append(k).append('=').append(v)
@@ -58,7 +64,7 @@ class ReplayWriter(file: File, meta: Map<String, String>) : AutoCloseable {
 
     /** What [stage] of the frame of the last [tick] changed outside its own group: values before it. */
     fun before(stage: String, fields: Map<String, String>) {
-        if (fields.isEmpty()) return
+        if (fields.isEmpty() || version != 0) return
         out.write("B $stage " + fields.entries.joinToString(" ") { "${it.key}=${it.value}" } + "\n")
     }
 
@@ -79,7 +85,7 @@ object ReplayReader {
 
     fun read(file: File): Pair<Map<String, String>, List<Tick>> {
         val lines = file.readLines()
-        require(lines.firstOrNull() == "UGR 0") { "not a UGR 0 file: $file" }
+        require(lines.firstOrNull() == "UGR 0" || lines.firstOrNull() == "UGR 1") { "not a UGR 0 / 1 file: $file" }
         var meta = emptyMap<String, String>()
         val ticks = ArrayList<Tick>()
         val state = sortedMapOf<String, String>()
@@ -94,7 +100,7 @@ object ReplayReader {
                     val hm = pairs(h.drop(2).joinToString(" "))
                     for ((k, v) in pairs(body)) if (v == "~") state.remove(k) else state[k] = v
                     val keys = hm.getValue("k").let { if (it == "-") emptyList() else it.split(',').map { s -> s.toInt(16) } }
-                    ticks += Tick(tick, hm.getValue("w").toInt(16), keys, HashMap(state))
+                    ticks += Tick(tick, hm["w"]?.toInt(16) ?: 0, keys, HashMap(state))
                 }
                 line.startsWith("B ") -> line.removePrefix("B ").split(" ", limit = 2).let { ticks.last().before[it[0]] = pairs(it.getOrElse(1) { "" }) }
                 line.startsWith("I ") -> ticks.last().inject = pairs(line.removePrefix("I "))

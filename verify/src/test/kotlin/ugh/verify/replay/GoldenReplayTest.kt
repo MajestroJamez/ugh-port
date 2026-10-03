@@ -75,12 +75,23 @@ class GoldenReplayTest {
         val audit = StateAudit()
         val original = StateProjection(audit.reading { seg, off -> ugh.machine.read16(seg, off) })
         val port = StateProjection { seg, off -> lockstep.portMem.read16(seg, off) }
+        val semanticOriginal = SemanticProjection { seg, off -> ugh.machine.read16(seg, off) }
+        val semanticPort = SemanticProjection { seg, off -> lockstep.portMem.read16(seg, off) }
         val meta = linkedMapOf(
             "exe-sha256" to exeSha256, "start" to "newgame", "level" to "$level", "password" to (password ?: "NONE"),
             "players" to if (team) "2" else "1", "difficulty" to "$difficulty",
             "pilot" to if (cheat) "cheat-pilot" else "random-keys", "seed" to "$seed",
         )
+        val semanticMeta = linkedMapOf(
+            "exe-sha256" to exeSha256, "level" to "$level", "players" to if (team) "2" else "1",
+            "difficulty" to listOf("easy", "medium", "hard")[difficulty],
+            "pilot" to if (cheat) "cheat-pilot" else "random-keys", "seed" to "$seed",
+        )
         val file = File(outDir, "$name.ugr")
+        val semanticFile = File(outDir, "ugr1/$name.ugr")
+        var semanticMismatches = 0
+        var firstSemanticMismatch: String? = null
+        val semanticProblems = LinkedHashSet<String>()
         var projectionMismatches = 0
         val unknownStates = ArrayList<String>()
         var firstMismatch: String? = null
@@ -96,12 +107,15 @@ class GoldenReplayTest {
         val maskRecords = HashSet<Int>()
         val probe = ProbeStats().also { it.attachTo(ugh) }
         var lastPhase = ""
-        ReplayWriter(file, meta).use { writer ->
+        ReplayWriter(file, meta).use { writer -> ReplayWriter(semanticFile, semanticMeta, version = 1).use { semanticWriter ->
             writer.tick(0, 0, emptyList(), original.project("start"))
+            semanticWriter.tick(0, 0, emptyList(), semanticOriginal.project("start"))
             val keys = ArrayList<Int>()
             var pending: Map<String, String>? = null
+            var semanticPending: Map<String, String>? = null
             var pendingWait = 0
             var pendingInject = emptyMap<String, String>()
+            var semanticPendingInject = emptyMap<String, String>()
             var pendingStages = emptyMap<String, Map<String, String>>()
             val stages = StageRecorder(ugh).also { it.attach() }
             lockstep.onKey += { keys += it }
@@ -113,7 +127,12 @@ class GoldenReplayTest {
                     writer.inject(pendingInject)
                     if (pendingInject.isNotEmpty()) injections++
                 }
+                semanticPending?.let {
+                    semanticWriter.tick(semanticWriter.ticks, 0, keys.toList(), it)
+                    semanticWriter.inject(semanticPendingInject)
+                }
                 pendingInject = emptyMap()
+                semanticPendingInject = emptyMap()
                 keys.clear()
                 val phase = StateProjection.phaseOfPort()
                 // the collision mask: entering the level play and every 64th frame (bit 7 of the background never changes)
@@ -130,6 +149,18 @@ class GoldenReplayTest {
                     if (k.startsWith("object.") && k.endsWith(".kind")) states += "object.$v"
                     if (v.startsWith("?")) unknownStates += "frame ${lockstep.frames}: $k=$v"
                 }
+                val so = semanticOriginal.project(phase)
+                val sp = semanticPort.project(phase)
+                for ((k, v) in so) {
+                    if (v.startsWith("?")) semanticProblems += "unnamed value $k=$v"
+                    if (v.startsWith("0x")) semanticProblems += "address in $k=$v"
+                }
+                if (so != sp) {
+                    semanticMismatches++
+                    if (firstSemanticMismatch == null) firstSemanticMismatch = "frame ${lockstep.frames}: " +
+                        so.keys.union(sp.keys).filter { so[it] != sp[it] }.joinToString { "$it original ${so[it]} port ${sp[it]}" }
+                }
+                semanticPending = so
                 if (o["game.levelDone"] == "1" && pending?.get("game.levelDone") == "0") levelsDone++
                 if (o != p) {
                     projectionMismatches++
@@ -148,18 +179,30 @@ class GoldenReplayTest {
                     val injected = after.filter { before[it.key] != it.value }
                     if (injected.isNotEmpty()) pendingInject = injected
                 }
+                val semanticBefore = semanticPending
+                if (semanticBefore != null && cheat) {
+                    val after = semanticOriginal.project(semanticBefore.getValue("game.phase"))
+                    val injected = after.filter { semanticBefore[it.key] != it.value } +
+                        semanticBefore.keys.filter { it !in after }.associateWith { "~" }
+                    for (k in injected.keys) if (!SemanticProjection.INJECTABLE.matches(k)) semanticProblems += "injection of $k"
+                    if (injected.isNotEmpty()) semanticPendingInject = injected
+                }
             }
             lockstep.run { end = playGame() }
             pending?.let {
                 writer.tick(writer.ticks, pendingWait, keys.toList(), it)
                 for ((stage, fields) in pendingStages) writer.before(stage, fields)
             }
-        }
+            semanticPending?.let { semanticWriter.tick(semanticWriter.ticks, 0, keys.toList(), it) }
+        } }
         check(lockstep.mismatchCount == 0) { "${lockstep.mismatchCount} lockstep mismatches: ${lockstep.mismatches.firstOrNull()}" }
         check(projectionMismatches == 0) { "$projectionMismatches projection mismatches, first $firstMismatch" }
         check(unknownStates.isEmpty()) { "state handlers without a name: ${unknownStates.take(3)}" }
+        check(semanticMismatches == 0) { "$semanticMismatches semantic projection mismatches, first $firstSemanticMismatch" }
+        check(semanticProblems.isEmpty()) { "semantic state: ${semanticProblems.take(5)}" }
         check(probe.outsideSolid == 0L) { "collision probe found solid pixels outside the background page: ${probe.outsideSolid} in rows ${probe.solidRows}" }
         problems += readBackProblems(file)
+        problems += readBackProblems(semanticFile).map { "UGR 1: $it" }
         val summary = "replay $name: ${lockstep.frames} frames, end $end, levels done $levelsDone, " +
             "injections $injections, ${file.length() / 1024} kB" + (cheatPilot?.let { ", pilot ${it.actions}" } ?: "")
         return Result(spec, file, lockstep.frames, end, problems.map { "$name: $it" }, states, levelsDone, injections, summary, audit, maskRecords, probe)
@@ -218,12 +261,12 @@ class GoldenReplayTest {
     private fun readBackProblems(file: File): List<String> {
         val (meta, ticks) = ReplayReader.read(file)
         val problems = ArrayList<String>()
-        if (meta["start"] != "newgame") problems += "meta start ${meta["start"]}"
+        if (meta["level"] == null) problems += "meta without level"
         if (ticks.size <= 100) problems += "ticks: ${ticks.size}"
         if (ticks.map { it.tick } != (0L until ticks.size).toList()) problems += "tick numbers not consecutive"
         if (!ticks.all { it.state["game.level"] != null && it.state["game.phase"] != null }) problems += "tick without level / phase"
         val play = ticks.filter { it.state["game.phase"] == "play" }
-        if (play.size <= 100 || !play.all { it.state["copter.0.xf"] != null }) problems += "play ticks: ${play.size}"
+        if (play.size <= 100 || !play.all { it.state["copter.0.xf"] != null || it.state["copter.0.x"] != null }) problems += "play ticks: ${play.size}"
         return problems
     }
 
