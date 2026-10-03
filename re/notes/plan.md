@@ -135,9 +135,88 @@ Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků
 - **N8 – Dokončení**: README, `logic-map.md`, pohled pro vykreslení v C API, `/code-review high`, junior test,
   smazat `sim/`, UGR 0 a `ugh-sim.bin`.
 
+## Krok N9 - Repo po krocích, C++ jádro bez kompromisů
+
+Review 2026-10-03 po N8: `logic/` je čitelné, ale ne vzorové (zdvojený stavový automat, tlusté třídy, PC scancody
+a 16bitová aritmetika DOSu v API a modelu, 565řádkový `DataFileReader`). **Kotlin se nepřepisuje ani neuklízí** -
+je to jen reference a generátor testů. Upravuje se jen C++ a umístění složek. Po každé etapě testy jednotek
+a všech 161 replayů zelené (každé pole, každý snímek).
+
+### N9a - Složky podle kroků projektu (obsah Kotlinu beze změny)
+
+Číslo = krok řetězu; odkazy vedou jen dozadu (pozdější krok používá dřívější), uvnitř kroku mezi sousedy.
+
+```
+1_original/             UGH.EXE (dnes OLD/, necommituje se)
+2_reverse_engineering/  dnešní re/: Ghidra skripty, JS nástroje, poznámky k originálu
+3_kotlin_port/          core/, oracle/ (emulátor originálu), desktop/ (hratelný port)
+4_test_data/            extractor/ (-> assets/logic/ugh-data.ugd), verify/ (-> golden replaye UGR 1)
+5_remake/
+  logic/                C++ pravidla hry: knihovna + testy jednotek (o replayích neví)
+  game/                 UE projekt (krok 10), logiku přibalí jako modul z ../logic
+6_verification/         přehraje replaye ze 4 proti logice z 5, pole po poli
+docs/                   plán, návrh a mapa C++ jádra
+assets/                 vygenerovaná data (necommitují se)
+```
+
+- `git mv` podle stromu. Gradle wrapper, `settings.gradle.kts` a `build.gradle.kts` zůstanou v kořeni, takže
+  `.\gradlew.bat :extractor:run` a `:verify:replays` se nemění.
+- `docs/`: z `re/notes/` vytáhnout `plan.md`, `rewrite-design.md`, `logic-map.md`; zbytek (`phase*`, `core-design.md`,
+  `rewrite-audit.md`) zůstane v `2_reverse_engineering/notes/`.
+- `6_verification/`: sem z `logic/` přejde `replay/` (zápis stavu do polí UGR 1) a `tools/replay_check/`; vlastní
+  `CMakeLists.txt` (logiku přidá `add_subdirectory(../5_remake/logic)`), `build.ps1` (logika + testy jednotek +
+  161 replayů) a `README.md`. `5_remake/logic/build.ps1` staví jen knihovnu a testy jednotek.
+- Úpravy jen mimo Kotlin kód: `settings.gradle.kts` (`project(":core").projectDir = file("3_kotlin_port/core")` ...),
+  cesty `OLD/` -> `1_original/` v `build.gradle.kts` extractoru, oracle a verify, cesta k `package/README.txt`
+  v `build.gradle.kts` desktopu, `.gitignore`, `release.yml`, odkazy v C++ a v `docs/`. Odkazy na `re/notes`
+  v komentářích Kotlinu zůstanou (Kotlin se nemění).
+- `README.md` v kořeni: co je který krok a v jakém pořadí číst; krátké `README.md` v každé číslované složce.
+- Hotovo když: `.\gradlew.bat :extractor:run :verify:replays` projde, `6_verification\build.ps1` zelený a `git status`
+  ukazuje u Kotlinu jen přejmenování (a výše uvedené `.kts`).
+
+### N9b - C++ jádro (etapy, po každé zelené)
+
+1. **Jeden stavový automat (DRY):** šablona `state/StateMachine<Entity, Context>` + `state/State<Entity, Context>`
+   (`enter`, `update`, `name`) místo 7 kopií `changeState` / `continueIn` / `state_` a 7 skoro stejných rozhraní
+   `*State`. Pravidlo „žádné vlastní šablony“ padá (UE šablony nevadí); dál platí bez výjimek, RTTI a maker.
+2. **Zapouzdření entit:** `Passenger` a `Enemy` bez `protected` dat. `RoutePassenger` (~35 veřejných metod) rozdělit
+   na malé části s vlastním chováním - `PassengerCall` (volání / mávání), `Swim` (rychlost, čas na hladině),
+   `Ride` (nosič, čas rychlého doručení), `Route` (zastávky, zpoždění) - stavy volají záměry
+   (`passenger.ride().start(copter)`), ne settery. Totéž u `Walker` a `Flyer` (časovače).
+3. **Druhy cestujících po jednom:** `PassengerKind` s `Type` a poli platnými jen pro část typů nahradit třídami
+   `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`; přepnutí do vody a zpět jako dvojice druhů. V `data/`
+   jedno pravidlo pro všechny záznamy: neměnné struktury s veřejnými poli; umístění (Visitor) stejně, jen s `accept`.
+4. **Vstup bez DOSu:** C API `ugh_logic_key(player, key, pressed)` a `ugh_logic_menu_key(key)` (Esc, P, „jiná klávesa“
+   pro popisek) místo scancodů. `PcKeyboard` (scancody, rozšířené klávesy, falešné shifty) se přesune do `6_verification/` jako
+   adaptér, který z kláves replayů dělá tyto vstupy. Logika o PC klávesnici neví.
+5. **Typy hry místo registrů:** podle `rewrite-audit.md` 16bitové přetečení ani neznaménkové porovnání v replayích
+   nenastane, takže jízdné, vzhled, číslo plošiny, životy, skóre a časovače budou `int`, `unsignedLess` zmizí
+   a 16bitová sémantika zůstane jen uvnitř `Fixed` / `Speed`. Nutné zvláštnosti originálu (sonda doleva / nahoru,
+   pixelová poloha vrtulníku po hodu, kapky přes okraj stránky) jen uvnitř své třídy, pojmenované a popsané. C API
+   dává kapky v souřadnicích obrazovky (bez „stránky 384 px“).
+6. **Zbytek DRY a čitelnost:**
+   - prodleva animace walkera jednou (dnes 4×),
+   - `RoutePassenger::stepTowards(x)` místo 3 kopií chůze,
+   - stavy na plošině se společnou kontrolou pádu do vody (dnes ve 4 stavech),
+   - zóna foukače přes stejnou třídu jako `TouchBox`,
+   - `copterOnWater(true, false)` -> pojmenované dotazy (`copterOnWaterWithRoom()` ...),
+   - metody `Game` pro fáze (`startAttempt`, `endAttempt` ...) do vlastní třídy, kterou dostane jen `GameFlow`,
+     takže na fasádě zůstane jen veřejné API,
+   - smazat mrtvou `PcKeyboard::LONGEST_SEQUENCE`.
+7. **Čtení dat:** `DataFileReader` (565 ř.) rozdělit na `UgdTokenizer` (řádky -> záznamy), `RecordReader` (klíče,
+   čísla, chyby s číslem řádku) a čtenáře po částech (`KindsReader`, `LevelReader`, `KeysReader`); `DataFileReader`
+   je jen skládá.
+8. **Dokumentace a kontrola:** `5_remake/logic/README.md`, `6_verification/README.md` (vzory, „kam sáhnout“), `docs/rewrite-design.md` (pravidla),
+   `docs/logic-map.md`; `/code-review high` bez nálezů; junior test (3 vymyšlené požadavky, u každého jeden soubor).
+   Vlastní testovací framework (68 ř., bez závislostí) zůstává.
+
+Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/logic/src`: žádné `scancode`, `unsignedLess`,
+`changeState` mimo `state/`, `protected:` s daty. Žádná třída nad ~15 veřejnými metodami (kromě fasády `Game`)
+a žádný soubor nad 200 řádků.
+
 ## Krok 10 - UE projekt v repu, šedé kostky
 
-- `game/` (UE 5.8 C++ projekt), C++ jádro `logic/` jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
+- `5_remake/game/` (UE 5.8 C++ projekt), C++ jádro `5_remake/logic/` jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
   (FSR jen upscaler: `r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0`; offscreen oprava FSR).
 - Level z mapy dlaždic a kolizní masky jako jednoduché kostky; vrtulník, cestující, nepřátelé jako tvary.
 - Pevný tik 70,086 Hz + interpolace pro vykreslení; ovládání klávesnicí (písmena, kvůli české klávesnici).
