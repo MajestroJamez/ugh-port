@@ -66,12 +66,12 @@ originál v oracle + Kotlin port ──► verify ──► verify/build/replays
    `-1`; výčet je `enum class` (`Wind`, `Difficulty`, `Facing`, `BonusEffect`, `PlayerKey`). Logika nemá obranné
    kontroly – vstup kontroluje jen loader dat.
 8. **Povolené C++:** třídy, virtuální metody, `enum class`, `std::array`, `std::vector`, `std::unique_ptr`,
-   `std::optional`, `std::string`, `std::string_view`. **Zakázané:** šablony (vlastní), makra (kromě
+   `std::optional`, `std::string`, `std::string_view`, malé vlastní šablony (od N9b `state/StateMachine`). **Zakázané:** makra (kromě
    `tests/TestFramework.hpp`), korutiny, `std::function`, ukazatele na členy, **výjimky a RTTI** (`dynamic_cast`,
    `typeid`) – Unreal Engine je ve výchozím stavu nemá; chyby vrací `std::optional` / struktura s textem chyby.
 9. **Závislosti jen jedním směrem:** `units` ← `data` ← `events` ← `world` ← (`physics`, `passengers`, `enemies`,
    `bonuses`) ← `input` ← `game` ← `api`. `replay/` a `tools/` jen čtou `game`. Nic v `src/` neincluduje
-   `include/ugh_logic.h` kromě `api/`.
+   `include/ugh_logic.h` kromě `api/`. `state` (šablony automatu, od N9b) nezávisí na ničem.
 10. **Metody krátké** (~30 řádků), pojmenované slovesem; každá třída a veřejná metoda má jednořádkový komentář,
     co dělá v pojmech hry.
 11. **DRY:** společné chování je v jedné třídě (`Animator`, `Ballistics`, `Screen`, `TouchBox`), ne v kopiích.
@@ -183,7 +183,7 @@ logic/
   cestujícího), `Level` vede i typovaný pohled (`std::vector<StandingPassenger*>`) – bez RTTI.
 - Stavy: vzor State, bezstavové objekty (`static const Waiting instance`), `enter()` a `update()`. Přechod
   `changeState(next)` (vstupní akce teď, update od příštího snímku) a `continueIn(next)` (obojí teď) – rozdíl je
-  popsaný na jednom místě v základní třídě entity. Registr stavů není potřeba (replay se nečte zpět do stavu).
+  popsaný na jednom místě v šabloně `state::StateMachine` (od N9b), ze které entita dědí. Registr stavů není potřeba (replay se nečte zpět do stavu).
 - Stavy „Placed“ (dnes `*Init`, `StartStanding`) zůstávají: je to skutečný stav „umístěn, ještě nezačal“, který je
   vidět na popisku levelu, než první update entitu rozběhne. Jinak žádné průchozí stavy navíc.
 
@@ -531,7 +531,7 @@ lokálně nebo ve větvi).
 - Všech 161 replayů UGR 1 projde celých (stejná pole, stejné hodnoty, každý snímek); testy jednotek a scénářů po
   modulech zelené; `build.ps1` zelený.
 - V `logic/src` není (kontrola grepem): `DGROUP`, `113b`, `0x` mimo bitové masky, `static_cast<int16_t>`, `throw`,
-  `try`, `dynamic_cast`, `typeid`, vlastní `template`, `#define`, `std::function`, `co_await`, veřejné měnitelné pole
+  `try`, `dynamic_cast`, `typeid`, vlastní `template` (do N9b), `#define`, `std::function`, `co_await`, veřejné měnitelné pole
   entity, `-1` jako „nic“.
 - Každý soubor jedna třída se jménem souboru; složka = namespace všude; závislosti jen jedním směrem (kap. 3.9).
 - Junior test podle `README.md`: u požadavků (1) změnit gravitaci vrtulníku, (2) prodloužit, jak dlouho cestující

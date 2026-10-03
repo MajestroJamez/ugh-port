@@ -9,6 +9,7 @@
 #include "passengers/Passenger.hpp"
 #include "passengers/route/RouteState.hpp"
 #include "passengers/route/WaitingSpot.hpp"
+#include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
 #include "units/Int16.hpp"
 #include "units/Speed.hpp"
@@ -23,7 +24,7 @@ namespace ugh::passengers::route {
  * that falls into the water stays the same passenger: only its kind turns into the water kind, and back when a copter
  * rescues it.
  */
-class RoutePassenger : public Passenger {
+class RoutePassenger : public Passenger, public state::StateMachine<RoutePassenger, PassengerContext> {
 public:
     /** From the copter's left edge to where a passenger gets in and out, in pixels. */
     static constexpr units::Int16 COPTER_DOOR = 16;
@@ -35,14 +36,9 @@ public:
     void accept(PassengerVisitor& visitor) const override;
 
     const data::PassengerKind& kind() const { return *kind_; }
-    const RouteState& state() const { return *state_; }
 
     // ------------------------------------------------------------ the state machine
 
-    /** Into `next` from the next frame on: its entry action now, its update in the next frame. */
-    void changeState(const RouteState& next, const PassengerContext& context);
-    /** Into `next` and on in it in this frame: its entry action and its update now. */
-    void continueIn(const RouteState& next, const PassengerContext& context);
     /** Into the water and out of it: the kind turns into its counterpart. */
     void switchKind() { kind_ = kind_->other; }
 
@@ -129,7 +125,6 @@ private:
     const data::PassengerKind* kind_;
     const data::Route* route_;
     int stop_ = 0;
-    const RouteState* state_;
     units::Int16 seenX_, seenY_;
     units::Int16 arrivalDelay_;
     WaitingSpot waitingSpot_ = WaitingSpot::Starting;

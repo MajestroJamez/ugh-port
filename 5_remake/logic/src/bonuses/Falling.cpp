@@ -23,7 +23,7 @@ void Falling::update(BonusItem& item, const world::PlayContext& context) const {
         return;
     }
     item.moveTo(body.x, body.y, body.fallSpeed);
-    if (result == physics::Ballistics::Result::Landed) Lying::start(item);
+    if (result == physics::Ballistics::Result::Landed) item.changeState(Lying::instance, context);
 }
 
 }  // namespace ugh::bonuses

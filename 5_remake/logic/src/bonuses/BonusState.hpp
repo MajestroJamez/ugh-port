@@ -2,17 +2,12 @@
 #pragma once
 
 #include "bonuses/BonusItem.hpp"
+#include "state/State.hpp"
 #include "world/PlayContext.hpp"
 
 namespace ugh::bonuses {
 
-/** A state of a bonus item (State); the states are stateless, the item holds the data. */
-class BonusState {
-public:
-    virtual ~BonusState() = default;
-    virtual const char* name() const = 0;
-    /** One frame in the state. */
-    virtual void update(BonusItem& item, const world::PlayContext& context) const = 0;
-};
+/** A state of a bonus item: falling, lying on a pad. */
+using BonusState = state::State<BonusItem, world::PlayContext>;
 
 }  // namespace ugh::bonuses

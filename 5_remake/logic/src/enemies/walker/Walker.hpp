@@ -5,6 +5,7 @@
 #include "data/WalkerPlacement.hpp"
 #include "enemies/Enemy.hpp"
 #include "enemies/walker/WalkerState.hpp"
+#include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
 #include "world/Copter.hpp"
 #include "world/Facing.hpp"
@@ -15,7 +16,7 @@ namespace ugh::enemies::walker {
  * The walker (triceratops): it walks to and fro on its pad. When a copter lands there it watches it a while, then
  * charges at it, faster and faster, and throws it into the air; a passenger dropped onto it stuns it.
  */
-class Walker : public Enemy {
+class Walker : public Enemy, public state::StateMachine<Walker, EnemyContext, WalkerState> {
 public:
     Walker(int index, const data::WalkerKind& kind, const data::WalkerPlacement& placement);
 
@@ -23,12 +24,7 @@ public:
     void accept(EnemyVisitor& visitor) const override;
 
     const data::WalkerKind& kind() const { return *kind_; }
-    const WalkerState& state() const { return *state_; }
 
-    /** Into `next` from the next frame on. */
-    void changeState(const WalkerState& next, const EnemyContext& context);
-    /** Into `next` and on in it in this frame. */
-    void continueIn(const WalkerState& next, const EnemyContext& context);
 
     int pad() const { return pad_; }
     /** Fixed per frame; negative: to the left. */
@@ -56,7 +52,6 @@ public:
 
 private:
     const data::WalkerKind* kind_;
-    const WalkerState* state_;
     int pad_;
     units::Fixed vx_;
     world::Facing facing_ = world::Facing::Left;

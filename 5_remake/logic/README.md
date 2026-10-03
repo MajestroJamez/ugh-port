@@ -29,6 +29,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 | Module | What is in it |
 |---|---|
 | `units/` | the arithmetic of the original: `Int16` (16 bits that wrap), `Fixed` (a position in 1/32 px), `Speed` (1/64 Fixed per frame), `Countdown` |
+| `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
 | `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd`, `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds, animations, keys, rules |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |
 | `world/` | the world of the game: `Session` (lives, score, level number, random numbers), `Level` (copters, pads, water, rain, energy, fade - and the questions the entities ask about it), `Copter`, `Pad`, `Water`, `Rain`, `Animator`, `PlayContext` |
@@ -66,8 +67,9 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
 
 - **State**: a passenger, an enemy or a bonus item has a state object (`passengers::route::Waiting` ...) with
   `enter()` (when the entity gets into it) and `update()` (every frame). The states are stateless singletons; the
-  entity holds the data. `changeState(next)` runs the entry action now and the update from the next frame on;
-  `continueIn(next)` runs both now. The game flow is a state machine of `Phase`s too.
+  entity holds the data. The entity derives from `state::StateMachine<Entity, Context>` (one template for all
+  of them): `changeState(next, context)` runs the entry action now and the update from the next frame on;
+  `continueIn(next, context)` runs both now. The states derive from `state::State<Entity, Context>`. The game flow is a state machine of `Phase`s too.
 - **Visitor**: the placements of a level (`data::PassengerPlacementVisitor`, `EnemyPlacementVisitor`) and the
   entities by type (`passengers::PassengerVisitor`, `enemies::EnemyVisitor`) - no RTTI.
 - **Factory**: `PassengerFactory`, `EnemyFactory` make the right class from a placement.
@@ -75,8 +77,8 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
 - **Observer**: the logic reports `events::Event`s to `EventListener`s.
 - **Facade**: `game::Game` is the one entry; nothing of the state can be set from outside but through `Cheats`.
 
-No exceptions, no RTTI, no templates of our own, no macros (the library builds as an Unreal Engine module): errors
-come back as values (`DataFileReader::read` returns nullptr and the text of the error).
+No exceptions, no RTTI, no macros (the library builds as an Unreal Engine module), templates only where they remove
+copies (`state/`): errors come back as values (`DataFileReader::read` returns nullptr and the text of the error).
 
 ## Where to change what
 

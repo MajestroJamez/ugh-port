@@ -17,7 +17,7 @@ void BonusSlots::drop(const data::BonusKind& kind, units::Fixed x, units::Fixed 
 void BonusSlots::update(const world::PlayContext& context) {
     for (int slot = SLOTS - 1; slot >= 0; slot--) {
         if (!items_[slot]) continue;
-        items_[slot]->state().update(*items_[slot], context);
+        items_[slot]->update(context);
         if (items_[slot]->gone()) items_[slot].reset();
     }
 }

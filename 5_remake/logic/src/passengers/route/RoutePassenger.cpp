@@ -6,9 +6,9 @@ namespace ugh::passengers::route {
 
 
 RoutePassenger::RoutePassenger(int index, const data::RoutePassengerPlacement& placement)
-    : Passenger(index), kind_(&placement.kind()), route_(&placement.route()), state_(&NextStop::instance) {}
+    : Passenger(index), StateMachine(NextStop::instance), kind_(&placement.kind()), route_(&placement.route()) {}
 
-void RoutePassenger::update(const PassengerContext& context) { state_->update(*this, context); }
+void RoutePassenger::update(const PassengerContext& context) { updateState(context); }
 
 void RoutePassenger::frameShown() {
     if (!sprite_) return;
@@ -17,16 +17,6 @@ void RoutePassenger::frameShown() {
 }
 
 void RoutePassenger::accept(PassengerVisitor& visitor) const { visitor.visit(*this); }
-
-void RoutePassenger::changeState(const RouteState& next, const PassengerContext& context) {
-    state_ = &next;
-    next.enter(*this, context);
-}
-
-void RoutePassenger::continueIn(const RouteState& next, const PassengerContext& context) {
-    changeState(next, context);
-    next.update(*this, context);
-}
 
 bool RoutePassenger::arrivalDue() {
     if (arrivalDelay_ == 0) return true;

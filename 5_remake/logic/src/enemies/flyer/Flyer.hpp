@@ -5,6 +5,7 @@
 #include "data/FlyerPlacement.hpp"
 #include "enemies/Enemy.hpp"
 #include "enemies/flyer/FlyerState.hpp"
+#include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
 #include "world/Facing.hpp"
 
@@ -15,7 +16,7 @@ namespace ugh::enemies::flyer {
  * copter - in the team mode the players take turns - and ends the attempt when it touches that copter. A standing
  * passenger dropped onto it makes it fall off the screen.
  */
-class Flyer : public Enemy {
+class Flyer : public Enemy, public state::StateMachine<Flyer, EnemyContext> {
 public:
     Flyer(int index, const data::FlyerKind& kind, const data::FlyerPlacement& placement);
 
@@ -23,12 +24,7 @@ public:
     void accept(EnemyVisitor& visitor) const override;
 
     const data::FlyerKind& kind() const { return *kind_; }
-    const FlyerState& state() const { return *state_; }
 
-    /** Into `next` from the next frame on. */
-    void changeState(const FlyerState& next, const EnemyContext& context);
-    /** Into `next` and on in it in this frame. */
-    void continueIn(const FlyerState& next, const EnemyContext& context);
 
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
@@ -61,7 +57,6 @@ public:
 
 private:
     const data::FlyerKind* kind_;
-    const FlyerState* state_;
     units::Int16 startDelay_;
     units::Fixed vx_;
     int lastTarget_ = 1;

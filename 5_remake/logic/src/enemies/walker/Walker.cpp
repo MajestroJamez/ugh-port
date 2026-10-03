@@ -5,24 +5,14 @@
 namespace ugh::enemies::walker {
 
 Walker::Walker(int index, const data::WalkerKind& kind, const data::WalkerPlacement& placement)
-    : Enemy(index), kind_(&kind), state_(&Placed::instance), pad_(placement.pad()), vx_(placement.speed()) {
+    : Enemy(index), StateMachine(Placed::instance), kind_(&kind), pad_(placement.pad()), vx_(placement.speed()) {
     x_ = placement.x();
     y_ = placement.y();
 }
 
-void Walker::update(const EnemyContext& context) { state_->update(*this, context); }
+void Walker::update(const EnemyContext& context) { updateState(context); }
 
 void Walker::accept(EnemyVisitor& visitor) const { visitor.visit(*this); }
-
-void Walker::changeState(const WalkerState& next, const EnemyContext& context) {
-    state_ = &next;
-    next.enter(*this, context);
-}
-
-void Walker::continueIn(const WalkerState& next, const EnemyContext& context) {
-    changeState(next, context);
-    next.update(*this, context);
-}
 
 void Walker::turnAround() {
     vx_ = -vx_;

@@ -2,18 +2,13 @@
 #pragma once
 
 #include "enemies/EnemyContext.hpp"
+#include "state/State.hpp"
 
 namespace ugh::enemies::blower {
 
 class Blower;
 
-/** A state of the blower (State): blowing, or stunned. */
-class BlowerState {
-public:
-    virtual ~BlowerState() = default;
-    virtual const char* name() const = 0;
-    virtual void enter(Blower&, const EnemyContext&) const {}
-    virtual void update(Blower& blower, const EnemyContext& context) const = 0;
-};
+/** A state of the blower: blowing, or stunned. */
+using BlowerState = state::State<Blower, EnemyContext>;
 
 }  // namespace ugh::enemies::blower

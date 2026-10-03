@@ -7,6 +7,7 @@
 #include "data/StandingPassengerPlacement.hpp"
 #include "passengers/Passenger.hpp"
 #include "passengers/standing/StandingState.hpp"
+#include "state/StateMachine.hpp"
 #include "units/Fixed.hpp"
 #include "units/Int16.hpp"
 
@@ -16,7 +17,7 @@ namespace ugh::passengers::standing {
  * The standing passenger: it waits on its pad until a copter with room touches it, hangs below the copter, and falls
  * where the pilot lets it go - onto a pad to stand there again, onto an enemy to stun it, or off the screen.
  */
-class StandingPassenger : public Passenger {
+class StandingPassenger : public Passenger, public state::StateMachine<StandingPassenger, PassengerContext, StandingState> {
 public:
     StandingPassenger(int index, const data::StandingPassengerPlacement& placement);
 
@@ -24,12 +25,7 @@ public:
     void accept(PassengerVisitor& visitor) const override;
 
     const data::PassengerKind& kind() const { return *kind_; }
-    const StandingState& state() const { return *state_; }
 
-    /** Into `next` from the next frame on: its entry action now, its update in the next frame. */
-    void changeState(const StandingState& next, const PassengerContext& context);
-    /** Into `next` and on in it in this frame. */
-    void continueIn(const StandingState& next, const PassengerContext& context);
 
     /** The copter it hangs below. */
     std::optional<int> carrier() const { return carrier_; }
@@ -63,7 +59,6 @@ public:
 
 private:
     const data::PassengerKind* kind_;
-    const StandingState* state_;
     std::optional<int> carrier_;
     units::Fixed dropSpeedX_;
     units::Int16 fallSpeed_;

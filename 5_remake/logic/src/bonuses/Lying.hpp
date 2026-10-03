@@ -10,10 +10,9 @@ class Lying : public BonusState {
 public:
     static const Lying instance;
 
-    /** The item landed: it lies for a while. */
-    static void start(BonusItem& item);
-
     const char* name() const override { return "Lying"; }
+    /** It landed: it lies for a while. */
+    void enter(BonusItem& item, const world::PlayContext& context) const override;
     void update(BonusItem& item, const world::PlayContext& context) const override;
 };
 

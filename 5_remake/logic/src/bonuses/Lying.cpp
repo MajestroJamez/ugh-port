@@ -13,8 +13,7 @@ constexpr units::Int16 TOUCH_HALF_SIZE = 3;   // pixels: a copter touches the 6 
 
 const Lying Lying::instance{};
 
-void Lying::start(BonusItem& item) {
-    item.changeState(instance);
+void Lying::enter(BonusItem& item, const world::PlayContext&) const {
     item.startLying(LYING_TIME);
 }
 

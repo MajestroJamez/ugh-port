@@ -355,3 +355,8 @@ a žádný soubor nad 200 řádků.
   kde `GameFile` najde `UGH.EXE`). `5_remake/logic/build.ps1` staví knihovnu a testy jednotek, `6_verification/build.ps1`
   přidá logiku přes `add_subdirectory`, pole replayů a `replay_check`: 162 testů zelených. README v kořeni a v každé
   číslované složce. Další: **N9b etapa 1**.
+- 2026-10-03: N9b etapa 1 hotová - šablony `state/State<Entity, Context>` a `state/StateMachine<Entity, Context>`
+  (entita z automatu dědí, `changeState` / `continueIn` / `state()` jen tam) místo 7 kopií; `*State` jsou aliasy,
+  jen `WalkerState` a `StandingState` zůstaly potomky (pomocník omráčení, `falls()`). Bonus dostal `enter` (`Lying`).
+  Stavy `changeState` dál volají - kontrola „grep mimo `state/`“ tedy platí pro definice. 38 testů + 161 replayů
+  zelených. Další: **N9b etapa 2**.
