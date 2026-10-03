@@ -31,8 +31,8 @@ file(GLOB UGH_CHECK_SOURCES CONFIGURE_DEPENDS tools/replay_check/*.cpp)
 add_executable(replay_check ${UGH_CHECK_SOURCES})
 target_link_libraries(replay_check PRIVATE ugh_logic_replay)
 
-set(UGH_DATA "${CMAKE_CURRENT_SOURCE_DIR}/../assets/sim/ugh-data.ugd" CACHE FILEPATH "Game data (.\\gradlew.bat :extractor:run)")
-set(UGH_REPLAYS "${CMAKE_CURRENT_SOURCE_DIR}/../verify/build/replays/ugr1" CACHE PATH "Golden replays UGR 1 (.\\gradlew.bat :verify:replays)")
+set(UGH_DATA "${CMAKE_CURRENT_SOURCE_DIR}/../assets/logic/ugh-data.ugd" CACHE FILEPATH "Game data (.\\gradlew.bat :extractor:run)")
+set(UGH_REPLAYS "${CMAKE_CURRENT_SOURCE_DIR}/../verify/build/replays" CACHE PATH "Golden replays UGR 1 (.\\gradlew.bat :verify:replays)")
 enable_testing()
 
 # tests by module (they need the data)

@@ -30,21 +30,8 @@ void Walker::turnAround() {
 }
 
 void Walker::turnTo(const world::Copter& copter) {
-    if (x_ < copter.x()) {
-        facing_ = world::Facing::Right;
-        headRight();
-    } else {
-        facing_ = world::Facing::Left;
-        headLeft();
-    }
-}
-
-void Walker::headLeft() {
-    if (vx_ >= units::Fixed()) vx_ = -vx_;
-}
-
-void Walker::headRight() {
-    if (vx_ < units::Fixed()) vx_ = -vx_;
+    facing_ = x_ < copter.x() ? world::Facing::Right : world::Facing::Left;
+    vx_ = headed(vx_, facing_);
 }
 
 }  // namespace ugh::enemies::walker

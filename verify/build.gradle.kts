@@ -26,7 +26,7 @@ tasks.withType<Test>().configureEach {
     testLogging { showStandardStreams = true }
 }
 
-// Golden replays ("UGR 0") for reimplementations, into build/replays; the full test run records them too.
+// Golden replays ("UGR 1") for the C++ logic, into build/replays; the full test run records them too.
 tasks.register<Test>("replays") {
     description = "Records the golden replays in lockstep with the original into build/replays."
     group = "verification"

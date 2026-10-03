@@ -87,9 +87,8 @@ fun extractAll(exe: Exe, out: File): Manifest {
     // DGROUP initialized image, referenced by original offsets during the faithful port
     File(out, "dgroup.bin").writeBytes(exe.slice(Layout.DGROUP, 0, Layout.DGROUP_INIT_SIZE))
 
-    // everything the game logic needs, for the C++ core
-    Sim.write(Sim.blocks(exe), File(out, "sim/ugh-sim.bin"))
-    LogicData.write(exe, File(out, "sim/ugh-data.ugd"))
+    // everything the game logic needs, for the C++ logic (logic/)
+    LogicData.write(exe, File(out, "logic/ugh-data.ugd"))
 
     val manifest = Manifest(sha256(exe.bytes), infos.size, levelSet.levels.size, levelSet.onePlayer.size, levelSet.team.size, intro, adlx)
     File(out, "manifest.json").writeText(json.encodeToString(manifest))

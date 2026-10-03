@@ -69,6 +69,14 @@ TEST(a_minimal_file_lacks_the_level_orders) {
     CHECK_EQUAL(std::string("a level order missing"), readError(VALID));
 }
 
+TEST(extra_spaces_are_allowed_and_an_order_only_once) {
+    CHECK_EQUAL(std::string("a level order missing"), readError(std::string(VALID) + "animation  a   frames=1  \n"));
+    std::string level = "level 0 toDeliver=1 wind=none start0=0,0 start1=0,0 water=0 waterSpeed=0\n";
+    for (int row = 0; row < 192; row++) level += "mask " + std::string(80, '0') + "\n";
+    CHECK_EQUAL(std::string("line 199 (order): a second order of oneplayer"),
+                readError(std::string(VALID) + level + "order oneplayer=0\norder oneplayer=0\n"));
+}
+
 TEST(broken_files_are_refused_with_the_line) {
     CHECK_EQUAL(std::string("not a UGD 1 file"), readError("UGD 2\n"));
     CHECK_EQUAL(std::string("line 2 (bogus): unknown record"), readError("UGD 1\nbogus x=1\n"));

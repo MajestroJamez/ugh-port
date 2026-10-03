@@ -23,8 +23,12 @@ public:
     /** At the start of an attempt: in the air at x, y, empty, the rotor at its first sprite. */
     void placeAtStart(units::Fixed x, units::Fixed y, int firstRotorSprite);
 
-    Controls& controls() { return controls_; }
+    /** The keys its pilot holds. */
     const Controls& controls() const { return controls_; }
+    /** The pilot pressed (true) or released a key. */
+    void setKey(data::PlayerKey key, bool held) { controls_.set(key, held); }
+    /** A new attempt: no key is held. */
+    void releaseKeys() { controls_ = Controls{}; }
 
     // ------------------------------------------------------------ where it is
 

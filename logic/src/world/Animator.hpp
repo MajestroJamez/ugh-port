@@ -14,9 +14,9 @@ namespace ugh::world {
  */
 class Animator {
 public:
-    /** From the start: the next step shows frame 0. */
+    /** From the start: the next step (it is due at once) shows frame 0. */
     void restart() {
-        frame_ = -1;
+        frame_ = BEFORE_FIRST_FRAME;
         delay_.start(1);
     }
 
@@ -49,6 +49,8 @@ public:
     units::Int16 delay() const { return delay_.remaining(); }
 
 private:
+    static constexpr int BEFORE_FIRST_FRAME = -1;
+
     int frame_ = 0;
     units::Countdown delay_;
 };

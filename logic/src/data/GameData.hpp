@@ -56,7 +56,7 @@ private:
     WalkerKind walkerKind_;
     BlowerKind blowerKind_;
     TreeKind treeKind_;
-    std::vector<std::unique_ptr<LevelDefinition>> levels_;   // by id
+    std::vector<std::unique_ptr<LevelDefinition>> levels_;   // in the order of the file (the orders point into it)
     std::array<std::vector<const LevelDefinition*>, 2> order_;   // one player, team
     std::optional<Rules> rules_;
     SpriteIds sprites_;

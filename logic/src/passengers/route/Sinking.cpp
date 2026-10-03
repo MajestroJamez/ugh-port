@@ -2,15 +2,10 @@
 
 #include "passengers/route/Gone.hpp"
 #include "passengers/route/RoutePassenger.hpp"
+#include "passengers/route/Splash.hpp"
 #include "world/Screen.hpp"
 
 namespace ugh::passengers::route {
-
-namespace {
-
-constexpr units::Speed GRAVITY = units::Speed::fromRaw(39);   // 1/64 Fixed per frame, per frame
-
-}  // namespace
 
 const Sinking Sinking::instance{};
 
@@ -23,7 +18,7 @@ void Sinking::enter(RoutePassenger& passenger, const PassengerContext&) const {
 void Sinking::update(RoutePassenger& passenger, const PassengerContext& context) const {
     passenger.animate();
     passenger.show(*passenger.kind().standing);
-    units::Speed speed = passenger.swimSpeed() + GRAVITY;
+    units::Speed speed = passenger.swimSpeed() + Splash::GRAVITY;
     passenger.setSwimSpeed(speed);
     units::Fixed y = passenger.y() + speed.perFrame();
     // compared unsigned, as the original does

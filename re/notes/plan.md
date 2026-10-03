@@ -4,9 +4,9 @@ Kontext a výsledky zkušebního průchodu: [phase4-modernization.md](phase4-mod
 Pravidla platná pro všechny kroky:
 
 - Fyzika a logika **přesně jako originál**. Kotlin port (`core/`) je jen reference a generátor testů, nepřepisuje se.
-- Testy jsou data: golden replays `UGR 0` (`verify/src/test/kotlin/ugh/verify/replay/`), každá nová
-  implementace musí projít všemi replayi pole po poli. Od kroku N3 sémantické `UGR 1` (pojmy hry, žádné adresy),
-  podle nich se ověřuje nové jádro `logic/`.
+- Testy jsou data: golden replays (`verify/src/test/kotlin/ugh/verify/replay/`), každá nová implementace musí projít
+  všemi replayi pole po poli. Od kroku N8 jen sémantické `UGR 1` (pojmy hry, žádné adresy; `UGR 0` zaniklo se
+  starým jádrem `sim/`), podle nich se ověřuje jádro `logic/`.
 - Herní data se necommitují (jen kód); C++ jádro čte data vytažená extractorem do `assets/`.
 - Nic viditelného na notebooku bez souhlasu (okno hry, editor se scénou, Blender); příkazy pro Jana jen PowerShell 5.1.
 - Na konci každého kroku: testy zelené, krátký zápis do tohoto souboru (sekce Stav), commit po Janově souhlasu.
@@ -265,3 +265,9 @@ Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků
 - 2026-10-03: krok N7 hotový - nepřátelé (flyer, walker, foukač, strom) jako samostatné třídy se stavy. **Všech 161
   replayů UGR 1 projde celých** (každé pole, každý snímek, stejná množina polí); `logic/build.ps1`: 32 testů + 161
   replayů, 16 s. Další: **krok N8**.
+- 2026-10-03: krok N8 hotový - nové jádro `logic/` je jediné: `sim/`, zápis `UGR 0`, řádky `B` (`StageRecorder`)
+  a `ugh-sim.bin` (`Sim.kt`) smazané; masky počítá `Masks.kt`, data jsou v `assets/logic/ugh-data.ugd`, replaye UGR 1
+  přímo ve `verify/build/replays`. C API má pohled pro vykreslení (`ugh_logic_get_view`), průvodce
+  `logic/README.md`, mapa na originál `logic-map.md`. `/code-review high`: 10 nálezů, všechny opravené. Kontroly
+  kap. 12 (grep, jedna třída na soubor, složka = namespace, závislosti jedním směrem) splněné. 35 testů + 161
+  replayů za 10 s. Další: **krok 10**.

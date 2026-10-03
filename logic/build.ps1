@@ -1,7 +1,7 @@
 # Builds the game logic with VS Build Tools 2026 (MSVC, CMake and Ninja of the Build Tools) and runs its tests and
 # the golden replays (CTest). Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\logic\build.ps1
-# Needs assets\sim\ugh-data.ugd (.\gradlew.bat :extractor:run) and verify\build\replays\ugr1 (.\gradlew.bat :verify:replays).
+# Needs assets\logic\ugh-data.ugd (.\gradlew.bat :extractor:run) and verify\build\replays (.\gradlew.bat :verify:replays).
 # -NoTest only builds.
 param([switch]$NoTest)
 

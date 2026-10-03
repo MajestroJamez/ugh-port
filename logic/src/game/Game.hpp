@@ -36,8 +36,8 @@ public:
     /** Events go to `listener` from now on. */
     void addListener(events::EventListener& listener) { events_.add(listener); }
 
-    /** A new game; the first step starts it. */
-    void newGame(const NewGameSettings& settings);
+    /** A new game; the first step starts it. False (and no game) when a setting is out of range. */
+    bool newGame(const NewGameSettings& settings);
 
     /** A scancode from the keyboard, between two frames. */
     void scancode(uint8_t code);

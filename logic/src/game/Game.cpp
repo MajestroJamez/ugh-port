@@ -1,14 +1,15 @@
 #include "game/Game.hpp"
 
-#include <string>
-
 #include "game/PlayFrame.hpp"
 
 namespace ugh::game {
 
 Game::Game(const data::GameData& data) : data_(data), keyboard_(data.keys()), flow_(*this) {}
 
-void Game::newGame(const NewGameSettings& settings) {
+bool Game::newGame(const NewGameSettings& settings) {
+    if (settings.players < 1 || settings.players > 2 || settings.firstLevel < 0 ||
+        settings.firstLevel >= data_.levelCount(settings.players) || settings.rainFloorRow < 0 || settings.rainFloorRow > 255)
+        return false;
     session_.emplace(data_.rules(), settings.players, settings.difficulty, settings.firstLevel,
                      world::RandomNumbers(settings.randomSeed));
     level_ = world::Level(settings.players);
@@ -17,12 +18,14 @@ void Game::newGame(const NewGameSettings& settings) {
     bonuses_.clear();
     level_.rain().setFloorRow(settings.rainFloorRow);
     keyboard_ = input::PcKeyboard(data_.keys());
+    diagnostics_.take();
     flow_.restart();
+    return true;
 }
 
 void Game::scancode(uint8_t code) {
     const data::KeyBinding::Action* action = keyboard_.deliver(code);
-    if (action) level_.copter(action->player).controls().set(action->key, action->press);
+    if (action) level_.copter(action->player).setKey(action->key, action->press);
 }
 
 bool Game::levelLoaded() const {
@@ -32,15 +35,12 @@ bool Game::levelLoaded() const {
 
 void Game::startGame() { session_->startGame(); }
 
+/** The level exists: the game starts at one (newGame checks it) and ends after the last (endAttempt). */
 void Game::startAttempt() {
-    const data::LevelDefinition* definition = data_.level(session_->players(), session_->levelNumber());
-    if (!definition) {
-        diagnostics_.report("no level " + std::to_string(session_->levelNumber()));
-        return;
-    }
-    level_.startAttempt(*definition, data_.sprites(), session_->random(), diagnostics_);
-    passengers_.load(*definition);
-    enemies_.load(*definition, data_);
+    const data::LevelDefinition& definition = *data_.level(session_->players(), session_->levelNumber());
+    level_.startAttempt(definition, data_.sprites(), session_->random(), diagnostics_);
+    passengers_.load(definition);
+    enemies_.load(definition, data_);
 }
 
 /** The play starts: the enemies, then the passengers get their first update before anything is shown; then nothing is shown. */

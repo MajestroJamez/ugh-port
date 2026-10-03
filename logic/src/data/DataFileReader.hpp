@@ -12,7 +12,7 @@
 namespace ugh::data {
 
 /**
- * Reads the game data in the format "UGD 1" (assets/sim/ugh-data.ugd, written by the extractor; described in
+ * Reads the game data in the format "UGD 1" (assets/logic/ugh-data.ugd, written by the extractor; described in
  * re/notes/phase2-data.md) and checks it, so that the logic needs no checks: the header, known records and keys,
  * names that exist, pad indexes inside their level, routes with a stop, complete masks, levels in both orders.
  */

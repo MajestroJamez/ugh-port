@@ -22,9 +22,9 @@ dokumentu) zapíšou odchylky od návrhu.
   V kroku N8 se smaže spolu s `UGR 0` a `UGHSIM01`.
 
 ```
-UGH.EXE ──► extractor (Kotlin) ──► assets/sim/ugh-data.ugd        UGD 1: pojmenovaná data
+UGH.EXE ──► extractor (Kotlin) ──► assets/logic/ugh-data.ugd        UGD 1: pojmenovaná data
                                             │
-originál v oracle + Kotlin port ──► verify ──► verify/build/replays/ugr1/*.ugr   UGR 1: vstupy + stav po snímcích
+originál v oracle + Kotlin port ──► verify ──► verify/build/replays/*.ugr   UGR 1: vstupy + stav po snímcích
                                             │
                        logic/ (C++) ◄───────┘   tools/replay_check: stejné vstupy → stejný stav, pole po poli
 ```
@@ -278,7 +278,7 @@ v [rewrite-audit.md](rewrite-audit.md), kap. 5).
 - Mrtvá pole: `passenger.startPad` (nikdo ho nečte), konstanty umístění nepřátel v replayi (`pad`, `startDelay` –
   jsou v datech).
 
-## 8. Formát dat UGD 1 (`assets/sim/ugh-data.ugd`)
+## 8. Formát dat UGD 1 (`assets/logic/ugh-data.ugd`)
 
 Text ASCII, jeden záznam na řádek: `<typ> [<jméno>] <klíč>=<hodnota> ...`, `#` komentář. Hodnoty desítkově,
 seznamy čárkou, rozsahy `a..b`. Všechny hodnoty jsou **už přepočtené** tak, jak je hra používá (pixely PC, snímky
@@ -325,7 +325,7 @@ order team=<id>,<id>,...
 - Loader v C++ kontroluje: hlavička, známé typy záznamů a klíče, odkazy na jména existují, indexy plošin v rozsahu
   levelu, trasa má aspoň jednu zastávku, maska 192 × 80 číslic, obě pořadí odkazují na existující levely.
 
-## 9. Formát replayů UGR 1 (`verify/build/replays/ugr1/*.ugr`)
+## 9. Formát replayů UGR 1 (`verify/build/replays/*.ugr`)
 
 ```
 UGR 1
@@ -464,7 +464,7 @@ lokálně nebo ve větvi).
   z paměti (plošiny, start vrtulníků, voda, vítr, umístění a rychlosti nepřátel, poloha stojícího cestujícího, trasy
   a bonusy stromů) s UGD 1; masky s dnešním `MASK`.
 - Popis formátu do `phase2-data.md` (nová sekce), aktualizovat kap. 8 tady.
-- **Hotovo když** `.\gradlew.bat :extractor:run` vytvoří `assets/sim/ugh-data.ugd`, test je zelený pro všech 81
+- **Hotovo když** `.\gradlew.bat :extractor:run` vytvoří `assets/logic/ugh-data.ugd`, test je zelený pro všech 81
   levelů a soubor jde přečíst okem (ukázka levelu 1 v `phase2-data.md`).
 
 ### N3 – Replaye UGR 1
@@ -472,7 +472,7 @@ lokálně nebo ve větvi).
 - `verify/.../replay/SemanticProjection.kt`: paměť originálu → pole UGR 1 podle kap. 9 (jména z `Names.kt`, významy
   sdílených slov podle stavu, pravidlo úplnosti jako tabulka po stavech podle výsledku N1). `ReplayWriter` umí
   `UGR 1` (bez `w=` a `B`); `GoldenReplayTest` píše z jednoho běhu oba formáty (`replays/*.ugr` = UGR 0 pro `sim/`,
-  `replays/ugr1/*.ugr`), port a originál dál porovnává po snímcích.
+  `replays/*.ugr`), port a originál dál porovnává po snímcích.
 - `CheatPilot`: `injectHit` nahradit akcí (kap. 9); zásahy jen vrtulník, energie, životy. Pokrytí stavů úplné
   (případně vylepšit předstih `dropOnEnemy`).
 - Kontrola v testu: každé pole UGR 1 je v tabulce pravidel, žádný stav nemá `?`, žádná hodnota není adresa.
@@ -563,7 +563,7 @@ konstanty extractoru s adresou rutiny.
 ### N3 (2026-10-03)
 
 `SemanticProjection.kt` (pravidla jako tabulky po stavech), `ReplayWriter` s verzí 1, `GoldenReplayTest` píše z jednoho
-běhu `replays/*.ugr` (UGR 0) i `replays/ugr1/*.ugr` (UGR 1, 90 MB) a hlídá shodu projekce originálu a portu, žádné
+běhu `replays/*.ugr` (UGR 0) i `replays/ugr1/*.ugr` (UGR 1, 90 MB; od N8 jen UGR 1 přímo v `replays/`) a hlídá shodu projekce originálu a portu, žádné
 adresy ani nepojmenované stavy a jen povolené zásahy. `CheatPilot`: `injectHit` nahrazen `dropOnFlyer` /
 `grabForFlyer`; pokrytí stavů úplné. Odchylky od návrhu: pole entit i ve fázi `setup`; stavy flyera, walkera, blowera
 a stromu jsou jen mezi snímky viditelné stavy (Placed se objeví jen před prvním updatem); `difficulty` jménem.
@@ -609,3 +609,22 @@ Falling; `walker/` Placed, Walking, Watching, Charging, Recovering, Stunned; `bl
 každé pole, stejná množina polí) hned po napojení nepřátel; CTest 162 testů za 16 s. `replay_check` už má jen
 `--continue`. 32 testů (scénáře flyer, walker, foukač, strom). Odchylka od návrhu: každý druh nepřítele má vlastní
 základ stavu (`FlyerState` …) místo jednoho `EnemyState`, takže stav dostane rovnou svou třídu nepřítele.
+
+### N8 (2026-10-03)
+
+Hotovo podle kap. 12: všech 161 replayů projde celých; testy po modulech (35, včetně C API) a `build.ps1` zelené.
+Grep v `logic/src`: žádné `DGROUP`, `113b`, `throw`, `try`, `dynamic_cast`, `typeid`, vlastní `template`, `#define`,
+`std::function`, `co_await`; `0x` jen v bitových maskách, `static_cast<int16_t>` jen v samotném `units::Int16`;
+`-1` jen v C API (dohoda „nic“ pro C) a jako směr. Jedna třída na soubor, složka = namespace a závislosti jedním
+směrem zkontrolované skriptem. Pohled pro vykreslení `ugh_logic_get_view` (fáze, level, životy, skóre, energie, fade,
+voda, vrtulníky, sprity entit s bublinami, kapky) a testy C API. `/code-review high`: 10 nálezů (null definice levelu,
+mezery v UGD, dvojí pořadí levelů, diagnostika přes novou hru, pád nástroje na špatném replayi, spekulativní pole,
+znovu parsovaná pravidla, dvakrát konstanty dveří a gravitace plavce, dvakrát otočení nepřítele, komentář) - všechny
+opravené. Junior test (README, „Where to change what“): gravitace → `physics/CopterPhysics.cpp`; jak dlouho
+cestující volá → `passengers/route/Calling.hpp`; nová událost → `events/EventKind.hpp`, místo hlášení,
+`include/ugh_logic.h`; nové pole replaye → `replay/<Entita>Fields.cpp` a `SemanticProjection.kt`; nový druh
+nepřítele → `enemies/<druh>/`, `data/` (umístění), `EnemyFactory.cpp`; počet životů → `world/Session.hpp`.
+Smazáno: `sim/`, zápis UGR 0 a řádky `B` (`StageRecorder`), `ugh-sim.bin` (`Sim.kt`; masky počítá `Masks.kt`).
+`StateProjection` zůstal jen pro audit úplnosti stavu (`StateAudit`). Data se přesunula do
+`assets/logic/ugh-data.ugd`, replaye UGR 1 do `verify/build/replays`. Odchylky: `Game::newGame` vrací `false` pro
+nastavení mimo rozsah (místo kontrol jinde), `ugh_logic_step` před novou hrou vrací `GAME_OVER`.

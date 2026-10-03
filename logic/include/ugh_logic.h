@@ -17,7 +17,7 @@ extern "C" {
 
 typedef struct ugh_logic ugh_logic;
 
-/** Loads the game data (assets/sim/ugh-data.ugd). NULL on failure, the reason in err. */
+/** Loads the game data (assets/logic/ugh-data.ugd). NULL on failure, the reason in err. */
 ugh_logic* ugh_logic_create(const char* data_path, char* err, size_t err_size);
 void ugh_logic_destroy(ugh_logic* logic);
 
@@ -38,7 +38,7 @@ void ugh_logic_scancode(ugh_logic* logic, int scancode);
 
 enum { UGH_LOGIC_CONTINUE = 0, UGH_LOGIC_GAME_OVER = 1, UGH_LOGIC_ALL_LEVELS_DONE = 2 };
 
-/** One frame (70.086 Hz): UGH_LOGIC_CONTINUE while the game goes on. */
+/** One frame (70.086 Hz): UGH_LOGIC_CONTINUE while the game goes on (UGH_LOGIC_GAME_OVER before a new game). */
 int ugh_logic_step(ugh_logic* logic);
 
 /** What happened (ugh_logic_take_events). */
@@ -69,6 +69,62 @@ typedef struct {
 
 /** Calls back with the events since the last call (and forgets them). */
 void ugh_logic_take_events(ugh_logic* logic, void (*callback)(void* ctx, const ugh_logic_event* event), void* ctx);
+
+/* ------------------------------------------------------------------ what to draw */
+
+/** Where the game is. */
+enum {
+    UGH_LOGIC_PHASE_START = 0,          /* a new game before its first frame */
+    UGH_LOGIC_PHASE_BETWEEN_LEVELS,     /* the black screen before the first caption */
+    UGH_LOGIC_PHASE_CAPTION,            /* the caption of a level */
+    UGH_LOGIC_PHASE_SETUP,              /* the black screen before the play */
+    UGH_LOGIC_PHASE_PLAY                /* the play (also while it fades in and out) */
+};
+
+/** What a sprite on the screen is. */
+enum { UGH_LOGIC_ENTITY_PASSENGER = 1, UGH_LOGIC_ENTITY_ENEMY, UGH_LOGIC_ENTITY_BONUS_ITEM };
+
+/** A sprite of the level: positions are top left corners in 1/32 px; sprites are assets/sprites/NNN.png, -1 none. */
+typedef struct {
+    int kind;      /* UGH_LOGIC_ENTITY_... */
+    int index;     /* in its list (the events name it so); the slot of a bonus item */
+    int x, y;
+    int sprite;
+    int bubble;    /* a passenger's speech bubble, -1 none */
+} ugh_logic_entity;
+
+/** A copter. */
+typedef struct {
+    int x, y;            /* 1/32 px */
+    int rotor_sprite;
+    int cargo_look;      /* who sits in it (or hangs below), 0 nobody */
+    int destination;     /* the number of the pad its passenger wants to go to, 0 none, -1 a passenger hangs below */
+    int fare;
+} ugh_logic_copter;
+
+enum { UGH_LOGIC_MAX_ENTITIES = 40, UGH_LOGIC_RAINDROPS = 193 };
+
+/** Everything a frontend draws of a frame. */
+typedef struct {
+    int phase;              /* UGH_LOGIC_PHASE_... */
+    int level;              /* the number of the level in the order of the mode, from 0 */
+    int level_id;           /* the level in the data (its map), -1 before the first level is loaded */
+    int lives, multiplier;
+    unsigned score;
+    int energy;             /* 0 .. 23099 */
+    int fade;               /* 0 black .. 256 */
+    int water_level;        /* the water surface, 1/32 px */
+    int water_frame;        /* the animation of the surface, 0 .. 2 */
+    int copter_count;
+    ugh_logic_copter copters[2];
+    int entity_count;
+    ugh_logic_entity entities[UGH_LOGIC_MAX_ENTITIES];
+    int raindrop_count;     /* 0 without wind */
+    int raindrops[UGH_LOGIC_RAINDROPS][2];   /* x, y in pixels of a page 384 px wide (x >= 320 is off the screen) */
+} ugh_logic_view;
+
+/** Fills `view` with the state after the last step. */
+void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view);
 
 #ifdef __cplusplus
 }

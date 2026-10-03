@@ -25,6 +25,9 @@ namespace ugh::passengers::route {
  */
 class RoutePassenger : public Passenger {
 public:
+    /** From the copter's left edge to where a passenger gets in and out, in pixels. */
+    static constexpr units::Int16 COPTER_DOOR = 16;
+
     RoutePassenger(int index, const data::RoutePassengerPlacement& placement);
 
     void update(const PassengerContext& context) override;

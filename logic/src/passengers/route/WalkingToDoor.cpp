@@ -9,7 +9,6 @@ namespace {
 
 using units::Fixed;
 
-constexpr units::Int16 COPTER_DOOR = 16;   // from the copter's left edge to where the passenger gets out
 // where a quick delivery's bonus item drops: from the copter's top left corner, in pixels
 constexpr units::Int16 BONUS_DROP_X = 16, BONUS_DROP_Y = 10;
 
@@ -23,7 +22,7 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
     world::Copter& copter = context.play.level.copter(player);
     world::Session& session = context.play.session;
     copter.unload();
-    passenger.moveToX(copter.x() + Fixed::fromPixels(COPTER_DOOR - passenger.kind().box.x));
+    passenger.moveToX(copter.x() + Fixed::fromPixels(RoutePassenger::COPTER_DOOR - passenger.kind().box.x));
     uint32_t points = static_cast<uint32_t>(copter.fare().bits()) * static_cast<uint32_t>(session.multiplier());
     session.addScore(points);
     context.play.report({events::EventKind::PassengerPaid, player, passenger.index(), static_cast<int>(points)});

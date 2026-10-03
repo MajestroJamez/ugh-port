@@ -9,6 +9,7 @@
 #include "units/Fixed.hpp"
 #include "units/Int16.hpp"
 #include "world/Animator.hpp"
+#include "world/Facing.hpp"
 
 namespace ugh::enemies {
 
@@ -59,6 +60,12 @@ public:
     bool bounceFallingPassenger(const EnemyContext& context, bool showHit) const;
     /** A passenger stunned it: its score. */
     void scoreStun(units::Int16 score, const EnemyContext& context) const;
+
+    /** A speed turned to point towards `side` (its size stays). */
+    static units::Fixed headed(units::Fixed speed, world::Facing side) {
+        bool left = speed < units::Fixed();
+        return (side == world::Facing::Left) == left ? speed : -speed;
+    }
 
 protected:
     units::Fixed x_, y_;   // top left corner

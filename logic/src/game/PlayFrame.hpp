@@ -25,7 +25,7 @@ public:
     void run();
 
 private:
-    static constexpr uint8_t SCANCODE_ESC = 0x01, SCANCODE_P = 0x19;
+    static constexpr uint8_t SCANCODE_ESC = 1, SCANCODE_P = 25;   // the keys Esc and P of the PC keyboard
 
     const world::PlayContext& context_;
     input::PcKeyboard& keyboard_;

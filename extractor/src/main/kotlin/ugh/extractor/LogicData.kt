@@ -368,14 +368,14 @@ object LogicData {
         }
 
         /**
-         * The collision mask (Sim.mask): 192 rows of 320 px as 80 hex digits, the leftmost pixel in the highest bit.
+         * The collision mask (Masks): 192 rows of 320 px as 80 hex digits, the leftmost pixel in the highest bit.
          * The original's background page is 384 px wide, but the tiles cover only 0..319: the rest must be empty.
          */
         private fun mask(level: Level): List<String> {
-            val mask = Sim.mask(level, sprites)
-            return (0 until Sim.MASK_HEIGHT).map { y ->
-                for (x in MASK_WIDTH until Sim.MASK_WIDTH) check(!Sim.maskBit(mask, x, y)) { "level ${level.record.hex()}: solid pixel at x $x" }
-                (0 until MASK_WIDTH / 8).joinToString("") { "%02x".format(mask[y * Sim.MASK_ROW_BYTES + it].toInt() and 0xff) }
+            val mask = Masks.mask(level, sprites)
+            return (0 until Masks.HEIGHT).map { y ->
+                for (x in MASK_WIDTH until Masks.WIDTH) check(!Masks.bit(mask, x, y)) { "level ${level.record.hex()}: solid pixel at x $x" }
+                (0 until MASK_WIDTH / 8).joinToString("") { "%02x".format(mask[y * Masks.ROW_BYTES + it].toInt() and 0xff) }
             }
         }
 

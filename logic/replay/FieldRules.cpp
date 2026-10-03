@@ -4,19 +4,21 @@
 
 namespace ugh::replay {
 
-std::set<std::string> FieldRules::fieldsOf(const std::string& state) const {
-    std::set<std::string> fields;
-    for (const Rule& rule : rules_) {
+FieldRules::FieldRules(const std::vector<Rule>& rules) {
+    for (const Rule& rule : rules) {
         std::istringstream states(rule.states);
-        std::string s;
-        bool applies = false;
-        while (states >> s) applies = applies || s == state;
-        if (!applies) continue;
-        std::istringstream names(rule.fields);
-        std::string f;
-        while (names >> f) fields.insert(f);
+        std::string state;
+        while (states >> state) {
+            std::istringstream names(rule.fields);
+            std::string field;
+            while (names >> field) fields_[state].insert(field);
+        }
     }
-    return fields;
+}
+
+const std::set<std::string>& FieldRules::fieldsOf(const std::string& state) const {
+    auto it = fields_.find(state);
+    return it == fields_.end() ? none_ : it->second;
 }
 
 }  // namespace ugh::replay

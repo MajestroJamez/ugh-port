@@ -11,11 +11,6 @@
 
 namespace ugh::tool {
 
-/** What to check. */
-struct CheckOptions {
-    bool continueAfterMismatch = false;   // count all mismatches (for statistics) instead of stopping at the first
-};
-
 /**
  * Plays a golden replay "UGR 1" on the logic: tick 0 gives the new game's settings, every later tick is one step of
  * the logic with the recorded scancodes and the test pilot's interventions (I lines, through Cheats), and after every
@@ -23,7 +18,14 @@ struct CheckOptions {
  */
 class ReplayCheck {
 public:
-    ReplayCheck(const data::GameData& data, const CheckOptions& options, ReplayReport& report)
+    /** What to check. */
+    struct Options {
+        bool continueAfterMismatch = false;   // count all mismatches (for statistics) instead of stopping at the first
+    };
+
+    using Tick = ReplayFile::Tick;
+
+    ReplayCheck(const data::GameData& data, const Options& options, ReplayReport& report)
         : data_(data), options_(options), report_(report) {}
 
     /** Plays the file; false when it cannot be read (the reason is on stderr). */
@@ -33,7 +35,7 @@ private:
     static constexpr size_t RECENT_TICKS = 5;
 
     const data::GameData& data_;
-    const CheckOptions& options_;
+    const Options& options_;
     ReplayReport& report_;
     std::deque<std::string> recent_;   // the scancodes of the last ticks, for the report
 
@@ -43,6 +45,9 @@ private:
     void apply(game::Game& game, const Tick& tick);
     void intervene(game::Game& game, const Tick& tick);
     void diagnostics(game::Game& game, long long tick);
+
+    /** A whole number in `text`; false when it is not one. */
+    static bool number(const std::string& text, int& out, int base = 10);
 };
 
 }  // namespace ugh::tool

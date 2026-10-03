@@ -10,20 +10,21 @@ import ugh.core.hw.MzLoader
 import ugh.extractor.Exe
 import ugh.extractor.Levels
 import ugh.extractor.LogicData
+import ugh.extractor.Masks
 import ugh.extractor.Names
-import ugh.extractor.Sim
 import ugh.extractor.UgdRecord
 import java.io.File
 
 /**
  * The game data for the C++ logic (format UGD 1, [LogicData]) against the port: every level of both modes is loaded
  * by the port's level load (113b:3976) and what it put into memory - pads, copter starts, water, wind, passengers,
- * routes, enemies - must be what the data file says, already converted. The masks must be the background pages.
+ * routes, enemies - must be what the data file says, already converted. The masks must be the background pages
+ * (the 320 px of the screen; the page is 384 px wide and empty beyond).
  */
 class LogicDataTest {
     private val exe = File(System.getProperty("ugh.exe")).readBytes()
     private val levelSet = Levels.extract(Exe(exe))
-    private val file = File(System.getProperty("ugh.out"), "sim/ugh-data.ugd").also { LogicData.write(Exe(exe), it) }
+    private val file = File(System.getProperty("ugh.out"), "logic/ugh-data.ugd").also { LogicData.write(Exe(exe), it) }
     private val records = LogicData.read(file)
 
     /** The records of each level: its `level` record and the ones after it up to the next level. */
@@ -58,15 +59,14 @@ class LogicDataTest {
 
     @Test
     fun `the masks are the background pages`() {
-        val masks = Sim.read(File(System.getProperty("ugh.out"), "sim/ugh-sim.bin").also { Sim.write(Sim.blocks(Exe(exe)), it) })
-            .filter { it.name == "MASK" }.associate { it.off to it.data }
+        val masks = Masks.forLevels(Exe(exe))
         for ((id, level) in levelSet.levels.withIndex()) {
             val rows = levels[id].filter { it.type == "mask" }.map { it.name!! }
             assertEquals(192, rows.size, "mask rows of level $id")
             val mask = masks.getValue(level.record)
-            for (y in 0 until Sim.MASK_HEIGHT) for (x in 0 until Sim.MASK_WIDTH) {
+            for (y in 0 until Masks.HEIGHT) for (x in 0 until Masks.WIDTH) {
                 val solid = x < LogicData.MASK_WIDTH && (rows[y].substring(x / 4, x / 4 + 1).toInt(16) and (8 shr (x and 3))) != 0
-                assertEquals(Sim.maskBit(mask, x, y), solid, "level $id pixel $x, $y")
+                assertEquals(Masks.bit(mask, x, y), solid, "level $id pixel $x, $y")
             }
         }
     }

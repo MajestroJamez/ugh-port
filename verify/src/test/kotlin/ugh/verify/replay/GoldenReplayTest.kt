@@ -9,7 +9,7 @@ import ugh.core.game.playGame
 import ugh.core.hw.Memory
 import ugh.extractor.Exe
 import ugh.extractor.Levels
-import ugh.extractor.Sim
+import ugh.extractor.Masks
 import ugh.oracle.OriginalUgh
 import ugh.verify.CheatPilot
 import ugh.verify.Lockstep
@@ -19,7 +19,7 @@ import java.security.MessageDigest
 import java.util.concurrent.Executors
 
 /**
- * Records golden replays (format "UGR 0", see [ReplayWriter]) in lockstep with the original: every level of
+ * Records golden replays (format "UGR 1", see [ReplayWriter]) in lockstep with the original: every level of
  * both modes entered by its password (F2 in the menu), driven by input-only pilots or the cheating pilot (its
  * memory writes are recorded as injections), so a reimplementation can replay the keys and compare the state
  * tick by tick. Every frame also checks that the projection of the original's memory equals the port's.
@@ -30,9 +30,8 @@ class GoldenReplayTest {
     private val levels = Levels.extract(Exe(exe))
     private val outDir = File(System.getProperty("ugh.replays"))
 
-    /** The data export of the extractor (format UGHSIM01), read back like the C++ core reads it. */
-    private val simFile = File(System.getProperty("ugh.out"), "sim/ugh-sim.bin").also { Sim.write(Sim.blocks(Exe(exe)), it) }
-    private val masks = Sim.read(simFile).filter { it.name == "MASK" }.associate { it.off to it.data }
+    /** The collision mask of each level (by its record), as the extractor computes it for the game data. */
+    private val masks = Masks.forLevels(Exe(exe))
 
     /** [level] 0-based; [difficulty]: 0 easy, 1 medium (the menu's default), 2 hard. */
     data class Spec(val name: String, val seed: Long, val frames: Long, val level: Int = 0, val team: Boolean = false,
@@ -73,28 +72,20 @@ class GoldenReplayTest {
         if (team) Pilot(ugh, seed + 1000, player = 1).attachTo(lockstep)
 
         val audit = StateAudit()
+        // the projection of the memory: the audit of the state's completeness watches what it reads (StateAudit)
         val original = StateProjection(audit.reading { seg, off -> ugh.machine.read16(seg, off) })
-        val port = StateProjection { seg, off -> lockstep.portMem.read16(seg, off) }
         val semanticOriginal = SemanticProjection { seg, off -> ugh.machine.read16(seg, off) }
         val semanticPort = SemanticProjection { seg, off -> lockstep.portMem.read16(seg, off) }
         val meta = linkedMapOf(
-            "exe-sha256" to exeSha256, "start" to "newgame", "level" to "$level", "password" to (password ?: "NONE"),
-            "players" to if (team) "2" else "1", "difficulty" to "$difficulty",
-            "pilot" to if (cheat) "cheat-pilot" else "random-keys", "seed" to "$seed",
-        )
-        val semanticMeta = linkedMapOf(
             "exe-sha256" to exeSha256, "level" to "$level", "players" to if (team) "2" else "1",
             "difficulty" to listOf("easy", "medium", "hard")[difficulty],
             "pilot" to if (cheat) "cheat-pilot" else "random-keys", "seed" to "$seed",
         )
         val file = File(outDir, "$name.ugr")
-        val semanticFile = File(outDir, "ugr1/$name.ugr")
         var semanticMismatches = 0
         var firstSemanticMismatch: String? = null
         val semanticProblems = LinkedHashSet<String>()
-        var projectionMismatches = 0
         val unknownStates = ArrayList<String>()
-        var firstMismatch: String? = null
         var end: GameEnd? = null
         val states = HashSet<String>()
         // state handlers that ran (inside a frame: most "Start..." handlers hand over before the frame ends)
@@ -107,32 +98,20 @@ class GoldenReplayTest {
         val maskRecords = HashSet<Int>()
         val probe = ProbeStats().also { it.attachTo(ugh) }
         var lastPhase = ""
-        ReplayWriter(file, meta).use { writer -> ReplayWriter(semanticFile, semanticMeta, version = 1).use { semanticWriter ->
-            writer.tick(0, 0, emptyList(), original.project("start"))
-            semanticWriter.tick(0, 0, emptyList(), semanticOriginal.project("start"))
+        ReplayWriter(file, meta).use { writer ->
+            writer.tick(0, emptyList(), semanticOriginal.project("start"))
             val keys = ArrayList<Int>()
             var pending: Map<String, String>? = null
-            var semanticPending: Map<String, String>? = null
-            var pendingWait = 0
             var pendingInject = emptyMap<String, String>()
-            var semanticPendingInject = emptyMap<String, String>()
-            var pendingStages = emptyMap<String, Map<String, String>>()
-            val stages = StageRecorder(ugh).also { it.attach() }
             lockstep.onKey += { keys += it }
             // runs first at every boundary: the previous frame's keys are complete, the new frame just ended
             lockstep.atBoundary.add(0) {
                 pending?.let {
-                    writer.tick(writer.ticks, pendingWait, keys.toList(), it)
-                    for ((stage, fields) in pendingStages) writer.before(stage, fields)
+                    writer.tick(writer.ticks, keys.toList(), it)
                     writer.inject(pendingInject)
                     if (pendingInject.isNotEmpty()) injections++
                 }
-                semanticPending?.let {
-                    semanticWriter.tick(semanticWriter.ticks, 0, keys.toList(), it)
-                    semanticWriter.inject(semanticPendingInject)
-                }
                 pendingInject = emptyMap()
-                semanticPendingInject = emptyMap()
                 keys.clear()
                 val phase = StateProjection.phaseOfPort()
                 // the collision mask: entering the level play and every 64th frame (bit 7 of the background never changes)
@@ -143,9 +122,7 @@ class GoldenReplayTest {
                 }
                 lastPhase = phase
                 audit.frame(lockstep.portMem.ram, ugh.machine.cpu.ss shl 4, phase)
-                val o = original.project(phase)
-                val p = port.project(phase)
-                for ((k, v) in o) {
+                for ((k, v) in original.project(phase)) {
                     if (k.startsWith("object.") && k.endsWith(".kind")) states += "object.$v"
                     if (v.startsWith("?")) unknownStates += "frame ${lockstep.frames}: $k=$v"
                 }
@@ -160,49 +137,28 @@ class GoldenReplayTest {
                     if (firstSemanticMismatch == null) firstSemanticMismatch = "frame ${lockstep.frames}: " +
                         so.keys.union(sp.keys).filter { so[it] != sp[it] }.joinToString { "$it original ${so[it]} port ${sp[it]}" }
                 }
-                semanticPending = so
-                if (o["game.levelDone"] == "1" && pending?.get("game.levelDone") == "0") levelsDone++
-                if (o != p) {
-                    projectionMismatches++
-                    if (firstMismatch == null) firstMismatch = "frame ${lockstep.frames}: " +
-                        o.keys.union(p.keys).filter { o[it] != p[it] }.joinToString { "$it original ${o[it]} port ${p[it]}" }
-                }
-                pending = o
-                pendingWait = lockstep.waitingIn()
-                pendingStages = stages.frameDone()
+                if (so["game.levelDone"] == "1" && pending?.get("game.levelDone") == "0") levelsDone++
+                pending = so
             }
             // runs last at every boundary: what the pilots poked into the state is an injection
             lockstep.atBoundary += {
                 val before = pending
                 if (before != null && cheat) {
-                    val after = original.project(before.getValue("game.phase"))
-                    val injected = after.filter { before[it.key] != it.value }
-                    if (injected.isNotEmpty()) pendingInject = injected
-                }
-                val semanticBefore = semanticPending
-                if (semanticBefore != null && cheat) {
-                    val after = semanticOriginal.project(semanticBefore.getValue("game.phase"))
-                    val injected = after.filter { semanticBefore[it.key] != it.value } +
-                        semanticBefore.keys.filter { it !in after }.associateWith { "~" }
+                    val after = semanticOriginal.project(before.getValue("game.phase"))
+                    val injected = after.filter { before[it.key] != it.value } + before.keys.filter { it !in after }.associateWith { "~" }
                     for (k in injected.keys) if (!SemanticProjection.INJECTABLE.matches(k)) semanticProblems += "injection of $k"
-                    if (injected.isNotEmpty()) semanticPendingInject = injected
+                    if (injected.isNotEmpty()) pendingInject = injected
                 }
             }
             lockstep.run { end = playGame() }
-            pending?.let {
-                writer.tick(writer.ticks, pendingWait, keys.toList(), it)
-                for ((stage, fields) in pendingStages) writer.before(stage, fields)
-            }
-            semanticPending?.let { semanticWriter.tick(semanticWriter.ticks, 0, keys.toList(), it) }
-        } }
+            pending?.let { writer.tick(writer.ticks, keys.toList(), it) }
+        }
         check(lockstep.mismatchCount == 0) { "${lockstep.mismatchCount} lockstep mismatches: ${lockstep.mismatches.firstOrNull()}" }
-        check(projectionMismatches == 0) { "$projectionMismatches projection mismatches, first $firstMismatch" }
         check(unknownStates.isEmpty()) { "state handlers without a name: ${unknownStates.take(3)}" }
         check(semanticMismatches == 0) { "$semanticMismatches semantic projection mismatches, first $firstSemanticMismatch" }
         check(semanticProblems.isEmpty()) { "semantic state: ${semanticProblems.take(5)}" }
         check(probe.outsideSolid == 0L) { "collision probe found solid pixels outside the background page: ${probe.outsideSolid} in rows ${probe.solidRows}" }
         problems += readBackProblems(file)
-        problems += readBackProblems(semanticFile).map { "UGR 1: $it" }
         val summary = "replay $name: ${lockstep.frames} frames, end $end, levels done $levelsDone, " +
             "injections $injections, ${file.length() / 1024} kB" + (cheatPilot?.let { ", pilot ${it.actions}" } ?: "")
         return Result(spec, file, lockstep.frames, end, problems.map { "$name: $it" }, states, levelsDone, injections, summary, audit, maskRecords, probe)
@@ -220,9 +176,9 @@ class GoldenReplayTest {
         val page = mem.read16(Game.CODE, Game.CS_BACK_PAGE)
         var differences = 0
         var first: String? = null
-        for (y in 0 until Sim.MASK_HEIGHT) for (x in 0 until Sim.MASK_WIDTH) {
+        for (y in 0 until Masks.HEIGHT) for (x in 0 until Masks.WIDTH) {
             val solid = mem.vga.planes[x and 3][(page + y * 0x60 + (x shr 2)) and 0xffff].toInt() and 0x80 != 0
-            if (solid != Sim.maskBit(mask, x, y)) { differences++; if (first == null) first = "x $x y $y: page $solid" }
+            if (solid != Masks.bit(mask, x, y)) { differences++; if (first == null) first = "x $x y $y: page $solid" }
         }
         return if (differences == 0) null else "collision mask of level record 0x%04x: %d pixels differ, first %s".format(record, differences, first)
     }
@@ -266,7 +222,7 @@ class GoldenReplayTest {
         if (ticks.map { it.tick } != (0L until ticks.size).toList()) problems += "tick numbers not consecutive"
         if (!ticks.all { it.state["game.level"] != null && it.state["game.phase"] != null }) problems += "tick without level / phase"
         val play = ticks.filter { it.state["game.phase"] == "play" }
-        if (play.size <= 100 || !play.all { it.state["copter.0.xf"] != null || it.state["copter.0.x"] != null }) problems += "play ticks: ${play.size}"
+        if (play.size <= 100 || !play.all { it.state["copter.0.x"] != null }) problems += "play ticks: ${play.size}"
         return problems
     }
 

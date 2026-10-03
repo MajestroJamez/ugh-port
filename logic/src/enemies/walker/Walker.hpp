@@ -62,9 +62,6 @@ private:
     world::Facing facing_ = world::Facing::Left;
     units::Countdown watchTime_, stunTime_;
     units::Int16 chargeSpeed_;
-
-    void headLeft();
-    void headRight();
 };
 
 }  // namespace ugh::enemies::walker

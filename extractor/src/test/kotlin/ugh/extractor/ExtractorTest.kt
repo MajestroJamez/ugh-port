@@ -62,19 +62,14 @@ class ExtractorTest {
         assertEquals(Layout.DGROUP_INIT_SIZE.toLong(), File(dir, "dgroup.bin").length())
     }
 
-    /** The collision masks themselves are checked against the background page of the port in :verify. */
+    /** The values themselves are checked against the port's level load in :verify (LogicDataTest). */
     @Test
-    fun `simulation data reads back`(@TempDir dir: File) {
-        val blocks = Sim.blocks(exe)
-        val file = File(dir, "ugh-sim.bin")
-        Sim.write(blocks, file)
-        val read = Sim.read(file)
-        assertEquals(blocks.map { Triple(it.name, it.seg, it.off) }, read.map { Triple(it.name, it.seg, it.off) })
-        assertTrue(blocks.zip(read).all { (a, b) -> a.data.contentEquals(b.data) })
-        assertEquals(listOf("DGROUP", "MAPS", "SPRITES"), read.take(3).map { it.name })
-        assertEquals(100 * 320, read[1].data.size)
-        val masks = read.filter { it.name == "MASK" }
-        assertEquals(Levels.extract(exe).levels.map { it.record }, masks.map { it.off })
-        assertTrue(masks.all { it.data.size == Sim.MASK_ROW_BYTES * Sim.MASK_HEIGHT })
+    fun `logic data reads back`(@TempDir dir: File) {
+        val file = File(dir, "ugh-data.ugd")
+        LogicData.write(exe, file)
+        val records = LogicData.read(file)
+        assertEquals(LogicData.records(exe).map { it.toString() }, records.map { it.toString() })
+        assertEquals(Levels.extract(exe).levels.size, records.count { it.type == "level" })
+        assertEquals(192 * records.count { it.type == "level" }, records.count { it.type == "mask" })
     }
 }

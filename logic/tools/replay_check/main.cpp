@@ -1,4 +1,4 @@
-// replay_check: the logic against golden replays "UGR 1" (verify/build/replays/ugr1).
+// replay_check: the logic against golden replays "UGR 1" (verify/build/replays).
 //
 //   replay_check [--continue] <ugh-data.ugd> <replay.ugr> ...
 #include <cstdio>
@@ -11,7 +11,7 @@
 
 
 int main(int argc, char** argv) {
-    ugh::tool::CheckOptions options;
+    ugh::tool::ReplayCheck::Options options;
     int i = 1;
     for (; i < argc && std::strncmp(argv[i], "--", 2) == 0; i++) {
         std::string option = argv[i];

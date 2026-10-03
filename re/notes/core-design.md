@@ -1,5 +1,8 @@
 # C++ jádro: cílový návrh (kroky 9b a 9c)
 
+> Historický dokument: jádro `sim/` nahradilo v krocích N1–N8 nové jádro `logic/` ([rewrite-design.md](rewrite-design.md));
+> `sim/` je od N8 smazané.
+
 Stav k 2026-10-03. Krok 9 převedl jádro z paměti DGROUP na typovaný model; logika je bit po bitu správná
 (161 replayů), ale kód ještě není takový, aby se v něm junior za chvíli vyznal. Tento dokument popisuje, jak má
 jádro vypadat, aby to šlo říct s čistým svědomím. Implementace podle něj, po etapách, s replayi zelenými po každé.

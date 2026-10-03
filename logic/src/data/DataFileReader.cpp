@@ -1,6 +1,7 @@
 #include "data/DataFileReader.hpp"
 
 #include <charconv>
+#include <optional>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -57,10 +58,14 @@ std::unique_ptr<const GameData> DataFileReader::parse(std::string_view text, std
         r.line = number;
         std::vector<std::string> words = split(line, ' ');
         r.type = words[0];
+        bool firstWord = true;
         for (size_t w = 1; w < words.size(); w++) {
+            if (words[w].empty()) continue;   // more spaces than one
             size_t eq = words[w].find('=');
+            bool name = firstWord;
+            firstWord = false;
             if (eq == std::string::npos) {
-                if (w != 1) {
+                if (!name) {
                     error = "line " + std::to_string(number) + ": a word without a value: " + words[w];
                     return nullptr;
                 }
@@ -305,7 +310,7 @@ bool DataFileReader::readKey(const Record& r) {
     if (!numbers(r, "codes", 0, codes) || !text(r, "key", key)) return false;
     if (codes.empty() || codes.size() > 2) return fail("a key of " + std::to_string(codes.size()) + " scancodes");
     for (int code : codes) {
-        if (code < 0 || code > 0xff) return fail("a scancode out of range");
+        if (code < 0 || code > 255) return fail("a scancode out of range");
         binding.scancodes.push_back(static_cast<uint8_t>(code));
     }
     if (key == "none") {
@@ -313,15 +318,16 @@ bool DataFileReader::readKey(const Record& r) {
     } else {
         static const char* const KEYS[] = {"up", "down", "left", "right", "fire"};
         KeyBinding::Action action;
-        int found = -1, press = 0;
+        std::optional<int> found;
+        int press = 0;
         for (int k = 0; k < 5; k++)
             if (key == KEYS[k]) found = k;
-        if (found < 0) return fail("unknown key " + key);
+        if (!found) return fail("unknown key " + key);
         if (!only(r, {"codes", "key", "player", "press"}) || !number(r, "player", action.player) ||
             !number(r, "press", press))
             return false;
         if (action.player != 0 && action.player != 1) return fail("a key of player " + std::to_string(action.player));
-        action.key = static_cast<PlayerKey>(found);
+        action.key = static_cast<PlayerKey>(*found);
         action.press = press != 0;
         binding.action = action;
     }
@@ -447,6 +453,7 @@ bool DataFileReader::readOrder(const Record& r) {
         const char* key = mode == 0 ? "oneplayer" : "team";
         if (!r.fields.count(key)) continue;
         if (!only(r, {key})) return false;
+        if (!data_->order_[mode].empty()) return fail(std::string("a second order of ") + key);
         std::vector<int> ids;
         if (!numbers(r, key, 0, ids)) return false;
         for (int id : ids) {

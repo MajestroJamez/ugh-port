@@ -1,6 +1,7 @@
 // Which fields an entity has in which state.
 #pragma once
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -18,13 +19,14 @@ public:
         const char* fields;
     };
 
-    explicit FieldRules(std::vector<Rule> rules) : rules_(std::move(rules)) {}
+    explicit FieldRules(const std::vector<Rule>& rules);
 
     /** The fields of an entity in `state`. */
-    std::set<std::string> fieldsOf(const std::string& state) const;
+    const std::set<std::string>& fieldsOf(const std::string& state) const;
 
 private:
-    std::vector<Rule> rules_;
+    std::map<std::string, std::set<std::string>> fields_;   // by state
+    std::set<std::string> none_;
 };
 
 }  // namespace ugh::replay

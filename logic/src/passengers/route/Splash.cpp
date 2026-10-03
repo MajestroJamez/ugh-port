@@ -10,7 +10,6 @@ namespace {
 using units::Speed;
 
 // in 1/64 Fixed per frame, per frame
-constexpr Speed GRAVITY = Speed::fromRaw(39);         // above the water
 constexpr Speed WATER_BRAKE = Speed::fromRaw(373);    // going down in the water
 constexpr Speed BUOYANCY = Speed::fromRaw(92);        // coming up
 constexpr Speed MAX_SPEED = Speed::fromRaw(6144);

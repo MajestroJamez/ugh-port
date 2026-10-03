@@ -21,13 +21,9 @@ void Flyer::continueIn(const FlyerState& next, const EnemyContext& context) {
     next.update(*this, context);
 }
 
-void Flyer::headLeft() {
-    if (vx_ >= units::Fixed()) vx_ = -vx_;
-}
+void Flyer::headLeft() { vx_ = headed(vx_, world::Facing::Left); }
 
-void Flyer::headRight() {
-    if (vx_ < units::Fixed()) vx_ = -vx_;
-}
+void Flyer::headRight() { vx_ = headed(vx_, world::Facing::Right); }
 
 int Flyer::takeNextTarget(int players) {
     int target = lastTarget_ ^ 1;

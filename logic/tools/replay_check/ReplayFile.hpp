@@ -9,20 +9,20 @@
 
 namespace ugh::tool {
 
-/** One tick of a replay: the state after it, the scancodes delivered after it, and its I line. */
-struct Tick {
-    long long number = -1;
-    replay::Fields state;        // the whole state after the tick
-    std::vector<int> scancodes;  // delivered after the tick: the input of the next one
-    replay::Fields inject;       // what the test pilot set after the tick
-};
-
 /**
  * A golden replay "UGR 1" (verify/.../replay/ReplayWriter.kt), read tick by tick: a T line has the tick number, the
  * scancodes and the fields that changed (`~` removes one); an I line after it belongs to it.
  */
 class ReplayFile {
 public:
+    /** One tick of a replay: the state after it, the scancodes delivered after it, and its I line. */
+    struct Tick {
+        long long number = -1;
+        replay::Fields state;        // the whole state after the tick
+        std::vector<int> scancodes;  // delivered after the tick: the input of the next one
+        replay::Fields inject;       // what the test pilot set after the tick
+    };
+
     explicit ReplayFile(const std::string& path);
 
     /** The file is open and starts with "UGR 1"; else error() says why. */

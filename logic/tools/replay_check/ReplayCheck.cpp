@@ -1,5 +1,6 @@
 #include "ReplayCheck.hpp"
 
+#include <charconv>
 #include <cstdio>
 
 #include "replay/StateWriter.hpp"
@@ -47,20 +48,22 @@ bool ReplayCheck::start(game::Game& game, const Tick& tick) {
         auto it = s.find(name);
         return it == s.end() ? "" : it->second;
     };
-    settings.players = std::stoi(value("game.players"));
     std::string difficulty = value("game.difficulty");
     settings.difficulty = difficulty == "easy" ? data::Difficulty::Easy
                           : difficulty == "hard" ? data::Difficulty::Hard
                                                  : data::Difficulty::Medium;
-    settings.firstLevel = std::stoi(value("game.level"));
     std::string rng = value("game.rng");
-    if (rng.size() != 16) {
-        report_.problem(tick.number, "no game.rng at tick 0");
+    bool ok = number(value("game.players"), settings.players) && number(value("game.level"), settings.firstLevel) &&
+              number(value("game.rainFloor"), settings.rainFloorRow) && rng.size() == 16;
+    for (int i = 0; ok && i < 4; i++) {
+        int word = 0;
+        ok = number(rng.substr(4 * i, 4), word, 16);
+        settings.randomSeed[3 - i] = static_cast<uint16_t>(word);
+    }
+    if (!ok || !game.newGame(settings)) {
+        report_.problem(tick.number, "tick 0 has no valid game.players, game.level, game.rainFloor and game.rng");
         return false;
     }
-    for (int i = 0; i < 4; i++) settings.randomSeed[3 - i] = static_cast<uint16_t>(std::stoul(rng.substr(4 * i, 4), nullptr, 16));
-    settings.rainFloorRow = std::stoi(value("game.rainFloor"));
-    game.newGame(settings);
     return true;
 }
 
@@ -121,7 +124,9 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
             auto it = tick.inject.find(c + field);
             if (it == tick.inject.end()) return current;
             moved = true;
-            return std::stoi(it->second);
+            int v = current;
+            if (!number(it->second, v)) report_.problem(tick.number, "a bad value " + it->first + "=" + it->second);
+            return v;
         };
         units::Fixed x = units::Fixed::fromRaw(value("x", copter.x().raw().value()));
         units::Fixed y = units::Fixed::fromRaw(value("y", copter.y().raw().value()));
@@ -132,17 +137,26 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
         auto landed = tick.inject.find(c + "landedPad");
         if (landed != tick.inject.end()) {
             moved = true;
-            pad = landed->second == "none" ? std::nullopt : std::optional<int>(std::stoi(landed->second));
+            int v = 0;
+            pad = landed->second != "none" && number(landed->second, v) ? std::optional<int>(v) : std::nullopt;
         }
         if (moved) cheats.placeCopter(player, x, y, pixelX, pixelY, vx, vy, pad);
     }
     for (const auto& [field, value] : tick.inject) {
-        if (field == "game.energy") cheats.setEnergy(std::stoi(value));
-        else if (field == "game.lives") cheats.setLives(std::stoi(value));
+        int v = 0;
+        bool known = field == "game.energy" || field == "game.lives";
+        if (known && !number(value, v)) report_.problem(tick.number, "a bad value " + field + "=" + value);
+        else if (field == "game.energy") cheats.setEnergy(v);
+        else if (field == "game.lives") cheats.setLives(v);
         else if (field.rfind("copter.", 0) != 0) report_.problem(tick.number, "an intervention the logic does not allow: " + field);
     }
 }
 
+
+bool ReplayCheck::number(const std::string& text, int& out, int base) {
+    auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), out, base);
+    return error == std::errc() && end == text.data() + text.size() && !text.empty();
+}
 
 void ReplayCheck::diagnostics(game::Game& game, long long tick) {
     for (const std::string& problem : game.diagnostics().take()) report_.problem(tick, "the logic: " + problem);

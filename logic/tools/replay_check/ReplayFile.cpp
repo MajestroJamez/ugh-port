@@ -1,5 +1,6 @@
 #include "ReplayFile.hpp"
 
+#include <charconv>
 #include <sstream>
 
 namespace ugh::tool {
@@ -68,7 +69,15 @@ bool ReplayFile::readTickLine(const std::string& line, Tick& tick) {
     if (keys != "-") {
         std::istringstream codes(keys);
         std::string code;
-        while (std::getline(codes, code, ',')) tick.scancodes.push_back(std::stoi(code, nullptr, 16));
+        while (std::getline(codes, code, ',')) {
+            int value = 0;
+            auto [end, error] = std::from_chars(code.data(), code.data() + code.size(), value, 16);
+            if (error != std::errc() || end != code.data() + code.size()) {
+                error_ = path_ + ":" + std::to_string(line_) + ": a bad scancode " + code;
+                return false;
+            }
+            tick.scancodes.push_back(value);
+        }
     }
     for (const auto& [name, value] : pairs(line.substr(bar + 2))) {
         if (value == "~") state_.erase(name);

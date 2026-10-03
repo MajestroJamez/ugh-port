@@ -4,11 +4,6 @@
 
 namespace ugh::passengers::route {
 
-namespace {
-
-constexpr units::Int16 COPTER_DOOR = 16;   // from the copter's left edge to where a passenger gets in
-
-}  // namespace
 
 RoutePassenger::RoutePassenger(int index, const data::RoutePassengerPlacement& placement)
     : Passenger(index), kind_(&placement.kind()), route_(&placement.route()), state_(&NextStop::instance) {}

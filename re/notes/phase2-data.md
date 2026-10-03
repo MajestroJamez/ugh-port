@@ -24,7 +24,7 @@ Extraktor odmítne jinou verzi EXE (kontroluje SHA-256 `ef93d2cd…6d7c`), proto
 | `dgroup.bin` | inicializovaná část DGROUP (0x7e2e B) pro věrný port tabulek podle původních offsetů |
 | `preview/` | náhledy: všechny sprity, všechny levely (jen dlaždice) |
 | `manifest.json` | SHA-256 zdroje a počty |
-| `sim/ugh-sim.bin` | data herní logiky pro C++ jádro (viz níže) |
+| `logic/ugh-data.ugd` | data herní logiky pro C++ jádro `logic/` (viz níže) |
 
 Kontroly v extraktoru a testech:
 - ICE depacker dává bajtově shodný výstup s nezávislým JS portem (`re/tools/unice.js`), obrázky jsou vizuálně správně.
@@ -33,36 +33,18 @@ Kontroly v extraktoru a testech:
   a bez překryvů. Pořadí bloků se mezi levely liší.
 - Počet hesel = počet levelů v obou režimech.
 
-## Data pro C++ jádro: `assets/sim/ugh-sim.bin` (formát `UGHSIM01`)
+## Kolizní maska (`Masks.kt`)
 
-Všechno, co potřebuje herní logika, v jednom binárním souboru (little endian, `Sim.kt`):
+Bit 7 barvy každého pixelu stránky pozadí po nastavení levelu (`113b:3d66`): 384 × 192 px. Vzniká z dlaždic
+(sloupec × 16, řádek × 12, po řádcích, barva 0 průhledná); obarvení pod hladinou (`| 0x40`) bit 7 nemění a za hry
+se nemění vůbec. Dlaždice pokrývají jen 320 px, sloupce 320..383 jsou vždy prázdné, proto data `UGD 1` nesou masku
+320 × 192. Sonda `113b:1457` čte jednu VGA rovinu stránky (bajt `y * 0x60 + x / 4`, rovina `x & 3`) a 10 bodů kolem
+vrtulníku; u horního a dolního okraje sahá až 20 řádků mimo stránku do sousední paměti VGA, ale nikdy tam není pevný
+pixel, proto logika bere vše mimo masku jako volné. `GoldenReplayTest` ověřuje masku proti stránce pozadí portu ve
+všech 81 levelech a hlídá i čtení mimo stránku. (Do kroku N8 nesl masky i tabulky DGROUP pro staré jádro `sim/`
+binární soubor `ugh-sim.bin`, formát `UGHSIM01`; s jádrem zanikl.)
 
-```
-0   char[8]  "UGHSIM01"
-8   u32      počet bloků N
-12  N x 20 B {char[8] jméno (doplněné NUL), u16 seg, u16 off, u32 pozice dat v souboru, u32 délka}
-    data bloků
-```
-
-| Blok | seg:off | Obsah |
-|---|---|---|
-| `DGROUP` | `6c09:0000`, 0x7e2e B | inicializovaná DGROUP: záznamy levelů (26 B, tabulky `3349` 1 hráč / `33d5` team), jejich seznamy A-D (plošiny, pasažéři a trasy, objekty, popisek), deskriptory pasažérů (`7720`, `776a` …, po 0x4a), objektů (`7630`, `766c`, `76a8`, `76e4`) a bonusů (`7a38` …), tabulky animací (sprity, `0d00` …), hesla (`00ee` / `0492`), tabulka kláves (`281c`), limity nárazu (`262e`) a multiplikátoru (`2628`) |
-| `MAPS` | `1a67:0000`, 32 000 B | rozbalené mapy levelů (CODE_7): 20 × 16 čísel dlaždic od `záznam+00` |
-| `SPRITES` | `6b63:0000`, 664 × 4 B | tabulka spritů `{u16 offset v bance, u8 šířka, u8 výška}` |
-| `MASK` (81×) | `6c09:<záznam levelu>`, 9 216 B | kolizní maska levelu, viz níže |
-
-Logika i golden replays odkazují na data **původními offsety v DGROUP** (`passenger.N.kind=0x7720`,
-`route=0x…`, `object.N.table=0x…`), proto zůstávají tabulky na svých adresách, ne v novém schématu.
-
-**Kolizní maska:** bit 7 barvy každého pixelu stránky pozadí po nastavení levelu (`113b:3d66`): 384 × 192 px,
-řádek po 48 B, pixel x v bitu `7 - (x & 7)` bajtu `x / 8`. Vzniká z dlaždic (sloupec × 16, řádek × 12, po řádcích,
-barva 0 průhledná); obarvení pod hladinou (`| 0x40`) bit 7 nemění a za hry se nemění vůbec. Sonda `113b:1457`
-čte jednu VGA rovinu stránky (bajt `y * 0x60 + x / 4`, rovina `x & 3`) a 10 bodů kolem vrtulníku. U horního
-a dolního okraje sahá až 20 řádků mimo stránku do sousední paměti VGA. V golden replayích k tomu došlo
-281 tisíckrát, ale nikdy tam nebyl pevný pixel, proto jádro bere všechno mimo stránku jako volné.
-`GoldenReplayTest` ověřuje masku proti stránce pozadí portu ve všech 81 levelech a hlídá i čtení mimo stránku.
-
-## Data pro nové jádro `logic/`: `assets/sim/ugh-data.ugd` (formát `UGD 1`)
+## Data pro nové jádro `logic/`: `assets/logic/ugh-data.ugd` (formát `UGD 1`)
 
 Text ASCII, jeden záznam na řádek: `<typ> [<jméno>] <klíč>=<hodnota> ...` (druhé slovo bez `=` je jméno), `#`
 komentář. Zapisuje ho `extractor/.../LogicData.kt`, jména dává jediná tabulka `Names.kt` (offset deskriptoru → jméno).
@@ -91,7 +73,7 @@ jmenují přesně ty obslužné rutiny stavů, které má logika napevno, a že 
 
 Záznamy `pad` … `mask` patří k poslednímu `level` nad nimi, v pořadí seznamů originálu (na pořadí cestujících
 a nepřátel záleží). `LogicDataTest` (verify) načte každý level obou režimů portem (`loadLevel`) a porovná paměť se
-souborem; masky porovná se stránkami pozadí z `ugh-sim.bin`. Level 1 (data level 0; celý soubor 1,4 MB):
+souborem; masky porovná se stránkami pozadí (`Masks.kt`). Level 1 (data level 0; celý soubor 1,4 MB):
 
 ```
 level 0 toDeliver=1 wind=none start0=4608,2080 start1=1536,1216 water=5520 waterSpeed=0

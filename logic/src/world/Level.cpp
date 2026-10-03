@@ -5,7 +5,7 @@ namespace ugh::world {
 void Level::startAttempt(const data::LevelDefinition& definition, const data::SpriteIds& sprites, RandomNumbers& random,
                          events::Diagnostics& diagnostics) {
     definition_ = &definition;
-    for (Copter& copter : copters_) copter.controls() = Controls{};
+    for (Copter& copter : copters_) copter.releaseKeys();
     done_ = false;
     energy_.fill();
     fade_.startFadeIn();
