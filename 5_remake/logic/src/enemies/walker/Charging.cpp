@@ -6,12 +6,6 @@
 
 namespace ugh::enemies::walker {
 
-namespace {
-
-constexpr int FRAME_DELAY = 4;
-
-}  // namespace
-
 const Charging Charging::instance{};
 
 void Charging::enter(Walker& walker, const EnemyContext&) const {
@@ -21,7 +15,7 @@ void Charging::enter(Walker& walker, const EnemyContext&) const {
 
 void Charging::update(Walker& walker, const EnemyContext& context) const {
     world::Level& level = context.play.level;
-    if (walker.animate(FRAME_DELAY)) walker.showFacing(walker.kind().charge);
+    if (walker.animate()) walker.showFacing(walker.kind().charge);
     if (stunnedByPassenger(walker, context)) return;
     std::optional<int> copter = level.copterLandedOn(walker.pad());
     if (!copter) {

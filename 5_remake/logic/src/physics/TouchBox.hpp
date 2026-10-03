@@ -18,6 +18,8 @@ class TouchBox {
 public:
     /** The box of a sprite at x, y (its top left corner) with the anchor and the half size of `box`. */
     TouchBox(const data::Box& box, units::Fixed x, units::Fixed y);
+    /** The area the copter's top left corner touches when it is between these corners (a blower's zone). */
+    static TouchBox between(units::Fixed left, units::Fixed right, units::Fixed top, units::Fixed bottom);
 
     bool touches(const world::Copter& copter) const;
 
@@ -25,6 +27,9 @@ public:
     std::optional<int> firstCopterIn(const world::Level& level) const;
 
 private:
+    TouchBox(units::Fixed left, units::Fixed right, units::Fixed top, units::Fixed bottom)
+        : left_(left), right_(right), top_(top), bottom_(bottom) {}
+
     // the corners the copter's top left corner can be between
     units::Fixed left_, right_, top_, bottom_;
 };

@@ -16,7 +16,7 @@ void SwimBoarding::enter(RoutePassenger& passenger, const PassengerContext& cont
 
 void SwimBoarding::update(RoutePassenger& passenger, const PassengerContext& context) const {
     passenger.floatOnSurface(context.play.level.water().row());
-    std::optional<int> copter = context.play.level.copterOnWater(true, false);
+    std::optional<int> copter = context.play.level.copterOnWaterWithRoom();
     if (!copter) {
         passenger.changeState(SwimWaving::instance, context);
         return;

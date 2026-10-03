@@ -18,7 +18,7 @@ void Swimming::update(RoutePassenger& passenger, const PassengerContext& context
     passenger.animate();
     passenger.show(*passenger.kind().waving);
     passenger.floatOnSurface(context.play.level.water().row());
-    if (passenger.swimmerKind().rescuable && context.play.level.copterOnWater(true, true)) {
+    if (passenger.swimmerKind().rescuable && context.play.level.stillCopterOnWaterWithRoom()) {
         passenger.changeState(SwimCalling::instance, context);
         return;
     }

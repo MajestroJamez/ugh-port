@@ -64,25 +64,9 @@ public:
     bool levelLoaded() const;
     events::Diagnostics& diagnostics() { return diagnostics_; }
 
-    // ------------------------------------------------------------ for the phases of the flow
-
-    /** The game starts: lives, multiplier, score. */
-    void startGame();
-    /** A new attempt at the current level. */
-    void startAttempt();
-    /** The level lists get their first update, then nothing is shown. */
-    void beforePlay();
-    /** One frame of the play. */
-    void playFrame();
-    /** The attempt is over (its fade-out reached black). */
-    bool attemptOver() const { return level_.fade().over(); }
-    /** The next level when the attempt finished the level, else a life less. */
-    GameResult endAttempt();
-    input::MenuInput& menu() { return menu_; }
-    void report(const events::Event& event) { events_.onEvent(event); }
-
 private:
     friend class Cheats;
+    friend class Attempts;
 
     const data::GameData& data_;
     events::EventBroadcast events_;
@@ -94,8 +78,6 @@ private:
     bonuses::BonusSlots bonuses_;   // they stay from the end of an attempt until the play of the next one
     input::MenuInput menu_;
     GameFlow flow_;
-
-    world::PlayContext context();
 };
 
 }  // namespace ugh::game

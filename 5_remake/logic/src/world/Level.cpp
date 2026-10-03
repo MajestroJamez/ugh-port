@@ -39,7 +39,7 @@ bool Level::emptyCopterLandedOn(int pad) const {
     return false;
 }
 
-std::optional<int> Level::copterOnWater(bool withRoom, bool still) const {
+std::optional<int> Level::firstCopterOnWater(bool withRoom, bool still) const {
     for (int c = 0; c < copterCount(); c++) {
         const Copter& copter = copters_[c];
         if ((still && !copter.stillVertically()) || (withRoom && !copter.hasRoom())) continue;

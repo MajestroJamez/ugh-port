@@ -38,7 +38,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 | `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `Route`, `PassengerCall`, `Ride`, `Swim`), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`; `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
 | `input/` | `MenuKey`, `MenuInput`: the keys the game loop looks at (Esc gives up, P would pause, a caption waits for any key); the pilots' keys go straight to the copters (`Game::key`) |
-| `game/` | `Game` (the facade), `GameFlow` with its `phases/`, `PlayFrame` (one frame of the play), `Cheats` (the test pilot of the replays) |
+| `game/` | `Game` (the facade), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play), `Cheats` (the test pilot of the replays) |
 | `api/` | `LogicApi.cpp`: the C API over `Game` |
 
 `tests/` holds the tests by module. The fields of the replays (`ugh_logic_replay`) and the replay check live in
@@ -76,6 +76,8 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
 - **Parameter Object**: `world::PlayContext` (and `PassengerContext`, `EnemyContext`) is what an update gets.
 - **Observer**: the logic reports `events::Event`s to `EventListener`s.
 - **Facade**: `game::Game` is the one entry; nothing of the state can be set from outside but through `Cheats`.
+- **Template Method**: `passengers::route::OnPickupPad`: the states on the pickup pad check the water and the copters
+  every frame, then do their own part (`walk`, `stay`).
 
 No exceptions, no RTTI, no macros (the library builds as an Unreal Engine module), templates only where they remove
 copies (`state/`): errors come back as values (`DataFileReader::read` returns nullptr and the text of the error).

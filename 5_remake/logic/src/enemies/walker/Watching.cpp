@@ -9,7 +9,7 @@ namespace ugh::enemies::walker {
 namespace {
 
 constexpr int WATCH_TIME = 140;
-constexpr int FRAME_DELAY = 5;
+constexpr int FRAME_DELAY = 5;   // slower than its other animations
 
 }  // namespace
 

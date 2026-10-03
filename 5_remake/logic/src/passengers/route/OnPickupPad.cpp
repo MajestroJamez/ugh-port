@@ -5,6 +5,14 @@
 
 namespace ugh::passengers::route {
 
+void OnPickupPad::update(RoutePassenger& passenger, const PassengerContext& context) const {
+    if (fellIntoWater(passenger, context)) return;
+    walk(passenger, context);
+    if (knockedIntoWater(passenger, context)) return;
+    stay(passenger, context);
+}
+
+/** The water rose to its knees: it is in the water. */
 bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
     const data::Box& box = passenger.kind().box;
     int surface = context.play.level.water().row();
@@ -16,6 +24,7 @@ bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContex
     return true;
 }
 
+/** A copter in the air touched it: it is knocked into the water. */
 bool OnPickupPad::knockedIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
     std::optional<int> copter =
         physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.play.level);

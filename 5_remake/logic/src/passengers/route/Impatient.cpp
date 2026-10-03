@@ -1,7 +1,6 @@
 #include "passengers/route/Impatient.hpp"
 
 #include "passengers/route/Calling.hpp"
-#include "passengers/route/OnPickupPad.hpp"
 #include "passengers/route/RoutePassenger.hpp"
 #include "passengers/route/Waiting.hpp"
 
@@ -16,9 +15,7 @@ void Impatient::enter(RoutePassenger& passenger, const PassengerContext& context
     passenger.call().start(WAVE_TIME);
 }
 
-void Impatient::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    if (OnPickupPad::fellIntoWater(passenger, context)) return;
-    if (OnPickupPad::knockedIntoWater(passenger, context)) return;
+void Impatient::stay(RoutePassenger& passenger, const PassengerContext& context) const {
     if (passenger.animate()) passenger.show(*passenger.kind().waving);
     if (!passenger.call().over()) return;
     if (context.play.level.emptyCopterLandedOn(passenger.route().pickupPad())) {

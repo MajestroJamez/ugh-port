@@ -62,8 +62,11 @@ public:
 
     /** Out of the door: its feet at the door, on the pad, and seen there. */
     void standAtDoor(const data::PadDefinition& pad);
-    /** One pixel to the left (-1) or to the right (1). */
-    void stepBy(int pixels) { moveToX(x() + units::Fixed::fromPixels(pixels)); }
+    /**
+     * A step towards `feet` (the x of its feet): shown walking that way, one pixel further when `stepDue`; true when
+     * its feet (as seen in the last frame) are there.
+     */
+    bool stepTowards(int feet, bool stepDue = true);
     /** A step (or a swim stroke) towards the copter; true when it is at the copter's door. */
     bool walkTowards(const world::Copter& copter);
     /** A swimmer stays on the surface (when it was seen elsewhere). */

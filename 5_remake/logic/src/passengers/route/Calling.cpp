@@ -2,7 +2,6 @@
 
 #include "passengers/route/Boarding.hpp"
 #include "passengers/route/Impatient.hpp"
-#include "passengers/route/OnPickupPad.hpp"
 #include "passengers/route/RoutePassenger.hpp"
 
 namespace ugh::passengers::route {
@@ -20,9 +19,7 @@ void Calling::enter(RoutePassenger& passenger, const PassengerContext& context) 
 }
 
 /** It waves impatiently when the copter left or is full. */
-void Calling::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    if (OnPickupPad::fellIntoWater(passenger, context)) return;
-    if (OnPickupPad::knockedIntoWater(passenger, context)) return;
+void Calling::stay(RoutePassenger& passenger, const PassengerContext& context) const {
     std::optional<int> copter = context.play.level.copterLandedOn(passenger.route().pickupPad());
     if (!copter || !context.play.level.copter(*copter).hasRoom()) {
         passenger.changeState(Impatient::instance, context);

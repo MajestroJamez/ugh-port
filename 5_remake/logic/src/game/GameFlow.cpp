@@ -1,6 +1,5 @@
 #include "game/GameFlow.hpp"
 
-#include "game/Game.hpp"
 #include "game/phases/BlackScreen.hpp"
 #include "game/phases/CaptionFadeIn.hpp"
 #include "game/phases/CaptionFadeOut.hpp"
@@ -9,7 +8,7 @@
 
 namespace ugh::game {
 
-GameFlow::GameFlow(Game& game) : game_(game) {
+GameFlow::GameFlow(Game& game) : attempts_(game) {
     phases_[static_cast<int>(PhaseId::BlackBeforeCaption)] =
         std::make_unique<phases::BlackScreen>(PhaseId::CaptionFadeIn, GamePhase::BetweenLevels);
     phases_[static_cast<int>(PhaseId::CaptionFadeIn)] = std::make_unique<phases::CaptionFadeIn>();
@@ -30,7 +29,7 @@ GameResult GameFlow::step() {
     if (current_) {
         current_->nextFrame(*this);
     } else {
-        game_.startGame();
+        attempts_.startGame();
         goTo(PhaseId::BlackBeforeCaption);
     }
     return result_;
@@ -42,7 +41,7 @@ void GameFlow::goTo(PhaseId next) {
 }
 
 void GameFlow::endAttempt() {
-    GameResult end = game_.endAttempt();
+    GameResult end = attempts_.end();
     if (end == GameResult::Continue) {
         goTo(PhaseId::CaptionFadeIn);
     } else {

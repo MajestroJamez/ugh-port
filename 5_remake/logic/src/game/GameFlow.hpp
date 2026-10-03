@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "game/GamePhase.hpp"
+#include "game/Attempts.hpp"
 #include "game/GameResult.hpp"
 #include "game/Phase.hpp"
 #include "game/PhaseId.hpp"
@@ -38,7 +39,7 @@ public:
 
     // ------------------------------------------------------------ for the phases
 
-    Game& game() { return game_; }
+    Attempts& attempts() { return attempts_; }
 
     /** The current phase is over: `next` starts in this frame. */
     void goTo(PhaseId next);
@@ -47,7 +48,7 @@ public:
     void endAttempt();
 
 private:
-    Game& game_;
+    Attempts attempts_;
     std::array<std::unique_ptr<Phase>, 6> phases_;   // by PhaseId
     Phase* current_ = nullptr;                       // nullptr: not started, or over
     GameResult result_ = GameResult::Continue;

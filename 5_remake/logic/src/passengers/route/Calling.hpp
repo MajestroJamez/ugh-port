@@ -1,12 +1,12 @@
 // The passenger state Calling.
 #pragma once
 
-#include "passengers/route/RouteState.hpp"
+#include "passengers/route/OnPickupPad.hpp"
 
 namespace ugh::passengers::route {
 
 /** Calls the copter that landed on its pad (a bubble with the number of its destination), then walks to it. */
-class Calling : public RouteState {
+class Calling : public OnPickupPad {
 public:
     static const Calling instance;
     /** How long a passenger calls before it walks to the copter. */
@@ -14,7 +14,7 @@ public:
 
     const char* name() const override { return "Calling"; }
     void enter(RoutePassenger& passenger, const PassengerContext& context) const override;
-    void update(RoutePassenger& passenger, const PassengerContext& context) const override;
+    void stay(RoutePassenger& passenger, const PassengerContext& context) const override;
 };
 
 }  // namespace ugh::passengers::route

@@ -18,6 +18,8 @@ namespace ugh::enemies::walker {
  */
 class Walker : public Enemy, public state::StateMachine<Walker, EnemyContext, WalkerState> {
 public:
+    static constexpr int FRAME_DELAY = 4;   // frames per animation frame
+
     Walker(int index, const data::WalkerKind& kind, const data::WalkerPlacement& placement);
 
     void update(const EnemyContext& context) override;
@@ -35,6 +37,9 @@ public:
     void turnTo(const world::Copter& copter);
     /** Shows the frame of the variant of `pair` it faces. */
     void showFacing(const data::AnimationPair& pair) { show(pair.towards(facing_ == world::Facing::Right)); }
+    /** One frame of its animation delay (4 frames per animation frame; watching a copter: animate(5)). */
+    bool animate() { return Figure::animate(FRAME_DELAY); }
+    using Figure::animate;
 
     /** How long it watches a landed copter before it charges. */
     units::Countdown& watchTime() { return watchTime_; }

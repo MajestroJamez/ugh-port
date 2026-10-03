@@ -65,10 +65,16 @@ public:
     std::optional<int> copterLandedOn(int pad) const;
     /** A copter with room for a passenger stands on the pad. */
     bool emptyCopterLandedOn(int pad) const;
-    /** The first copter that floats on the water; `withRoom`: with room for a passenger, `still`: not moving up or down. */
-    std::optional<int> copterOnWater(bool withRoom, bool still) const;
+    /** The first copter that floats on the water. */
+    std::optional<int> copterOnWater() const { return firstCopterOnWater(false, false); }
+    /** The first copter with room for a passenger that floats on the water. */
+    std::optional<int> copterOnWaterWithRoom() const { return firstCopterOnWater(true, false); }
+    /** The first copter with room for a passenger that floats still on the water (not moving up or down). */
+    std::optional<int> stillCopterOnWaterWithRoom() const { return firstCopterOnWater(true, true); }
 
 private:
+    std::optional<int> firstCopterOnWater(bool withRoom, bool still) const;
+
     int players_;
     const data::LevelDefinition* definition_ = nullptr;
     std::array<Copter, 2> copters_;

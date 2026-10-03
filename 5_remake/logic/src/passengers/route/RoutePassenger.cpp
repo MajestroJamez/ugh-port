@@ -29,19 +29,16 @@ void RoutePassenger::standAtDoor(const data::PadDefinition& pad) {
 }
 
 bool RoutePassenger::walkTowards(const world::Copter& copter) {
-    bool step = animate();
-    int spot = feetX() - COPTER_DOOR;
-    if (spot > copter.pixelX()) {
-        show(*kind().walking.left);
-        if (step) stepBy(-1);
-        return false;
-    }
-    if (spot < copter.pixelX()) {
-        show(*kind().walking.right);
-        if (step) stepBy(1);
-        return false;
-    }
-    return true;
+    bool stepDue = animate();
+    return stepTowards(copter.pixelX() + COPTER_DOOR, stepDue);
+}
+
+bool RoutePassenger::stepTowards(int feet, bool stepDue) {
+    if (feetX() == feet) return true;
+    bool right = feetX() < feet;
+    show(kind().walking.towards(right));
+    if (stepDue) moveToX(x() + units::Fixed::fromPixels(right ? 1 : -1));
+    return false;
 }
 
 void RoutePassenger::floatOnSurface(int waterRow) {

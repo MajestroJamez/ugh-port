@@ -5,12 +5,6 @@
 
 namespace ugh::enemies::walker {
 
-namespace {
-
-constexpr int FRAME_DELAY = 4;
-
-}  // namespace
-
 const Stunned Stunned::instance{};
 
 void Stunned::enter(Walker& walker, const EnemyContext& context) const {
@@ -24,7 +18,7 @@ void Stunned::update(Walker& walker, const EnemyContext& context) const {
         walker.continueIn(Placed::instance, context);
         return;
     }
-    if (walker.animate(FRAME_DELAY)) walker.showFacing(walker.kind().stunned);
+    if (walker.animate()) walker.showFacing(walker.kind().stunned);
 }
 
 }  // namespace ugh::enemies::walker

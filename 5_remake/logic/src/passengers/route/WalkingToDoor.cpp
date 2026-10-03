@@ -43,14 +43,10 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
 void WalkingToDoor::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
     int door = context.play.level.pad(passenger.route().targetPad()).place().door;
-    int feet = passenger.feetX();
-    if (feet == door) {
+    if (passenger.stepTowards(door)) {
         passenger.changeState(GoingIn::instance, context);
         return;
     }
-    bool right = feet < door;
-    passenger.show(passenger.kind().walking.towards(right));
-    passenger.stepBy(right ? 1 : -1);
     // the original looks at the position it moved to as well
     if (passenger.x().pixels() + passenger.kind().box.x == door) passenger.changeState(GoingIn::instance, context);
 }

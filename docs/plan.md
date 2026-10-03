@@ -385,3 +385,9 @@ a žádný soubor nad 200 řádků.
   Nalezena chyba překladače MSVC: `<=>` nad `int16_t` po negaci a posunu dával špatný výsledek (každý odraz od
   podlahy bral jako od stropu) - `Int16` proto drží hodnotu v `int`. 38 testů + 2 + 161 replayů zelených.
   Další: **N9b etapa 6**.
+- 2026-10-03: N9b etapa 6 hotová - prodleva animace walkera jednou (`Walker::animate()`, `FRAME_DELAY`), chůze
+  cestujícího jednou (`RoutePassenger::stepTowards(feet)`, i k vrtulníku), stavy na plošině mají společný základ
+  `OnPickupPad` (Template Method: voda, vrtulník, pak `walk` / `stay`), zóna foukače je `TouchBox::between`, voda má
+  pojmenované dotazy (`copterOnWater()`, `copterOnWaterWithRoom()`, `stillCopterOnWaterWithRoom()`), fáze toku hry
+  pracují přes `Attempts` (má ho jen `GameFlow`), na fasádě `Game` zůstalo veřejné API. `LONGEST_SEQUENCE` zmizela
+  už v etapě 4. 38 testů + 2 + 161 replayů zelených. Další: **N9b etapa 7**.

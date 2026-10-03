@@ -7,7 +7,6 @@ namespace ugh::enemies::walker {
 
 namespace {
 
-constexpr int STEP_DELAY = 4;
 constexpr int WIDTH = 32;   // pixels: it turns before its right edge passes the end of the pad
 
 }  // namespace
@@ -17,7 +16,7 @@ const Walking Walking::instance{};
 void Walking::enter(Walker& walker, const EnemyContext&) const { walker.restartAnimation(); }
 
 void Walking::update(Walker& walker, const EnemyContext& context) const {
-    if (walker.animate(STEP_DELAY)) {
+    if (walker.animate()) {
         const data::PadDefinition& pad = context.play.level.pad(walker.pad()).place();
         walker.moveToX(walker.x() + walker.speedX());
         int x = walker.x().pixels();

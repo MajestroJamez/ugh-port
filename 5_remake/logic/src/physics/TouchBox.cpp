@@ -17,6 +17,8 @@ TouchBox::TouchBox(const data::Box& box, Fixed x, Fixed y)
       top_(y + Fixed::fromPixels(box.y - (box.halfHeight << 1)) - Fixed::fromPixels(COPTER_HEIGHT)),
       bottom_(y + Fixed::fromPixels(box.y)) {}
 
+TouchBox TouchBox::between(Fixed left, Fixed right, Fixed top, Fixed bottom) { return {left, right, top, bottom}; }
+
 bool TouchBox::touches(const world::Copter& copter) const {
     return bottom_ >= copter.y() && top_ <= copter.y() && right_ >= copter.x() && left_ <= copter.x();
 }

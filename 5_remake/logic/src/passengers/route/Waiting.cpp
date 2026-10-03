@@ -1,7 +1,6 @@
 #include "passengers/route/Waiting.hpp"
 
 #include "passengers/route/Calling.hpp"
-#include "passengers/route/OnPickupPad.hpp"
 #include "passengers/route/RoutePassenger.hpp"
 
 namespace ugh::passengers::route {
@@ -14,23 +13,19 @@ void Waiting::enter(RoutePassenger& passenger, const PassengerContext&) const {
     passenger.hideBubble();
 }
 
-void Waiting::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    if (OnPickupPad::fellIntoWater(passenger, context)) return;
-    if (passenger.animate()) {
-        const data::AnimatedPassengerKind& kind = passenger.kind();
-        int spot = context.play.level.pad(passenger.route().pickupPad()).place().wait;
-        int feet = passenger.feetX();
-        if (feet == spot) {
-            if (passenger.call().reachSpot()) passenger.rewindAnimation();   // it just got there
-            passenger.show(*kind.standing);
-        } else {
-            passenger.call().walkToSpot();
-            bool right = feet < spot;
-            passenger.show(kind.walking.towards(right));
-            passenger.stepBy(right ? 1 : -1);
-        }
+/** A step per animation frame to the waiting spot of the pad; it stands there. */
+void Waiting::walk(RoutePassenger& passenger, const PassengerContext& context) const {
+    if (!passenger.animate()) return;
+    int spot = context.play.level.pad(passenger.route().pickupPad()).place().wait;
+    if (!passenger.stepTowards(spot)) {
+        passenger.call().walkToSpot();
+        return;
     }
-    if (OnPickupPad::knockedIntoWater(passenger, context)) return;
+    if (passenger.call().reachSpot()) passenger.rewindAnimation();   // it just got there
+    passenger.show(*passenger.kind().standing);
+}
+
+void Waiting::stay(RoutePassenger& passenger, const PassengerContext& context) const {
     if (context.play.level.emptyCopterLandedOn(passenger.route().pickupPad()))
         passenger.changeState(Calling::instance, context);
 }
