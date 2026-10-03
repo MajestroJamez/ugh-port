@@ -98,6 +98,17 @@ replays jsou záchranná síť.
 - Hotovo když: všech 161 replayů projde celých, v logice nejsou offsety DGROUP ani `Regs` a kód projde code
   review (`/code-review`) bez nálezů na čitelnost.
 
+## Krok 9b - C++ jádro: čitelná struktura (model, stavy, data)
+
+Podle [core-design.md](core-design.md), etapy 1-5: hodnotové typy, složky a namespaces, rozdělená data, entity jako
+třídy s Mementem, stavy jako třídy (State) s `enter/update`. Hotovo když: 323 testů zelených po každé etapě.
+
+## Krok 9c - C++ jádro: fyzika, tok hry, adaptér, průvodce
+
+Podle [core-design.md](core-design.md), etapy 6-11: `CopterPhysics`, tok hry jako automat fází místo korutin,
+adaptér replayů jako Visitor, rozdělený přehrávač a testy, `sim/README.md`. Hotovo když: splněna sekce
+„Hotovo když“ v core-design.md.
+
 ## Krok 10 - UE projekt v repu, šedé kostky
 
 - `game/` (UE 5.8 C++ projekt), C++ jádro jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
@@ -179,3 +190,6 @@ replays jsou záchranná síť.
   žádné příznaky „známé“ nemá. Všech 161 replayů projde celých i po přechodech se stejným počtem porovnaných hodnot
   jako dřív, 12 testů jednotek (`tests/unit_tests.cpp`), CTest 323 testů, ~28 s. `/code-review`: 6 nálezů opraveno
   (mj. `ugh_sim_create` teď dává výchozí stav programu), zdvojený čas testů ponechán. Další: **krok 10**.
+- 2026-10-03: analýza čitelnosti jádra hotová - cílový návrh v [core-design.md](core-design.md) (složky a namespaces,
+  jedna třída na soubor, entity s Mementem, stavy jako třídy, automat fází místo korutin, adaptér jako Visitor,
+  průvodce `sim/README.md`). Další: **krok 9b**.
