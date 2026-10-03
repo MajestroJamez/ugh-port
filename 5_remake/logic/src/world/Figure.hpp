@@ -10,11 +10,14 @@
 namespace ugh::world {
 
 /**
- * What a passenger or an enemy shows: where it is (its top left corner), the sprite it shows and where it is in its
- * animation. The passengers and the enemies derive from it; their states move it and pick its frames.
+ * An entity of the play as it is shown: its place in its list, where it is (its top left corner), the sprite it shows
+ * and where it is in its animation. The passengers, the enemies and the bonus items derive from it; their states move
+ * it and pick its frames.
  */
 class Figure {
 public:
+    /** Its place in its list (of the passengers, the enemies, the bonus slots): events and the replays name it so. */
+    int index() const { return index_; }
     units::Fixed x() const { return x_; }
     units::Fixed y() const { return y_; }
     std::optional<int> sprite() const { return sprite_; }
@@ -43,10 +46,11 @@ public:
     bool atLastFrameOf(const data::kinds::Animation& animation) const { return animator_.atLastFrameOf(animation); }
 
 protected:
-    Figure() = default;
-    Figure(units::Fixed x, units::Fixed y) : x_(x), y_(y) {}
+    explicit Figure(int index) : index_(index) {}
+    Figure(int index, units::Fixed x, units::Fixed y) : index_(index), x_(x), y_(y) {}
 
 private:
+    int index_;
     units::Fixed x_, y_;
     std::optional<int> sprite_;
     Animator animator_;

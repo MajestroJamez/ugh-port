@@ -21,10 +21,10 @@ void Riding::enter(RoutePassenger& passenger, const PassengerContext& context) c
     world::Copter& copter = *passenger.ride().carrier();
     int fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
     passenger.kinds().outOfWater();   // a rescued swimmer is itself again
-    int destination = passenger.route().targetPad(context.level).place().number;
+    int destination = passenger.route().targetPad().place().number;
     copter.cabin().takeOnBoard(passenger.kinds().land().look, destination, fare, fareMin);
     passenger.hide();
-    passenger.route().pickupPad(context.level).vacate();
+    passenger.route().pickupPad().vacate();
     context.report({events::EventKind::PassengerBoarded, copter.player(), passenger.index()});
 }
 
@@ -32,7 +32,7 @@ void Riding::update(RoutePassenger& passenger, const PassengerContext& context) 
     world::Copter& copter = *passenger.ride().carrier();
     copter.cabin().lowerFare();
     passenger.ride().tick();
-    if (copter.landedOn(passenger.route().targetPad(context.level))) passenger.changeState(WalkingToDoor::instance, context);
+    if (copter.landedOn(passenger.route().targetPad())) passenger.changeState(WalkingToDoor::instance, context);
 }
 
 }  // namespace ugh::passengers::route

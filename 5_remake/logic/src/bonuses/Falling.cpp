@@ -7,7 +7,7 @@ namespace ugh::bonuses {
 
 namespace {
 
-constexpr int GRAVITY = 3;   // 1/32 px per frame, per frame
+constexpr units::Fixed GRAVITY = units::Fixed::fromRaw(3);   // per frame, per frame
 
 }  // namespace
 
@@ -22,7 +22,8 @@ void Falling::update(BonusItem& item, const world::PlayContext& context) const {
         item.disappear();
         return;
     }
-    item.moveTo(body.x, body.y, body.fallSpeed);
+    item.moveTo(body.x, body.y);
+    item.setFallSpeed(body.fallSpeed);
     if (result == physics::Ballistics::Result::Landed) item.changeState(Lying::instance, context);
 }
 

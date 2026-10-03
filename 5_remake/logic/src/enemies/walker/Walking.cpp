@@ -17,13 +17,13 @@ void Walking::enter(Walker& walker, const EnemyContext&) const { walker.restartA
 
 void Walking::update(Walker& walker, const EnemyContext& context) const {
     if (walker.animate()) {
-        const data::levels::PadDefinition& pad = walker.pad(context.level).place();
+        const data::levels::PadDefinition& pad = walker.pad().place();
         walker.moveToX(walker.x() + walker.speedX());
         int x = walker.x().pixels();
         if (x < pad.left || x + WIDTH >= pad.right) walker.turnAround();
         walker.showFacing(walker.kind().walk);
     }
-    if (context.level.copters().landedOn(walker.pad(context.level))) {
+    if (context.level.copters().landedOn(walker.pad())) {
         walker.changeState(Watching::instance, context);
         return;
     }

@@ -27,7 +27,7 @@ void Watching::update(Walker& walker, const EnemyContext& context) const {
     }
     if (walker.animate(FRAME_DELAY)) walker.showFacing(walker.kind().watch);
     if (stunnedByPassenger(walker, context)) return;
-    const world::Copter* copter = context.level.copters().landedOn(walker.pad(context.level));
+    const world::Copter* copter = context.level.copters().landedOn(walker.pad());
     if (!copter) {
         walker.continueIn(Placed::instance, context);
         return;

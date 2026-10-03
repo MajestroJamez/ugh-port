@@ -20,7 +20,7 @@ TouchBox::TouchBox(const data::kinds::Box& box, Fixed x, Fixed y)
 TouchBox TouchBox::between(Fixed left, Fixed right, Fixed top, Fixed bottom) { return {left, right, top, bottom}; }
 
 bool TouchBox::touches(const world::Copter& copter) const {
-    return bottom_ >= copter.y() && top_ <= copter.y() && right_ >= copter.x() && left_ <= copter.x();
+    return bottom_ >= copter.motion().y() && top_ <= copter.motion().y() && right_ >= copter.motion().x() && left_ <= copter.motion().x();
 }
 
 world::Copter* TouchBox::firstCopterIn(world::Copters& copters) const {

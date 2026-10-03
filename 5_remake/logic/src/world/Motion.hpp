@@ -4,18 +4,19 @@
 #include "units/Fixed.hpp"
 #include "units/Speed.hpp"
 
-namespace ugh::testing {
-class TestPilot;   // the test pilot of the replays (5_remake/logic/testing)
-}
-
 namespace ugh::world {
 
 /**
  * Where a copter is and how fast it moves. The pixel position is what the collision probe sees: it follows x and y,
- * except that a copter thrown by a walker keeps its pixel row for a frame (`thrown`).
+ * except that a copter thrown by a walker keeps its pixel row for a frame (`throwUp`).
  */
 class Motion {
 public:
+    Motion() = default;
+    /** At x, y with the pixel position the collision probe sees (it may lag behind y, see above), moving at vx, vy. */
+    Motion(units::Fixed x, units::Fixed y, int pixelX, int pixelY, units::Speed vx, units::Speed vy)
+        : x_(x), y_(y), pixelX_(pixelX), pixelY_(pixelY), vx_(vx), vy_(vy) {}
+
     units::Fixed x() const { return x_; }
     units::Fixed y() const { return y_; }
     int pixelX() const { return pixelX_; }
@@ -23,10 +24,10 @@ public:
     units::Speed speedX() const { return vx_; }
     units::Speed speedY() const { return vy_; }
 
-    void setSpeed(units::Speed vx, units::Speed vy) {
-        vx_ = vx;
-        vy_ = vy;
-    }
+    void setSpeedX(units::Speed vx) { vx_ = vx; }
+    void setSpeedY(units::Speed vy) { vy_ = vy; }
+    /** No speed. */
+    void stop() { vx_ = vy_ = units::Speed(); }
     /** To x, and its pixel column. */
     void moveToX(units::Fixed x) {
         x_ = x;
@@ -38,17 +39,14 @@ public:
         pixelY_ = y.pixels();
     }
 
-protected:
     /** A pixel up and into the air with `walkerSpeed` (sideways 32 times, up 16 times as much); the pixel row stays. */
-    void thrown(int walkerSpeed) {
+    void throwUp(units::Fixed walkerSpeed) {
         y_ -= units::Fixed::fromPixels(1);
-        vx_ = units::Speed::fromRaw(walkerSpeed * 32);
-        vy_ = units::Speed::fromRaw(walkerSpeed * 16);
+        vx_ = units::Speed::fromRaw(walkerSpeed.raw() * 32);
+        vy_ = units::Speed::fromRaw(walkerSpeed.raw() * 16);
     }
 
 private:
-    friend class testing::TestPilot;   // it puts a copter anywhere
-
     units::Fixed x_, y_;
     int pixelX_ = 0, pixelY_ = 0;
     units::Speed vx_, vy_;

@@ -62,8 +62,8 @@ originál v oracle + Kotlin port ──► verify ──► verify/build/replays
    aritmetické posuny a znaménkové / neznaménkové porovnání jsou vidět v typu a jménu metody, ne v castech.
 6. **Zapouzdření:** stav entity je soukromý, mění se jen metodami se slovesem (`copter.takeOnBoard(...)`). Ven jen
    čtecí metody (renderer, zápis replaye). Žádný `Snapshot` / `restore`.
-7. **Žádné nemožné stavy:** chybějící hodnota je `std::optional` (`landedPad`, `waitingPassenger`, `carrier`), ne
-   `-1`; výčet je `enum class` (`Wind`, `Difficulty`, `Facing`, `BonusEffect`, `PlayerKey`). Logika nemá obranné
+7. **Žádné nemožné stavy:** chybějící hodnota je `std::optional`, chybějící objekt `nullptr` (`landedPad`,
+   `Pad::waiting`, `carrier`), ne `-1`; výčet je `enum class` (`Wind`, `Difficulty`, `Facing`, `BonusEffect`, `PlayerKey`). Logika nemá obranné
    kontroly – vstup kontroluje jen loader dat.
 8. **Povolené C++:** třídy, virtuální metody, `enum class`, `std::array`, `std::vector`, `std::unique_ptr`,
    `std::optional`, `std::string`, `std::string_view`, `std::span`, malé vlastní šablony (od N9b `state/StateMachine`).
@@ -82,10 +82,11 @@ Od N9b navíc (výsledek review po N8):
 
 12. **Velikost:** žádný soubor nad 200 řádků, žádná třída nad ~15 veřejnými metodami (různá jména, const a
     non-const dvojice jednou; kromě fasády `Game`). Třída, která roste, dostane části s vlastním chováním
-    (`Copter`: `Motion`, `Rotor`, `Cabin`; `RoutePassenger`: `RouteKinds`, `Route`, `PassengerCall`, `Ride`, `Swim`;
-    `Level`: `Copters`, `Delivery`; `Session`: `Score`) a stavy volají záměry, ne settery.
+    (`Copter`: `Motion`, `Rotor`, `Cabin`; `RoutePassenger`: `RouteKinds`, `RouteProgress`, `PassengerCall`, `Ride`,
+    `Swim`; `Level`: `Copters`, `Delivery`; `Session`: `Lives`, `Score`) a stavy volají záměry, ne settery.
 13. **Žádná `protected` data:** co mají druhy entity společné, je základní třída s vlastními metodami
-    (`world::Figure`, `world::Motion`); jeden stavový automat pro všechny entity (`state/`).
+    (`world::Figure`: index, poloha, sprite a animace cestujících, nepřátel i bonusových předmětů); jeden stavový
+    automat pro všechny entity (`state/`). Část, která není „druh“ entity, se skládá, nedědí (`Copter` má `Motion`).
 14. **Typy hry místo registrů:** hodnoty hry jsou `int`; 16bitová sémantika jen uvnitř `Fixed` a `Speed` (audit N1:
     jinde se v replayích neprojeví) a jako pojmenovaná zvláštnost `world::Energy` (pod nulou přetéká, doplnění
     bonusem porovnává bez znaménka). Nutné zvláštnosti originálu jen ve své třídě, pojmenované.
@@ -94,15 +95,30 @@ Od N9b navíc (výsledek review po N8):
 
 Od N9c navíc (výsledek review po N9b):
 
-16. **Objekty, ne indexy:** logika pracuje s `world::Copter&` / `Copter*` a `world::Pad&`; čísla hráčů, plošin
-    a entit jen tam, kde je potřebuje svět venku (eventy, C API, replaye: `Copter::player()`, `Pad::index()`) a kde je
-    pojmenují data (trasa, walker na plošině: `passenger.route().pickupPad(level)`).
+16. **Objekty, ne indexy:** logika pracuje s `world::Copter&` / `Copter*` a `world::Pad&` / `Pad*` (vrtulník stojí
+    na `const Pad*`, na plošině čeká `const Figure*`, trasa a walker drží plošiny levelu: `passenger.route().pickupPad()`,
+    `walker.pad()`); čísla hráčů, plošin a entit jen tam, kde je potřebuje svět venku (eventy, C API, replaye:
+    `Copter::player()`, `Pad::index()`, `Figure::index()`) a v datech (umístění, `data::levels::Route`).
 17. **Žádný `friend` do cizích vnitřků:** stav hry je `game::GameState`, s nímž `Game` a `Attempts` pracují
     explicitně; `GameData` vzniká z `GameData::Contents`. `friend` jen továrny svých kolekcí
-    (`PassengerFactory`, `EnemyFactory`) a testovací pilot (bod 18).
+    (`PassengerFactory`, `EnemyFactory`) a testovací pilot u fasády `Game` (bod 18).
 18. **Nic navíc pro testy v `src/`:** testovací pilot replayů (`testing::TestPilot`, knihovna `ugh_logic_testing`
-    v `5_remake/logic/testing/`) je mimo logiku; třídy, které mění (`Motion`, `Copter`, `Energy`, `Session`, `Game`),
-    ho jen jmenují jako `friend` (vzor test peer). Žádné metody `*ByTestPilot`.
+    v `5_remake/logic/testing/`) je mimo logiku. Do stavu hry se dostane jen jako jediný `friend` fasády `Game`
+    (vzor test peer); dál používá veřejné operace světa (`land` / `takeOff`, hodnotové typy
+    `copter.motion() = Motion(...)`, `Energy(n)`, `Lives(n)`). Žádné metody `*ByTestPilot`.
+
+Od N9d navíc (výsledek review po N9c):
+
+19. **Jedna jednotka, jeden typ:** poloha a rychlost za snímek je vždy `Fixed` (pád, hod, výpad walkera), rychlost
+    vrtulníku a plavce `Speed`; žádný holý `int` v 1/32 px.
+20. **Odpočty jen přes `units::Countdown`:** `tick()` (jedná při dosažení nuly) nebo `tickToZero()` (zůstane na
+    nule, nula = „už je čas“); žádné ruční `--x`.
+21. **Tabulky místo řetězců `if (name == ...)`:** typ záznamu dat → metoda (`RecordTable`), pole replaye → hodnota
+    (`6_verification/replay/FieldTable`, ukazatele na funkce bez zachycení).
+22. **Stejná jména stavů v různých balíčcích jsou záměr:** `flyer::Falling`, `bonuses::Falling` a
+    `standing::Falling` jsou jména stavů v replayích (`state=Falling`); balíček (namespace) je odliší jako package
+    v Javě. Jinak jedna třída = jedno jméno v celé logice (`data::levels::Route` jsou data, `RouteProgress` je
+    postup cestujícího po ní).
 
 ## 4. Moduly a třídy
 
@@ -137,7 +153,7 @@ logic/
       EventKind.hpp, Event.hpp, EventListener.hpp, EventQueue.hpp, EventBroadcast.hpp
       Diagnostics.hpp       situace, které jádro nepodporuje (pauza, 12 bonusů naráz)
     world/                  ugh::world – stav rozehrané hry
-      Session.hpp/.cpp      hráči, obtížnost, číslo levelu, životy, násobič, skóre, generátor náhody
+      Session.hpp/.cpp      hráči, obtížnost, číslo levelu, životy (Lives), násobič, skóre, generátor náhody
       RandomNumbers.hpp/.cpp    generátor originálu (4 slova se sčítáním s přenosem)
       Level.hpp/.cpp        běžící pokus: vrtulníky, plošiny, cestující, nepřátelé, bonusy, voda, déšť, energie,
                             fade; dotazy (který vrtulník přistál na plošině, který plave na vodě ...)
@@ -229,7 +245,7 @@ takže stav píše `context.level`.
 |---|---|
 | `PassengerCounter` | `RoutePassenger::callTime` (Countdown), `waitingSpot` (enum Starting/Walking/Reached), `carrier` (optional hráč); `StandingPassenger::carrier` |
 | `PassengerTimer` | `RoutePassenger::arrivalDelay`, `swimTime`; `StandingPassenger::dropSpeedX` |
-| `Passenger::vy` | `StandingPassenger::fallSpeed` (Int16, 1/32 px), `RoutePassenger::swimSpeed` (Speed) |
+| `Passenger::vy` | `StandingPassenger::fallSpeed` (Fixed za snímek), `RoutePassenger::swimSpeed` (Speed) |
 | `Passenger::bonusTimer` | `RoutePassenger::quickDeliveryTime` |
 | `EnemyTimer` | `Flyer::waitTime` (skrytý i křičí: jeden odpočet, stavy se vylučují; replay ho píše jako `waitTime` / `screechTime`), `fallSpeed`; `Walker::watchTime`, `chargeSpeed`, `stun`; `Blower::stun` (`enemies::Stun`); `Tree::restTime` |
 | `EnemyFacing` | `Walker::facing` (enum Facing); `Flyer::lastTarget` (hráč) |
@@ -658,7 +674,7 @@ znovu parsovaná pravidla, dvakrát konstanty dveří a gravitace plavce, dvakr�
 opravené. Junior test (README, „Where to change what“): gravitace → `physics/CopterPhysics.cpp`; jak dlouho
 cestující volá → `passengers/route/Calling.hpp`; nová událost → `events/EventKind.hpp`, místo hlášení,
 `include/ugh_logic.h`; nové pole replaye → `replay/<Entita>Fields.cpp` a `SemanticProjection.kt`; nový druh
-nepřítele → `enemies/<druh>/`, `data/` (umístění), `EnemyFactory.cpp`; počet životů → `world/Session.hpp`.
+nepřítele → `enemies/<druh>/`, `data/` (umístění), `EnemyFactory.cpp`; počet životů → `world/Lives.hpp`.
 Smazáno: `sim/`, zápis UGR 0 a řádky `B` (`StageRecorder`), `ugh-sim.bin` (`Sim.kt`; masky počítá `Masks.kt`).
 `StateProjection` zůstal jen pro audit úplnosti stavu (`StateAudit`). Data se přesunula do
 `assets/logic/ugh-data.ugd`, replaye UGR 1 do `4_test_data/verify/build/replays`. Odchylky: `Game::newGame` vrací `false` pro

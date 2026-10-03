@@ -35,7 +35,7 @@ void Blowing::update(Blower& blower, const EnemyContext& context) const {
     world::Level& level = context.level;
     for (world::Copter& copter : level.copters().all()) {
         if (zone.touches(copter))
-            copter.setSpeed(copter.speedX() + (blower.animator().frame() < BLOW_FRAME ? BLOW : -BLOW), copter.speedY());
+            copter.motion().setSpeedX(copter.motion().speedX() + (blower.animator().frame() < BLOW_FRAME ? BLOW : -BLOW));
     }
     if (blower.bounceFallingPassenger(context, false)) blower.changeState(Stunned::instance, context);
 }

@@ -22,7 +22,7 @@ void StandingPassenger::update(const PassengerContext& context) { updateState(co
 void StandingPassenger::accept(PassengerVisitor& visitor) const { visitor.visit(*this); }
 
 bool StandingPassenger::fallsOnto(Fixed enemyX, Fixed enemyY) const {
-    if (!state().falls() || fallSpeed_ < 0) return false;
+    if (!state().falls() || fallSpeed_ < Fixed()) return false;
     Fixed hitY = y() + Fixed::fromPixels(HIT_POINT_Y), hitX = x() + Fixed::fromPixels(HIT_POINT_X);
     return hitY >= enemyY && hitY - Fixed::fromPixels(ENEMY_HEIGHT) <= enemyY && hitX >= enemyX &&
            hitX - Fixed::fromPixels(ENEMY_WIDTH) <= enemyX;

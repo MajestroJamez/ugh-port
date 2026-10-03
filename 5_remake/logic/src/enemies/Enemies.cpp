@@ -4,9 +4,9 @@
 
 namespace ugh::enemies {
 
-void Enemies::load(const data::levels::LevelDefinition& definition, const data::GameData& data) {
+void Enemies::load(const data::levels::LevelDefinition& definition, const data::GameData& data, world::Level& level) {
     all_.clear();
-    EnemyFactory factory(*this, data);
+    EnemyFactory factory(*this, data, level);
     for (const auto& placement : definition.enemies) placement->accept(factory);
 }
 

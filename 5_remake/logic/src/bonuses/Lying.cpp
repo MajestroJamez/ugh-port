@@ -28,11 +28,11 @@ void Lying::update(BonusItem& item, const world::PlayContext& context) const {
     if (!copter) return;
     switch (kind.effect) {
         case data::kinds::BonusEffect::Energy: context.level.energy().refill(kind.amount); break;
-        case data::kinds::BonusEffect::Life: context.session.addLives(kind.amount); break;
+        case data::kinds::BonusEffect::Life: context.session.lives().add(kind.amount); break;
         case data::kinds::BonusEffect::Multiplier: context.session.score().raiseMultiplier(); break;
     }
     item.disappear();
-    context.report({events::EventKind::BonusCollected, copter->player(), item.slot(), static_cast<int>(kind.effect)});
+    context.report({events::EventKind::BonusCollected, copter->player(), item.index(), static_cast<int>(kind.effect)});
 }
 
 }  // namespace ugh::bonuses

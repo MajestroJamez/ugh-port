@@ -10,19 +10,16 @@
 namespace ugh::enemies {
 
 /**
- * An enemy: what all have - their place in the level's list and what they show (`world::Figure`). The flyer, the
+ * An enemy: what all have - what they show (`world::Figure`, with their place in the level's list). The flyer, the
  * walker, the blower and the tree are its kinds, each with its own state machine.
  */
 class Enemy : public world::Figure {
 public:
-    explicit Enemy(int index) : index_(index) {}
-    Enemy(int index, units::Fixed x, units::Fixed y) : Figure(x, y), index_(index) {}
+    explicit Enemy(int index) : Figure(index) {}
+    Enemy(int index, units::Fixed x, units::Fixed y) : Figure(index, x, y) {}
     virtual ~Enemy() = default;
     Enemy(const Enemy&) = delete;
     Enemy& operator=(const Enemy&) = delete;
-
-    /** Its place in the level's list: events and the replays name it so. */
-    int index() const { return index_; }
 
     /** One frame in its state. */
     virtual void update(const EnemyContext& context) = 0;
@@ -43,9 +40,6 @@ public:
         bool left = speed < units::Fixed();
         return (side == world::Facing::Left) == left ? speed : -speed;
     }
-
-private:
-    int index_ = 0;
 };
 
 }  // namespace ugh::enemies

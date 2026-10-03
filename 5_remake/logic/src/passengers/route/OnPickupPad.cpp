@@ -18,7 +18,7 @@ bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContex
     int surface = context.level.water().row();
     if ((box.y >> 1) + passenger.seenY() - surface < 0) return false;
     passenger.moveToY(units::Fixed::fromPixels(surface + box.y));
-    passenger.route().pickupPad(context.level).vacate();
+    passenger.route().pickupPad().vacate();
     passenger.hideBubble();
     intoWater(passenger, context);
     return true;

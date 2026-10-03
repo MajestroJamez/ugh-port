@@ -54,13 +54,15 @@ void CopterPhysics::fly(world::Copter& copter) {
 /** In the air the wind pushes the copter sideways and a little down. */
 void CopterPhysics::blowWithWind(world::Copter& copter, Depth depth) {
     if (depth != Depth::Above || !context_.level.windy()) return;
+    world::Motion& motion = copter.motion();
     Speed push = context_.level.wind() == data::levels::Wind::Left ? -WIND_PUSH : WIND_PUSH;
-    copter.setSpeed(copter.speedX() + push, copter.speedY() + WIND_DOWN);
+    motion.setSpeedX(motion.speedX() + push);
+    motion.setSpeedY(motion.speedY() + WIND_DOWN);
 }
 
 /** The left or the right key. */
 void CopterPhysics::steer(world::Copter& copter) {
-    Speed vx = copter.speedX();
+    Speed vx = copter.motion().speedX();
     if (copter.controls().left) {
         vx -= STEER;
         copter.rotor().addEffort(STEER_EFFORT);
@@ -68,13 +70,14 @@ void CopterPhysics::steer(world::Copter& copter) {
         vx += STEER;
         copter.rotor().addEffort(STEER_EFFORT);
     }
-    copter.setSpeed(vx.clamped(MAX_SPEED), copter.speedY());
+    copter.motion().setSpeedX(vx.clamped(MAX_SPEED));
 }
 
 /** The move sideways against the collision mask, bouncing off walls. */
 void CopterPhysics::moveHorizontally(world::Copter& copter) {
-    Speed vx = copter.speedX();
-    Fixed target = copter.x() + vx.perFrame();
+    world::Motion& motion = copter.motion();
+    Speed vx = motion.speedX();
+    Fixed target = motion.x() + vx.perFrame();
     if (target < LEFT_EDGE) {
         target = LEFT_EDGE;
         vx = Speed();
@@ -83,21 +86,21 @@ void CopterPhysics::moveHorizontally(world::Copter& copter) {
         vx = Speed();
     }
     Fixed x = target;
-    if (target.pixels() != copter.pixelX()) {
+    if (target.pixels() != motion.pixelX()) {
         std::optional<Fixed> stop =
-            CollisionProbe(context_.level).stopOnTheWay(copter, Axis::Horizontal, copter.x(), target);
+            CollisionProbe(context_.level).stopOnTheWay(copter, Axis::Horizontal, motion.x(), target);
         if (stop) {
             x = *stop;
             impact_ = bounce(vx);
         }
     }
-    copter.setSpeed(vx, copter.speedY());
-    copter.moveToX(x);
+    motion.setSpeedX(vx);
+    motion.moveToX(x);
 }
 
 /** Buoyancy in the water, gravity and diving in the air, pedalling up. */
 void CopterPhysics::liftAndFall(world::Copter& copter, Depth depth) {
-    Speed vy = copter.speedY();
+    Speed vy = copter.motion().speedY();
     bool canPedal = true;
     if (depth == Depth::Below) {
         context_.level.energy().spend(AIRBORNE_COST);
@@ -123,13 +126,14 @@ void CopterPhysics::liftAndFall(world::Copter& copter, Depth depth) {
         copter.rotor().addEffort(PEDAL_EFFORT);
         copter.takeOff();
     }
-    copter.setSpeed(copter.speedX(), vy.clamped(MAX_SPEED));
+    copter.motion().setSpeedY(vy.clamped(MAX_SPEED));
 }
 
 /** The move up or down against the collision mask; under water the copter floats up to the surface. */
 void CopterPhysics::moveVertically(world::Copter& copter, Depth depth) {
-    Speed vy = copter.speedY();
-    Fixed target = copter.y() + vy.perFrame();
+    world::Motion& motion = copter.motion();
+    Speed vy = motion.speedY();
+    Fixed target = motion.y() + vy.perFrame();
     if (target < TOP_EDGE) {
         target = TOP_EDGE;
         vy = Speed();
@@ -143,23 +147,24 @@ void CopterPhysics::moveVertically(world::Copter& copter, Depth depth) {
         vy = Speed();
         target = Fixed::fromPixels(surface - world::Copter::WATERLINE);
     }
-    copter.setSpeed(copter.speedX(), vy);
+    motion.setSpeedY(vy);
     Fixed y = target;
-    if (target.pixels() != copter.pixelY()) {
-        std::optional<Fixed> stop = CollisionProbe(context_.level).stopOnTheWay(copter, Axis::Vertical, copter.y(), target);
+    if (target.pixels() != motion.pixelY()) {
+        std::optional<Fixed> stop =
+            CollisionProbe(context_.level).stopOnTheWay(copter, Axis::Vertical, motion.y(), target);
         if (stop) {
             y = *stop;
             bounceVertically(copter, y);
         }
     }
-    copter.moveToY(y);
+    motion.moveToY(y);
 }
 
 /** The bounce off a floor or a ceiling; a soft one on a pad is a touch-down. */
 void CopterPhysics::bounceVertically(world::Copter& copter, Fixed y) {
-    Speed vy = copter.speedY();
+    Speed vy = copter.motion().speedY();
     int impact = bounce(vy);
-    copter.setSpeed(copter.speedX(), vy);
+    copter.motion().setSpeedY(vy);
     if (impact > impact_) impact_ = impact;
     if (vy >= Speed()) return;   // hit a ceiling
     if (impact_ >= context_.session.crashLimit()) return;
@@ -169,7 +174,7 @@ void CopterPhysics::bounceVertically(world::Copter& copter, Fixed y) {
 /** It lands when its skids are on the surface of a pad. */
 void CopterPhysics::touchDownOnPad(world::Copter& copter, Fixed y) {
     int skidsY = y.pixels() + SKIDS_BOTTOM;
-    int middle = copter.pixelX() + SKIDS_MIDDLE;
+    int middle = copter.motion().pixelX() + SKIDS_MIDDLE;
     for (const world::Pad& pad : context_.level.pads()) {
         if (pad.place().y == skidsY && pad.place().spans(middle)) {
             copter.land(pad);

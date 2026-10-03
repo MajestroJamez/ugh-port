@@ -11,7 +11,7 @@
 #include "units/Countdown.hpp"
 #include "world/Copter.hpp"
 #include "world/Facing.hpp"
-#include "world/Level.hpp"
+#include "world/Pad.hpp"
 
 namespace ugh::enemies::walker {
 
@@ -23,7 +23,8 @@ class Walker : public Enemy, public state::StateMachine<Walker, EnemyContext, Wa
 public:
     static constexpr int FRAME_DELAY = 4;   // frames per animation frame
 
-    Walker(int index, const data::kinds::WalkerKind& kind, const data::levels::WalkerPlacement& placement);
+    /** The walker of `placement` on `pad` (the pad the placement names). */
+    Walker(int index, const data::kinds::WalkerKind& kind, const data::levels::WalkerPlacement& placement, world::Pad& pad);
 
     void update(const EnemyContext& context) override;
     void accept(EnemyVisitor& visitor) const override;
@@ -31,7 +32,7 @@ public:
     const data::kinds::WalkerKind& kind() const { return *kind_; }
 
     /** The pad it walks on. */
-    world::Pad& pad(world::Level& level) const { return level.pad(pad_); }
+    world::Pad& pad() const { return *pad_; }
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
     world::Facing facing() const { return facing_; }
@@ -61,7 +62,7 @@ public:
 
 private:
     const data::kinds::WalkerKind* kind_;
-    int pad_ = 0;
+    world::Pad* pad_;
     units::Fixed vx_;
     world::Facing facing_ = world::Facing::Left;
     units::Countdown watchTime_;

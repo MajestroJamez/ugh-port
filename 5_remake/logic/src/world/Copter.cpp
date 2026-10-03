@@ -3,22 +3,22 @@
 namespace ugh::world {
 
 void Copter::placeAtStart(units::Fixed x, units::Fixed y, int firstRotorSprite) {
-    moveToX(x);
-    moveToY(y);
-    landedPad_.reset();
+    motion_.moveToX(x);
+    motion_.moveToY(y);
+    motion_.stop();
+    landedOn_ = nullptr;
     rotor_.start(firstRotorSprite);
     cabin_.clear();
-    setSpeed(units::Speed(), units::Speed());
 }
 
 void Copter::land(const Pad& pad) {
-    landedPad_ = pad.index();
-    setSpeed(units::Speed(), units::Speed());
+    landedOn_ = &pad;
+    motion_.stop();
 }
 
-void Copter::throwUp(int walkerSpeed) {
-    thrown(walkerSpeed);
-    landedPad_.reset();
+void Copter::throwUp(units::Fixed walkerSpeed) {
+    motion_.throwUp(walkerSpeed);
+    landedOn_ = nullptr;
 }
 
 }  // namespace ugh::world

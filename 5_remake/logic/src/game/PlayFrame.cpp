@@ -23,7 +23,7 @@ void PlayFrame::readKeys() {
     input::MenuKey key = menu_.last();
     if (key == input::MenuKey::Pause) context_.diagnostics.report("pause (P) is not supported");
     if (key == input::MenuKey::Escape) {
-        context_.session.giveUp();
+        context_.session.lives().giveUp();
         if (!context_.level.fade().fadingOut()) context_.level.fade().startFadeOut();
     }
 }

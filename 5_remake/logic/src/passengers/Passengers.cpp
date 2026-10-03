@@ -4,10 +4,10 @@
 
 namespace ugh::passengers {
 
-void Passengers::load(const data::levels::LevelDefinition& definition) {
+void Passengers::load(const data::levels::LevelDefinition& definition, world::Level& level) {
     all_.clear();
     standing_.clear();
-    PassengerFactory factory(*this);
+    PassengerFactory factory(*this, level);
     for (const auto& placement : definition.passengers) placement->accept(factory);
 }
 

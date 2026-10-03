@@ -11,12 +11,12 @@ Ballistics::Result Ballistics::fall(Body& body, const world::Level& level) const
     if (world::Screen::pastSide(x)) return Result::Gone;
     body.x = x;
     body.fallSpeed += gravity_;
-    if (body.fallSpeed < 0) {   // still on its way up
-        body.y += Fixed::fromRaw(body.fallSpeed);
+    if (body.fallSpeed < Fixed()) {   // still on its way up
+        body.y += body.fallSpeed;
         return Result::Flying;
     }
     Fixed before = body.y;
-    Fixed y = before + Fixed::fromRaw(body.fallSpeed);
+    Fixed y = before + body.fallSpeed;
     if (y >= world::Screen::BOTTOM) return Result::Gone;
     body.y = y;
     int bottom = y.pixels() + body.anchorY, bottomBefore = before.pixels() + body.anchorY;

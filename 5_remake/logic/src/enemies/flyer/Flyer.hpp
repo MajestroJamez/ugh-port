@@ -45,11 +45,11 @@ public:
     bool waitOver() { return waitTime_.tick(); }
     int waitTime() const { return waitTime_.remaining(); }
 
-    /** Falling: 1/32 px per frame, faster every frame up to a limit. */
-    int fallSpeed() const { return fallSpeed_; }
-    void startFalling() { fallSpeed_ = 0; }
-    void fallFaster(int limit) {
-        if (fallSpeed_ < limit) fallSpeed_ += 1;
+    /** Falling: Fixed per frame, faster every frame (by 1/32 px) up to `limit`. */
+    units::Fixed fallSpeed() const { return fallSpeed_; }
+    void startFalling() { fallSpeed_ = units::Fixed(); }
+    void fallFaster(units::Fixed limit) {
+        if (fallSpeed_ < limit) fallSpeed_ += units::Fixed::fromRaw(1);
     }
 
 private:
@@ -59,7 +59,7 @@ private:
     int lastTarget_ = 1;
     world::Facing flight_ = world::Facing::Left;
     units::Countdown waitTime_;
-    int fallSpeed_ = 0;
+    units::Fixed fallSpeed_;
 };
 
 }  // namespace ugh::enemies::flyer

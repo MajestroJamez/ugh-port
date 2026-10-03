@@ -62,7 +62,7 @@ public:
     events::Diagnostics& diagnostics() { return diagnostics_; }
 
 private:
-    friend class testing::TestPilot;   // it reaches the copters, the energy and the lives
+    friend class testing::TestPilot;   // the one way into the state: the copters, the energy and the lives
 
     const data::GameData& data_;
     events::EventBroadcast events_;

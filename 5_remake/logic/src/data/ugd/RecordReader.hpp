@@ -12,7 +12,7 @@ namespace ugh::data::ugd {
 
 /**
  * The values of the record being read (at): its keys, texts, numbers, lists and ranges. A missing key or a bad value is an
- * error with the line number and the type of the record; the first error stays.
+ * error with the line number and the type of the record; the readers stop at the first one.
  */
 class RecordReader {
 public:

@@ -6,12 +6,13 @@
 #include "passengers/Passenger.hpp"
 #include "passengers/route/PassengerCall.hpp"
 #include "passengers/route/Ride.hpp"
-#include "passengers/route/Route.hpp"
 #include "passengers/route/RouteKinds.hpp"
+#include "passengers/route/RouteProgress.hpp"
 #include "passengers/route/RouteState.hpp"
 #include "passengers/route/Swim.hpp"
 #include "state/StateMachine.hpp"
 #include "world/Copter.hpp"
+#include "world/Level.hpp"
 
 namespace ugh::passengers::route {
 
@@ -27,7 +28,8 @@ public:
     /** From the copter's left edge to where a passenger gets in and out, in pixels. */
     static constexpr int COPTER_DOOR = 16;
 
-    RoutePassenger(int index, const data::levels::RoutePassengerPlacement& placement);
+    /** The passenger of `placement`, on its route through the pads of `level`. */
+    RoutePassenger(int index, const data::levels::RoutePassengerPlacement& placement, world::Level& level);
 
     void update(const PassengerContext& context) override;
     void frameShown() override;
@@ -38,8 +40,8 @@ public:
     RouteKinds& kinds() { return kinds_; }
     const RouteKinds& kinds() const { return kinds_; }
 
-    Route& route() { return route_; }
-    const Route& route() const { return route_; }
+    RouteProgress& route() { return route_; }
+    const RouteProgress& route() const { return route_; }
     PassengerCall& call() { return call_; }
     const PassengerCall& call() const { return call_; }
     Ride& ride() { return ride_; }
@@ -69,7 +71,7 @@ public:
 
 private:
     RouteKinds kinds_;
-    Route route_;
+    RouteProgress route_;
     PassengerCall call_;
     Ride ride_;
     Swim swim_;

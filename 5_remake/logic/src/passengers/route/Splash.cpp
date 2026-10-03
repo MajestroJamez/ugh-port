@@ -8,7 +8,7 @@ namespace ugh::passengers::route {
 const Splash Splash::instance{};
 
 void Splash::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    passenger.route().pickupPad(context.level).vacate();
+    passenger.route().pickupPad().vacate();
     passenger.hideBubble();
     passenger.restartAnimation();
     passenger.swim().plunge();

@@ -69,7 +69,7 @@ void GameFields::write(const game::Game& game, Fields& f) {
     f["game.level"] = std::to_string(session.levelNumber());
     f["game.players"] = std::to_string(session.players());
     f["game.difficulty"] = difficultyName(session.difficulty());
-    f["game.lives"] = std::to_string(session.lives());
+    f["game.lives"] = std::to_string(session.lives().count());
     f["game.multiplier"] = std::to_string(session.score().multiplier());
     f["game.score"] = std::to_string(session.score().points());
     const world::RandomNumbers::Words& words = session.random().words();

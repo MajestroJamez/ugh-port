@@ -131,12 +131,13 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
             if (!number(it->second, v)) report_.problem(tick.number, "a bad value " + it->first + "=" + it->second);
             return v;
         };
-        units::Fixed x = units::Fixed::fromRaw(value("x", copter.x().raw()));
-        units::Fixed y = units::Fixed::fromRaw(value("y", copter.y().raw()));
-        int pixelX = value("pixelX", copter.pixelX()), pixelY = value("pixelY", copter.pixelY());
-        units::Speed vx = units::Speed::fromRaw(value("vx", copter.speedX().raw()));
-        units::Speed vy = units::Speed::fromRaw(value("vy", copter.speedY().raw()));
-        std::optional<int> pad = copter.landedPad();
+        units::Fixed x = units::Fixed::fromRaw(value("x", copter.motion().x().raw()));
+        units::Fixed y = units::Fixed::fromRaw(value("y", copter.motion().y().raw()));
+        int pixelX = value("pixelX", copter.motion().pixelX()), pixelY = value("pixelY", copter.motion().pixelY());
+        units::Speed vx = units::Speed::fromRaw(value("vx", copter.motion().speedX().raw()));
+        units::Speed vy = units::Speed::fromRaw(value("vy", copter.motion().speedY().raw()));
+        std::optional<int> pad;
+        if (copter.landedPad()) pad = copter.landedPad()->index();
         auto landed = tick.inject.find(c + "landedPad");
         if (landed != tick.inject.end()) {
             moved = true;

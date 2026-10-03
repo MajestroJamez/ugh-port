@@ -485,3 +485,13 @@ Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/l
   seřazené. `/code-review high`: 7 nálezů, 5 opraveno, 2 záměrně ponechány (podpis tabulky; `type` cestujícího je
   hodnota pole). Junior test: 2 ze 3 požadavků jen z README, třetí (doba ležení bonusu) doplněn do „kam sáhnout“.
   41 testů + 3 + 161 replayů zelených. Krok N9c hotový. Další: **krok 10**.
+- 2026-10-03: N9d hotový (review po N9c) - objekty místo indexů i tam, kde zbyly: vrtulník stojí na `const Pad*`,
+  na plošině čeká `const Figure*`, walker a trasa cestujícího drží plošiny levelu (`walker.pad()`,
+  `route().pickupPad()`); index entity je v `world::Figure` (cestující, nepřítel i bonusový předmět - ten teď z
+  `Figure` dědí). `Copter` skládá `Motion` (už nedědí), životy jsou `world::Lives`; testovací pilot je jediný
+  `friend` fasády `Game` (dřív i `Copter`, `Motion`, `Energy`, `Session`). Rychlosti pádu a výpadu walkera jsou
+  `Fixed`, ne holý `int`; ruční odpočty (`arrivalDelay`, `quickDeliveryTime`) přes `Countdown::tickToZero`.
+  `passengers::route::Route` přejmenována na `RouteProgress` (kolize s `data::levels::Route`); stejná jména stavů
+  v různých balíčcích zůstávají (jsou to jména stavů v replayích). Pole replayů v `6_verification` z tabulek
+  (`FieldTable`) místo řetězů `if`. Opravené komentáře (`Raindrop`, `RecordReader`), pravidla 19-22 v
+  `rewrite-design.md`. 41 testů + 3 + 161 replayů zelených. Další: **krok 10**.

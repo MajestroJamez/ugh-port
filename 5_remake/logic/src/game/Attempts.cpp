@@ -11,8 +11,8 @@ void Attempts::start() {
     world::Session& session = *state_.session;
     const data::levels::LevelDefinition& definition = *data_.level(session.players(), session.levelNumber());
     state_.level.startAttempt(definition, data_.sprites(), session.random(), diagnostics_);
-    state_.passengers.load(definition);
-    state_.enemies.load(definition, data_);
+    state_.passengers.load(definition, state_.level);
+    state_.enemies.load(definition, data_, state_.level);
 }
 
 /**

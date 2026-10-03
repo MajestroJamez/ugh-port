@@ -21,16 +21,16 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
     world::Copter& copter = *passenger.ride().carrier();
     world::Session& session = context.session;
     copter.cabin().unload();
-    passenger.moveToX(copter.x() + Fixed::fromPixels(RoutePassenger::COPTER_DOOR - passenger.kind().box.x));
+    passenger.moveToX(copter.motion().x() + Fixed::fromPixels(RoutePassenger::COPTER_DOOR - passenger.kind().box.x));
     uint32_t points = static_cast<uint32_t>(copter.cabin().fare()) * static_cast<uint32_t>(session.score().multiplier());
     session.score().add(points);
     context.report({events::EventKind::PassengerPaid, copter.player(), passenger.index(), static_cast<int>(points)});
     if (passenger.ride().quick() && session.score().multiplierBelowLimit()) {
-        context.bonuses.drop(*context.data.rules().quickDeliveryBonus, copter.x() + Fixed::fromPixels(BONUS_DROP_X),
-                             copter.y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), 0, context.diagnostics);
+        context.bonuses.drop(*context.data.rules().quickDeliveryBonus, copter.motion().x() + Fixed::fromPixels(BONUS_DROP_X),
+                             copter.motion().y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), Fixed(), context.diagnostics);
         context.report({events::EventKind::QuickDelivery, copter.player(), passenger.index()});
     }
-    const data::levels::PadDefinition& target = passenger.route().targetPad(context.level).place();
+    const data::levels::PadDefinition& target = passenger.route().targetPad().place();
     passenger.moveToY(Fixed::fromPixels(target.y - passenger.kind().box.y));
     passenger.restartAnimation();
 }
@@ -41,7 +41,7 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
  */
 void WalkingToDoor::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
-    int door = passenger.route().targetPad(context.level).place().door;
+    int door = passenger.route().targetPad().place().door;
     if (passenger.stepTowards(door)) {
         passenger.changeState(GoingIn::instance, context);
         return;

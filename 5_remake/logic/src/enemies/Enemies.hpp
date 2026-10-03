@@ -7,14 +7,15 @@
 #include "data/GameData.hpp"
 #include "data/levels/LevelDefinition.hpp"
 #include "enemies/Enemy.hpp"
+#include "world/Level.hpp"
 
 namespace ugh::enemies {
 
 /** The enemies of the level, in the order of its definition (the order of their updates). */
 class Enemies {
 public:
-    /** The enemies of a new attempt at `definition`. */
-    void load(const data::levels::LevelDefinition& definition, const data::GameData& data);
+    /** The enemies of a new attempt at `definition`, on the pads of `level`. */
+    void load(const data::levels::LevelDefinition& definition, const data::GameData& data, world::Level& level);
 
     /** Every enemy's state, in order. */
     void update(const EnemyContext& context);

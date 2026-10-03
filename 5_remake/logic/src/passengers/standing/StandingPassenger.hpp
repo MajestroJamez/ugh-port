@@ -32,20 +32,20 @@ public:
 
     // ------------------------------------------------------------ falling
 
-    /** Its speed sideways (Fixed per frame) and down (1/32 px per frame; negative: up). */
+    /** Its speed sideways and down (Fixed per frame; negative: up). */
     units::Fixed dropSpeedX() const { return dropSpeedX_; }
-    int fallSpeed() const { return fallSpeed_; }
-    void setFall(units::Fixed speedX, int fallSpeed) {
+    units::Fixed fallSpeed() const { return fallSpeed_; }
+    void setFall(units::Fixed speedX, units::Fixed fallSpeed) {
         dropSpeedX_ = speedX;
         fallSpeed_ = fallSpeed;
     }
     /** It bounced off an enemy: it goes up with `fallSpeed`, showing that it was hit. */
-    void bounce(int fallSpeed, int bouncedSprite) {
+    void bounce(units::Fixed fallSpeed, int bouncedSprite) {
         fallSpeed_ = fallSpeed;
         showSprite(bouncedSprite);
     }
     /** It bounced off a blower: the same, but it shows no hit. */
-    void bounceUnseen(int fallSpeed) { fallSpeed_ = fallSpeed; }
+    void bounceUnseen(units::Fixed fallSpeed) { fallSpeed_ = fallSpeed; }
 
     /** It falls down (not up) and its hit point is in the box of an enemy at enemyX, enemyY. */
     bool fallsOnto(units::Fixed enemyX, units::Fixed enemyY) const;
@@ -54,7 +54,7 @@ private:
     const data::kinds::StandingPassengerKind* kind_;
     world::Copter* carrier_ = nullptr;
     units::Fixed dropSpeedX_;
-    int fallSpeed_ = 0;
+    units::Fixed fallSpeed_;
 };
 
 }  // namespace ugh::passengers::standing

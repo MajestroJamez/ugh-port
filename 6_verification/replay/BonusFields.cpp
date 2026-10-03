@@ -7,7 +7,7 @@
 namespace ugh::replay {
 
 void BonusFields::write(const bonuses::BonusItem& item, Fields& f) {
-    std::string c = "bonus." + std::to_string(item.slot()) + ".";
+    std::string c = "bonus." + std::to_string(item.index()) + ".";
     std::string state = item.state().name();
     f[c + "kind"] = item.kind().name;
     f[c + "state"] = state;
@@ -16,9 +16,9 @@ void BonusFields::write(const bonuses::BonusItem& item, Fields& f) {
     f[c + "sprite"] = std::to_string(item.kind().sprite);
     if (state == "Falling") {
         f[c + "vx"] = std::to_string(item.speedX().raw());
-        f[c + "vy"] = std::to_string(item.fallSpeed());
+        f[c + "vy"] = std::to_string(item.fallSpeed().raw());
     } else {
-        f[c + "lyingTime"] = std::to_string(item.lyingTime().remaining());
+        f[c + "lyingTime"] = std::to_string(item.lyingTime());
     }
 }
 

@@ -7,7 +7,7 @@
 namespace ugh::passengers {
 
 void PassengerFactory::visit(const data::levels::RoutePassengerPlacement& placement) {
-    passengers_.all_.push_back(std::make_unique<route::RoutePassenger>(passengers_.count(), placement));
+    passengers_.all_.push_back(std::make_unique<route::RoutePassenger>(passengers_.count(), placement, level_));
 }
 
 void PassengerFactory::visit(const data::levels::StandingPassengerPlacement& placement) {

@@ -8,7 +8,7 @@ namespace ugh::enemies::flyer {
 
 namespace {
 
-constexpr int MAX_FALL_SPEED = 40;   // 1/32 px per frame
+constexpr units::Fixed MAX_FALL_SPEED = units::Fixed::fromRaw(40);   // per frame
 
 }  // namespace
 
@@ -28,7 +28,7 @@ void Falling::update(Flyer& flyer, const EnemyContext& context) const {
     }
     flyer.moveToX(x);
     flyer.fallFaster(MAX_FALL_SPEED);
-    units::Fixed y = units::Fixed::fromRaw(flyer.fallSpeed()) + flyer.y();
+    units::Fixed y = flyer.fallSpeed() + flyer.y();
     if (y >= world::Screen::BOTTOM) {
         flyer.continueIn(Placed::instance, context);
         return;

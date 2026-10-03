@@ -10,7 +10,7 @@ const BehindDoor BehindDoor::instance{};
 void BehindDoor::update(RoutePassenger& passenger, const PassengerContext& context) const {
     passenger.hide();
     if (!passenger.route().arrivalDue()) return;
-    if (!passenger.route().pickupPad(context.level).free()) return;
+    if (!passenger.route().pickupPad().free()) return;
     passenger.changeState(ComingOut::instance, context);
 }
 

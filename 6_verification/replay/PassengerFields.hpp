@@ -1,7 +1,6 @@
 // The fields of the passengers.
 #pragma once
 
-#include "passengers/Passenger.hpp"
 #include "passengers/PassengerVisitor.hpp"
 #include "replay/Fields.hpp"
 
@@ -17,8 +16,6 @@ public:
 
 private:
     Fields& fields_;
-
-    void common(const passengers::Passenger& passenger, const std::string& prefix, const std::string& field);
 };
 
 }  // namespace ugh::replay

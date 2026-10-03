@@ -15,7 +15,7 @@ void Boarding::enter(RoutePassenger& passenger, const PassengerContext&) const {
 }
 
 void Boarding::stay(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Copter* copter = context.level.copters().landedOn(passenger.route().pickupPad(context.level));
+    world::Copter* copter = context.level.copters().landedOn(passenger.route().pickupPad());
     if (!copter) {
         passenger.changeState(Impatient::instance, context);
         return;

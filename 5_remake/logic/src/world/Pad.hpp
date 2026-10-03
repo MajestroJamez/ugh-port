@@ -1,9 +1,8 @@
 // A pad during the play.
 #pragma once
 
-#include <optional>
-
 #include "data/levels/PadDefinition.hpp"
+#include "world/Figure.hpp"
 
 namespace ugh::world {
 
@@ -16,16 +15,16 @@ public:
     int index() const { return index_; }
     const data::levels::PadDefinition& place() const { return *place_; }
 
-    bool free() const { return !waiting_.has_value(); }
-    /** The index of the passenger who waits on it. */
-    std::optional<int> waiting() const { return waiting_; }
-    void occupy(int passenger) { waiting_ = passenger; }
-    void vacate() { waiting_.reset(); }
+    bool free() const { return waiting_ == nullptr; }
+    /** The passenger who waits on it; nullptr if none. */
+    const Figure* waiting() const { return waiting_; }
+    void occupy(const Figure& passenger) { waiting_ = &passenger; }
+    void vacate() { waiting_ = nullptr; }
 
 private:
     int index_;
     const data::levels::PadDefinition* place_;
-    std::optional<int> waiting_;
+    const Figure* waiting_ = nullptr;
 };
 
 }  // namespace ugh::world

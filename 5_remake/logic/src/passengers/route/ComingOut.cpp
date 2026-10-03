@@ -7,9 +7,9 @@ namespace ugh::passengers::route {
 
 const ComingOut ComingOut::instance{};
 
-void ComingOut::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Pad& pad = passenger.route().pickupPad(context.level);
-    pad.occupy(passenger.index());
+void ComingOut::enter(RoutePassenger& passenger, const PassengerContext&) const {
+    world::Pad& pad = passenger.route().pickupPad();
+    pad.occupy(passenger);
     passenger.standAtDoor(pad.place());
     passenger.restartAnimation();
 }

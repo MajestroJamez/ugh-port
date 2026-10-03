@@ -1,14 +1,25 @@
 #include "replay/EnemyFields.hpp"
 
+#include <string>
+
 #include "enemies/blower/Blower.hpp"
 #include "enemies/flyer/Flyer.hpp"
 #include "enemies/tree/Tree.hpp"
 #include "enemies/walker/Walker.hpp"
 #include "replay/FieldRules.hpp"
+#include "replay/FieldTable.hpp"
 
 namespace ugh::replay {
 
 namespace {
+
+using enemies::Enemy;
+using enemies::blower::Blower;
+using enemies::flyer::Flyer;
+using enemies::tree::Tree;
+using enemies::walker::Walker;
+
+// ------------------------------------------------------------ which fields an enemy has in which state
 
 const FieldRules& flyerRules() {
     static const FieldRules rules({
@@ -55,64 +66,81 @@ const FieldRules& treeRules() {
     return rules;
 }
 
-const char* side(world::Facing facing) { return facing == world::Facing::Left ? "left" : "right"; }
+// ------------------------------------------------------------ the values of the fields
 
-std::string prefix(const enemies::Enemy& enemy) { return "enemy." + std::to_string(enemy.index()) + "."; }
+std::string side(world::Facing facing) { return facing == world::Facing::Left ? "left" : "right"; }
+
+const FieldTable<Enemy>& commonValues() {
+    static const FieldTable<Enemy> values{
+        {"sprite", [](const Enemy& e) { return e.sprite() ? std::to_string(*e.sprite()) : "none"; }},
+        {"x", [](const Enemy& e) { return std::to_string(e.x().raw()); }},
+        {"y", [](const Enemy& e) { return std::to_string(e.y().raw()); }},
+        {"animFrame", [](const Enemy& e) { return std::to_string(e.animator().frame()); }},
+        {"animDelay", [](const Enemy& e) { return std::to_string(e.animator().delay()); }},
+    };
+    return values;
+}
+
+const FieldTable<Flyer>& flyerValues() {
+    static const FieldTable<Flyer> values{
+        {"kind", [](const Flyer&) { return std::string("flyer"); }},
+        {"state", [](const Flyer& f) { return std::string(f.state().name()); }},
+        {"vx", [](const Flyer& f) { return std::to_string(f.speedX().raw()); }},
+        {"lastTarget", [](const Flyer& f) { return std::to_string(f.lastTarget()); }},
+        {"flight", [](const Flyer& f) { return side(f.flight()); }},
+        {"waitTime", [](const Flyer& f) { return std::to_string(f.waitTime()); }},
+        {"screechTime", [](const Flyer& f) { return std::to_string(f.waitTime()); }},
+        {"fallSpeed", [](const Flyer& f) { return std::to_string(f.fallSpeed().raw()); }},
+    };
+    return values;
+}
+
+const FieldTable<Walker>& walkerValues() {
+    static const FieldTable<Walker> values{
+        {"kind", [](const Walker&) { return std::string("walker"); }},
+        {"state", [](const Walker& w) { return std::string(w.state().name()); }},
+        {"vx", [](const Walker& w) { return std::to_string(w.speedX().raw()); }},
+        {"facing", [](const Walker& w) { return side(w.facing()); }},
+        {"watchTime", [](const Walker& w) { return std::to_string(w.watchTime()); }},
+        {"chargeSpeed", [](const Walker& w) { return std::to_string(w.charge().speed().raw()); }},
+        {"stunTime", [](const Walker& w) { return std::to_string(w.stun().time()); }},
+    };
+    return values;
+}
+
+const FieldTable<Blower>& blowerValues() {
+    static const FieldTable<Blower> values{
+        {"kind", [](const Blower&) { return std::string("blower"); }},
+        {"state", [](const Blower& b) { return std::string(b.state().name()); }},
+        {"stunTime", [](const Blower& b) { return std::to_string(b.stun().time()); }},
+    };
+    return values;
+}
+
+const FieldTable<Tree>& treeValues() {
+    static const FieldTable<Tree> values{
+        {"kind", [](const Tree&) { return std::string("tree"); }},
+        {"state", [](const Tree& t) { return std::string(t.state().name()); }},
+        {"nextDrop", [](const Tree& t) { return std::to_string(t.nextDrop()); }},
+        {"restTime", [](const Tree& t) { return std::to_string(t.restTime()); }},
+    };
+    return values;
+}
+
+std::string prefix(const Enemy& enemy) { return "enemy." + std::to_string(enemy.index()) + "."; }
 
 }  // namespace
 
-std::optional<std::string> EnemyFields::common(const enemies::Enemy& e, const char* kind, const char* state,
-                                               const std::string& field) {
-    if (field == "kind") return kind;
-    if (field == "state") return state;
-    if (field == "sprite") return e.sprite() ? std::to_string(*e.sprite()) : "none";
-    if (field == "x") return std::to_string(e.x().raw());
-    if (field == "y") return std::to_string(e.y().raw());
-    if (field == "animFrame") return std::to_string(e.animator().frame());
-    if (field == "animDelay") return std::to_string(e.animator().delay());
-    return std::nullopt;
+void EnemyFields::visit(const Flyer& f) { writeFields(f, prefix(f), flyerRules(), flyerValues(), commonValues(), fields_); }
+
+void EnemyFields::visit(const Walker& w) {
+    writeFields(w, prefix(w), walkerRules(), walkerValues(), commonValues(), fields_);
 }
 
-void EnemyFields::visit(const enemies::flyer::Flyer& f) {
-    for (const std::string& field : flyerRules().fieldsOf(f.state().name())) {
-        std::optional<std::string> v = common(f, "flyer", f.state().name(), field);
-        if (field == "vx") v = std::to_string(f.speedX().raw());
-        else if (field == "lastTarget") v = std::to_string(f.lastTarget());
-        else if (field == "flight") v = side(f.flight());
-        else if (field == "waitTime") v = std::to_string(f.waitTime());
-        else if (field == "screechTime") v = std::to_string(f.waitTime());
-        else if (field == "fallSpeed") v = std::to_string(f.fallSpeed());
-        fields_[prefix(f) + field] = v.value_or("?");   // "?": a field of the rules without a value
-    }
+void EnemyFields::visit(const Blower& b) {
+    writeFields(b, prefix(b), blowerRules(), blowerValues(), commonValues(), fields_);
 }
 
-void EnemyFields::visit(const enemies::walker::Walker& w) {
-    for (const std::string& field : walkerRules().fieldsOf(w.state().name())) {
-        std::optional<std::string> v = common(w, "walker", w.state().name(), field);
-        if (field == "vx") v = std::to_string(w.speedX().raw());
-        else if (field == "facing") v = side(w.facing());
-        else if (field == "watchTime") v = std::to_string(w.watchTime());
-        else if (field == "chargeSpeed") v = std::to_string(w.charge().speed());
-        else if (field == "stunTime") v = std::to_string(w.stun().time());
-        fields_[prefix(w) + field] = v.value_or("?");   // "?": a field of the rules without a value
-    }
-}
-
-void EnemyFields::visit(const enemies::blower::Blower& b) {
-    for (const std::string& field : blowerRules().fieldsOf(b.state().name())) {
-        std::optional<std::string> v = common(b, "blower", b.state().name(), field);
-        if (field == "stunTime") v = std::to_string(b.stun().time());
-        fields_[prefix(b) + field] = v.value_or("?");   // "?": a field of the rules without a value
-    }
-}
-
-void EnemyFields::visit(const enemies::tree::Tree& t) {
-    for (const std::string& field : treeRules().fieldsOf(t.state().name())) {
-        std::optional<std::string> v = common(t, "tree", t.state().name(), field);
-        if (field == "nextDrop") v = std::to_string(t.nextDrop());
-        else if (field == "restTime") v = std::to_string(t.restTime());
-        fields_[prefix(t) + field] = v.value_or("?");   // "?": a field of the rules without a value
-    }
-}
+void EnemyFields::visit(const Tree& t) { writeFields(t, prefix(t), treeRules(), treeValues(), commonValues(), fields_); }
 
 }  // namespace ugh::replay

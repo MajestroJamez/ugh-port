@@ -16,9 +16,9 @@ public:
 
     /**
      * A new item of `kind` with its middle and bottom at x, y, thrown sideways with `speedX` and up with its kind's
-     * lift and `lift` more (1/32 px per frame). With all slots in use the original jumps into nowhere: diagnostics.
+     * lift and `lift` more (Fixed per frame). With all slots in use the original jumps into nowhere: diagnostics.
      */
-    void drop(const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX, int lift,
+    void drop(const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX, units::Fixed lift,
               events::Diagnostics& diagnostics);
 
     /** Every item, the last slot first. */

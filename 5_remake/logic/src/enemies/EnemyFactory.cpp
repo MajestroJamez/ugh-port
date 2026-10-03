@@ -12,7 +12,8 @@ void EnemyFactory::visit(const data::levels::FlyerPlacement& placement) {
 }
 
 void EnemyFactory::visit(const data::levels::WalkerPlacement& placement) {
-    enemies_.all_.push_back(std::make_unique<walker::Walker>(enemies_.count(), data_.walkerKind(), placement));
+    enemies_.all_.push_back(std::make_unique<walker::Walker>(enemies_.count(), data_.walkerKind(), placement,
+                                                                    level_.pad(placement.pad)));
 }
 
 void EnemyFactory::visit(const data::levels::BlowerPlacement& placement) {

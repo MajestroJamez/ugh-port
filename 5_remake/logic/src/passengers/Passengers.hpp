@@ -7,14 +7,15 @@
 #include "data/levels/LevelDefinition.hpp"
 #include "passengers/Passenger.hpp"
 #include "passengers/standing/StandingPassenger.hpp"
+#include "world/Level.hpp"
 
 namespace ugh::passengers {
 
 /** The passengers of the level, in the order of its definition (the order of their updates). */
 class Passengers {
 public:
-    /** The passengers of a new attempt at `definition`. */
-    void load(const data::levels::LevelDefinition& definition);
+    /** The passengers of a new attempt at `definition`, on the pads of `level`. */
+    void load(const data::levels::LevelDefinition& definition, world::Level& level);
 
     /** Every passenger's state, in order. */
     void update(const PassengerContext& context);

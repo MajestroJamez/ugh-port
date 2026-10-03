@@ -26,14 +26,14 @@ const Flying Flying::instance{};
 void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
     world::Level& level = context.level;
     const world::Copter& copter = level.copters()[flyer.takeNextTarget(context.session.players())];
-    if (copter.x() < SCREEN_MIDDLE) {
+    if (copter.motion().x() < SCREEN_MIDDLE) {
         flyer.flyTowards(world::Facing::Left);
         flyer.moveToX(START_RIGHT);
     } else {
         flyer.flyTowards(world::Facing::Right);
         flyer.moveToX(START_LEFT);
     }
-    Fixed y = copter.y() + HEIGHT;
+    Fixed y = copter.motion().y() + HEIGHT;
     if (y > level.water().level()) y = level.water().level();
     y -= HEIGHT;
     if (y < CEILING) y = CEILING;

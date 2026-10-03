@@ -3,10 +3,6 @@
 
 #include "units/Int16.hpp"
 
-namespace ugh::testing {
-class TestPilot;   // the test pilot of the replays (5_remake/logic/testing)
-}
-
 namespace ugh::world {
 
 /**
@@ -18,6 +14,9 @@ class Energy {
 public:
     static constexpr int FULL = 23099;
 
+    Energy() = default;
+    explicit Energy(int value) : value_(value) {}
+
     void fill() { value_ = FULL; }
     void spend(int amount) { value_ = units::Int16(value_ - amount).value(); }
 
@@ -28,9 +27,8 @@ public:
     }
 
     int value() const { return value_; }
-private:
-    friend class testing::TestPilot;   // it keeps the energy up
 
+private:
     int value_ = 0;
 };
 

@@ -19,7 +19,7 @@ void Swaying::update(Tree& tree, const EnemyContext& context) const {
     tree.show(*tree.kind().swaying);
     passengers::standing::StandingPassenger* passenger = context.passengers.fallingOnto(tree.x(), tree.y());
     if (!passenger) return;
-    passenger->bounce((-passenger->fallSpeed()) >> 1, context.data.sprites().bouncedPassenger);
+    passenger->bounce((-passenger->fallSpeed()).half(), context.data.sprites().bouncedPassenger);
     tree.changeState(Resting::instance, context);
     if (!tree.hasDrops()) {
         context.diagnostics.report("a tree without bonus items to drop");
@@ -27,7 +27,7 @@ void Swaying::update(Tree& tree, const EnemyContext& context) const {
     }
     // up with a quarter of the bounce
     context.bonuses.drop(tree.takeDrop(), passenger->x(), passenger->y(), passenger->dropSpeedX(),
-                         (-passenger->fallSpeed()) >> 2, context.diagnostics);
+                         (-passenger->fallSpeed()).half().half(), context.diagnostics);
     context.report({events::EventKind::TreeDrop, std::nullopt, tree.index()});
 }
 

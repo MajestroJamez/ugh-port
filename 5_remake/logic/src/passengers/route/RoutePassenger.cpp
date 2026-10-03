@@ -4,8 +4,8 @@
 
 namespace ugh::passengers::route {
 
-RoutePassenger::RoutePassenger(int index, const data::levels::RoutePassengerPlacement& placement)
-    : Passenger(index), StateMachine(NextStop::instance), kinds_(*placement.kind), route_(placement.route) {}
+RoutePassenger::RoutePassenger(int index, const data::levels::RoutePassengerPlacement& placement, world::Level& level)
+    : Passenger(index), StateMachine(NextStop::instance), kinds_(*placement.kind), route_(placement.route, level) {}
 
 void RoutePassenger::update(const PassengerContext& context) { updateState(context); }
 
@@ -25,7 +25,7 @@ void RoutePassenger::standAtDoor(const data::levels::PadDefinition& pad) {
 
 bool RoutePassenger::walkTowards(const world::Copter& copter) {
     bool stepDue = animate();
-    return stepTowards(copter.pixelX() + COPTER_DOOR, stepDue);
+    return stepTowards(copter.motion().pixelX() + COPTER_DOOR, stepDue);
 }
 
 bool RoutePassenger::stepTowards(int feet, bool stepDue) {

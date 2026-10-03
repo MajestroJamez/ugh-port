@@ -5,20 +5,16 @@
 
 namespace ugh::bonuses {
 
-BonusItem::BonusItem(int slot, const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX,
-                     int lift)
-    : StateMachine(Falling::instance),
-      slot_(slot),
-      kind_(&kind),
-      x_(x - units::Fixed::fromPixels(kind.anchorX)),
-      y_(y - units::Fixed::fromPixels(kind.anchorY).half()),   // half its height
-      speedX_(speedX),
-      fallSpeed_(-(lift + kind.lift)) {}
+using units::Fixed;
 
-void BonusItem::moveTo(units::Fixed x, units::Fixed y, int fallSpeed) {
-    x_ = x;
-    y_ = y;
-    fallSpeed_ = fallSpeed;
+BonusItem::BonusItem(int slot, const data::kinds::BonusKind& kind, Fixed x, Fixed y, Fixed speedX, Fixed lift)
+    : Figure(slot, x - Fixed::fromPixels(kind.anchorX),
+             y - Fixed::fromPixels(kind.anchorY).half()),   // half its height
+      StateMachine(Falling::instance),
+      kind_(&kind),
+      speedX_(speedX),
+      fallSpeed_(-(lift + Fixed::fromRaw(kind.lift))) {
+    showSprite(kind.sprite);
 }
 
 }  // namespace ugh::bonuses

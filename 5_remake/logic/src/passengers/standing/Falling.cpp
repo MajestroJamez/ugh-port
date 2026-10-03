@@ -11,7 +11,7 @@ namespace {
 
 using units::Fixed;
 
-constexpr int GRAVITY = 2;   // 1/32 px per frame, per frame
+constexpr Fixed GRAVITY = Fixed::fromRaw(2);   // per frame, per frame
 // where it falls from: from the copter's top left corner, in pixels
 constexpr int DROP_X = 16, DROP_Y = 10;
 
@@ -24,9 +24,9 @@ void Falling::enter(StandingPassenger& passenger, const PassengerContext& contex
     world::Copter& copter = *passenger.carrier();
     const data::kinds::Box& box = passenger.kind().box;
     copter.cabin().unload();
-    passenger.setFall(copter.speedX().twicePerFrame(), copter.speedY().twicePerFrame().raw());
-    passenger.moveTo(copter.x() + Fixed::fromPixels(DROP_X) - Fixed::fromPixels(box.x),
-                     copter.y() + Fixed::fromPixels(DROP_Y) - Fixed::fromPixels(box.y).half());   // half its height
+    passenger.setFall(copter.motion().speedX().twicePerFrame(), copter.motion().speedY().twicePerFrame());
+    passenger.moveTo(copter.motion().x() + Fixed::fromPixels(DROP_X) - Fixed::fromPixels(box.x),
+                     copter.motion().y() + Fixed::fromPixels(DROP_Y) - Fixed::fromPixels(box.y).half());   // half its height
     passenger.showSprite(context.data.sprites().droppedPassenger);
     context.report({events::EventKind::PassengerDropped, copter.player(), passenger.index()});
 }

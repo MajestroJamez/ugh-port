@@ -24,7 +24,7 @@ bool Copters::emptyLandedOn(const Pad& pad) const {
 
 Copter* Copters::firstOnWater(const Water& water, bool withRoom, bool still) {
     for (Copter& copter : all()) {
-        if ((still && copter.speedY() != units::Speed()) || (withRoom && !copter.cabin().hasRoom())) continue;
+        if ((still && copter.motion().speedY() != units::Speed()) || (withRoom && !copter.cabin().hasRoom())) continue;
         if (copter.depthIn(water.row()) == 0) return &copter;
     }
     return nullptr;

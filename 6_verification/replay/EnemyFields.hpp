@@ -1,10 +1,6 @@
 // The fields of the enemies.
 #pragma once
 
-#include <optional>
-#include <string>
-
-#include "enemies/Enemy.hpp"
 #include "enemies/EnemyVisitor.hpp"
 #include "replay/Fields.hpp"
 
@@ -22,10 +18,6 @@ public:
 
 private:
     Fields& fields_;
-
-    /** The value of a field all enemies have; none when `field` is not one of them. */
-    static std::optional<std::string> common(const enemies::Enemy& enemy, const char* kind, const char* state,
-                                             const std::string& field);
 };
 
 }  // namespace ugh::replay

@@ -60,7 +60,7 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     for (const ugh::world::Copter& c : level.copters().all()) {
         const auto& cargo = c.cabin().cargo();
         int destination = !cargo ? 0 : cargo->destination ? *cargo->destination : -1;
-        view.copters[c.player()] = {c.x().raw(), c.y().raw(), c.rotor().sprite(), cargo ? cargo->look : 0,
+        view.copters[c.player()] = {c.motion().x().raw(), c.motion().y().raw(), c.rotor().sprite(), cargo ? cargo->look : 0,
                            destination, c.cabin().fare()};
     }
     for (int i = 0; i < game.passengers().count(); i++) {
@@ -73,7 +73,7 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     }
     for (int slot = 0; slot < ugh::bonuses::BonusSlots::SLOTS; slot++) {
         const auto& item = game.bonuses()[slot];
-        if (item) addEntity(view, UGH_LOGIC_ENTITY_BONUS_ITEM, slot, item->x(), item->y(), item->kind().sprite, std::nullopt);
+        if (item) addEntity(view, UGH_LOGIC_ENTITY_BONUS_ITEM, slot, item->x(), item->y(), item->sprite(), std::nullopt);
     }
     if (!level.windy()) return;
     for (const ugh::world::Raindrop& drop : level.rain().drops()) {
@@ -164,7 +164,7 @@ void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view) {
     view->phase = phase(game.phase());
     const ugh::world::Session& session = game.session();
     view->level = session.levelNumber();
-    view->lives = session.lives();
+    view->lives = session.lives().count();
     view->multiplier = session.score().multiplier();
     view->score = session.score().points();
     if (game.levelLoaded()) viewLevel(game, *view);

@@ -14,7 +14,7 @@ void PadFields::write(const world::Pad& pad, int index, Fields& f) {
     f[c + "wait"] = std::to_string(place.wait);
     f[c + "stand"] = std::to_string(place.stand);
     f[c + "number"] = std::to_string(place.number);
-    f[c + "waiting"] = pad.waiting() ? std::to_string(*pad.waiting()) : "none";
+    f[c + "waiting"] = pad.waiting() ? std::to_string(pad.waiting()->index()) : "none";
 }
 
 }  // namespace ugh::replay

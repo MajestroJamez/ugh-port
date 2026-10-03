@@ -11,19 +11,16 @@
 namespace ugh::passengers {
 
 /**
- * A passenger: what all have - their place in the level's list, what they show (`world::Figure`) and their speech
+ * A passenger: what all have - what they show (`world::Figure`, with their place in the level's list) and their speech
  * bubble. A passenger with a route and the standing passenger are its two kinds, each with its own state machine.
  */
 class Passenger : public world::Figure {
 public:
-    explicit Passenger(int index) : index_(index) {}
-    Passenger(int index, units::Fixed x, units::Fixed y) : Figure(x, y), index_(index) {}
+    explicit Passenger(int index) : Figure(index) {}
+    Passenger(int index, units::Fixed x, units::Fixed y) : Figure(index, x, y) {}
     virtual ~Passenger() = default;
     Passenger(const Passenger&) = delete;
     Passenger& operator=(const Passenger&) = delete;
-
-    /** Its place in the level's list: pads, events and the replays name it so. */
-    int index() const { return index_; }
 
     /** One frame in its state. */
     virtual void update(const PassengerContext& context) = 0;
@@ -36,7 +33,6 @@ public:
     void hideBubble() { bubble_.reset(); }
 
 private:
-    int index_;
     std::optional<int> bubble_;
 };
 

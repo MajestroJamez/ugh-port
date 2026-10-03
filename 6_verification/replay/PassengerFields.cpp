@@ -1,12 +1,22 @@
 #include "replay/PassengerFields.hpp"
 
+#include <optional>
+#include <string>
+
 #include "passengers/route/RoutePassenger.hpp"
 #include "passengers/standing/StandingPassenger.hpp"
 #include "replay/FieldRules.hpp"
+#include "replay/FieldTable.hpp"
 
 namespace ugh::replay {
 
 namespace {
+
+using passengers::Passenger;
+using passengers::route::RoutePassenger;
+using passengers::standing::StandingPassenger;
+
+// ------------------------------------------------------------ which fields a passenger has in which state
 
 const char* const ROUTE_ANIMATED = "ComingOut Waiting Calling Impatient Boarding WalkingToDoor GoingIn Splash Swimming "
                                    "SwimCalling SwimWaving SwimBoarding Sinking";
@@ -43,7 +53,11 @@ const FieldRules& standingRules() {
     return rules;
 }
 
-std::string sprite(std::optional<int> s) { return s ? std::to_string(*s) : "none"; }
+// ------------------------------------------------------------ the values of the fields
+
+std::string orNone(std::optional<int> value) { return value ? std::to_string(*value) : "none"; }
+
+std::string playerOf(const world::Copter* copter) { return copter ? std::to_string(copter->player()) : "none"; }
 
 const char* spotName(passengers::route::WaitingSpot spot) {
     switch (spot) {
@@ -54,50 +68,59 @@ const char* spotName(passengers::route::WaitingSpot spot) {
     return "";
 }
 
+const FieldTable<Passenger>& commonValues() {
+    static const FieldTable<Passenger> values{
+        {"sprite", [](const Passenger& p) { return orNone(p.sprite()); }},
+        {"bubble", [](const Passenger& p) { return orNone(p.bubble()); }},
+        {"x", [](const Passenger& p) { return std::to_string(p.x().raw()); }},
+        {"y", [](const Passenger& p) { return std::to_string(p.y().raw()); }},
+        {"animFrame", [](const Passenger& p) { return std::to_string(p.animator().frame()); }},
+        {"animDelay", [](const Passenger& p) { return std::to_string(p.animator().delay()); }},
+    };
+    return values;
+}
+
+const FieldTable<RoutePassenger>& routeValues() {
+    static const FieldTable<RoutePassenger> values{
+        {"kind", [](const RoutePassenger& p) { return p.kind().name; }},
+        {"state", [](const RoutePassenger& p) { return std::string(p.state().name()); }},
+        {"routeStop", [](const RoutePassenger& p) { return std::to_string(p.route().stop()); }},
+        {"pickupPad", [](const RoutePassenger& p) { return std::to_string(p.route().pickupPad().index()); }},
+        {"targetPad", [](const RoutePassenger& p) { return std::to_string(p.route().targetPad().index()); }},
+        {"seenX", [](const RoutePassenger& p) { return std::to_string(p.seenX()); }},
+        {"seenY", [](const RoutePassenger& p) { return std::to_string(p.seenY()); }},
+        {"arrivalDelay", [](const RoutePassenger& p) { return std::to_string(p.route().arrivalDelay()); }},
+        {"callTime", [](const RoutePassenger& p) { return std::to_string(p.call().time()); }},
+        {"waitingSpot", [](const RoutePassenger& p) { return std::string(spotName(p.call().spot())); }},
+        {"carrier", [](const RoutePassenger& p) { return playerOf(p.ride().carrier()); }},
+        {"quickDeliveryTime", [](const RoutePassenger& p) { return std::to_string(p.ride().quickDeliveryTime()); }},
+        {"swimSpeed", [](const RoutePassenger& p) { return std::to_string(p.swim().speed().raw()); }},
+        {"swimTime", [](const RoutePassenger& p) { return std::to_string(p.swim().afloatTime()); }},
+    };
+    return values;
+}
+
+const FieldTable<StandingPassenger>& standingValues() {
+    static const FieldTable<StandingPassenger> values{
+        {"kind", [](const StandingPassenger& p) { return p.kind().name; }},
+        {"state", [](const StandingPassenger& p) { return std::string(p.state().name()); }},
+        {"carrier", [](const StandingPassenger& p) { return playerOf(p.carrier()); }},
+        {"dropSpeedX", [](const StandingPassenger& p) { return std::to_string(p.dropSpeedX().raw()); }},
+        {"fallSpeed", [](const StandingPassenger& p) { return std::to_string(p.fallSpeed().raw()); }},
+    };
+    return values;
+}
+
+std::string prefix(const Passenger& passenger) { return "passenger." + std::to_string(passenger.index()) + "."; }
+
 }  // namespace
 
-void PassengerFields::common(const passengers::Passenger& p, const std::string& c, const std::string& field) {
-    if (field == "sprite") fields_[c + field] = sprite(p.sprite());
-    else if (field == "bubble") fields_[c + field] = sprite(p.bubble());
-    else if (field == "x") fields_[c + field] = std::to_string(p.x().raw());
-    else if (field == "y") fields_[c + field] = std::to_string(p.y().raw());
-    else if (field == "animFrame") fields_[c + field] = std::to_string(p.animator().frame());
-    else if (field == "animDelay") fields_[c + field] = std::to_string(p.animator().delay());
+void PassengerFields::visit(const RoutePassenger& p) {
+    writeFields(p, prefix(p), routeRules(), routeValues(), commonValues(), fields_);
 }
 
-void PassengerFields::visit(const passengers::route::RoutePassenger& p) {
-    std::string c = "passenger." + std::to_string(p.index()) + ".";
-    for (const std::string& field : routeRules().fieldsOf(p.state().name())) {
-        std::string& v = fields_[c + field];
-        if (field == "kind") v = p.kind().name;
-        else if (field == "state") v = p.state().name();
-        else if (field == "routeStop") v = std::to_string(p.route().stop());
-        else if (field == "pickupPad") v = std::to_string(p.route().pickupPadIndex());
-        else if (field == "targetPad") v = std::to_string(p.route().targetPadIndex());
-        else if (field == "seenX") v = std::to_string(p.seenX());
-        else if (field == "seenY") v = std::to_string(p.seenY());
-        else if (field == "arrivalDelay") v = std::to_string(p.route().arrivalDelay());
-        else if (field == "callTime") v = std::to_string(p.call().time());
-        else if (field == "waitingSpot") v = spotName(p.call().spot());
-        else if (field == "carrier") v = p.ride().carrier() ? std::to_string(p.ride().carrier()->player()) : "none";
-        else if (field == "quickDeliveryTime") v = std::to_string(p.ride().quickDeliveryTime());
-        else if (field == "swimSpeed") v = std::to_string(p.swim().speed().raw());
-        else if (field == "swimTime") v = std::to_string(p.swim().afloatTime());
-        else common(p, c, field);
-    }
-}
-
-void PassengerFields::visit(const passengers::standing::StandingPassenger& p) {
-    std::string c = "passenger." + std::to_string(p.index()) + ".";
-    for (const std::string& field : standingRules().fieldsOf(p.state().name())) {
-        std::string& v = fields_[c + field];
-        if (field == "kind") v = p.kind().name;
-        else if (field == "state") v = p.state().name();
-        else if (field == "carrier") v = p.carrier() ? std::to_string(p.carrier()->player()) : "none";
-        else if (field == "dropSpeedX") v = std::to_string(p.dropSpeedX().raw());
-        else if (field == "fallSpeed") v = std::to_string(p.fallSpeed());
-        else common(p, c, field);
-    }
+void PassengerFields::visit(const StandingPassenger& p) {
+    writeFields(p, prefix(p), standingRules(), standingValues(), commonValues(), fields_);
 }
 
 }  // namespace ugh::replay

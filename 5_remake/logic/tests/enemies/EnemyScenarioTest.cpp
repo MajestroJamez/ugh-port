@@ -47,7 +47,7 @@ TEST(the_flyer_hunts_the_copter_and_ends_the_attempt) {
     CHECK_EQUAL(std::string("Flying"), std::string(flyer.state().name()));
     CHECK_EQUAL(0, flyer.lastTarget());
     CHECK(flyer.flight() == world::Facing::Left);   // the copter is on the left half: it comes in from the right
-    CHECK(flyer.y() == arena.level.level().copters()[0].y());
+    CHECK(flyer.y() == arena.level.level().copters()[0].motion().y());
     arena.run(flyer, 200);
     CHECK(arena.level.level().fade().fadingOut());
 }
@@ -55,9 +55,10 @@ TEST(the_flyer_hunts_the_copter_and_ends_the_attempt) {
 TEST(the_walker_watches_charges_and_throws_the_copter) {
     Arena arena;
     world::Copter& copter = arena.level.level().copters()[0];
-    testing::TestPilot::placeCopter(copter, Fixed::fromPixels(170), Fixed::fromPixels(130), 170, 130, Speed(), Speed(), 0);
+    testing::TestPilot::placeCopter(copter, Fixed::fromPixels(170), Fixed::fromPixels(130), 170, 130, Speed(), Speed(), &arena.level.level().pad(0));
     enemies::walker::Walker walker(0, test::gameData().walkerKind(),
-                                   data::levels::WalkerPlacement(0, Fixed::fromPixels(110), Fixed::fromPixels(128), Fixed::fromRaw(-34)));
+                                   data::levels::WalkerPlacement(0, Fixed::fromPixels(110), Fixed::fromPixels(128), Fixed::fromRaw(-34)),
+                                   arena.level.level().pad(0));
     arena.run(walker, 2);
     CHECK_EQUAL(std::string("Watching"), std::string(walker.state().name()));
     arena.run(walker, 140);
@@ -65,7 +66,7 @@ TEST(the_walker_watches_charges_and_throws_the_copter) {
     CHECK(walker.facing() == world::Facing::Right);
     for (int frame = 0; frame < 100 && copter.landed(); frame++) arena.run(walker, 1);
     CHECK(!copter.landed());
-    CHECK(copter.speedY() > Speed());
+    CHECK(copter.motion().speedY() > Speed());
     CHECK_EQUAL(std::string("Recovering"), std::string(walker.state().name()));
 }
 
@@ -75,9 +76,9 @@ TEST(the_blower_pushes_a_copter_in_front_of_it) {
     enemies::blower::Blower blower(0, test::gameData().blowerKind(),
                                    data::levels::BlowerPlacement(Fixed::fromPixels(200), Fixed::fromPixels(100)));
     // the zone: 9 .. 30 px above the blower's anchor (y 100 + 22), 16 .. 130 px to the left of it (x 200 + 16)
-    testing::TestPilot::placeCopter(copter, Fixed::fromPixels(150), Fixed::fromPixels(100), 150, 100, Speed(), Speed(), std::nullopt);
+    testing::TestPilot::placeCopter(copter, Fixed::fromPixels(150), Fixed::fromPixels(100), 150, 100, Speed(), Speed(), nullptr);
     arena.run(blower, 2);
-    CHECK(copter.speedX() != Speed());
+    CHECK(copter.motion().speedX() != Speed());
 }
 
 TEST(a_passenger_dropped_onto_the_tree_shakes_out_a_bonus_item) {

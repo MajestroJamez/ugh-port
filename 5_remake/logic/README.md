@@ -33,22 +33,22 @@ packages that never import "down"):
 | `units/` | the arithmetic of the original: `Fixed` (a position in 1/32 px) and `Speed` (1/64 Fixed per frame) wrap at 16 bits like the original (`Int16` inside them); `Countdown`. Everything else is a plain `int` |
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
 | `data/kinds/` | the kinds of the game data: of passengers (`RoutePassengerKind`, its `SwimmerKind` in the water, `StandingPassengerKind`), of enemies (`FlyerKind`, `WalkerKind`, `BlowerKind`, `TreeKind`) and of bonus items (`BonusKind`), and what they are made of (`Animation`, `AnimationPair`, `Box`). Every record of the data is a struct with public fields, read-only through `GameData` |
-| `data/levels/` | a level as the data defines it: `LevelDefinition` with its `PadDefinition`s, `CollisionMask`, `Wind`, and the placements of passengers (`Route`) and enemies; the placements have `accept` (Visitor) |
+| `data/levels/` | a level as the data defines it: `LevelDefinition` with its `PadDefinition`s, `CollisionMask`, `Wind`, and the placements of passengers (with their `Route`) and enemies; the placements have `accept` (Visitor) |
 | `data/` | the game data, read-only: `GameData` (the levels in the order of both modes, the kinds, `Rules`, `SpriteIds`), `Difficulty` |
 | `data/ugd/` | reading `ugh-data.ugd` (format UGD 1) with all checks: `DataFileReader` puts together `UgdTokenizer` (lines to records), `RecordReader` (values and errors with the line) and the readers, each with a table of the record types it reads: `KindsReader` (with `AnimationsReader`, `PassengerKindsReader`), `RulesReader`, `LevelReader` (with `PlacementReader`). The keys of the PC keyboard are skipped (`6_verification/keyboard`) |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |
 | `input/` | `PlayerKey` (the keys a pilot flies with), `MenuKey`, `MenuInput`: the keys the game loop looks at (Esc gives up, P would pause, a caption waits for any key) |
-| `world/` | the world of the game: `Session` (lives, `Score`, level number, random numbers), `Level` (`Copters` - and what the entities ask about them, as `Copter*` -, `Pad`s, water, rain, energy, fade, `Delivery`), `Copter` (its player, `Motion`, `Controls`, `Rotor`, `Cabin`), `Pad` (its index, who waits on it), `Water`, `Rain`, `Figure` (what a passenger or an enemy shows: position, sprite, animation), `Animator`, `PlayContext` |
+| `world/` | the world of the game: `Session` (`Lives`, `Score`, level number, random numbers), `Level` (`Copters` - and what the entities ask about them, as `Copter*` -, `Pad`s, water, rain, `Energy`, fade, `Delivery`), `Copter` (its player, and its parts `Motion`, `Controls`, `Rotor`, `Cabin`; the `Pad` it stands on), `Pad` (its index, who waits on it), `Water`, `Rain`, `Figure` (the base of a passenger, an enemy and a bonus item: its index, position, sprite, animation), `Animator`, `PlayContext` |
 | `physics/` | `CopterPhysics` (one frame of a copter's flight), `CollisionProbe` (a copter against the background), `TouchBox` (a copter against a sprite), `Ballistics` (anything thrown that falls) |
 | `bonuses/` | the bonus items: `BonusSlots`, `BonusItem`, their states `Falling` and `Lying` |
-| `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `RouteKinds`, `Route`, `PassengerCall`, `Ride`, `Swim`; `OnPickupPad` the base of the states on the pickup pad), `standing/` the standing passenger (5 states) |
+| `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `RouteKinds`, `RouteProgress`, `PassengerCall`, `Ride`, `Swim`; `OnPickupPad` the base of the states on the pickup pad), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`, `Stun` (a walker or a blower stunned); `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
 | `game/` | `Game` (the facade), `GameState` (what changes during a game), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game state: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play) |
 | `api/` | `LogicApi.cpp`: the C API over `Game` |
 
 `testing/` is not part of the logic: `testing::TestPilot` (library `ugh_logic_testing`), the test pilot of the replays
-(it puts a copter anywhere, keeps the energy and the lives up) for the tests and `6_verification`; the classes it
-changes only name it as a `friend`. `tests/` holds the tests by module. The fields of the replays (`ugh_logic_replay`) and the replay check live in
+(it puts a copter anywhere, keeps the energy and the lives up) for the tests and `6_verification`; it is the one
+`friend` of the facade `Game` and otherwise uses the public operations of the world. `tests/` holds the tests by module. The fields of the replays (`ugh_logic_replay`) and the replay check live in
 `6_verification/`; the logic does not know them.
 
 ## One frame
@@ -85,7 +85,7 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
   it and add what only they need (the bonus items, the passengers), so a state writes `context.level`.
 - **Observer**: the logic reports `events::Event`s to `EventListener`s.
 - **Facade**: `game::Game` is the one entry; nothing of the state can be set from outside but by the test pilot
-  (`testing::TestPilot`, a test peer outside `src/`).
+  (`testing::TestPilot`, a test peer outside `src/` and the one friend of `Game`).
 - **Table of methods**: each data reader has a table "record type -> its method" (`RecordTable`, like method
   references in Java): a new record type is one line in the table and one method.
 - **Template Method**: `passengers::route::OnPickupPad`: the states on the pickup pad check the water and the copters
@@ -99,13 +99,19 @@ text of the error).
 
 - One class per file, named like the file; no file over 200 lines, no class over about 15 public methods (the
   facade `Game` aside): a class that grows gets parts with their own behaviour (`Copter` has `Rotor` and `Cabin`,
-  `RoutePassenger` has `Route`, `PassengerCall`, `Ride`, `Swim`), and the states call their intents
+  `RoutePassenger` has `RouteProgress`, `PassengerCall`, `Ride`, `Swim`), and the states call their intents
   (`passenger.ride().start(...)`), not setters.
 - No `protected` data: what the kinds of an entity share is a base class with its own methods (`world::Figure`).
 - Objects, not indexes: the logic hands copters and pads around (`Copter&`, `Copter*`, `Pad&`); a number only where
   the world outside needs one (events, the C API, the replays: `Copter::player()`, `Pad::index()`) or the data names
-  one (`passenger.route().pickupPad(level)`).
-- No `friend` into the insides of another class: the factories of their own collections and the test pilot only.
+  one (the placements). The route and the walker hold the pads of the level (`passenger.route().pickupPad()`,
+  `walker.pad()`), a pad holds who waits on it (`const Figure*`).
+- No `friend` into the insides of another class: the factories of their own collections, and the test pilot as the
+  one friend of the facade `Game`.
+- One unit, one type: a position or a speed per frame is a `Fixed`, a copter's or a swimmer's speed a `Speed`; frames
+  are counted down by a `Countdown` (`tick`, or `tickToZero` for a delay that stays due).
+- The same name in two modules only for the states the replays name so (`flyer::Falling`, `bonuses::Falling`,
+  `standing::Falling` ...): the namespace tells them apart, like a Java package.
 - Nothing for the tests in `src/`: the test pilot lives in `testing/`.
 - Values of the game are plain `int`s; only `Fixed` and `Speed` keep the 16 bits of the original (and the energy, as
   a named quirk). A quirk of the original lives in the class it belongs to, named and described.
@@ -118,7 +124,7 @@ text of the error).
 | change the gravity, the lift, the steering of a copter, how hard it can land | `src/physics/CopterPhysics.cpp` (the constants at the top); the crash limits are in the data (`rules`) |
 | make a passenger call a copter for longer | `src/passengers/route/Calling.hpp` (`CALL_TIME`) |
 | make a passenger wave impatiently for longer (no copter with room) | `src/passengers/route/Impatient.hpp` (`WAVE_TIME`) |
-| change how many lives a game starts with | `src/world/Session.hpp` (`START_LIVES`) |
+| change how many lives a game starts with | `src/world/Lives.hpp` (`START`) |
 | change what a state of a passenger or an enemy does | the state's file: `src/passengers/route/<State>.cpp`, `src/enemies/<kind>/<State>.cpp` |
 | add an event for the frontend | `src/events/EventKind.hpp` (the kind), `context.report({...})` where it happens, `include/ugh_logic.h` (`UGH_LOGIC_EVENT_...`, in the same order) |
 | add a field to the replays | the entity's writer in `6_verification/replay/` (`PassengerFields.cpp` ...: its rule and its value) and the same field in `4_test_data/verify/.../replay/SemanticProjection.kt` |
