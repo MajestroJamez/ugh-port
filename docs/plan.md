@@ -360,3 +360,9 @@ a žádný soubor nad 200 řádků.
   jen `WalkerState` a `StandingState` zůstaly potomky (pomocník omráčení, `falls()`). Bonus dostal `enter` (`Lying`).
   Stavy `changeState` dál volají - kontrola „grep mimo `state/`“ tedy platí pro definice. 38 testů + 161 replayů
   zelených. Další: **N9b etapa 2**.
+- 2026-10-03: N9b etapa 2 hotová - `world::Figure` (poloha, sprite, animace) je základem `Passenger` i `Enemy`,
+  žádná `protected` data. `RoutePassenger` má části `Route` (zastávky, zpoždění), `PassengerCall` (místo čekání,
+  volání / mávání), `Ride` (nosič, rychlé doručení: `ride().start(player, frames)`), `Swim` (fyzika šplouchnutí
+  a potápění, čas na hladině); stavy volají záměry místo setterů. Časovače nepřátel jsou `Countdown` části
+  (`watchTime().start(...)`), letec `flyTowards(side)` místo dvou setterů. 38 testů + 161 replayů zelených.
+  Další: **N9b etapa 3**.

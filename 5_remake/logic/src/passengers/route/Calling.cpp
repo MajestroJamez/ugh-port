@@ -13,24 +13,24 @@ const Calling Calling::instance{};
 void Calling::enter(RoutePassenger& passenger, const PassengerContext& context) const {
     const data::SpriteIds& sprites = context.play.data.sprites();
     passenger.restartAnimation();
-    units::Int16 bubble = sprites.firstDestinationBubble + passenger.targetPad();
+    units::Int16 bubble = sprites.firstDestinationBubble + passenger.route().targetPad();
     // compared unsigned, as the original does
     if (units::Int16::unsignedLess(sprites.lastDestinationBubble, bubble)) bubble = sprites.lastDestinationBubble;
     passenger.showBubble(bubble.value());
-    passenger.startCallTime(CALL_TIME);
+    passenger.call().start(CALL_TIME);
 }
 
 /** It waves impatiently when the copter left or is full. */
 void Calling::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (OnPickupPad::fellIntoWater(passenger, context)) return;
     if (OnPickupPad::knockedIntoWater(passenger, context)) return;
-    std::optional<int> copter = context.play.level.copterLandedOn(passenger.pickupPad());
+    std::optional<int> copter = context.play.level.copterLandedOn(passenger.route().pickupPad());
     if (!copter || !context.play.level.copter(*copter).hasRoom()) {
         passenger.changeState(Impatient::instance, context);
         return;
     }
     if (passenger.animate()) passenger.show(*passenger.kind().waving);
-    if (passenger.callTimeOver()) passenger.changeState(Boarding::instance, context);
+    if (passenger.call().over()) passenger.changeState(Boarding::instance, context);
 }
 
 }  // namespace ugh::passengers::route

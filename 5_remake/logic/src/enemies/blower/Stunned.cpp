@@ -9,12 +9,12 @@ const Stunned Stunned::instance{};
 
 void Stunned::enter(Blower& blower, const EnemyContext& context) const {
     blower.scoreStun(blower.kind().score, context);
-    blower.startStunTime(STUN_TIME);
+    blower.stunTime().start(STUN_TIME);
     blower.showSprite(blower.kind().stunnedSprite);
 }
 
 void Stunned::update(Blower& blower, const EnemyContext& context) const {
-    if (blower.stunTimeOver()) blower.continueIn(Placed::instance, context);
+    if (blower.stunTime().tick()) blower.continueIn(Placed::instance, context);
 }
 
 }  // namespace ugh::enemies::blower

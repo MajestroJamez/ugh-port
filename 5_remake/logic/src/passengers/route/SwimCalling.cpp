@@ -21,7 +21,7 @@ void SwimCalling::update(RoutePassenger& passenger, const PassengerContext& cont
         return;
     }
     if (passenger.animate()) passenger.show(*passenger.kind().waving);
-    if (passenger.callTimeOver()) passenger.changeState(SwimBoarding::instance, context);
+    if (passenger.call().over()) passenger.changeState(SwimBoarding::instance, context);
 }
 
 }  // namespace ugh::passengers::route

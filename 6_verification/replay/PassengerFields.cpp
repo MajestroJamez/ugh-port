@@ -71,18 +71,18 @@ void PassengerFields::visit(const passengers::route::RoutePassenger& p) {
         std::string& v = fields_[c + field];
         if (field == "kind") v = p.kind().name;
         else if (field == "state") v = p.state().name();
-        else if (field == "routeStop") v = std::to_string(p.routeStop());
-        else if (field == "pickupPad") v = std::to_string(p.pickupPad());
-        else if (field == "targetPad") v = std::to_string(p.targetPad());
+        else if (field == "routeStop") v = std::to_string(p.route().stop());
+        else if (field == "pickupPad") v = std::to_string(p.route().pickupPad());
+        else if (field == "targetPad") v = std::to_string(p.route().targetPad());
         else if (field == "seenX") v = std::to_string(p.seenX().value());
         else if (field == "seenY") v = std::to_string(p.seenY().value());
-        else if (field == "arrivalDelay") v = std::to_string(p.arrivalDelay().value());
-        else if (field == "callTime") v = std::to_string(p.callTime().value());
-        else if (field == "waitingSpot") v = spotName(p.waitingSpot());
-        else if (field == "carrier") v = p.carrier() ? std::to_string(*p.carrier()) : "none";
-        else if (field == "quickDeliveryTime") v = std::to_string(p.quickDeliveryTime().value());
-        else if (field == "swimSpeed") v = std::to_string(p.swimSpeed().raw().value());
-        else if (field == "swimTime") v = std::to_string(p.swimTime().value());
+        else if (field == "arrivalDelay") v = std::to_string(p.route().arrivalDelay().value());
+        else if (field == "callTime") v = std::to_string(p.call().time().value());
+        else if (field == "waitingSpot") v = spotName(p.call().spot());
+        else if (field == "carrier") v = p.ride().carrier() ? std::to_string(*p.ride().carrier()) : "none";
+        else if (field == "quickDeliveryTime") v = std::to_string(p.ride().quickDeliveryTime().value());
+        else if (field == "swimSpeed") v = std::to_string(p.swim().speed().raw().value());
+        else if (field == "swimTime") v = std::to_string(p.swim().afloatTime().value());
         else common(p, c, field);
     }
 }

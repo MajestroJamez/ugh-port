@@ -5,10 +5,11 @@
 namespace ugh::enemies::walker {
 
 Walker::Walker(int index, const data::WalkerKind& kind, const data::WalkerPlacement& placement)
-    : Enemy(index), StateMachine(Placed::instance), kind_(&kind), pad_(placement.pad()), vx_(placement.speed()) {
-    x_ = placement.x();
-    y_ = placement.y();
-}
+    : Enemy(index, placement.x(), placement.y()),
+      StateMachine(Placed::instance),
+      kind_(&kind),
+      pad_(placement.pad()),
+      vx_(placement.speed()) {}
 
 void Walker::update(const EnemyContext& context) { updateState(context); }
 
@@ -20,7 +21,7 @@ void Walker::turnAround() {
 }
 
 void Walker::turnTo(const world::Copter& copter) {
-    facing_ = x_ < copter.x() ? world::Facing::Right : world::Facing::Left;
+    facing_ = x() < copter.x() ? world::Facing::Right : world::Facing::Left;
     vx_ = headed(vx_, facing_);
 }
 

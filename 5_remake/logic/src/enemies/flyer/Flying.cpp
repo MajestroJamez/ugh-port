@@ -27,13 +27,11 @@ void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
     world::Level& level = context.play.level;
     const world::Copter& copter = level.copter(flyer.takeNextTarget(context.play.session.players()));
     if (copter.x() < SCREEN_MIDDLE) {
-        flyer.headLeft();
+        flyer.flyTowards(world::Facing::Left);
         flyer.moveToX(START_RIGHT);
-        flyer.setFlight(world::Facing::Left);
     } else {
-        flyer.headRight();
+        flyer.flyTowards(world::Facing::Right);
         flyer.moveToX(START_LEFT);
-        flyer.setFlight(world::Facing::Right);
     }
     Fixed y = copter.y() + HEIGHT;
     if (y > level.water().level()) y = level.water().level();

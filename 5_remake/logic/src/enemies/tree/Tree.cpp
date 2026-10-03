@@ -5,10 +5,10 @@
 namespace ugh::enemies::tree {
 
 Tree::Tree(int index, const data::TreeKind& kind, const data::TreePlacement& placement)
-    : Enemy(index), StateMachine(Placed::instance), kind_(&kind), drops_(&placement.drops()) {
-    x_ = placement.x();
-    y_ = placement.y();
-}
+    : Enemy(index, placement.x(), placement.y()),
+      StateMachine(Placed::instance),
+      kind_(&kind),
+      drops_(&placement.drops()) {}
 
 void Tree::update(const EnemyContext& context) { updateState(context); }
 

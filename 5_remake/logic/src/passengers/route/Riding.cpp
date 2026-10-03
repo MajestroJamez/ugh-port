@@ -8,7 +8,7 @@ namespace ugh::passengers::route {
 const Riding Riding::instance{};
 
 void Riding::board(RoutePassenger& passenger, int player, const PassengerContext& context) {
-    passenger.setCarrier(player);
+    passenger.ride().start(player, QUICK_DELIVERY_TIME);
     passenger.changeState(instance, context);
 }
 
@@ -19,21 +19,21 @@ void Riding::board(RoutePassenger& passenger, int player, const PassengerContext
  */
 void Riding::enter(RoutePassenger& passenger, const PassengerContext& context) const {
     world::Level& level = context.play.level;
-    int player = *passenger.carrier();
+    int player = *passenger.ride().carrier();
     units::Int16 fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
     if (passenger.kind().type == data::PassengerKind::Type::Water) passenger.switchKind();
-    level.copter(player).takeOnBoard(passenger.kind().look, level.pad(passenger.targetPad()).place().number, fare, fareMin);
+    units::Int16 destination = level.pad(passenger.route().targetPad()).place().number;
+    level.copter(player).takeOnBoard(passenger.kind().look, destination, fare, fareMin);
     passenger.hide();
-    passenger.startQuickDeliveryTime(QUICK_DELIVERY_TIME);
-    level.pad(passenger.pickupPad()).vacate();
+    level.pad(passenger.route().pickupPad()).vacate();
     context.play.report({events::EventKind::PassengerBoarded, player, passenger.index()});
 }
 
 void Riding::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Copter& copter = context.play.level.copter(*passenger.carrier());
+    world::Copter& copter = context.play.level.copter(*passenger.ride().carrier());
     copter.lowerFare();
-    passenger.tickQuickDeliveryTime();
-    if (copter.landedOn(passenger.targetPad())) passenger.changeState(WalkingToDoor::instance, context);
+    passenger.ride().tick();
+    if (copter.landedOn(passenger.route().targetPad())) passenger.changeState(WalkingToDoor::instance, context);
 }
 
 }  // namespace ugh::passengers::route

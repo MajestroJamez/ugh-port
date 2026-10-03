@@ -14,7 +14,7 @@ void GoingIn::update(RoutePassenger& passenger, const PassengerContext& context)
     const data::Animation& door = *passenger.kind().goingIn;
     passenger.showFrameOf(door);
     if (!passenger.atLastFrameOf(door)) return;
-    passenger.nextStop();
+    passenger.route().next();
     passenger.continueIn(NextStop::instance, context);
 }
 

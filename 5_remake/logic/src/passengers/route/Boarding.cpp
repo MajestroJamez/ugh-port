@@ -18,7 +18,7 @@ void Boarding::enter(RoutePassenger& passenger, const PassengerContext&) const {
 void Boarding::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (OnPickupPad::fellIntoWater(passenger, context)) return;
     if (OnPickupPad::knockedIntoWater(passenger, context)) return;
-    std::optional<int> copter = context.play.level.copterLandedOn(passenger.pickupPad());
+    std::optional<int> copter = context.play.level.copterLandedOn(passenger.route().pickupPad());
     if (!copter) {
         passenger.changeState(Impatient::instance, context);
         return;

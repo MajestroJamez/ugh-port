@@ -23,16 +23,15 @@ public:
 
     const data::TreeKind& kind() const { return *kind_; }
 
-
     /** The bonus item it drops next (its index in the tree's list). */
     int nextDrop() const { return nextDrop_; }
     bool hasDrops() const { return nextDrop_ < static_cast<int>(drops_->size()); }
     /** Takes the next bonus item out of the tree. */
     const data::BonusKind& takeDrop() { return *(*drops_)[nextDrop_++]; }
 
-    void startRestTime(units::Int16 frames) { restTime_.start(frames); }
-    bool restTimeOver() { return restTime_.tick(); }
-    units::Int16 restTime() const { return restTime_.remaining(); }
+    /** How long it rests after a passenger bounced off it. */
+    units::Countdown& restTime() { return restTime_; }
+    const units::Countdown& restTime() const { return restTime_; }
 
 private:
     const data::TreeKind* kind_;

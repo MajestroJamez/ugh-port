@@ -18,7 +18,7 @@ const WalkingToDoor WalkingToDoor::instance{};
 
 /** It pays the fare times the score multiplier; a quick delivery drops a bonus item that raises the multiplier. */
 void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    int player = *passenger.carrier();
+    int player = *passenger.ride().carrier();
     world::Copter& copter = context.play.level.copter(player);
     world::Session& session = context.play.session;
     copter.unload();
@@ -26,12 +26,12 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
     uint32_t points = static_cast<uint32_t>(copter.fare().bits()) * static_cast<uint32_t>(session.multiplier());
     session.addScore(points);
     context.play.report({events::EventKind::PassengerPaid, player, passenger.index(), static_cast<int>(points)});
-    if (passenger.deliveredQuickly() && session.multiplierBelowLimit()) {
+    if (passenger.ride().quick() && session.multiplierBelowLimit()) {
         context.bonuses.drop(context.play.data.rules().quickDeliveryBonus(), copter.x() + Fixed::fromPixels(BONUS_DROP_X),
                              copter.y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), 0, context.play.diagnostics);
         context.play.report({events::EventKind::QuickDelivery, player, passenger.index()});
     }
-    const data::PadDefinition& target = context.play.level.pad(passenger.targetPad()).place();
+    const data::PadDefinition& target = context.play.level.pad(passenger.route().targetPad()).place();
     passenger.moveToY(Fixed::fromPixels(target.y - passenger.kind().box.y));
     passenger.restartAnimation();
 }
@@ -42,7 +42,7 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
  */
 void WalkingToDoor::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
-    units::Int16 door = context.play.level.pad(passenger.targetPad()).place().door;
+    units::Int16 door = context.play.level.pad(passenger.route().targetPad()).place().door;
     units::Int16 feet = passenger.feetX();
     if (feet == door) {
         passenger.changeState(GoingIn::instance, context);

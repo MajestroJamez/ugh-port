@@ -17,11 +17,11 @@ const Watching Watching::instance{};
 
 void Watching::enter(Walker& walker, const EnemyContext&) const {
     walker.restartAnimation();
-    walker.startWatchTime(WATCH_TIME);
+    walker.watchTime().start(WATCH_TIME);
 }
 
 void Watching::update(Walker& walker, const EnemyContext& context) const {
-    if (walker.watchTimeOver()) {
+    if (walker.watchTime().tick()) {
         walker.changeState(Charging::instance, context);
         return;
     }

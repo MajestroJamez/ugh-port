@@ -25,11 +25,10 @@ public:
 
     const data::FlyerKind& kind() const { return *kind_; }
 
-
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
-    void headLeft();
-    void headRight();
+    /** It flies towards `side`: its speed and its flight animation point there. */
+    void flyTowards(world::Facing side);
 
     /** The player it hunted last (before its first flight: 1, so that it hunts player 0 first). */
     int lastTarget() const { return lastTarget_; }
@@ -38,15 +37,14 @@ public:
 
     /** The side it flies towards (its flight animation). */
     world::Facing flight() const { return flight_; }
-    void setFlight(world::Facing flight) { flight_ = flight; }
 
     units::Int16 startDelay() const { return startDelay_; }
-    void startWaitTime() { waitTime_.start(startDelay_); }
-    bool waitTimeOver() { return waitTime_.tick(); }
-    units::Int16 waitTime() const { return waitTime_.remaining(); }
-    void startScreechTime(units::Int16 frames) { screechTime_.start(frames); }
-    bool screechTimeOver() { return screechTime_.tick(); }
-    units::Int16 screechTime() const { return screechTime_.remaining(); }
+    /** How long it stays hidden (it starts from its start delay). */
+    units::Countdown& waitTime() { return waitTime_; }
+    const units::Countdown& waitTime() const { return waitTime_; }
+    /** How long it screeches before it flies. */
+    units::Countdown& screechTime() { return screechTime_; }
+    const units::Countdown& screechTime() const { return screechTime_; }
 
     /** Falling: 1/32 px per frame, faster every frame up to a limit. */
     units::Int16 fallSpeed() const { return fallSpeed_; }

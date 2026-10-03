@@ -5,7 +5,7 @@
 namespace ugh::enemies {
 
 bool Enemy::bounceFallingPassenger(const EnemyContext& context, bool showHit) const {
-    passengers::standing::StandingPassenger* passenger = context.passengers.fallingOnto(x_, y_);
+    passengers::standing::StandingPassenger* passenger = context.passengers.fallingOnto(x(), y());
     if (!passenger) return false;
     if (showHit) passenger->bounce(-passenger->fallSpeed(), context.play.data.sprites().bouncedPassenger);
     else passenger->bounceUnseen(-passenger->fallSpeed());

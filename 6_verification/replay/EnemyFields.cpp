@@ -79,8 +79,8 @@ void EnemyFields::visit(const enemies::flyer::Flyer& f) {
         if (field == "vx") v = std::to_string(f.speedX().raw().value());
         else if (field == "lastTarget") v = std::to_string(f.lastTarget());
         else if (field == "flight") v = side(f.flight());
-        else if (field == "waitTime") v = std::to_string(f.waitTime().value());
-        else if (field == "screechTime") v = std::to_string(f.screechTime().value());
+        else if (field == "waitTime") v = std::to_string(f.waitTime().remaining().value());
+        else if (field == "screechTime") v = std::to_string(f.screechTime().remaining().value());
         else if (field == "fallSpeed") v = std::to_string(f.fallSpeed().value());
         fields_[prefix(f) + field] = v.value_or("?");   // "?": a field of the rules without a value
     }
@@ -91,9 +91,9 @@ void EnemyFields::visit(const enemies::walker::Walker& w) {
         std::optional<std::string> v = common(w, "walker", w.state().name(), field);
         if (field == "vx") v = std::to_string(w.speedX().raw().value());
         else if (field == "facing") v = side(w.facing());
-        else if (field == "watchTime") v = std::to_string(w.watchTime().value());
+        else if (field == "watchTime") v = std::to_string(w.watchTime().remaining().value());
         else if (field == "chargeSpeed") v = std::to_string(w.chargeSpeed().value());
-        else if (field == "stunTime") v = std::to_string(w.stunTime().value());
+        else if (field == "stunTime") v = std::to_string(w.stunTime().remaining().value());
         fields_[prefix(w) + field] = v.value_or("?");   // "?": a field of the rules without a value
     }
 }
@@ -101,7 +101,7 @@ void EnemyFields::visit(const enemies::walker::Walker& w) {
 void EnemyFields::visit(const enemies::blower::Blower& b) {
     for (const std::string& field : blowerRules().fieldsOf(b.state().name())) {
         std::optional<std::string> v = common(b, "blower", b.state().name(), field);
-        if (field == "stunTime") v = std::to_string(b.stunTime().value());
+        if (field == "stunTime") v = std::to_string(b.stunTime().remaining().value());
         fields_[prefix(b) + field] = v.value_or("?");   // "?": a field of the rules without a value
     }
 }
@@ -110,7 +110,7 @@ void EnemyFields::visit(const enemies::tree::Tree& t) {
     for (const std::string& field : treeRules().fieldsOf(t.state().name())) {
         std::optional<std::string> v = common(t, "tree", t.state().name(), field);
         if (field == "nextDrop") v = std::to_string(t.nextDrop());
-        else if (field == "restTime") v = std::to_string(t.restTime().value());
+        else if (field == "restTime") v = std::to_string(t.restTime().remaining().value());
         fields_[prefix(t) + field] = v.value_or("?");   // "?": a field of the rules without a value
     }
 }

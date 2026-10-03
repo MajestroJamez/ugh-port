@@ -32,10 +32,10 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
 | `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd`, `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds, animations, keys, rules |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |
-| `world/` | the world of the game: `Session` (lives, score, level number, random numbers), `Level` (copters, pads, water, rain, energy, fade - and the questions the entities ask about it), `Copter`, `Pad`, `Water`, `Rain`, `Animator`, `PlayContext` |
+| `world/` | the world of the game: `Session` (lives, score, level number, random numbers), `Level` (copters, pads, water, rain, energy, fade - and the questions the entities ask about it), `Copter`, `Pad`, `Water`, `Rain`, `Figure` (what a passenger or an enemy shows: position, sprite, animation), `Animator`, `PlayContext` |
 | `physics/` | `CopterPhysics` (one frame of a copter's flight), `CollisionProbe` (a copter against the background), `TouchBox` (a copter against a sprite), `Ballistics` (anything thrown that falls) |
 | `bonuses/` | the bonus items: `BonusSlots`, `BonusItem`, their states `Falling` and `Lying` |
-| `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water), `standing/` the standing passenger (5 states) |
+| `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `Route`, `PassengerCall`, `Ride`, `Swim`), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`; `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
 | `input/` | `PcKeyboard`: scancodes of the PC keyboard to the keys the pilots hold |
 | `game/` | `Game` (the facade), `GameFlow` with its `phases/`, `PlayFrame` (one frame of the play), `Cheats` (the test pilot of the replays) |

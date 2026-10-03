@@ -15,19 +15,17 @@ constexpr units::Int16 HIT_POINT_X = 12, HIT_POINT_Y = 8, ENEMY_WIDTH = 38, ENEM
 }  // namespace
 
 StandingPassenger::StandingPassenger(int index, const data::StandingPassengerPlacement& placement)
-    : Passenger(index), StateMachine(Placed::instance), kind_(&placement.kind()) {
-    x_ = placement.x();
-    y_ = placement.y();
-}
+    : Passenger(index, placement.x(), placement.y()), StateMachine(Placed::instance), kind_(&placement.kind()) {}
 
 void StandingPassenger::update(const PassengerContext& context) { updateState(context); }
 
 void StandingPassenger::accept(PassengerVisitor& visitor) const { visitor.visit(*this); }
 
-bool StandingPassenger::fallsOnto(Fixed x, Fixed y) const {
+bool StandingPassenger::fallsOnto(Fixed enemyX, Fixed enemyY) const {
     if (!state().falls() || fallSpeed_ < 0) return false;
-    Fixed hitY = y_ + Fixed::fromPixels(HIT_POINT_Y), hitX = x_ + Fixed::fromPixels(HIT_POINT_X);
-    return hitY >= y && hitY - Fixed::fromPixels(ENEMY_HEIGHT) <= y && hitX >= x && hitX - Fixed::fromPixels(ENEMY_WIDTH) <= x;
+    Fixed hitY = y() + Fixed::fromPixels(HIT_POINT_Y), hitX = x() + Fixed::fromPixels(HIT_POINT_X);
+    return hitY >= enemyY && hitY - Fixed::fromPixels(ENEMY_HEIGHT) <= enemyY && hitX >= enemyX &&
+           hitX - Fixed::fromPixels(ENEMY_WIDTH) <= enemyX;
 }
 
 }  // namespace ugh::passengers::standing

@@ -5,15 +5,20 @@
 namespace ugh::enemies::flyer {
 
 Flyer::Flyer(int index, const data::FlyerKind& kind, const data::FlyerPlacement& placement)
-    : Enemy(index), StateMachine(Placed::instance), kind_(&kind), startDelay_(placement.startDelay()), vx_(placement.speed()) {}
+    : Enemy(index),
+      StateMachine(Placed::instance),
+      kind_(&kind),
+      startDelay_(placement.startDelay()),
+      vx_(placement.speed()) {}
 
 void Flyer::update(const EnemyContext& context) { updateState(context); }
 
 void Flyer::accept(EnemyVisitor& visitor) const { visitor.visit(*this); }
 
-void Flyer::headLeft() { vx_ = headed(vx_, world::Facing::Left); }
-
-void Flyer::headRight() { vx_ = headed(vx_, world::Facing::Right); }
+void Flyer::flyTowards(world::Facing side) {
+    vx_ = headed(vx_, side);
+    flight_ = side;
+}
 
 int Flyer::takeNextTarget(int players) {
     int target = lastTarget_ ^ 1;

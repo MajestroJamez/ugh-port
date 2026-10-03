@@ -25,7 +25,6 @@ public:
 
     const data::WalkerKind& kind() const { return *kind_; }
 
-
     int pad() const { return pad_; }
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
@@ -37,18 +36,18 @@ public:
     /** Shows the frame of the variant of `pair` it faces. */
     void showFacing(const data::AnimationPair& pair) { show(pair.towards(facing_ == world::Facing::Right)); }
 
-    void startWatchTime(units::Int16 frames) { watchTime_.start(frames); }
-    bool watchTimeOver() { return watchTime_.tick(); }
-    units::Int16 watchTime() const { return watchTime_.remaining(); }
+    /** How long it watches a landed copter before it charges. */
+    units::Countdown& watchTime() { return watchTime_; }
+    const units::Countdown& watchTime() const { return watchTime_; }
 
     /** How much faster than its walk it charges (Fixed per frame): one more every frame, in the direction it faces. */
     units::Int16 chargeSpeed() const { return chargeSpeed_; }
     void startCharge() { chargeSpeed_ = 0; }
     void chargeFaster() { chargeSpeed_ += facing_ == world::Facing::Right ? 1 : -1; }
 
-    void startStunTime(units::Int16 frames) { stunTime_.start(frames); }
-    bool stunTimeOver() { return stunTime_.tick(); }
-    units::Int16 stunTime() const { return stunTime_.remaining(); }
+    /** How long it stays stunned. */
+    units::Countdown& stunTime() { return stunTime_; }
+    const units::Countdown& stunTime() const { return stunTime_; }
 
 private:
     const data::WalkerKind* kind_;

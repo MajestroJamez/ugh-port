@@ -20,10 +20,9 @@ public:
 
     const data::BlowerKind& kind() const { return *kind_; }
 
-
-    void startStunTime(units::Int16 frames) { stunTime_.start(frames); }
-    bool stunTimeOver() { return stunTime_.tick(); }
-    units::Int16 stunTime() const { return stunTime_.remaining(); }
+    /** How long it stays stunned. */
+    units::Countdown& stunTime() { return stunTime_; }
+    const units::Countdown& stunTime() const { return stunTime_; }
 
 private:
     const data::BlowerKind* kind_;

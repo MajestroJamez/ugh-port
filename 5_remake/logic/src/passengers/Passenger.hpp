@@ -6,18 +6,18 @@
 #include "passengers/PassengerContext.hpp"
 #include "passengers/PassengerVisitor.hpp"
 #include "units/Fixed.hpp"
-#include "world/Animator.hpp"
+#include "world/Figure.hpp"
 
 namespace ugh::passengers {
 
 /**
- * A passenger: what all have - their place in the level's list, where they are, the sprite and the speech bubble
- * they show, their animation. A passenger with a route and the standing passenger are its two kinds, each with its
- * own state machine.
+ * A passenger: what all have - their place in the level's list, what they show (`world::Figure`) and their speech
+ * bubble. A passenger with a route and the standing passenger are its two kinds, each with its own state machine.
  */
-class Passenger {
+class Passenger : public world::Figure {
 public:
     explicit Passenger(int index) : index_(index) {}
+    Passenger(int index, units::Fixed x, units::Fixed y) : Figure(x, y), index_(index) {}
     virtual ~Passenger() = default;
     Passenger(const Passenger&) = delete;
     Passenger& operator=(const Passenger&) = delete;
@@ -31,22 +31,13 @@ public:
     virtual void frameShown() {}
     virtual void accept(PassengerVisitor& visitor) const = 0;
 
-    units::Fixed x() const { return x_; }
-    units::Fixed y() const { return y_; }
-    std::optional<int> sprite() const { return sprite_; }
     std::optional<int> bubble() const { return bubble_; }
-    const world::Animator& animator() const { return animator_; }
-
-    /** Nothing of it is shown. */
-    void hide() { sprite_.reset(); }
-
-protected:
-    units::Fixed x_, y_;   // top left corner
-    std::optional<int> sprite_, bubble_;
-    world::Animator animator_;
+    void showBubble(int bubble) { bubble_ = bubble; }
+    void hideBubble() { bubble_.reset(); }
 
 private:
     int index_;
+    std::optional<int> bubble_;
 };
 
 }  // namespace ugh::passengers

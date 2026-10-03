@@ -5,10 +5,7 @@
 namespace ugh::enemies::blower {
 
 Blower::Blower(int index, const data::BlowerKind& kind, const data::BlowerPlacement& placement)
-    : Enemy(index), StateMachine(Placed::instance), kind_(&kind) {
-    x_ = placement.x();
-    y_ = placement.y();
-}
+    : Enemy(index, placement.x(), placement.y()), StateMachine(Placed::instance), kind_(&kind) {}
 
 void Blower::update(const EnemyContext& context) { updateState(context); }
 
