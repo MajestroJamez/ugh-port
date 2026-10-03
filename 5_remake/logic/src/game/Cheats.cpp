@@ -6,7 +6,7 @@ namespace ugh::game {
 
 void Cheats::placeCopter(int player, units::Fixed x, units::Fixed y, int pixelX, int pixelY,
                          units::Speed vx, units::Speed vy, std::optional<int> landedPad) {
-    game_.level_.copter(player).placeByTestPilot(x, y, pixelX, pixelY, vx, vy, landedPad);
+    game_.level_.copters()[player].placeByTestPilot(x, y, pixelX, pixelY, vx, vy, landedPad);
 }
 
 void Cheats::setEnergy(int energy) { game_.level_.energy().setByTestPilot(energy); }

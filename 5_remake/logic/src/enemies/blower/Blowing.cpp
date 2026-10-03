@@ -33,9 +33,10 @@ void Blowing::update(Blower& blower, const EnemyContext& context) const {
         blower.x() + Fixed::fromPixels(box.x - ZONE_FAR), blower.x() + Fixed::fromPixels(box.x - ZONE_NEAR),
         blower.y() + Fixed::fromPixels(box.y - ZONE_TOP), blower.y() + Fixed::fromPixels(box.y - ZONE_BOTTOM));
     world::Level& level = context.play.level;
-    for (int c = 0; c < level.copterCount(); c++) {
-        world::Copter& copter = level.copter(c);
-        if (zone.touches(copter)) copter.push(blower.animator().frame() < BLOW_FRAME ? BLOW : -BLOW);
+    for (int c = 0; c < level.copters().count(); c++) {
+        world::Copter& copter = level.copters()[c];
+        if (zone.touches(copter))
+            copter.setSpeed(copter.speedX() + (blower.animator().frame() < BLOW_FRAME ? BLOW : -BLOW), copter.speedY());
     }
     if (blower.bounceFallingPassenger(context, false)) blower.changeState(Stunned::instance, context);
 }

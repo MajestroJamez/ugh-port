@@ -6,6 +6,7 @@
 #include "data/Difficulty.hpp"
 #include "data/Rules.hpp"
 #include "world/RandomNumbers.hpp"
+#include "world/Score.hpp"
 
 namespace ugh::world {
 
@@ -16,7 +17,12 @@ public:
     static constexpr int MAX_LIVES = 99;
 
     Session(const data::Rules& rules, int players, data::Difficulty difficulty, int firstLevel, RandomNumbers random)
-        : rules_(&rules), players_(players), difficulty_(difficulty), levelNumber_(firstLevel), random_(random) {}
+        : rules_(&rules),
+          players_(players),
+          difficulty_(difficulty),
+          levelNumber_(firstLevel),
+          score_(rules.multiplierLimit(difficulty)),
+          random_(random) {}
 
     /** The game starts: 3 lives, multiplier 1, score 0. */
     void startGame();
@@ -25,8 +31,9 @@ public:
     data::Difficulty difficulty() const { return difficulty_; }
     int levelNumber() const { return levelNumber_; }
     int lives() const { return lives_; }
-    int multiplier() const { return multiplier_; }
-    uint32_t score() const { return score_; }
+    /** The points and the multiplier. */
+    Score& score() { return score_; }
+    const Score& score() const { return score_; }
 
     /** The level is done: on to the next one; false when there is none. */
     bool nextLevel(int levelCount);
@@ -43,13 +50,6 @@ public:
     /** A life bonus item: more lives, at most MAX_LIVES. */
     void addLives(int amount);
 
-    void addScore(uint32_t points) { score_ += points; }
-
-    /** The score multiplier can go higher on this difficulty. */
-    bool multiplierBelowLimit() const { return multiplier_ < rules_->multiplierLimit(difficulty_); }
-    /** A multiplier bonus item. */
-    void raiseMultiplier();
-
     /** A bounce this hard crashes a copter on this difficulty. */
     int crashLimit() const { return rules_->crashLimit(difficulty_); }
 
@@ -62,8 +62,7 @@ private:
     data::Difficulty difficulty_;
     int levelNumber_ = 0;
     int lives_ = 0;
-    int multiplier_ = 0;
-    uint32_t score_ = 0;
+    Score score_;
     RandomNumbers random_;
 };
 

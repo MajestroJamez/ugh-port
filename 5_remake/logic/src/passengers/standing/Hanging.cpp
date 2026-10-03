@@ -9,13 +9,14 @@ const Hanging Hanging::instance{};
 
 void Hanging::enter(StandingPassenger& passenger, const PassengerContext& context) const {
     int player = *passenger.carrier();
-    context.play.level.copter(player).pickUpHanging(passenger.kind().look);
+    context.play.level.copters()[player].cabin().pickUpHanging(passenger.kind().look);
     passenger.hide();
     context.play.report({events::EventKind::PassengerBoarded, player, passenger.index()});
 }
 
 void Hanging::update(StandingPassenger& passenger, const PassengerContext& context) const {
-    if (context.play.level.copter(*passenger.carrier()).controls().fire) passenger.changeState(Falling::instance, context);
+    if (context.play.level.copters()[*passenger.carrier()].controls().fire)
+        passenger.changeState(Falling::instance, context);
 }
 
 }  // namespace ugh::passengers::standing

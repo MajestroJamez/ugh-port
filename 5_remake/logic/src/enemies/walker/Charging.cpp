@@ -17,17 +17,17 @@ void Charging::update(Walker& walker, const EnemyContext& context) const {
     world::Level& level = context.play.level;
     if (walker.animate()) walker.showFacing(walker.kind().charge);
     if (stunnedByPassenger(walker, context)) return;
-    std::optional<int> copter = level.copterLandedOn(walker.pad());
+    std::optional<int> copter = level.copters().landedOn(walker.pad());
     if (!copter) {
         walker.changeState(Recovering::instance, context);
         return;
     }
-    walker.turnTo(level.copter(*copter));
+    walker.turnTo(level.copters()[*copter]);
     walker.chargeFaster();
     walker.moveToX(walker.x() + (units::Fixed::fromRaw(walker.chargeSpeed()) + walker.speedX()));
     std::optional<int> hit = physics::TouchBox(walker.kind().box, walker.x(), walker.y()).firstCopterIn(level);
     if (!hit) return;
-    level.copter(*hit).throwUp(walker.speedX().raw() + walker.chargeSpeed());
+    level.copters()[*hit].throwUp(walker.speedX().raw() + walker.chargeSpeed());
     walker.changeState(Recovering::instance, context);
 }
 

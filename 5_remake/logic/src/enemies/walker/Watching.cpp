@@ -27,12 +27,12 @@ void Watching::update(Walker& walker, const EnemyContext& context) const {
     }
     if (walker.animate(FRAME_DELAY)) walker.showFacing(walker.kind().watch);
     if (stunnedByPassenger(walker, context)) return;
-    std::optional<int> copter = context.play.level.copterLandedOn(walker.pad());
+    std::optional<int> copter = context.play.level.copters().landedOn(walker.pad());
     if (!copter) {
         walker.continueIn(Placed::instance, context);
         return;
     }
-    walker.turnTo(context.play.level.copter(*copter));
+    walker.turnTo(context.play.level.copters()[*copter]);
 }
 
 }  // namespace ugh::enemies::walker

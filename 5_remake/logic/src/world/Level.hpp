@@ -1,7 +1,6 @@
 // The world of the level being played.
 #pragma once
 
-#include <array>
 #include <optional>
 #include <vector>
 
@@ -9,7 +8,8 @@
 #include "data/LevelDefinition.hpp"
 #include "events/Diagnostics.hpp"
 #include "events/EventListener.hpp"
-#include "world/Copter.hpp"
+#include "world/Copters.hpp"
+#include "world/Delivery.hpp"
 #include "world/Energy.hpp"
 #include "world/Fade.hpp"
 #include "world/Pad.hpp"
@@ -20,14 +20,13 @@
 namespace ugh::world {
 
 /**
- * The world of the level being played: the copters, the pads, the water, the rain, the energy and the fade, how
- * many passengers are left; and the questions the entities ask about it (which copter landed on a pad, which one
- * floats on the water). It lasts for the whole game: an attempt reloads it from the level's definition, but the
- * copters keep their effort and the rain keeps its floor row.
+ * The world of the level being played: the copters (and what the entities ask about them), the pads, the water, the
+ * rain, the energy, the fade and how many passengers are left. It lasts for the whole game: an attempt reloads it from
+ * the level's definition, but the copters keep their effort and the rain keeps its floor row.
  */
 class Level {
 public:
-    explicit Level(int players = 1) : players_(players) {}
+    explicit Level(int players = 1) : copters_(players) {}
 
     /** A new attempt at `definition`: the copters at their start, the pads, the water, full energy, fading in. */
     void startAttempt(const data::LevelDefinition& definition, const data::SpriteIds& sprites, RandomNumbers& random,
@@ -37,9 +36,8 @@ public:
     data::Wind wind() const { return definition_ ? definition_->wind : data::Wind::None; }
     bool windy() const { return wind() != data::Wind::None; }
 
-    int copterCount() const { return players_; }
-    Copter& copter(int player) { return copters_[player]; }
-    const Copter& copter(int player) const { return copters_[player]; }
+    Copters& copters() { return copters_; }
+    const Copters& copters() const { return copters_; }
     int padCount() const { return static_cast<int>(pads_.size()); }
     Pad& pad(int i) { return pads_[i]; }
     const Pad& pad(int i) const { return pads_[i]; }
@@ -52,39 +50,23 @@ public:
     Fade& fade() { return fade_; }
     const Fade& fade() const { return fade_; }
 
-    int passengersLeft() const { return passengersLeft_; }
-    bool done() const { return done_; }
+    /** How many passengers are left, and whether the level is done. */
+    const Delivery& delivery() const { return delivery_; }
     /** A passenger finished its route; the last one ends the level (the count never goes below zero). */
     void passengerFinished(events::EventListener& events);
 
-    // ------------------------------------------------------------ what the entities ask
-
     /** The background is solid at the pixel. */
     bool solid(int x, int y) const { return definition_ && definition_->mask.solid(x, y); }
-    /** The first copter that stands on the pad. */
-    std::optional<int> copterLandedOn(int pad) const;
-    /** A copter with room for a passenger stands on the pad. */
-    bool emptyCopterLandedOn(int pad) const;
-    /** The first copter that floats on the water. */
-    std::optional<int> copterOnWater() const { return firstCopterOnWater(false, false); }
-    /** The first copter with room for a passenger that floats on the water. */
-    std::optional<int> copterOnWaterWithRoom() const { return firstCopterOnWater(true, false); }
-    /** The first copter with room for a passenger that floats still on the water (not moving up or down). */
-    std::optional<int> stillCopterOnWaterWithRoom() const { return firstCopterOnWater(true, true); }
 
 private:
-    std::optional<int> firstCopterOnWater(bool withRoom, bool still) const;
-
-    int players_;
     const data::LevelDefinition* definition_ = nullptr;
-    std::array<Copter, 2> copters_;
+    Copters copters_;
     std::vector<Pad> pads_;
     Water water_;
     Rain rain_;
     Energy energy_;
     Fade fade_;
-    int passengersLeft_ = 0;
-    bool done_ = false;
+    Delivery delivery_;
 };
 
 }  // namespace ugh::world

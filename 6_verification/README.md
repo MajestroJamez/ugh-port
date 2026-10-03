@@ -32,3 +32,22 @@ build\replay_check.exe ..\assets\logic\ugh-data.ugd ..\4_test_data\verify\build\
 | `tools/replay_check/` | `replay_check`: reads a replay tick by tick, feeds its keys and the test pilot's settings to the logic and compares the fields |
 
 The format of the replays and the table of fields: `docs/rewrite-design.md`, chap. 9.
+
+## Patterns
+
+- **Visitor**: `StateWriter` visits the passengers and the enemies of the logic by type (`PassengerVisitor`,
+  `EnemyVisitor`); one writer per entity (`PassengerFields`, `EnemyFields` ...) writes its fields.
+- **Table of rules**: which fields an entity has in which state is a table at the top of its writer (`FieldRules`):
+  a field is written exactly when the original defines it.
+- **Adapter**: `PcKeyboard` turns the scancodes of the original into the inputs of the logic; the logic never sees a
+  scancode.
+
+## Where to change what
+
+| I want to ... | Go to |
+|---|---|
+| add a field to the replays | the rule and the value in the entity's writer (`replay/PassengerFields.cpp` ...), and the same field in `4_test_data/verify/.../replay/SemanticProjection.kt` |
+| change what a mismatch report shows | `tools/replay_check/ReplayReport.cpp` |
+| read a new kind of line of a replay | `tools/replay_check/ReplayFile.cpp` |
+| let the test pilot set something new (an I line) | `tools/replay_check/ReplayCheck.cpp` (`intervene`) and `5_remake/logic/src/game/Cheats.hpp` |
+| change how the keys of a replay reach the logic | `keyboard/PcKeyboard.cpp` |

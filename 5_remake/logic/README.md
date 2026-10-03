@@ -30,12 +30,12 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 |---|---|
 | `units/` | the arithmetic of the original: `Fixed` (a position in 1/32 px) and `Speed` (1/64 Fixed per frame) wrap at 16 bits like the original (`Int16` inside them); `Countdown`. Everything else is a plain `int` |
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
-| `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd` (it puts together `UgdTokenizer`: lines to records, `RecordReader`: values and errors with the line, `KindsReader`, `RulesReader`, `LevelReader`), `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds (passengers: `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`), animations, keys, rules. Every record is a struct with public fields, read-only through `GameData`; the placements also have `accept` (Visitor) |
+| `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd` (it puts together `UgdTokenizer`: lines to records, `RecordReader`: values and errors with the line, `KindsReader`, `RulesReader`, `LevelReader`), `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds (passengers: `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`), animations, rules (the keys of the PC keyboard are skipped: `6_verification/keyboard`). Every record is a struct with public fields, read-only through `GameData`; the placements also have `accept` (Visitor) |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |
-| `world/` | the world of the game: `Session` (lives, score, level number, random numbers), `Level` (copters, pads, water, rain, energy, fade - and the questions the entities ask about it), `Copter`, `Pad`, `Water`, `Rain`, `Figure` (what a passenger or an enemy shows: position, sprite, animation), `Animator`, `PlayContext` |
+| `world/` | the world of the game: `Session` (lives, `Score`, level number, random numbers), `Level` (`Copters` - and what the entities ask about them -, pads, water, rain, energy, fade, `Delivery`), `Copter` (its `Motion`, `Controls`, `Rotor`, `Cabin`), `Pad`, `Water`, `Rain`, `Figure` (what a passenger or an enemy shows: position, sprite, animation), `Animator`, `PlayContext` |
 | `physics/` | `CopterPhysics` (one frame of a copter's flight), `CollisionProbe` (a copter against the background), `TouchBox` (a copter against a sprite), `Ballistics` (anything thrown that falls) |
 | `bonuses/` | the bonus items: `BonusSlots`, `BonusItem`, their states `Falling` and `Lying` |
-| `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `Route`, `PassengerCall`, `Ride`, `Swim`), `standing/` the standing passenger (5 states) |
+| `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `RouteKinds`, `Route`, `PassengerCall`, `Ride`, `Swim`; `OnPickupPad` the base of the states on the pickup pad), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`; `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
 | `input/` | `MenuKey`, `MenuInput`: the keys the game loop looks at (Esc gives up, P would pause, a caption waits for any key); the pilots' keys go straight to the copters (`Game::key`) |
 | `game/` | `Game` (the facade), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play), `Cheats` (the test pilot of the replays) |
@@ -69,7 +69,8 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
   `enter()` (when the entity gets into it) and `update()` (every frame). The states are stateless singletons; the
   entity holds the data. The entity derives from `state::StateMachine<Entity, Context>` (one template for all
   of them): `changeState(next, context)` runs the entry action now and the update from the next frame on;
-  `continueIn(next, context)` runs both now. The states derive from `state::State<Entity, Context>`. The game flow is a state machine of `Phase`s too.
+  `continueIn(next, context)` runs both now. The states derive from `state::State<Entity, Context>`. The game
+  flow is a state machine of `Phase`s too.
 - **Visitor**: the placements of a level (`data::PassengerPlacementVisitor`, `EnemyPlacementVisitor`) and the
   entities by type (`passengers::PassengerVisitor`, `enemies::EnemyVisitor`) - no RTTI.
 - **Factory**: `PassengerFactory`, `EnemyFactory` make the right class from a placement.
@@ -82,21 +83,35 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
 No exceptions, no RTTI, no macros (the library builds as an Unreal Engine module), templates only where they remove
 copies (`state/`): errors come back as values (`DataFileReader::read` returns nullptr and the text of the error).
 
+## Rules of the code
+
+- One class per file, named like the file; no file over 200 lines, no class over about 15 public methods (the
+  facade `Game` aside): a class that grows gets parts with their own behaviour (`Copter` has `Rotor` and `Cabin`,
+  `RoutePassenger` has `Route`, `PassengerCall`, `Ride`, `Swim`), and the states call their intents
+  (`passenger.ride().start(...)`), not setters.
+- No `protected` data: what the kinds of an entity share is a base class with its own methods (`world::Figure`).
+- Values of the game are plain `int`s; only `Fixed` and `Speed` keep the 16 bits of the original (and the energy, as
+  a named quirk). A quirk of the original lives in the class it belongs to, named and described.
+- The logic knows nothing of DOS, the PC keyboard or the replays: those are in `6_verification/`.
+
 ## Where to change what
 
 | I want to ... | Go to |
 |---|---|
 | change the gravity, the lift, the steering of a copter, how hard it can land | `src/physics/CopterPhysics.cpp` (the constants at the top); the crash limits are in the data (`rules`) |
 | make a passenger call a copter for longer | `src/passengers/route/Calling.hpp` (`CALL_TIME`) |
+| make a passenger wave impatiently for longer (no copter with room) | `src/passengers/route/Impatient.hpp` (`WAVE_TIME`) |
 | change how many lives a game starts with | `src/world/Session.hpp` (`START_LIVES`) |
 | change what a state of a passenger or an enemy does | the state's file: `src/passengers/route/<State>.cpp`, `src/enemies/<kind>/<State>.cpp` |
 | add an event for the frontend | `src/events/EventKind.hpp` (the kind), `context.report({...})` where it happens, `include/ugh_logic.h` (`UGH_LOGIC_EVENT_...`, in the same order) |
 | add a field to the replays | the entity's writer in `6_verification/replay/` (`PassengerFields.cpp` ...: its rule and its value) and the same field in `4_test_data/verify/.../replay/SemanticProjection.kt` |
 | add a kind of enemy | a folder `src/enemies/<kind>/` (the class and its states, like `flyer/`), its placement in `src/data/` (with `EnemyPlacementVisitor`, its kind in `KindsReader`, its placement in `LevelReader`), `src/enemies/EnemyFactory.cpp`; then its fields in `6_verification/replay/EnemyFields.cpp` |
 | change the order of the systems in a frame | `src/game/PlayFrame.cpp` |
-| change the caption, the black screens, the end of an attempt | `src/game/phases/`, `src/game/GameFlow.cpp` (`endAttempt`) |
+| change the caption, the black screens, the end of an attempt | `src/game/phases/`, `src/game/Attempts.cpp` (`end`) |
 | change how a copter hits walls | `src/physics/CollisionProbe.cpp` |
 | change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`) and `src/api/LogicApi.cpp` |
+| change how the score multiplier works | `src/world/Score.hpp` |
+| change what a passenger does on its pickup pad every frame (the water, a copter flying into it) | `src/passengers/route/OnPickupPad.cpp` |
 
 ## Glossary
 

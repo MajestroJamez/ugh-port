@@ -56,13 +56,13 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     view.fade = level.fade().position();
     view.water_level = level.water().level().raw();
     view.water_frame = level.water().surfaceFrame();
-    view.copter_count = level.copterCount();
-    for (int p = 0; p < level.copterCount(); p++) {
-        const ugh::world::Copter& c = level.copter(p);
-        const auto& cargo = c.cargo();
+    view.copter_count = level.copters().count();
+    for (int p = 0; p < level.copters().count(); p++) {
+        const ugh::world::Copter& c = level.copters()[p];
+        const auto& cargo = c.cabin().cargo();
         int destination = !cargo ? 0 : cargo->destination ? *cargo->destination : -1;
-        view.copters[p] = {c.x().raw(), c.y().raw(), c.rotorSprite(), cargo ? cargo->look : 0,
-                           destination, c.fare()};
+        view.copters[p] = {c.x().raw(), c.y().raw(), c.rotor().sprite(), cargo ? cargo->look : 0,
+                           destination, c.cabin().fare()};
     }
     for (int i = 0; i < game.passengers().count(); i++) {
         const ugh::passengers::Passenger& passenger = game.passengers()[i];
@@ -156,8 +156,8 @@ void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view) {
     const ugh::world::Session& session = game.session();
     view->level = session.levelNumber();
     view->lives = session.lives();
-    view->multiplier = session.multiplier();
-    view->score = session.score();
+    view->multiplier = session.score().multiplier();
+    view->score = session.score().points();
     if (game.levelLoaded()) viewLevel(game, *view);
 }
 

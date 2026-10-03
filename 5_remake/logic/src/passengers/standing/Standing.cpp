@@ -11,7 +11,7 @@ const Standing Standing::instance{};
 void Standing::update(StandingPassenger& passenger, const PassengerContext& context) const {
     std::optional<int> copter =
         physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.play.level);
-    if (copter && context.play.level.copter(*copter).hasRoom()) {
+    if (copter && context.play.level.copters()[*copter].cabin().hasRoom()) {
         passenger.setCarrier(*copter);
         passenger.changeState(Hanging::instance, context);
         return;

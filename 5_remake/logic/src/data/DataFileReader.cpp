@@ -1,8 +1,5 @@
 #include "data/DataFileReader.hpp"
 
-#include <fstream>
-#include <iterator>
-
 #include "data/KindsReader.hpp"
 #include "data/LevelReader.hpp"
 #include "data/RecordReader.hpp"
@@ -30,13 +27,9 @@ bool isLevelPart(const UgdRecord& r) {
 }  // namespace
 
 std::unique_ptr<const GameData> DataFileReader::read(const std::string& path, std::string& error) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        error = "cannot open " + path;
-        return nullptr;
-    }
-    std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    auto data = parse(text, error);
+    std::vector<UgdRecord> records;
+    if (!UgdTokenizer::tokenizeFile(path, records, error)) return nullptr;
+    auto data = build(records, error);
     if (!data) error = path + ": " + error;
     return data;
 }
@@ -44,6 +37,10 @@ std::unique_ptr<const GameData> DataFileReader::read(const std::string& path, st
 std::unique_ptr<const GameData> DataFileReader::parse(std::string_view text, std::string& error) {
     std::vector<UgdRecord> records;
     if (!UgdTokenizer::tokenize(text, records, error)) return nullptr;
+    return build(records, error);
+}
+
+std::unique_ptr<const GameData> DataFileReader::build(const std::vector<UgdRecord>& records, std::string& error) {
     std::unique_ptr<GameData> data(new GameData());
     RecordReader in;
     if (!readAll(records, in, *data)) {

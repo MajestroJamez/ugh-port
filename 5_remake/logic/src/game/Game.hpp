@@ -24,9 +24,9 @@
 namespace ugh::game {
 
 /**
- * The game (Facade): a new game, the pilots' keys and the keys of the game loop, one frame after another, until the game is over;
- * the state can be read (a renderer, the replays) and the events are reported to listeners. Nothing can be set from
- * outside but through Cheats (the test pilot of the replays).
+ * The game (Facade): a new game, the pilots' keys and the keys of the game loop, one frame after another, until the
+ * game is over; the state can be read (a renderer, the replays) and the events are reported to listeners. Nothing can
+ * be set from outside but through Cheats (the test pilot of the replays).
  */
 class Game {
 public:
@@ -41,7 +41,7 @@ public:
     bool newGame(const NewGameSettings& settings);
 
     /** A pilot's key pressed or released, between two frames. */
-    void key(int player, data::PlayerKey key, bool pressed) { level_.copter(player).setKey(key, pressed); }
+    void key(int player, data::PlayerKey key, bool pressed) { level_.copters()[player].controls().set(key, pressed); }
     /** A key event the game loop sees (Esc, P, any other), between two frames. */
     void menuKey(input::MenuKey key) { menu_.receive(key); }
 

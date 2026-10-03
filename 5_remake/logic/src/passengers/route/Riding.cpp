@@ -21,17 +21,17 @@ void Riding::enter(RoutePassenger& passenger, const PassengerContext& context) c
     world::Level& level = context.play.level;
     int player = *passenger.ride().carrier();
     int fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
-    passenger.outOfWater();   // a rescued swimmer is itself again
+    passenger.kinds().outOfWater();   // a rescued swimmer is itself again
     int destination = level.pad(passenger.route().targetPad()).place().number;
-    level.copter(player).takeOnBoard(passenger.landKind().look, destination, fare, fareMin);
+    level.copters()[player].cabin().takeOnBoard(passenger.kinds().land().look, destination, fare, fareMin);
     passenger.hide();
     level.pad(passenger.route().pickupPad()).vacate();
     context.play.report({events::EventKind::PassengerBoarded, player, passenger.index()});
 }
 
 void Riding::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    world::Copter& copter = context.play.level.copter(*passenger.ride().carrier());
-    copter.lowerFare();
+    world::Copter& copter = context.play.level.copters()[*passenger.ride().carrier()];
+    copter.cabin().lowerFare();
     passenger.ride().tick();
     if (copter.landedOn(passenger.route().targetPad())) passenger.changeState(WalkingToDoor::instance, context);
 }

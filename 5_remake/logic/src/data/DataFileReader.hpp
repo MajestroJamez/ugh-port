@@ -32,6 +32,8 @@ public:
     static std::unique_ptr<const GameData> parse(std::string_view text, std::string& error);
 
 private:
+    /** The game data of the records, checked; nullptr and `error` when they are bad. */
+    static std::unique_ptr<const GameData> build(const std::vector<UgdRecord>& records, std::string& error);
     /** The records in the order their references need: animations, kinds, rules, levels, orders. */
     static bool readAll(const std::vector<UgdRecord>& records, RecordReader& in, GameData& data);
     static bool readKinds(const std::vector<UgdRecord>& records, RecordReader& in, KindsReader& kinds);

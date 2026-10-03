@@ -17,6 +17,8 @@ class UgdTokenizer {
 public:
     /** The records of `text`; false (and `error`) when the header is missing or a line is bad. */
     static bool tokenize(std::string_view text, std::vector<UgdRecord>& out, std::string& error);
+    /** The records of the file at `path`; false (and `error`, with the path) when it cannot be read or is bad. */
+    static bool tokenizeFile(const std::string& path, std::vector<UgdRecord>& out, std::string& error);
 };
 
 }  // namespace ugh::data

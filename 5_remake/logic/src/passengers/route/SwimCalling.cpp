@@ -15,8 +15,9 @@ void SwimCalling::enter(RoutePassenger& passenger, const PassengerContext& conte
 }
 
 void SwimCalling::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    passenger.floatOnSurface(context.play.level.water().row());
-    if (!context.play.level.copterOnWater()) {
+    const world::Level& level = context.play.level;
+    passenger.floatOnSurface(level.water().row());
+    if (!level.copters().onWater(level.water())) {
         passenger.changeState(SwimWaving::instance, context);
         return;
     }

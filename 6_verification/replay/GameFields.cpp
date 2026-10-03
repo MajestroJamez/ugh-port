@@ -70,8 +70,8 @@ void GameFields::write(const game::Game& game, Fields& f) {
     f["game.players"] = std::to_string(session.players());
     f["game.difficulty"] = difficultyName(session.difficulty());
     f["game.lives"] = std::to_string(session.lives());
-    f["game.multiplier"] = std::to_string(session.multiplier());
-    f["game.score"] = std::to_string(session.score());
+    f["game.multiplier"] = std::to_string(session.score().multiplier());
+    f["game.score"] = std::to_string(session.score().points());
     const world::RandomNumbers::Words& words = session.random().words();
     char rng[20];
     std::snprintf(rng, sizeof rng, "%04x%04x%04x%04x", words[3], words[2], words[1], words[0]);
@@ -82,9 +82,9 @@ void GameFields::write(const game::Game& game, Fields& f) {
     f["game.energy"] = std::to_string(level.energy().value());
     f["game.fade"] = std::to_string(level.fade().position());
     f["game.fadeDirection"] = level.fade().fadingOut() ? "out" : "in";
-    f["game.levelDone"] = level.done() ? "1" : "0";
+    f["game.levelDone"] = level.delivery().done() ? "1" : "0";
     f["game.wind"] = windName(level.wind());
-    f["game.passengersLeft"] = std::to_string(level.passengersLeft());
+    f["game.passengersLeft"] = std::to_string(level.delivery().left());
     const world::Water& water = level.water();
     f["game.water.level"] = std::to_string(water.level().raw());
     f["game.water.resting"] = water.resting() ? "1" : "0";

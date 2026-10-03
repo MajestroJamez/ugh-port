@@ -58,7 +58,7 @@ originál v oracle + Kotlin port ──► verify ──► verify/build/replays
 4. **Čísla s jednotkami:** desítkově, s jednotkou v typu nebo jménu (`Fixed::fromPixels(304)`, `Speed(27)  // 1/64
    Fixed za snímek²`, `constexpr int CALL_TIME_FRAMES = 140`). Hex jen pro bitové masky. Žádné magické číslo
    v logice; čísla spritů přicházejí z dat (`SpriteIds`), ne z kódu.
-5. **Aritmetika originálu přes hodnotové typy** (`Int16`, `Fixed`, `Speed`, `Countdown`): 16bitové přetečení,
+5. **Aritmetika originálu přes hodnotové typy** (`Fixed`, `Speed`, `Countdown`; od N9b viz bod 14): 16bitové přetečení,
    aritmetické posuny a znaménkové / neznaménkové porovnání jsou vidět v typu a jménu metody, ne v castech.
 6. **Zapouzdření:** stav entity je soukromý, mění se jen metodami se slovesem (`copter.takeOnBoard(...)`). Ven jen
    čtecí metody (renderer, zápis replaye). Žádný `Snapshot` / `restore`.
@@ -66,8 +66,8 @@ originál v oracle + Kotlin port ──► verify ──► verify/build/replays
    `-1`; výčet je `enum class` (`Wind`, `Difficulty`, `Facing`, `BonusEffect`, `PlayerKey`). Logika nemá obranné
    kontroly – vstup kontroluje jen loader dat.
 8. **Povolené C++:** třídy, virtuální metody, `enum class`, `std::array`, `std::vector`, `std::unique_ptr`,
-   `std::optional`, `std::string`, `std::string_view`, malé vlastní šablony (od N9b `state/StateMachine`). **Zakázané:** makra (kromě
-   `tests/TestFramework.hpp`), korutiny, `std::function`, ukazatele na členy, **výjimky a RTTI** (`dynamic_cast`,
+   `std::optional`, `std::string`, `std::string_view`, malé vlastní šablony (od N9b `state/StateMachine`).
+   **Zakázané:** makra (kromě `tests/TestFramework.hpp`), korutiny, `std::function`, ukazatele na členy, **výjimky a RTTI** (`dynamic_cast`,
    `typeid`) – Unreal Engine je ve výchozím stavu nemá; chyby vrací `std::optional` / struktura s textem chyby.
 9. **Závislosti jen jedním směrem:** `units` ← `data` ← `events` ← `world` ← (`physics`, `passengers`, `enemies`,
    `bonuses`) ← `input` ← `game` ← `api`. `replay/` a `tools/` jen čtou `game`. Nic v `src/` neincluduje
@@ -75,6 +75,20 @@ originál v oracle + Kotlin port ──► verify ──► verify/build/replays
 10. **Metody krátké** (~30 řádků), pojmenované slovesem; každá třída a veřejná metoda má jednořádkový komentář,
     co dělá v pojmech hry.
 11. **DRY:** společné chování je v jedné třídě (`Animator`, `Ballistics`, `Screen`, `TouchBox`), ne v kopiích.
+
+Od N9b navíc (výsledek review po N8):
+
+12. **Velikost:** žádný soubor nad 200 řádků, žádná třída nad ~15 veřejnými metodami (různá jména, const a
+    non-const dvojice jednou; kromě fasády `Game`). Třída, která roste, dostane části s vlastním chováním
+    (`Copter`: `Motion`, `Rotor`, `Cabin`; `RoutePassenger`: `RouteKinds`, `Route`, `PassengerCall`, `Ride`, `Swim`;
+    `Level`: `Copters`, `Delivery`; `Session`: `Score`) a stavy volají záměry, ne settery.
+13. **Žádná `protected` data:** co mají druhy entity společné, je základní třída s vlastními metodami
+    (`world::Figure`, `world::Motion`); jeden stavový automat pro všechny entity (`state/`).
+14. **Typy hry místo registrů:** hodnoty hry jsou `int`; 16bitová sémantika jen uvnitř `Fixed` a `Speed` (audit N1:
+    jinde se v replayích neprojeví) a jako pojmenovaná zvláštnost `world::Energy` (pod nulou přetéká, doplnění
+    bonusem porovnává bez znaménka). Nutné zvláštnosti originálu jen ve své třídě, pojmenované.
+15. **Logika bez DOSu:** žádné skenkódy, stránky VGA ani formát replayů; klávesy pilotů a klávesy smyčky hry přes
+    C API, adaptér PC klávesnice a zápis replayů jsou v `6_verification/`.
 
 ## 4. Moduly a třídy
 

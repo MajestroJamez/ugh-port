@@ -50,8 +50,8 @@ TEST(the_last_passenger_ends_the_level) {
     test::TestLevel t;
     t.start();
     t.level().passengerFinished(t.events);
-    CHECK(t.level().done());
+    CHECK(t.level().delivery().done());
     CHECK(t.level().fade().fadingOut());
     t.level().passengerFinished(t.events);
-    CHECK_EQUAL(0, t.level().passengersLeft());
+    CHECK_EQUAL(0, t.level().delivery().left());
 }

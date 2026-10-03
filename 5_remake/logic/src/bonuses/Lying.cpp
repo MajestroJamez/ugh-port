@@ -29,7 +29,7 @@ void Lying::update(BonusItem& item, const world::PlayContext& context) const {
     switch (kind.effect) {
         case data::BonusEffect::Energy: context.level.energy().refill(kind.amount); break;
         case data::BonusEffect::Life: context.session.addLives(kind.amount); break;
-        case data::BonusEffect::Multiplier: context.session.raiseMultiplier(); break;
+        case data::BonusEffect::Multiplier: context.session.score().raiseMultiplier(); break;
     }
     item.disappear();
     context.report({events::EventKind::BonusCollected, *copter, item.slot(), static_cast<int>(kind.effect)});

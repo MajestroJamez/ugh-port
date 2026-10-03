@@ -5,7 +5,7 @@
 namespace ugh::passengers::route {
 
 RoutePassenger::RoutePassenger(int index, const data::RoutePassengerPlacement& placement)
-    : Passenger(index), StateMachine(NextStop::instance), land_(placement.kind), route_(placement.route) {}
+    : Passenger(index), StateMachine(NextStop::instance), kinds_(*placement.kind), route_(placement.route) {}
 
 void RoutePassenger::update(const PassengerContext& context) { updateState(context); }
 
@@ -16,11 +16,6 @@ void RoutePassenger::frameShown() {
 }
 
 void RoutePassenger::accept(PassengerVisitor& visitor) const { visitor.visit(*this); }
-
-const data::AnimatedPassengerKind& RoutePassenger::kind() const {
-    if (inWater_) return *land_->swimmer;
-    return *land_;
-}
 
 void RoutePassenger::standAtDoor(const data::PadDefinition& pad) {
     seenY_ = pad.y - kind().box.y;

@@ -38,3 +38,19 @@ TEST(a_fake_shift_is_swallowed) {
     CHECK(keyboard.match(0xe0) == nullptr);
     CHECK(keyboard.match(0x2a) == nullptr);
 }
+
+TEST(the_game_loop_sees_the_last_scancode_when_it_changed_since_the_frame_before) {
+    keyboard::PcKeyboard keyboard(keys());
+    CHECK(!keyboard.takeMenuKey().has_value());   // nothing yet
+    keyboard.match(0x39);                         // Space pressed
+    CHECK(keyboard.takeMenuKey() == input::MenuKey::Other);
+    keyboard.match(0x39);                         // held: the same scancode again
+    CHECK(!keyboard.takeMenuKey().has_value());
+    keyboard.match(0xb9);                         // released and pressed again in one frame
+    keyboard.match(0x39);
+    CHECK(!keyboard.takeMenuKey().has_value());
+    keyboard.match(0x01);                         // Esc
+    CHECK(keyboard.takeMenuKey() == input::MenuKey::Escape);
+    keyboard.match(0x19);                         // P
+    CHECK(keyboard.takeMenuKey() == input::MenuKey::Pause);
+}

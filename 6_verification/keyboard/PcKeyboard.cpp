@@ -12,11 +12,16 @@ void PcKeyboard::deliver(uint8_t scancode, game::Game& game) {
 }
 
 void PcKeyboard::beforeFrame(game::Game& game) {
-    if (last_ == seen_) return;
+    std::optional<input::MenuKey> key = takeMenuKey();
+    if (key) game.menuKey(*key);
+}
+
+std::optional<input::MenuKey> PcKeyboard::takeMenuKey() {
+    if (last_ == seen_) return std::nullopt;
     seen_ = last_;
-    if (last_ == SCANCODE_ESC) game.menuKey(input::MenuKey::Escape);
-    else if (last_ == SCANCODE_P) game.menuKey(input::MenuKey::Pause);
-    else game.menuKey(input::MenuKey::Other);
+    if (last_ == SCANCODE_ESC) return input::MenuKey::Escape;
+    if (last_ == SCANCODE_P) return input::MenuKey::Pause;
+    return input::MenuKey::Other;
 }
 
 const KeyBinding::Action* PcKeyboard::match(uint8_t scancode) {

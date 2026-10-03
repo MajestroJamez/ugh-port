@@ -25,7 +25,7 @@ const Flying Flying::instance{};
 /** It takes its next target and comes in from the side away from the target's copter. */
 void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
     world::Level& level = context.play.level;
-    const world::Copter& copter = level.copter(flyer.takeNextTarget(context.play.session.players()));
+    const world::Copter& copter = level.copters()[flyer.takeNextTarget(context.play.session.players())];
     if (copter.x() < SCREEN_MIDDLE) {
         flyer.flyTowards(world::Facing::Left);
         flyer.moveToX(START_RIGHT);

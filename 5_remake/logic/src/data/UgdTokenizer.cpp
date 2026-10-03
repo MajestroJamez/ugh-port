@@ -1,5 +1,7 @@
 #include "data/UgdTokenizer.hpp"
 
+#include <fstream>
+#include <iterator>
 #include <sstream>
 
 #include "data/RecordReader.hpp"
@@ -56,6 +58,18 @@ bool UgdTokenizer::tokenize(std::string_view text, std::vector<UgdRecord>& out, 
         return false;
     }
     return true;
+}
+
+bool UgdTokenizer::tokenizeFile(const std::string& path, std::vector<UgdRecord>& out, std::string& error) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in) {
+        error = "cannot open " + path;
+        return false;
+    }
+    std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    if (tokenize(text, out, error)) return true;
+    error = path + ": " + error;
+    return false;
 }
 
 }  // namespace ugh::data

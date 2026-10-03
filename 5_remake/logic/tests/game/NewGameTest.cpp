@@ -11,8 +11,8 @@ TEST(a_new_game_starts_after_eight_black_frames) {
     CHECK_EQUAL(0, g.session().lives());
     g.step();
     CHECK(g.phase() == game::GamePhase::BetweenLevels);
-    CHECK_EQUAL(3, g.session().lives());
-    CHECK_EQUAL(1, g.session().multiplier());
+    CHECK_EQUAL(world::Session::START_LIVES, g.session().lives());
+    CHECK_EQUAL(1, g.session().score().multiplier());
     for (int frame = 2; frame <= 8; frame++) g.step();
     CHECK(g.phase() == game::GamePhase::BetweenLevels);
     g.step();

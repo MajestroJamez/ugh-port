@@ -118,9 +118,9 @@ void ReplayCheck::apply(game::Game& game, keyboard::PcKeyboard& keyboard, const 
 /** The I line through Cheats: a copter put somewhere (the fields not in the line stay), energy, lives. */
 void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
     game::Cheats cheats = game.cheats();
-    for (int player = 0; player < game.level().copterCount(); player++) {
+    for (int player = 0; player < game.level().copters().count(); player++) {
         std::string c = "copter." + std::to_string(player) + ".";
-        const world::Copter& copter = game.level().copter(player);
+        const world::Copter& copter = game.level().copters()[player];
         bool moved = false;
         auto value = [&](const char* field, int current) {
             auto it = tick.inject.find(c + field);

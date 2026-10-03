@@ -37,9 +37,9 @@ constexpr int SKIDS_MIDDLE = 16, SKIDS_BOTTOM = 20;
 }  // namespace
 
 void CopterPhysics::fly(int player) {
-    world::Copter& copter = context_.level.copter(player);
+    world::Copter& copter = context_.level.copters()[player];
     context_.level.energy().spend(FLYING_COST);
-    copter.startFrame();
+    copter.rotor().newFrame();
     impact_ = 0;
     Depth depth = depthOf(copter);
     if (!copter.landed()) {
@@ -50,11 +50,6 @@ void CopterPhysics::fly(int player) {
     liftAndFall(copter, depth);
     moveVertically(copter, depth);
     checkCrash(player);
-}
-
-CopterPhysics::Depth CopterPhysics::depthOf(const world::Copter& copter) const {
-    int depth = copter.depthIn(context_.level.water().row());
-    return depth < 0 ? Depth::Above : depth == 0 ? Depth::Surface : Depth::Below;
 }
 
 /** In the air the wind pushes the copter sideways and a little down. */
@@ -69,10 +64,10 @@ void CopterPhysics::steer(world::Copter& copter) {
     Speed vx = copter.speedX();
     if (copter.controls().left) {
         vx -= STEER;
-        copter.addEffort(STEER_EFFORT);
+        copter.rotor().addEffort(STEER_EFFORT);
     } else if (copter.controls().right) {
         vx += STEER;
-        copter.addEffort(STEER_EFFORT);
+        copter.rotor().addEffort(STEER_EFFORT);
     }
     copter.setSpeed(vx.clamped(MAX_SPEED), copter.speedY());
 }
@@ -119,14 +114,14 @@ void CopterPhysics::liftAndFall(world::Copter& copter, Depth depth) {
         context_.level.energy().spend(AIRBORNE_COST);
         if (copter.controls().down) {
             vy += DIVE;
-            copter.addEffort(PEDAL_EFFORT);
+            copter.rotor().addEffort(PEDAL_EFFORT);
             canPedal = false;
         }
     }
     if (canPedal && copter.controls().up) {
         context_.level.energy().spend(PEDAL_COST);
         vy -= LIFT;
-        copter.addEffort(PEDAL_EFFORT);
+        copter.rotor().addEffort(PEDAL_EFFORT);
         copter.takeOff();
     }
     copter.setSpeed(copter.speedX(), vy.clamped(MAX_SPEED));

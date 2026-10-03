@@ -2,16 +2,6 @@
 
 namespace ugh::data {
 
-namespace {
-
-template <class Kind>
-const Kind* find(const std::map<std::string, Kind*>& kinds, const std::string& name) {
-    auto it = kinds.find(name);
-    return it == kinds.end() ? nullptr : it->second;
-}
-
-}  // namespace
-
 bool KindsReader::readAnimation(const UgdRecord& r) {
     std::vector<int> frames;
     if (!in_.only(r, {"frames"}) || !in_.numbers(r, "frames", 0, frames)) return false;
@@ -188,12 +178,19 @@ bool KindsReader::pair(const UgdRecord& r, const char* key, AnimationPair& out) 
     return true;
 }
 
-const RoutePassengerKind* KindsReader::routeKind(const std::string& name) const { return find(routeKinds_, name); }
-
-const StandingPassengerKind* KindsReader::standingKind(const std::string& name) const {
-    return find(standingKinds_, name);
+const RoutePassengerKind* KindsReader::routeKind(const std::string& name) const {
+    auto it = routeKinds_.find(name);
+    return it == routeKinds_.end() ? nullptr : it->second;
 }
 
-const BonusKind* KindsReader::bonusKind(const std::string& name) const { return find(bonusKinds_, name); }
+const StandingPassengerKind* KindsReader::standingKind(const std::string& name) const {
+    auto it = standingKinds_.find(name);
+    return it == standingKinds_.end() ? nullptr : it->second;
+}
+
+const BonusKind* KindsReader::bonusKind(const std::string& name) const {
+    auto it = bonusKinds_.find(name);
+    return it == bonusKinds_.end() ? nullptr : it->second;
+}
 
 }  // namespace ugh::data

@@ -22,9 +22,9 @@ const Falling Falling::instance{};
 /** It falls from under the copter; the copter's speed in 1/64 Fixed becomes twice that in 1/32 px (shifted by 5). */
 void Falling::enter(StandingPassenger& passenger, const PassengerContext& context) const {
     int player = *passenger.carrier();
-    world::Copter& copter = context.play.level.copter(player);
+    world::Copter& copter = context.play.level.copters()[player];
     const data::Box& box = passenger.kind().box;
-    copter.unload();
+    copter.cabin().unload();
     passenger.setFall(Fixed::fromRaw(copter.speedX().raw() >> 5), copter.speedY().raw() >> 5);
     passenger.moveTo(copter.x() + Fixed::fromPixels(DROP_X) - Fixed::fromPixels(box.x),
                      copter.y() + Fixed::fromPixels(DROP_Y) - Fixed::fromRaw(box.y << 4));   // half its height

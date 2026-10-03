@@ -24,8 +24,8 @@ bool TouchBox::touches(const world::Copter& copter) const {
 }
 
 std::optional<int> TouchBox::firstCopterIn(const world::Level& level) const {
-    for (int c = 0; c < level.copterCount(); c++)
-        if (touches(level.copter(c))) return c;
+    for (int c = 0; c < level.copters().count(); c++)
+        if (touches(level.copters()[c])) return c;
     return std::nullopt;
 }
 

@@ -7,9 +7,9 @@
 namespace ugh::units {
 
 /**
- * A signed 16-bit integer that wraps on overflow: 32767 + 1 is -32768. Only `Fixed` and `Speed` compute with it:
- * positions and speeds keep the 16 bits of the original. Everything else of the game is a plain int (the replays never
- * overflow 16 bits there, 2_reverse_engineering/notes/rewrite-audit.md).
+ * A signed 16-bit integer that wraps on overflow: 32767 + 1 is -32768. `Fixed` and `Speed` compute with it: positions
+ * and speeds keep the 16 bits of the original; so does the named quirk of `world::Energy`. Everything else of the game
+ * is a plain int (the replays never overflow 16 bits there, 2_reverse_engineering/notes/rewrite-audit.md).
  *
  * - An int converts to an Int16 implicitly and is cut to 16 bits.
  * - `>>` shifts arithmetically (keeps the sign), `<<` shifts left and wraps.

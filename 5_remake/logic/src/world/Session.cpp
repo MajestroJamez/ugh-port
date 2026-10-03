@@ -4,8 +4,7 @@ namespace ugh::world {
 
 void Session::startGame() {
     lives_ = START_LIVES;
-    multiplier_ = 1;
-    score_ = 0;
+    score_.start();
 }
 
 bool Session::nextLevel(int levelCount) {
@@ -16,17 +15,13 @@ bool Session::nextLevel(int levelCount) {
 bool Session::loseLife() {
     lives_--;
     if (lives_ <= 0) return false;
-    multiplier_ = 1;
+    score_.resetMultiplier();
     return true;
 }
 
 void Session::addLives(int amount) {
     lives_ += amount;
     if (lives_ > MAX_LIVES) lives_ = MAX_LIVES;
-}
-
-void Session::raiseMultiplier() {
-    if (multiplierBelowLimit()) multiplier_++;
 }
 
 }  // namespace ugh::world

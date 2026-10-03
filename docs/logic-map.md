@@ -11,15 +11,15 @@ v `4_test_data/verify/.../replay/SemanticProjection.kt`.
 | `logic/` | Kotlin port | Originál |
 |---|---|---|
 | `game::GameFlow::step` | `GameFlow.kt` `playGame` | `113b:0c61 .. 0fe7` |
-| `game::Game::startGame` / `world::Session::startGame` | `GameFlow.kt` `newGame` | `113b:3961` |
+| `game::Attempts::startGame` / `world::Session::startGame` | `GameFlow.kt` `newGame` | `113b:3961` |
 | `game::phases::BlackScreen` | `Host.kt` `blackPalette` | `113b:4e9b` |
-| `game::phases::CaptionFadeIn` (`Game::startAttempt`) | `Level.kt` `levelSetup`, `loadLevel`, `levelCaption`; `Host.kt` `fadeIn` | `113b:3d66`, `3976`, `0664`, `4e19` |
+| `game::phases::CaptionFadeIn` (`Attempts::start`) | `Level.kt` `levelSetup`, `loadLevel`, `levelCaption`; `Host.kt` `fadeIn` | `113b:3d66`, `3976`, `0664`, `4e19` |
 | `game::phases::CaptionWaitKey` | `Host.kt` `waitKey` | `113b:44db` |
 | `game::phases::CaptionFadeOut` | `Host.kt` `fadeOut` | `113b:4e28` |
-| `game::phases::Playing::enter` (`Game::beforePlay`) | `Level.kt` `levelSetup` (konec), `resetDrawnSprites` | `113b:3d66`, `0b4f` |
+| `game::phases::Playing::enter` (`Attempts::beforePlay`) | `Level.kt` `levelSetup` (konec), `resetDrawnSprites` | `113b:3d66`, `0b4f` |
 | `game::phases::Playing::nextFrame`, `game::PlayFrame::run` | `GameFlow.kt` `playLevel`; `Frame.kt` `frameFade`, `frameBody`, `frameAfterKeys` | `113b:0c7d .. 0fa4`, `0ca5` |
 | `game::PlayFrame::readKeys` | `Frame.kt` `frameKeys`, `readScancode` | `113b:0fe8`, `44f1` |
-| `game::GameFlow::endAttempt`, `Game::endAttempt` | `GameFlow.kt` `playGame` (po `playLevel`) | `113b:0fa7` |
+| `game::GameFlow::endAttempt`, `Attempts::end` | `GameFlow.kt` `playGame` (po `playLevel`) | `113b:0fa7` |
 | `keyboard::PcKeyboard::deliver` (adaptér v `6_verification`) | `Host.kt` `keyboardInterrupt` | `113b:4567` |
 | `input::MenuInput` (`keyboard::PcKeyboard::beforeFrame`) | `Frame.kt` `readScancode` | `113b:44f1` |
 | `world::RandomNumbers::next` | `Draw.kt` `random` | `113b:4f09` |
@@ -36,9 +36,9 @@ v `4_test_data/verify/.../replay/SemanticProjection.kt`.
 | `world::Rain::move` | `Draw.kt` `moveRain` | `113b:3c78` |
 | `world::Rain::spawn` | `Draw.kt` `spawnRaindrop` | `113b:3c35` |
 | `world::Rain::start` | `Level.kt` `loadLevel` (konec) | `113b:3976` |
-| `world::Copter::spinRotor` | `Draw.kt` `drawCopter` | `113b:418d` |
+| `world::Rotor::spin` | `Draw.kt` `drawCopter` | `113b:418d` |
 | `world::Copter::throwUp` | `Objects.kt` `o2748Charging` | `113b:2748` |
-| `world::Copter::takeOnBoard` / `pickUpHanging` / `lowerFare` | `Passengers.kt` `p19e0Board` / `p1c48Grabbed` / `p1a42Riding` | `113b:19fb`, `1c48`, `1a42` |
+| `world::Cabin::takeOnBoard` / `pickUpHanging` / `lowerFare` | `Passengers.kt` `p19e0Board` / `p1c48Grabbed` / `p1a42Riding` | `113b:19fb`, `1c48`, `1a42` |
 | `world::Energy::refill` | `Bonuses.kt` `b2ca9Lying` | `113b:2ca9` |
 | `physics::CopterPhysics::fly` | `Game.kt` `copterUpdate` | `113b:1095` |
 | `physics::CopterPhysics::moveHorizontally` | `Game.kt` `moveHorizontally` | `113b:1095` |

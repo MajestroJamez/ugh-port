@@ -27,7 +27,10 @@ private:
     const world::PlayContext& context_;
     int impact_ = 0;   // the hardest bounce of this frame
 
-    Depth depthOf(const world::Copter& copter) const;
+    Depth depthOf(const world::Copter& copter) const {
+        int depth = copter.depthIn(context_.level.water().row());
+        return depth < 0 ? Depth::Above : depth == 0 ? Depth::Surface : Depth::Below;
+    }
     void blowWithWind(world::Copter& copter, Depth depth);
     void steer(world::Copter& copter);
     void moveHorizontally(world::Copter& copter);

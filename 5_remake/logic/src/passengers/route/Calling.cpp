@@ -20,8 +20,8 @@ void Calling::enter(RoutePassenger& passenger, const PassengerContext& context) 
 
 /** It waves impatiently when the copter left or is full. */
 void Calling::stay(RoutePassenger& passenger, const PassengerContext& context) const {
-    std::optional<int> copter = context.play.level.copterLandedOn(passenger.route().pickupPad());
-    if (!copter || !context.play.level.copter(*copter).hasRoom()) {
+    std::optional<int> copter = context.play.level.copters().landedOn(passenger.route().pickupPad());
+    if (!copter || !context.play.level.copters()[*copter].cabin().hasRoom()) {
         passenger.changeState(Impatient::instance, context);
         return;
     }

@@ -16,7 +16,7 @@ void ComingOut::enter(RoutePassenger& passenger, const PassengerContext& context
 
 void ComingOut::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
-    const data::Animation& door = *passenger.landKind().comingOut;
+    const data::Animation& door = *passenger.kinds().land().comingOut;
     if (passenger.pastEndOf(door)) {
         passenger.changeState(Waiting::instance, context);
         return;

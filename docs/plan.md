@@ -396,3 +396,15 @@ a žádný soubor nad 200 řádků.
   (pravidla, sprity; místo `KeysReader` - klávesy od etapy 4 čte `6_verification`) a `LevelReader` (levely, plošiny,
   umístění, maska, pořadí); největší soubor 199 ř. `KeyFile` v `6_verification` používá stejný `UgdTokenizer`
   a `RecordReader`. Texty chyb beze změny. 40 testů + 2 + 161 replayů zelených. Další: **N9b etapa 8**.
+- 2026-10-03: N9b etapa 8 hotová - kontroly „Hotovo když“: v `5_remake/logic/src` není `scancode`, `unsignedLess`,
+  definice `changeState` mimo `state/` ani `protected` data; žádný soubor nad 200 ř. (`CopterPhysics.cpp` 196);
+  žádná třída nad ~15 veřejnými metodami (různá jména, const/non-const jednou; nejvíc 16: `RoutePassenger`, `Figure`)
+  - proto ještě části `Copter` (`Motion` jako základ, `Rotor`, `Cabin`, `controls()`), `Level` (`Copters` s dotazy
+  na vrtulníky, `Delivery`), `Session` (`Score`), `RoutePassenger` (`RouteKinds`). Dokumentace: README logiky
+  (pravidla kódu, kam sáhnout), README `6_verification` (vzory, kam sáhnout), `rewrite-design.md` body 12-15,
+  `logic-map.md`. `/code-review high`: 7 nálezů, všechny opravené (mj. energie zas jako originál: pod nulou
+  16bitově přetéká a doplnění bonusem ji naplní - pojmenovaná zvláštnost v `Energy`; test `PcKeyboard::takeMenuKey`;
+  sdílené čtení souboru `UgdTokenizer::tokenizeFile`). Junior test (agent jen s README): plyn vrtulníku
+  (`CopterPhysics.cpp` `GRAVITY`) a počet životů (`Session.hpp` `START_LIVES`) jeden soubor; mávání netrpělivého
+  cestujícího README neukazovalo - doplněn řádek (`Impatient.hpp` `WAVE_TIME`), testy berou `START_LIVES`.
+  40 testů logiky + 3 klávesnice + 161 replayů zelených. Krok N9 hotový. Další: **krok 10**.

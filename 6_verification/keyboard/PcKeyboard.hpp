@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 #include "game/Game.hpp"
@@ -23,6 +24,8 @@ public:
     void deliver(uint8_t scancode, game::Game& game);
     /** The scancodes before a frame are delivered: the game loop sees the last one if it changed. */
     void beforeFrame(game::Game& game);
+    /** The menu key the game loop sees before this frame: the last scancode, if it changed since the frame before. */
+    std::optional<input::MenuKey> takeMenuKey();
 
     /** The action of a completed key binding, if any (`deliver` without a game). */
     const KeyBinding::Action* match(uint8_t scancode);

@@ -23,7 +23,7 @@ void Walking::update(Walker& walker, const EnemyContext& context) const {
         if (x < pad.left || x + WIDTH >= pad.right) walker.turnAround();
         walker.showFacing(walker.kind().walk);
     }
-    if (context.play.level.copterLandedOn(walker.pad())) {
+    if (context.play.level.copters().landedOn(walker.pad())) {
         walker.changeState(Watching::instance, context);
         return;
     }

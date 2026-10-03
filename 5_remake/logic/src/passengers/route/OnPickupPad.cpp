@@ -28,13 +28,13 @@ bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContex
 bool OnPickupPad::knockedIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
     std::optional<int> copter =
         physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.play.level);
-    if (!copter || context.play.level.copter(*copter).landed()) return false;
+    if (!copter || context.play.level.copters()[*copter].landed()) return false;
     intoWater(passenger, context);
     return true;
 }
 
 void OnPickupPad::intoWater(RoutePassenger& passenger, const PassengerContext& context) {
-    passenger.intoWater();
+    passenger.kinds().intoWater();
     passenger.changeState(Splash::instance, context);
 }
 

@@ -1,8 +1,5 @@
 #include "keyboard/KeyFile.hpp"
 
-#include <fstream>
-#include <iterator>
-
 #include "data/RecordReader.hpp"
 #include "data/UgdTokenizer.hpp"
 
@@ -40,17 +37,8 @@ bool readKey(const data::UgdRecord& r, data::RecordReader& in, KeyBinding& bindi
 }  // namespace
 
 bool KeyFile::read(const std::string& path, std::vector<KeyBinding>& out, std::string& error) {
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        error = "cannot open " + path;
-        return false;
-    }
-    std::string text((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     std::vector<data::UgdRecord> records;
-    if (!data::UgdTokenizer::tokenize(text, records, error)) {
-        error = path + ": " + error;
-        return false;
-    }
+    if (!data::UgdTokenizer::tokenizeFile(path, records, error)) return false;
     data::RecordReader in;
     for (const data::UgdRecord& r : records) {
         if (r.type != "key") continue;

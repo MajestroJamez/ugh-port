@@ -32,13 +32,13 @@ void PlayFrame::readKeys() {
 void PlayFrame::flyCopters() {
     if (context_.level.fade().coptersWaiting()) return;
     physics::CopterPhysics physics(context_);
-    for (int player = 0; player < context_.level.copterCount(); player++) physics.fly(player);
+    for (int player = 0; player < context_.level.copters().count(); player++) physics.fly(player);
 }
 
 void PlayFrame::spinRotors() {
     const data::SpriteIds& sprites = context_.data.sprites();
-    for (int player = 0; player < context_.level.copterCount(); player++)
-        context_.level.copter(player).spinRotor(sprites.firstRotor[player], sprites.lastRotor[player]);
+    for (int player = 0; player < context_.level.copters().count(); player++)
+        context_.level.copters()[player].rotor().spin(sprites.firstRotor[player], sprites.lastRotor[player]);
 }
 
 }  // namespace ugh::game

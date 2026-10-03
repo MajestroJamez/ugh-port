@@ -16,7 +16,10 @@ void Attempts::start() {
     game_.enemies_.load(definition, game_.data_);
 }
 
-/** The play starts: the enemies, then the passengers get their first update before anything is shown; then nothing is shown. */
+/**
+ * The play starts: the enemies, then the passengers get their first update before anything is shown; then nothing is
+ * shown.
+ */
 void Attempts::beforePlay() {
     world::PlayContext c = context();
     game_.enemies_.update({c, game_.passengers_, game_.bonuses_});
@@ -36,8 +39,9 @@ bool Attempts::over() const { return game_.level_.fade().over(); }
 
 GameResult Attempts::end() {
     world::Session& session = *game_.session_;
-    if (game_.level_.done())
-        return session.nextLevel(game_.data_.levelCount(session.players())) ? GameResult::Continue : GameResult::AllLevelsDone;
+    if (game_.level_.delivery().done())
+        return session.nextLevel(game_.data_.levelCount(session.players())) ? GameResult::Continue
+                                                                           : GameResult::AllLevelsDone;
     return session.loseLife() ? GameResult::Continue : GameResult::GameOver;
 }
 

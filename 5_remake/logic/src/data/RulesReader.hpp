@@ -8,7 +8,10 @@
 
 namespace ugh::data {
 
-/** Reads the rules (crash and multiplier limits, the bonus of a quick delivery) and the sprite numbers the logic names. */
+/**
+ * Reads the rules (crash and multiplier limits, the bonus of a quick delivery) and the sprite numbers the logic
+ * names.
+ */
 class RulesReader {
 public:
     RulesReader(RecordReader& in, const KindsReader& kinds, GameData& data) : in_(in), kinds_(kinds), data_(data) {}

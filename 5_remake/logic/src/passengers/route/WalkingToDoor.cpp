@@ -19,14 +19,14 @@ const WalkingToDoor WalkingToDoor::instance{};
 /** It pays the fare times the score multiplier; a quick delivery drops a bonus item that raises the multiplier. */
 void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& context) const {
     int player = *passenger.ride().carrier();
-    world::Copter& copter = context.play.level.copter(player);
+    world::Copter& copter = context.play.level.copters()[player];
     world::Session& session = context.play.session;
-    copter.unload();
+    copter.cabin().unload();
     passenger.moveToX(copter.x() + Fixed::fromPixels(RoutePassenger::COPTER_DOOR - passenger.kind().box.x));
-    uint32_t points = static_cast<uint32_t>(copter.fare()) * static_cast<uint32_t>(session.multiplier());
-    session.addScore(points);
+    uint32_t points = static_cast<uint32_t>(copter.cabin().fare()) * static_cast<uint32_t>(session.score().multiplier());
+    session.score().add(points);
     context.play.report({events::EventKind::PassengerPaid, player, passenger.index(), static_cast<int>(points)});
-    if (passenger.ride().quick() && session.multiplierBelowLimit()) {
+    if (passenger.ride().quick() && session.score().multiplierBelowLimit()) {
         context.bonuses.drop(*context.play.data.rules().quickDeliveryBonus, copter.x() + Fixed::fromPixels(BONUS_DROP_X),
                              copter.y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), 0, context.play.diagnostics);
         context.play.report({events::EventKind::QuickDelivery, player, passenger.index()});

@@ -67,17 +67,17 @@ TEST(a_passenger_comes_out_rides_and_pays) {
     landOn(g, 0);   // passenger 0 starts at pad 0 and wants to go to pad 2
     CHECK(stepUntil(g, 0, "Calling", 600, 0));
     CHECK(stepUntil(g, 0, "Riding", 600, 0));
-    CHECK(g.level().copter(0).cargo().has_value());
-    CHECK_EQUAL(3, *g.level().copter(0).cargo()->destination);   // the number of pad 2
+    CHECK(g.level().copters()[0].cabin().cargo().has_value());
+    CHECK_EQUAL(3, *g.level().copters()[0].cabin().cargo()->destination);   // the number of pad 2
     for (int frame = 0; frame < 50; frame++) {
         g.cheats().setEnergy(20000);
         g.step();
     }
-    CHECK_EQUAL(1100 - 50, g.level().copter(0).fare());   // a unit less every frame of the ride
+    CHECK_EQUAL(1100 - 50, g.level().copters()[0].cabin().fare());   // a unit less every frame of the ride
     landOn(g, 2);
     CHECK(stepUntil(g, 0, "WalkingToDoor", 5, 2));
-    CHECK(g.session().score() > 0);
-    CHECK(!g.level().copter(0).cargo().has_value());
+    CHECK(g.session().score().points() > 0);
+    CHECK(!g.level().copters()[0].cabin().cargo().has_value());
     CHECK(stepUntil(g, 0, "BehindDoor", 600, 2));   // through the door to its next stop
 }
 
@@ -106,11 +106,11 @@ TEST(the_standing_passenger_is_carried_and_dropped) {
     g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
     g.step();
     CHECK_EQUAL(std::string("Hanging"), stateOf(g, 2));
-    CHECK(!g.level().copter(0).cargo()->destination.has_value());
+    CHECK(!g.level().copters()[0].cabin().cargo()->destination.has_value());
     g.key(0, data::PlayerKey::Fire, true);
     g.step();
     CHECK_EQUAL(std::string("Falling"), stateOf(g, 2));
-    CHECK(g.level().copter(0).hasRoom());
+    CHECK(g.level().copters()[0].cabin().hasRoom());
 }
 
 TEST(a_passenger_knocked_into_the_water_drowns) {
