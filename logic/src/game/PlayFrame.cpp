@@ -10,6 +10,7 @@ void PlayFrame::run() {
     readKeys();
     flyCopters();
     passengers_.update({context_, bonuses_});
+    enemies_.update({context_, passengers_, bonuses_});
     bonuses_.update(context_);
     passengers_.frameShown();
     spinRotors();

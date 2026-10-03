@@ -600,3 +600,12 @@ replayů levelu 1 souhlasí ve všem kromě `enemy.*` až do konce (týmový dlo
 odrazu cestujícího od stromu. Odchylky od návrhu: kontext cestujících a nepřátel je vlastní struktura modulu
 (`PassengerContext`, `EnemyContext`) nad `world::PlayContext`; pořadí modulů `bonuses` ← `passengers` ← `enemies`
 (doručení shodí bonus, nepřítel odrazí cestujícího); bonus v neplatném slotu hlídá `BonusSlots` (zmizí po updatu).
+
+### N7 (2026-10-03)
+
+`enemies/` (Enemy, Enemies, EnemyFactory, EnemyContext, EnemyVisitor; `flyer/` Placed, Hidden, Screeching, Flying,
+Falling; `walker/` Placed, Walking, Watching, Charging, Recovering, Stunned; `blower/` Placed, Blowing, Stunned;
+`tree/` Placed, Swaying, Resting, Bare), zápis polí nepřátel. **Všech 161 replayů projde celých** (434 tis. snímků,
+každé pole, stejná množina polí) hned po napojení nepřátel; CTest 162 testů za 16 s. `replay_check` už má jen
+`--continue`. 32 testů (scénáře flyer, walker, foukač, strom). Odchylka od návrhu: každý druh nepřítele má vlastní
+základ stavu (`FlyerState` …) místo jednoho `EnemyState`, takže stav dostane rovnou svou třídu nepřítele.

@@ -1,6 +1,5 @@
 #include "ReplayCheck.hpp"
 
-#include <cctype>
 #include <cstdio>
 
 #include "replay/StateWriter.hpp"
@@ -17,7 +16,6 @@ bool ReplayCheck::run(const std::string& path) {
     Tick tick, previous;
     bool started = false;
     while (file.next(tick)) {
-        if (stopsAt(tick)) break;
         if (!started) {
             if (!start(game, tick)) return true;
             started = true;
@@ -71,7 +69,6 @@ bool ReplayCheck::compare(const game::Game& game, const Tick& tick) {
     std::string diffs;
     int n = 0;
     for (const auto& [name, expected] : tick.state) {
-        if (!compared(name)) continue;
         auto it = actual.find(name);
         if (it == actual.end()) {
             diffs += "\n    " + name + " expected " + expected + ", missing";
@@ -85,7 +82,7 @@ bool ReplayCheck::compare(const game::Game& game, const Tick& tick) {
         }
     }
     for (const auto& [name, value] : actual) {
-        if (compared(name) && !tick.state.count(name)) {
+        if (!tick.state.count(name)) {
             diffs += "\n    " + name + " not expected, got " + value;
             n++;
         }
@@ -146,41 +143,10 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
     }
 }
 
-bool ReplayCheck::compared(const std::string& field) const {
-    if (!options_.only.empty()) {
-        bool in = false;
-        for (const std::string& prefix : options_.only) in = in || field.rfind(prefix, 0) == 0;
-        if (!in) return false;
-    }
-    std::string g = general(field);
-    for (const std::string& skipped : options_.skip)
-        if (g == skipped || field == skipped) return false;
-    return true;
-}
-
-bool ReplayCheck::stopsAt(const Tick& tick) const {
-    if (options_.untilField.empty()) return false;
-    auto it = tick.state.find(options_.untilField);
-    if (options_.untilNot) return it != tick.state.end() && it->second != options_.untilValue;
-    return it != tick.state.end() && it->second == options_.untilValue;
-}
 
 void ReplayCheck::diagnostics(game::Game& game, long long tick) {
     for (const std::string& problem : game.diagnostics().take()) report_.problem(tick, "the logic: " + problem);
 }
 
-/** passenger.3.x -> passenger.N.x */
-std::string ReplayCheck::general(const std::string& field) {
-    std::string g;
-    for (size_t i = 0; i < field.size(); i++) {
-        if (std::isdigit(static_cast<unsigned char>(field[i])) && i > 0 && field[i - 1] == '.') {
-            while (i + 1 < field.size() && std::isdigit(static_cast<unsigned char>(field[i + 1]))) i++;
-            g += 'N';
-        } else {
-            g += field[i];
-        }
-    }
-    return g;
-}
 
 }  // namespace ugh::tool

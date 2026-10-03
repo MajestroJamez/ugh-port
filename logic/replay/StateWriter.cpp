@@ -2,6 +2,7 @@
 
 #include "replay/BonusFields.hpp"
 #include "replay/CopterFields.hpp"
+#include "replay/EnemyFields.hpp"
 #include "replay/GameFields.hpp"
 #include "replay/PadFields.hpp"
 #include "replay/PassengerFields.hpp"
@@ -17,6 +18,8 @@ Fields StateWriter::write(const game::Game& game) {
     for (int i = 0; i < level.padCount(); i++) PadFields::write(level.pad(i), i, fields);
     PassengerFields passengers(fields);
     for (int i = 0; i < game.passengers().count(); i++) game.passengers()[i].accept(passengers);
+    EnemyFields enemies(fields);
+    for (int i = 0; i < game.enemies().count(); i++) game.enemies()[i].accept(enemies);
     for (int slot = 0; slot < bonuses::BonusSlots::SLOTS; slot++)
         if (game.bonuses()[slot]) BonusFields::write(*game.bonuses()[slot], fields);
     return fields;

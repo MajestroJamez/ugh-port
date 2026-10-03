@@ -2,8 +2,8 @@
 # the golden replays (CTest). Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\logic\build.ps1
 # Needs assets\sim\ugh-data.ugd (.\gradlew.bat :extractor:run) and verify\build\replays\ugr1 (.\gradlew.bat :verify:replays).
-# -NoTest only builds; -CheckOptions passes options to replay_check (e.g. "--only game.").
-param([switch]$NoTest, [string]$CheckOptions = '')
+# -NoTest only builds.
+param([switch]$NoTest)
 
 $ErrorActionPreference = 'Stop'
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -14,7 +14,7 @@ $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
 
 $src = $PSScriptRoot
 $build = Join-Path $src 'build'
-$steps = "cmake -S `"$src`" -B `"$build`" -G Ninja -DCMAKE_BUILD_TYPE=Release `"-DUGH_CHECK_OPTIONS=$CheckOptions`" && cmake --build `"$build`""
+$steps = "cmake -S `"$src`" -B `"$build`" -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build `"$build`""
 if (-not $NoTest) { $steps += " && ctest --test-dir `"$build`" -j 8 --output-on-failure" }
 cmd /c "call `"$vcvars`" >nul && $steps"
 $code = $LASTEXITCODE

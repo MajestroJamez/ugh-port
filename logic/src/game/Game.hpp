@@ -13,6 +13,7 @@
 #include "game/GamePhase.hpp"
 #include "game/GameResult.hpp"
 #include "game/NewGameSettings.hpp"
+#include "enemies/Enemies.hpp"
 #include "input/PcKeyboard.hpp"
 #include "passengers/Passengers.hpp"
 #include "world/Level.hpp"
@@ -54,6 +55,7 @@ public:
     const world::Session& session() const { return *session_; }
     const world::Level& level() const { return level_; }
     const passengers::Passengers& passengers() const { return passengers_; }
+    const enemies::Enemies& enemies() const { return enemies_; }
     const bonuses::BonusSlots& bonuses() const { return bonuses_; }
     /** A level is loaded: its world and its entities are there (caption, setup, play). */
     bool levelLoaded() const;
@@ -85,6 +87,7 @@ private:
     std::optional<world::Session> session_;
     world::Level level_;
     passengers::Passengers passengers_;
+    enemies::Enemies enemies_;
     bonuses::BonusSlots bonuses_;   // they stay from the end of an attempt until the play of the next one
     input::PcKeyboard keyboard_;
     GameFlow flow_;
