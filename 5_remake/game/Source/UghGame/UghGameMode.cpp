@@ -17,6 +17,7 @@
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghShot.h"
+#include "UghSpeaker.h"
 #include "UghStage.h"
 #include "UnrealClient.h"
 
@@ -66,11 +67,16 @@ void AUghGameMode::StartPlay()
 		}
 		return;
 	}
+	Speaker->GetPlayer().Load(Assets / TEXT("sound"));
+	if (!bShooting)
+	{
+		Speaker->Start();   // the autopilot is silent
+	}
 	Previewed = Menu.GetChoice();
 	Simulation.Preview(Previewed);
 }
 
-/** The stage (light, air, camera), the level's background, the figures, the campfire. */
+/** The stage (light, air, camera), the level's background, the figures, the campfire, the speaker. */
 void AUghGameMode::BuildStage()
 {
 	UWorld* World = GetWorld();
@@ -78,6 +84,7 @@ void AUghGameMode::BuildStage()
 	Background = World->SpawnActor<AUghBackground>();
 	Figures = World->SpawnActor<AUghFigures>();
 	Campfire = World->SpawnActor<AUghCampfire>();
+	Speaker = World->SpawnActor<AUghSpeaker>();
 	if (APlayerController* Controller = World->GetFirstPlayerController())
 	{
 		Controller->SetViewTarget(Stage);
@@ -91,6 +98,7 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	if (!bInMenu)
 	{
 		Simulation.Advance(DeltaSeconds);
+		PlaySounds();
 		if (Simulation.IsOver())
 		{
 			OpenMenu();
@@ -152,6 +160,10 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 
 bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 {
+	if (HandleVolumeKey(Key, Event))
+	{
+		return true;
+	}
 	// the menu takes every key (U and G are in passwords)
 	if (bInMenu && Simulation.IsLoaded())
 	{
@@ -194,6 +206,7 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 	case FUghMenu::EAction::Play:
 		if (Simulation.NewGame(Menu.GetChoice()))
 		{
+			Speaker->GetPlayer().OnNewGame();
 			bInMenu = false;
 			StartKey = Key;
 		}
@@ -217,6 +230,7 @@ void AUghGameMode::OpenMenu()
 	LastGame = Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE
 		? FString::Printf(TEXT("All levels done! Score %u"), View.score)
 		: FString::Printf(TEXT("Game over in level %d, score %u"), View.level + 1, View.score);
+	Speaker->GetPlayer().OnGameEnd(Simulation.GetResult());
 	bInMenu = true;
 	Previewed = Menu.GetChoice();
 	Simulation.Preview(Previewed);
@@ -225,4 +239,32 @@ void AUghGameMode::OpenMenu()
 void AUghGameMode::Quit()
 {
 	UKismetSystemLibrary::QuitGame(this, GetWorld()->GetFirstPlayerController(), EQuitPreference::Quit, false);
+}
+
+bool AUghGameMode::HandleVolumeKey(const FKey& Key, EInputEvent Event)
+{
+	if (Key != EKeys::PageUp && Key != EKeys::PageDown)
+	{
+		return false;
+	}
+	if (Event == IE_Pressed)
+	{
+		Speaker->GetPlayer().ChangeVolume(Key == EKeys::PageUp ? 1 : -1);
+	}
+	return true;   // nor is its release a key of the game
+}
+
+int32 AUghGameMode::GetVolumePercent() const
+{
+	return Speaker ? Speaker->GetPlayer().GetVolumePercent() : 0;
+}
+
+void AUghGameMode::PlaySounds()
+{
+	FUghSoundPlayer& Player = Speaker->GetPlayer();
+	for (const ugh_logic_event& Event : Simulation.GetEvents())
+	{
+		Player.OnEvent(Event);
+	}
+	Player.OnView(Simulation.GetCurrent());
 }

@@ -31,6 +31,9 @@ New-Item -ItemType Directory -Force (Join-Path $data 'logic') | Out-Null
 Copy-Item (Join-Path $assets 'logic\ugh-data.ugd') (Join-Path $data 'logic')
 Copy-Item (Join-Path $assets 'sprites.json'), (Join-Path $assets 'levels.json') $data
 Copy-Item -Recurse (Join-Path $assets 'sprites') $data
+# the sounds (.\gradlew.bat :extractor:sound); without them the game is silent
+if (Test-Path (Join-Path $assets 'sound')) { Copy-Item -Recurse (Join-Path $assets 'sound') $data }
+else { Write-Host 'no sounds (.\gradlew.bat :extractor:sound): the package is silent' -ForegroundColor Yellow }
 
 if (-not $NoZip) {
     $zip = Join-Path $out 'UghGame-Windows.zip'

@@ -43,8 +43,14 @@ void AUghHud::DrawHUD()
 	DrawText(FString::Printf(TEXT("Level %d   Lives %d   Score %u   x%d   Energy %d %%"), View.level + 1, View.lives,
 		View.score, View.multiplier, FMath::RoundToInt(100.0 * View.energy / FullEnergy)),
 		FLinearColor::White, 20, 16, GEngine->GetLargeFont(), TextScale);
-	DrawText(FString::Printf(TEXT("%s, %s  |  %s"), FUghKeyboard::Help(), AUghGameMode::KeysHelp(),
-		*Mode->GetUpscaler().Describe()), FLinearColor::Gray, 20, 48, GEngine->GetSmallFont(), TextScale);
+	DrawText(FString::Printf(TEXT("%s, %s"), FUghKeyboard::Help(), AUghGameMode::KeysHelp()), FLinearColor::Gray, 20,
+		48, GEngine->GetSmallFont(), TextScale);
+	// the frontend's settings on the right of the status line
+	const FString Settings = FString::Printf(TEXT("%s  |  volume %d %%"), *Mode->GetUpscaler().Describe(),
+		Mode->GetVolumePercent());
+	float Width = 0, Height = 0;
+	GetTextSize(Settings, Width, Height, GEngine->GetSmallFont(), TextScale);
+	DrawText(Settings, FLinearColor::Gray, Canvas->ClipX - Width - 20, 20, GEngine->GetSmallFont(), TextScale);
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION)
 	{
 		DrawCentred(FString::Printf(TEXT("Level %d"), View.level + 1), Canvas->ClipY * 0.4f, FLinearColor::Yellow,
@@ -82,6 +88,8 @@ void AUghHud::DrawMenu(const AUghGameMode& Mode)
 		TextScale);
 	DrawCentred(FUghKeyboard::Help(), Height * (MenuTop + (FUghMenu::RowCount + 2) * MenuRowStep), FLinearColor::Gray,
 		TextScale);
+	DrawCentred(FString::Printf(TEXT("PgUp/PgDn: volume %d %%"), Mode.GetVolumePercent()),
+		Height * (MenuTop + (FUghMenu::RowCount + 3) * MenuRowStep), FLinearColor::Gray, TextScale);
 }
 
 void AUghHud::DrawCentred(const FString& Text, float Y, const FLinearColor& Color, float Scale)

@@ -47,6 +47,7 @@ bool FUghSimulation::NewGame(const FUghGameChoice& Choice)
 	ugh_logic_get_view(Logic, &CurrentView);
 	PreviousView = CurrentView;
 	Waiting = 0;
+	Events.Reset();
 	return !IsOver();
 }
 
@@ -61,7 +62,7 @@ void FUghSimulation::Preview(const FUghGameChoice& Choice)
 		ugh_logic_step(Logic);
 		ugh_logic_get_view(Logic, &CurrentView);
 	}
-	ugh_logic_take_events(Logic, [](void*, const ugh_logic_event*) {}, nullptr);
+	ugh_logic_take_events(Logic, [](void*, const ugh_logic_event*) {}, nullptr);   // a preview is silent
 	PreviousView = CurrentView;
 	Result = UGH_LOGIC_GAME_OVER;
 }
@@ -84,6 +85,7 @@ void FUghSimulation::MenuKey(int32 LogicMenuKey)
 
 void FUghSimulation::Advance(double Seconds)
 {
+	Events.Reset();
 	if (!Logic || IsOver())
 	{
 		return;
@@ -102,5 +104,6 @@ void FUghSimulation::Advance(double Seconds)
 			break;
 		}
 	}
-	ugh_logic_take_events(Logic, [](void*, const ugh_logic_event*) {}, nullptr);   // no sounds or effects yet
+	ugh_logic_take_events(Logic, [](void* Context, const ugh_logic_event* Event)
+		{ static_cast<TArray<ugh_logic_event>*>(Context)->Add(*Event); }, &Events);
 }

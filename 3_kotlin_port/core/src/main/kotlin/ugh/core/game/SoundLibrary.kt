@@ -265,6 +265,15 @@ fun Game.libEffect(off: Int, seg: Int, vol: Int, repeats: Int): Int {
     return best
 }
 
+/** Channel [n] (8..11 an effect, 12 the music) plays (not part of the original: for exporting the sounds). */
+fun Game.channelPlaying(n: Int) = dw(ch(n) + 0x3c) and 1 != 0
+
+/**
+ * Channel [n] stands at the start of its track: just loaded, or just gone back by its end event to repeat (not part
+ * of the original: for exporting the sounds as loops).
+ */
+fun Game.channelAtStart(n: Int) = dw(ch(n) + 0x24) == dw(ch(n) + 0x1a) && dw(ch(n) + 0x26) == dw(ch(n) + 0x1c)
+
 /** A busy wait for the next timer interrupt (1878:10ee): time passes in a live host, then the interrupt. */
 internal fun Game.waitTimer() {
     host.timerWait()

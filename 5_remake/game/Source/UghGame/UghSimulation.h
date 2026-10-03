@@ -45,6 +45,9 @@ public:
 	/** Runs the steps that `Seconds` more of real time ask for (at most MaxStepsPerFrame: a long hitch is dropped). */
 	void Advance(double Seconds);
 
+	/** What happened in the steps of the last Advance (sounds, effects). */
+	const TArray<ugh_logic_event>& GetEvents() const { return Events; }
+
 	/** The view after the step before the last one, and after the last one. */
 	const ugh_logic_view& GetPrevious() const { return PreviousView; }
 	const ugh_logic_view& GetCurrent() const { return CurrentView; }
@@ -62,6 +65,7 @@ private:
 	ugh_logic* Logic = nullptr;
 	ugh_logic_view PreviousView;
 	ugh_logic_view CurrentView;
+	TArray<ugh_logic_event> Events;
 	double Waiting = 0;   // real time since the last step, seconds
 	int32 Result = UGH_LOGIC_GAME_OVER;
 };

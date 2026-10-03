@@ -30,18 +30,23 @@ fun main(args: Array<String>) {
         System.err.println("usage: extractor <UGH.EXE> <output dir>")
         exitProcess(2)
     }
-    val exeFile = File(args[0])
+    val exe = readKnownExe(File(args[0]))
     val out = File(args[1])
-    val exe = Exe(exeFile.readBytes())
-    val hash = sha256(exe.bytes)
-    if (hash != KNOWN_EXE_SHA256) {
-        System.err.println("${exeFile.absolutePath} is a different UGH.EXE version (sha256 $hash), offsets would not match")
-        exitProcess(1)
-    }
     val manifest = extractAll(exe, out)
     println("Extracted ${manifest.sprites} sprites, ${manifest.levels} levels " +
         "(${manifest.levelsOnePlayer} one player, ${manifest.levelsTeam} team), " +
         "${manifest.introImages.size} pictures, ${manifest.adlx.size} ADLX blocks into ${out.absolutePath}")
+}
+
+/** The UGH.EXE in [file]; exits when it is another version than [KNOWN_EXE_SHA256]. */
+fun readKnownExe(file: File): Exe {
+    val exe = Exe(file.readBytes())
+    val hash = sha256(exe.bytes)
+    if (hash != KNOWN_EXE_SHA256) {
+        System.err.println("${file.absolutePath} is a different UGH.EXE version (sha256 $hash), offsets would not match")
+        exitProcess(1)
+    }
+    return exe
 }
 
 fun extractAll(exe: Exe, out: File): Manifest {

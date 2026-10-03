@@ -90,6 +90,14 @@ snímků), zbytek míst volání pokrývá lockstep celého programu s kartou.
   v hudbě i efektech pak zůstanou pod plným rozsahem.
 - `SoundRenderTest` vykreslí hudbu menu, levelu a rekordů, všechny efekty a mix do
   `4_test_data/verify/build/verify-out/sound/*.wav` (k poslechu; obsahuje hudbu hry, necommitovat).
+- Pro remake (krok 13): `.\gradlew.bat :extractor:sound` (`extractor/Sounds.kt`, `SoundRecorder.kt`) vyrenderuje
+  každý blok ADLX tak, jak ho hra hraje (hlasitost volání, jednou / smyčka), do `assets/sound/*.wav` (49 716 Hz,
+  16 bit mono, zesílení 8×). Kde se co hraje: efekty `0x425b` křik letce, `0x4260` mávání (smyčka do zastavení),
+  `0x4265` foukač, `0x4274` bonus (ze stromu i za rychlé doručení), `0x4632` puštěný cestující, `0x4629` znělka
+  titulku levelu, `0x426b` „bad luck“ po prohře; hudba `0x4637` menu, `0x4444` level, `0x4279` konec hry a rekordy.
+  Smyčky (hudba, mávání) jsou druhý průchod stopou (od návratu na začátek po další), takže navazují bez švu; průchody
+  se liší jen fází LFO (tremolo/vibrato běží dál), korelace dvou průchodů ~0,99. `SoundsTest` měří délku, hlasitost,
+  špičku a šev smyček, `SoundRenderTest` porovná hudbu menu s tím, co hraje celý program portu (korelace 0,995).
 
 ## Okno
 

@@ -27,6 +27,15 @@ tasks.named<JavaExec>("run") {
     args(originalExe.asFile.absolutePath, assetsDir.asFile.absolutePath)
 }
 
+// The original's sounds and music as WAV files for the remake (Sounds.kt), into assets/sound.
+tasks.register<JavaExec>("sound") {
+    description = "Renders the original's sounds and music with the port's OPL2 synthesizer into assets/sound."
+    group = "application"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass = "ugh.extractor.SoundsKt"
+    args(originalExe.asFile.absolutePath, assetsDir.dir("sound").asFile.absolutePath)
+}
+
 tasks.test {
     useJUnitPlatform()
     systemProperty("ugh.exe", originalExe.asFile.absolutePath)

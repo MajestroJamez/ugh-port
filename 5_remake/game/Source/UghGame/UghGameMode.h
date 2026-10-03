@@ -15,14 +15,15 @@
 class AUghBackground;
 class AUghCampfire;
 class AUghFigures;
+class AUghSpeaker;
 class AUghStage;
 
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
  * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground,
- * AUghFigures, AUghCampfire, the HUD); the end of a game goes back to the menu. Behind the menu the diorama shows the
- * level the menu would start, dimmed. No map: the scene is built here. Keys of the frontend (in a game): U the next
- * upscaler, G the frame generation.
+ * AUghFigures, AUghCampfire, the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu. Behind the
+ * menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of the
+ * frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
  *
  * -UghAssets=<folder> reads the data from elsewhere than assets/ (of the package, else of the repository).
  * -UghShot=<folder>: the game plays by itself for screenshots (FUghShot).
@@ -40,11 +41,13 @@ public:
 	/** A key event from the player controller (or the autopilot of FUghShot); true when the game used it. */
 	bool HandleKey(const FKey& Key, EInputEvent Event);
 	/** The keys of the frontend (HandleKey), for the HUD. */
-	static const TCHAR* KeysHelp() { return TEXT("U upscaler, G frame generation"); }
+	static const TCHAR* KeysHelp() { return TEXT("U upscaler, G frame generation, PgUp/PgDn volume"); }
 
 	const FUghSimulation& GetSimulation() const { return Simulation; }
 	const FUghUpscaler& GetUpscaler() const { return Upscaler; }
 	const FUghPasswords& GetPasswords() const { return Passwords; }
+	/** The volume of the sounds in percent. */
+	int32 GetVolumePercent() const;
 	/** The menu is shown (no game is played). */
 	bool IsInMenu() const { return bInMenu; }
 	const FUghMenu& GetMenu() const { return Menu; }
@@ -61,6 +64,10 @@ private:
 	void ShowFrame();
 	void BuildLevel(const ugh_logic_view& View);
 	void HandleMenuKey(const FKey& Key);
+	/** Page Up and Page Down: the volume; true when it was one of them. */
+	bool HandleVolumeKey(const FKey& Key, EInputEvent Event);
+	/** The sounds of the logic's events and of the frame's view. */
+	void PlaySounds();
 	/** Back to the menu after a game: how it ended, the level of the menu's choice behind it. */
 	void OpenMenu();
 	void Quit();
@@ -83,5 +90,6 @@ private:
 	UPROPERTY() TObjectPtr<AUghBackground> Background;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;
+	UPROPERTY() TObjectPtr<AUghSpeaker> Speaker;
 	int32 BackgroundLevel = -1;   // the level_id the background shows
 };

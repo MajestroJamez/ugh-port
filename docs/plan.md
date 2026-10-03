@@ -637,3 +637,22 @@ změny. Pravidla navíc:
   (ohniště, voda i stoupající voda, okraje). Review agentem: 6 nálezů opraveno, druhé kolo čisté. CTest logiky
   a `6_verification` (163, s 161 replayi) a 162 testů v UE zelené. Další: Jan odehraje menu v obou režimech
   (`play.ps1`), pak **krok 13**.
+- 2026-10-04: krok 13 hotový (bez poslechu) - zvuk a hudba originálu. `.\gradlew.bat :extractor:sound`
+  (`extractor/Sounds.kt`, `SoundRecorder.kt`) pustí každý blok ADLX knihovnou zvuku Kotlin portu tak, jak ho hra hraje
+  (hlasitost, jednou / smyčka), a OPL2 portu ho vyrenderuje do `assets/sound/*.wav` (49 716 Hz, 16 bit mono, zesílení
+  8× jako přehrávač portu): 7 efektů (znělka titulku, „bad luck“ po prohře, křik letce, mávání, foukač, bonus,
+  puštěný cestující) a 3 hudby (menu 65 s, level 108 s, konec hry 104 s). Smyčky (hudba, mávání) jsou druhý průchod
+  stopou, takže navazují bez švu. Podle portu má zvuk jen 8 z 15 událostí logiky (titulek, křik, mávání start/stop,
+  foukač, strom a rychlé doručení = bonus, puštěný cestující); náraz, nástup, zaplacení, voda, omráčení, sebraný
+  bonus a dokončený level originál neozvučil; mávání cestujícího žádný zvuk nemá. UE: `FUghSimulation` sbírá události,
+  `FUghSounds` (tabulka událost -> soubor, čtení WAV), `FUghMixer` (hudba se smyčkou, zpožděním a stmíváním, 4 kanály
+  efektů jako originál, smyčka do zastavení entitou, hlasitost), `FUghSoundPlayer` (menu: hudba menu; hra: hudba
+  levelu od začátku hraní, na konci efekty stop a hudba se stmívá s obrazem 1,7 s; prohra: „bad luck“ a pak hudba
+  menu; všechny levely: hudba konce), `AUghSpeaker` (procedurální zvuk krmený každý snímek ~60 ms dopředu). Hlasitost
+  PgUp/PgDn (i v menu, v HUD). Bez souborů hra mlčí a zaloguje to (ověřeno shotem bez `assets/sound`), autopilot
+  a `-nosound` mlčí. Rozdíl od originálu: efekty neberou hudbě hlasy (hrají obě). Ověření bez poslechu: `SoundsTest`
+  (délky, RMS 235-3182, špičky -8 až -26 dBFS, bez ořezu, průchody smyček stejně dlouhé a stejně hlasité 0,999,
+  šev bez skoku), `SoundRenderTest` (hudba menu proti celému programu portu: korelace 0,995, dva průchody portu mezi
+  sebou 0,992 - liší se jen fází LFO), UE testy `Ugh.Sounds.Files/Mixer/Player`. CTest logiky, `6_verification`
+  (163) a 165 testů v UE zelené. Čeká na Jana: poslech (`play.ps1`: menu, level s letcem a foukačem, prohra,
+  hlasitost). Další: **krok 14**.
