@@ -5,7 +5,8 @@ Pravidla platná pro všechny kroky:
 
 - Fyzika a logika **přesně jako originál**. Kotlin port (`core/`) je jen reference a generátor testů, nepřepisuje se.
 - Testy jsou data: golden replays `UGR 0` (`verify/src/test/kotlin/ugh/verify/replay/`), každá nová
-  implementace musí projít všemi replayi pole po poli.
+  implementace musí projít všemi replayi pole po poli. Od kroku N3 sémantické `UGR 1` (pojmy hry, žádné adresy),
+  podle nich se ověřuje nové jádro `logic/`.
 - Herní data se necommitují (jen kód); C++ jádro čte data vytažená extractorem do `assets/`.
 - Nic viditelného na notebooku bez souhlasu (okno hry, editor se scénou, Blender); příkazy pro Jana jen PowerShell 5.1.
 - Na konci každého kroku: testy zelené, krátký zápis do tohoto souboru (sekce Stav), commit po Janově souhlasu.
@@ -109,9 +110,34 @@ Podle [core-design.md](core-design.md), etapy 6-11: zbytek `physics/`, tok hry j
 adaptér replayů jako Visitor, rozdělený přehrávač a testy, `sim/README.md`. Hotovo když: splněna sekce
 „Hotovo když“ v core-design.md.
 
+## Nové jádro `logic/` (kroky N1–N8)
+
+Review 2026-10-03: `sim/` je přesné, ale model pořád kopíruje paměť originálu (sdílená slova, jedna třída pro čtyři
+nepřátele, sloty se zbytky, DGROUP za běhu, jména podle adres). Rozhodnutí: **nová, čistě napsaná C++ aplikace
+`logic/`**, totožná s originálem 1:1, bez čehokoli z paměti staré aplikace; všechno o paměti DOSu jen v Kotlinu.
+Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků, architektura, formáty a „Hotovo když“:
+[rewrite-design.md](rewrite-design.md). `sim/` se do N8 nemění (reference, UGR 0 dál prochází).
+
+- **N1 – Průzkum** (kap. 11 N1): na `sim/` dočasně změřit, zda známý stav závisí na zbytcích paměti, zda se sdílená
+  slova čtou v jiném významu, čtení animací za koncem, definovanost polí po stavech, zvláštnosti. Výstup
+  `rewrite-audit.md`. Hotovo když má každý nález rozhodnutí a `sim/` je beze změny.
+- **N2 – Data UGD 1**: `extractor` (`Names.kt`, `LogicData.kt`) → `assets/sim/ugh-data.ugd`, test proti paměti portu
+  pro všech 81 levelů, popis v `phase2-data.md`.
+- **N3 – Replaye UGR 1**: `SemanticProjection.kt`, `ReplayWriter` pro UGR 1, oba formáty z jednoho běhu,
+  `CheatPilot` bez zápisu stavu cestujících. Hotovo když 161 replayů v obou formátech a `sim/` dál zelené.
+- **N4 – Kostra `logic/`**: CMake, `units/`, `data/` (parser UGD 1), `events/`, nástroj `replay_check`, návrh C API.
+  Hotovo když `game.*` souhlasí až do prvního popisku.
+- **N5 – Tok hry, načtení levelu, vrtulník**: `world/`, `physics/`, `input/`, `game/`. Hotovo když v levelu 1
+  souhlasí hra, vrtulníky a plošiny do prvního nástupu.
+- **N6 – Cestující a bonusy**: oba automaty cestujících, `Ballistics`, `bonuses/`. Hotovo když level 1 souhlasí ve
+  všem kromě nepřátel.
+- **N7 – Nepřátelé**: flyer, walker, foukač, strom. Hotovo když **všech 161 replayů projde celých**.
+- **N8 – Dokončení**: README, `logic-map.md`, pohled pro vykreslení v C API, `/code-review high`, junior test,
+  smazat `sim/`, UGR 0 a `ugh-sim.bin`.
+
 ## Krok 10 - UE projekt v repu, šedé kostky
 
-- `game/` (UE 5.8 C++ projekt), C++ jádro jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
+- `game/` (UE 5.8 C++ projekt), C++ jádro `logic/` jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
   (FSR jen upscaler: `r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0`; offscreen oprava FSR).
 - Level z mapy dlaždic a kolizní masky jako jednoduché kostky; vrtulník, cestující, nepřátelé jako tvary.
 - Pevný tik 70,086 Hz + interpolace pro vykreslení; ovládání klávesnicí (písmena, kvůli české klávesnici).
@@ -205,3 +231,6 @@ adaptér replayů jako Visitor, rozdělený přehrávač a testy, `sim/README.md
   a `std::function`), přehrávač rozdělený (`tools/ugh_replay/`), testy po modulech (`TestFramework.hpp`, 25 testů),
   průvodce `sim/README.md`. 323 testů zelených, výstup přehrávače shodný s výchozím. `/code-review high`: 8 nálezů,
   7 opraveno, 1 ponechán (viz [core-design.md](core-design.md)). Další: **krok 10**.
+- 2026-10-03: review celého jádra `sim/`: přesné, ale ne čisté (paměť originálu v modelu). Rozhodnuto napsat nové
+  jádro `logic/` bez čehokoli ze staré aplikace, ověřené sémantickými replayi `UGR 1`; zadání v
+  [rewrite-design.md](rewrite-design.md), kroky N1–N8 výše. Krok 10 až po N8. Další: **krok N1**.
