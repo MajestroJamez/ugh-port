@@ -241,3 +241,7 @@ Hranice jsou data `UGD 1` a sémantické replaye `UGR 1`. Zadání všech kroků
   zvláštnost sondy doleva / nahoru změní výsledek 267×, kapky přes okraj stránky 20 tis.×. Opravy návrhu: `impact`
   a `water.row` nejsou stav, `effort` přežívá mezi pokusy, poloha viděná minulý snímek jen u cestujících s trasou,
   maska 320 px. Další: **krok N2**.
+- 2026-10-03: krok N2 hotový - `.\gradlew.bat :extractor:run` zapíše `assets/sim/ugh-data.ugd` (UGD 1, 1,4 MB):
+  pravidla, sprity, klávesy, animace, druhy, 81 levelů s plošinami, cestujícími, nepřáteli a maskou 320 × 192, pořadí
+  obou režimů; vše přepočtené a pojmenované (`Names.kt`, `LogicData.kt`). `LogicDataTest` porovná každý level obou
+  režimů po načtení portem a masky se stránkami pozadí - zelený. Popis v `phase2-data.md`. Další: **krok N3**.

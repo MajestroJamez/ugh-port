@@ -280,45 +280,50 @@ v [rewrite-audit.md](rewrite-audit.md), kap. 5).
 
 ## 8. Formát dat UGD 1 (`assets/sim/ugh-data.ugd`)
 
-Text ASCII, jeden záznam na řádek: `<typ> <jméno nebo pozice> <klíč>=<hodnota> ...`, `#` komentář. Hodnoty desítkově,
+Text ASCII, jeden záznam na řádek: `<typ> [<jméno>] <klíč>=<hodnota> ...`, `#` komentář. Hodnoty desítkově,
 seznamy čárkou, rozsahy `a..b`. Všechny hodnoty jsou **už přepočtené** tak, jak je hra používá (pixely PC, snímky
 70 Hz, `Fixed` v 1/32 px jako celé číslo). Vytváří ho `extractor/src/main/kotlin/ugh/extractor/LogicData.kt`, jména
 dává jediná tabulka `extractor/src/main/kotlin/ugh/extractor/Names.kt` (offset deskriptoru → jméno; tu sdílí i
-sémantická projekce replayů).
+sémantická projekce replayů). Úplný popis s ukázkou levelu 1 je v [phase2-data.md](phase2-data.md) (sekce UGD 1).
 
 ```
 UGD 1
-# UGH! game data for the C++ logic (extracted from UGH.EXE sha256 ef93d2cd...)
-rules crashLimit=<easy>,<medium>,<hard> multiplierLimit=<e>,<m>,<h> quickDeliveryBonus=<bonus>
-sprites standingPassenger=544 droppedPassenger=545 bouncedPassenger=546 shakenTree=232 destinationBubbles=268..273 impatientBubble=274 rotor0=<a>..<b> rotor1=<c>..<d>
+# UGH! game data for the C++ logic, extracted from UGH.EXE sha256 ef93d2cd...
+rules crashLimit=3100,2300,1380 multiplierLimit=3,9,99 quickDeliveryBonus=multiplier
+sprites standingPassenger=544 droppedPassenger=545 bouncedPassenger=546 shakenTree=232 destinationBubbles=268..273 impatientBubble=274 rotor0=218..223 rotor1=224..229
 key codes=224,72 player=0 key=up press=1
-key codes=42 key=none
-animation <jméno> frames=<sprite>,<sprite>,...
-passengerKind <jméno> type=route|water|standing box=<x>,<y>,<halfW>,<halfH> standing=<anim> waving=<anim> walk=<animL>,<animR> comingOut=<anim> goingIn=<anim> animDelay=<snímky> fare=<n> fareMin=<n> swimTime=<snímky> look=<n> waterKind=<jméno> rescuable=0|1
-flyerKind box=... flight=<animL>,<animR> hit=<animL>,<animR> score=<n>
-walkerKind box=... walk=<L>,<R> watch=<L>,<R> charge=<L>,<R> recover=<L>,<R> stunned=<L>,<R> score=<n>
-blowerKind box=... blowing=<anim> stunnedSprite=<sprite> score=<n>
-treeKind box=... swaying=<anim>
-bonusKind <jméno> effect=energy|life|multiplier amount=<n> lift=<1/32 px za snímek> sprite=<n> anchor=<x>,<y>
+key codes=224,42 key=none
+animation kind1.standing frames=377,377,378,378
+passengerKind kind1 type=route box=8,10,4,4 standing=kind1.standing waving=kind1.waving walk=kind1.walkLeft,kind1.walkRight comingOut=kind1.comingOut goingIn=kind1.goingIn animDelay=7 fare=1100 fareMin=300 look=1 waterKind=kind1-water
+passengerKind kind1-water type=water box=8,3,4,4 standing=... waving=... walk=...,... animDelay=7 fare=300 fareMin=300 swimTime=700 landKind=kind1 rescuable=1
+passengerKind standing type=standing box=8,11,3,2 look=4
+flyerKind box=16,11,8,8 flight=flyer.left,flyer.right hitSprite=234,246 score=2500
+walkerKind box=16,22,8,8 walk=<L>,<R> watch=<L>,<R> charge=<L>,<R> recover=<L>,<R> stunned=<L>,<R> score=1400
+blowerKind box=16,22,8,8 blowing=blower.blowing stunnedSprite=275 score=800
+treeKind swaying=tree.swaying
+bonusKind energy1 effect=energy amount=3000 lift=14 sprite=285 anchor=8,16
 level <id> toDeliver=<n> wind=none|left|right start0=<xFixed>,<yFixed> start1=<xFixed>,<yFixed> water=<Fixed> waterSpeed=<Fixed za 2 snímky>
 pad left=<px> right=<px> y=<px> door=<px> wait=<px> stand=<px> number=<n>
-routePassenger kind=<jméno> pad=<i> route=<pad>/<zpoždění ve snímcích>,<pad>/<zpoždění>,...,<pad>
-standingPassenger pad=<i> x=<Fixed> y=<Fixed>
+routePassenger kind=<jméno> route=<pad>/<zpoždění ve snímcích>,...,<pad>
+standingPassenger x=<Fixed> y=<Fixed>
 flyer startDelay=<snímky> speed=<Fixed za snímek>
 walker pad=<i> x=<Fixed> y=<Fixed> speed=<Fixed za snímek>
 blower x=<Fixed> y=<Fixed>
-tree pad=<i> x=<Fixed> y=<Fixed> drops=<bonus>,<bonus>,...
-mask <96 hex číslic = 384 px, nejvyšší bit vlevo>          (192 řádků)
+tree x=<Fixed> y=<Fixed> drops=<bonus>,<bonus>,...|-
+mask <80 hex číslic = 320 px, nejvyšší bit vlevo>          (192 řádků)
 order oneplayer=<id>,<id>,...
 order team=<id>,<id>,...
 ```
 
-- Řádky `pad`, `routePassenger` ... `mask` patří k poslednímu `level` nad nimi (v pořadí seznamů originálu; na pořadí
-  záleží). `<id>` levelu je jeho pořadí v `levels.json`.
-- Jména druhů cestujících podle vzhledu (N2 projde `assets/sprites/*.png`; když vzhled nejde poznat, `kind1`...),
-  vodní protějšek `<jméno>-water`, stojící `standing`. Bonusy podle efektu a množství (`energy-small` ...).
+- Řádky `pad` … `mask` patří k poslednímu `level` nad nimi (v pořadí seznamů originálu; na pořadí záleží). `<id>`
+  levelu je jeho pořadí v `levels.json`.
+- Druhy cestujících `kind1` … `kind3` (podle deskriptoru; vzhled se z dat nepozná), vodní protějšek `<jméno>-water`,
+  stojící `standing`. Bonusy `energy1` … `energy9`, `life`, `multiplier`. V souboru jsou jen druhy a animace, na které
+  levely odkazují (bonus `life` žádný strom neshazuje). Animace se jmenuje podle prvního druhu, který ji použije.
+- Konstanty umístění, které logika nečte, v souboru nejsou (plošina stojícího cestujícího, stromu a startovní plošina
+  cestujícího s trasou; zpoždění za poslední zastávkou trasy).
 - Loader v C++ kontroluje: hlavička, známé typy záznamů a klíče, odkazy na jména existují, indexy plošin v rozsahu
-  levelu, trasa má aspoň jednu zastávku, maska 192 × 96 číslic, obě pořadí odkazují na existující levely.
+  levelu, trasa má aspoň jednu zastávku, maska 192 × 80 číslic, obě pořadí odkazují na existující levely.
 
 ## 9. Formát replayů UGR 1 (`verify/build/replays/ugr1/*.ugr`)
 
@@ -534,3 +539,12 @@ Odchylky od návrhu: `copter.impact` a `water.row` nejsou stav (vypadly z kap. 9
 pokusy, poloha cestujícího „viděná minulý snímek“ je jen u cestujících s trasou a jmenuje se `seenX/Y`, nepřítel
 v Placed nemá sprite, maska v UGD 1 jen 320 px (sousední řádek nikdy nenarazí), animace bez přetečení, nové
 zvláštnosti v kap. 6.
+
+### N2 (2026-10-03)
+
+`extractor`: `Names.kt`, `LogicData.kt` (zápis i čtení UGD 1 jako obecné záznamy `UgdRecord`), volání z `Main.kt`.
+`verify`: `LogicDataTest` (150 načtení levelů portem, 81 masek). Odchylky od návrhu: maska 320 px (N1), druhy
+cestujících `kind1` … `kind3` (vzhled z dat nejde poznat), bonusy `energy1` … `energy9`, `life`, `multiplier`;
+`flyerKind` má jen první snímky zásahu (`hitSprite`), `blowerKind` `stunnedSprite`; zpoždění za poslední zastávkou
+trasy a nečtené plošiny umístění v souboru nejsou; vodní druh má `landKind`. Čísla spritů z kódu originálu jsou
+konstanty extractoru s adresou rutiny.
