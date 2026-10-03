@@ -8,7 +8,7 @@
 #include "ReplayCheck.hpp"
 #include "ReplayReport.hpp"
 #include "data/DataFileReader.hpp"
-
+#include "keyboard/KeyFile.hpp"
 
 int main(int argc, char** argv) {
     ugh::tool::ReplayCheck::Options options;
@@ -32,10 +32,15 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 2;
     }
+    std::vector<ugh::keyboard::KeyBinding> keys;
+    if (!ugh::keyboard::KeyFile::read(argv[i], keys, error)) {
+        std::fprintf(stderr, "%s\n", error.c_str());
+        return 2;
+    }
     bool ok = true;
     for (int r = i + 1; r < argc; r++) {
         ugh::tool::ReplayReport report;
-        if (!ugh::tool::ReplayCheck(*data, options, report).run(argv[r])) {
+        if (!ugh::tool::ReplayCheck(*data, keys, options, report).run(argv[r])) {
             ok = false;
             continue;
         }

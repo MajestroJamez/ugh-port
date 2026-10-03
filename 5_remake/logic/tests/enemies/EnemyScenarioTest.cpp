@@ -83,7 +83,7 @@ TEST(a_passenger_dropped_onto_the_tree_shakes_out_a_bonus_item) {
     game::Game g(test::gameData());
     g.newGame({});
     for (int frame = 0; frame < 80; frame++) g.step();
-    g.scancode(0x39);
+    g.menuKey(input::MenuKey::Other);
     while (g.phase() != game::GamePhase::Play) g.step();
     for (int frame = 0; frame < 100; frame++) g.step();   // past the fade-in: the copters fly
     const passengers::Passenger& standing = g.passengers()[2];
@@ -91,8 +91,7 @@ TEST(a_passenger_dropped_onto_the_tree_shakes_out_a_bonus_item) {
     g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
     g.step();   // it hangs below the copter
     g.cheats().placeCopter(0, Fixed::fromPixels(60), Fixed::fromPixels(40), 60, 40, Speed(), Speed(), std::nullopt);
-    g.scancode(0xe0);
-    g.scancode(0x1d);   // fire: let it go above the tree
+    g.key(0, data::PlayerKey::Fire, true);   // let it go above the tree
     bool dropped = false;
     for (int frame = 0; frame < 60 && !dropped; frame++) {
         g.step();

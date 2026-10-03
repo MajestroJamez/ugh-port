@@ -4,7 +4,7 @@
 
 namespace ugh::game {
 
-Game::Game(const data::GameData& data) : data_(data), keyboard_(data.keys()), flow_(*this) {}
+Game::Game(const data::GameData& data) : data_(data), flow_(*this) {}
 
 bool Game::newGame(const NewGameSettings& settings) {
     if (settings.players < 1 || settings.players > 2 || settings.firstLevel < 0 ||
@@ -17,15 +17,10 @@ bool Game::newGame(const NewGameSettings& settings) {
     enemies_ = enemies::Enemies();
     bonuses_.clear();
     level_.rain().setFloorRow(settings.rainFloorRow);
-    keyboard_ = input::PcKeyboard(data_.keys());
+    menu_ = input::MenuInput();
     diagnostics_.take();
     flow_.restart();
     return true;
-}
-
-void Game::scancode(uint8_t code) {
-    const data::KeyBinding::Action* action = keyboard_.deliver(code);
-    if (action) level_.copter(action->player).setKey(action->key, action->press);
 }
 
 bool Game::levelLoaded() const {
@@ -56,7 +51,7 @@ void Game::beforePlay() {
 void Game::playFrame() {
     level_.fade().advance();
     world::PlayContext c = context();
-    PlayFrame(c, keyboard_, passengers_, enemies_, bonuses_).run();
+    PlayFrame(c, menu_, passengers_, enemies_, bonuses_).run();
 }
 
 GameResult Game::endAttempt() {

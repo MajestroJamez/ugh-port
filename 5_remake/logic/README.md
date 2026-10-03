@@ -37,7 +37,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 | `bonuses/` | the bonus items: `BonusSlots`, `BonusItem`, their states `Falling` and `Lying` |
 | `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `Route`, `PassengerCall`, `Ride`, `Swim`), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`; `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
-| `input/` | `PcKeyboard`: scancodes of the PC keyboard to the keys the pilots hold |
+| `input/` | `MenuKey`, `MenuInput`: the keys the game loop looks at (Esc gives up, P would pause, a caption waits for any key); the pilots' keys go straight to the copters (`Game::key`) |
 | `game/` | `Game` (the facade), `GameFlow` with its `phases/`, `PlayFrame` (one frame of the play), `Cheats` (the test pilot of the replays) |
 | `api/` | `LogicApi.cpp`: the C API over `Game` |
 
@@ -58,7 +58,7 @@ Before the first frame of the play the enemies and then the passengers get one u
 frame of the play (`PlayFrame::run`) runs the systems in the order of the original:
 
 1. the fade, the water
-2. the last scancode (Esc gives the game up)
+2. the last menu key (Esc gives the game up)
 3. the copters (`CopterPhysics::fly`) - not while the level is still fading in
 4. the passengers, the enemies, the bonus items (each runs its state's `update()`)
 5. where the passengers were seen, the rotors, the rain, the water surface

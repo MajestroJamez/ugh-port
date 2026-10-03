@@ -2,7 +2,7 @@
  * UGH! game logic - C API (C++20 library without dependencies, docs/rewrite-design.md).
  *
  * The whole game from a new game to its end: the level caption, the play (copter physics, passengers, enemies,
- * bonus items, water, rain, keyboard, random numbers), the end of a level, game over. No drawing and no sound: the
+ * bonus items, water, rain, keys, random numbers), the end of a level, game over. No drawing and no sound: the
  * logic reports events for those. Nothing of the state can be set from outside.
  */
 #ifndef UGH_LOGIC_H
@@ -33,8 +33,21 @@ typedef struct {
 /** A new game; 0 when a setting is out of range. */
 int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings);
 
-/** A scancode of the PC keyboard, between two frames. */
-void ugh_logic_scancode(ugh_logic* logic, int scancode);
+/** The keys a pilot flies with. */
+enum { UGH_LOGIC_KEY_UP = 0, UGH_LOGIC_KEY_DOWN, UGH_LOGIC_KEY_LEFT, UGH_LOGIC_KEY_RIGHT, UGH_LOGIC_KEY_FIRE };
+
+/** A pilot's key (UGH_LOGIC_KEY_...) pressed (1) or released (0), between two frames; player 0 or 1. */
+void ugh_logic_key(ugh_logic* logic, int player, int key, int pressed);
+
+/** The keys the game loop sees besides the pilots' keys. */
+enum { UGH_LOGIC_MENU_ESCAPE = 0, UGH_LOGIC_MENU_PAUSE, UGH_LOGIC_MENU_OTHER };
+
+/**
+ * A key event the game loop sees, between two frames: Esc pressed (it gives the game up in every frame of the play
+ * until the next key event), P pressed (pause, not supported), or any other key pressed or released - also a
+ * pilot's key. A caption waits for one.
+ */
+void ugh_logic_menu_key(ugh_logic* logic, int key);
 
 enum { UGH_LOGIC_CONTINUE = 0, UGH_LOGIC_GAME_OVER = 1, UGH_LOGIC_ALL_LEVELS_DONE = 2 };
 

@@ -7,14 +7,14 @@
 
 #include "data/PlayerKey.hpp"
 
-namespace ugh::data {
+namespace ugh::keyboard {
 
-/** A key of the PC keyboard: its scancodes (an extended key has two) and what it does. */
+/** A key of the PC keyboard (the `key` records of the game data): its scancodes (an extended key has two) and what it does. */
 struct KeyBinding {
-    /** A player's key pressed or released. */
+    /** A pilot's key pressed or released. */
     struct Action {
         int player = 0;
-        PlayerKey key = PlayerKey::Up;
+        data::PlayerKey key = data::PlayerKey::Up;
         bool press = false;
     };
 
@@ -22,4 +22,4 @@ struct KeyBinding {
     std::optional<Action> action;   // none: the scancodes are swallowed (the fake shifts of extended keys)
 };
 
-}  // namespace ugh::data
+}  // namespace ugh::keyboard

@@ -58,7 +58,6 @@ private:
     bool readEnemyKind(const Record& r);
     bool readRules(const Record& r);
     bool readSprites(const Record& r);
-    bool readKey(const Record& r);
     bool readLevel(const std::vector<Record>& records, size_t& i);
     bool readLevelPart(const Record& r, LevelDefinition& level, std::vector<uint8_t>& mask, int& maskRows);
     bool readOrder(const Record& r);

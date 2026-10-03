@@ -11,7 +11,6 @@
 #include "data/BlowerKind.hpp"
 #include "data/BonusKind.hpp"
 #include "data/FlyerKind.hpp"
-#include "data/KeyBinding.hpp"
 #include "data/LevelDefinition.hpp"
 #include "data/RoutePassengerKind.hpp"
 #include "data/Rules.hpp"
@@ -27,7 +26,7 @@ class DataFileReader;
 
 /**
  * The data of the game (Repository), read-only: the levels in the order of both modes, the kinds of passengers,
- * enemies and bonus items, the animations, the keys and the rules. DataFileReader makes it.
+ * enemies and bonus items, the animations and the rules. DataFileReader makes it.
  */
 class GameData {
 public:
@@ -40,7 +39,6 @@ public:
 
     const Rules& rules() const { return *rules_; }
     const SpriteIds& sprites() const { return sprites_; }
-    const std::vector<KeyBinding>& keys() const { return keys_; }
 
     const FlyerKind& flyerKind() const { return flyerKind_; }
     const WalkerKind& walkerKind() const { return walkerKind_; }
@@ -64,7 +62,6 @@ private:
     std::array<std::vector<const LevelDefinition*>, 2> order_;   // one player, team
     std::optional<Rules> rules_;
     SpriteIds sprites_;
-    std::vector<KeyBinding> keys_;
 };
 
 }  // namespace ugh::data

@@ -37,7 +37,7 @@ std::string stateOf(const game::Game& g, int passenger) {
 void startLevelOne(game::Game& g) {
     g.newGame({});
     for (int frame = 0; frame < 80; frame++) g.step();
-    g.scancode(0x39);
+    g.menuKey(input::MenuKey::Other);
     while (g.phase() != game::GamePhase::Play) g.step();
 }
 
@@ -107,8 +107,7 @@ TEST(the_standing_passenger_is_carried_and_dropped) {
     g.step();
     CHECK_EQUAL(std::string("Hanging"), stateOf(g, 2));
     CHECK(!g.level().copter(0).cargo()->destination.has_value());
-    g.scancode(0xe0);
-    g.scancode(0x1d);   // fire
+    g.key(0, data::PlayerKey::Fire, true);
     g.step();
     CHECK_EQUAL(std::string("Falling"), stateOf(g, 2));
     CHECK(g.level().copter(0).hasRoom());

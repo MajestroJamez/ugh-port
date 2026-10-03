@@ -93,7 +93,10 @@ bool DataFileReader::fail(const std::string& what) {
     return false;
 }
 
-/** The records in the order their references need: animations, kinds, rules, keys, levels, orders. */
+/**
+ * The records in the order their references need: animations, kinds, rules, levels, orders. The `key` records are the
+ * keys of the PC keyboard: not for the logic (the replays' keyboard in 6_verification reads them).
+ */
 bool DataFileReader::readAll(const std::vector<Record>& records) {
     static const char* const KNOWN[] = {"rules", "sprites", "key", "animation", "passengerKind", "flyerKind",
                                         "walkerKind", "blowerKind", "treeKind", "bonusKind", "level", "pad",
@@ -128,8 +131,6 @@ bool DataFileReader::readAll(const std::vector<Record>& records) {
         } else if (r.type == "sprites") {
             if (!readSprites(r)) return false;
             sprites = true;
-        } else if (r.type == "key") {
-            if (!readKey(r)) return false;
         } else if (r.type == "level") {
             if (!readLevel(records, i)) return false;
         } else if (r.type == "order") {
@@ -317,38 +318,6 @@ bool DataFileReader::readSprites(const Record& r) {
            range(r, "destinationBubbles", s.firstDestinationBubble, s.lastDestinationBubble) &&
            number(r, "impatientBubble", s.impatientBubble) && range(r, "rotor0", s.firstRotor[0], s.lastRotor[0]) &&
            range(r, "rotor1", s.firstRotor[1], s.lastRotor[1]);
-}
-
-bool DataFileReader::readKey(const Record& r) {
-    KeyBinding binding;
-    std::vector<int> codes;
-    std::string key;
-    if (!numbers(r, "codes", 0, codes) || !text(r, "key", key)) return false;
-    if (codes.empty() || codes.size() > 2) return fail("a key of " + std::to_string(codes.size()) + " scancodes");
-    for (int code : codes) {
-        if (code < 0 || code > 255) return fail("a scancode out of range");
-        binding.scancodes.push_back(static_cast<uint8_t>(code));
-    }
-    if (key == "none") {
-        if (!only(r, {"codes", "key"})) return false;
-    } else {
-        static const char* const KEYS[] = {"up", "down", "left", "right", "fire"};
-        KeyBinding::Action action;
-        std::optional<int> found;
-        int press = 0;
-        for (int k = 0; k < 5; k++)
-            if (key == KEYS[k]) found = k;
-        if (!found) return fail("unknown key " + key);
-        if (!only(r, {"codes", "key", "player", "press"}) || !number(r, "player", action.player) ||
-            !number(r, "press", press))
-            return false;
-        if (action.player != 0 && action.player != 1) return fail("a key of player " + std::to_string(action.player));
-        action.key = static_cast<PlayerKey>(*found);
-        action.press = press != 0;
-        binding.action = action;
-    }
-    data_->keys_.push_back(binding);
-    return true;
 }
 
 /** A level record and the records after it up to the next level or order. */

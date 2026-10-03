@@ -25,6 +25,10 @@ struct ugh_logic {
 
 namespace {
 
+// the keys of the C API are the logic's keys in the same order
+static_assert(static_cast<int>(ugh::data::PlayerKey::Fire) == UGH_LOGIC_KEY_FIRE);
+static_assert(static_cast<int>(ugh::input::MenuKey::Other) == UGH_LOGIC_MENU_OTHER);
+
 int eventKind(ugh::events::EventKind kind) { return static_cast<int>(kind) + UGH_LOGIC_EVENT_LEVEL_CAPTION; }
 
 int phase(ugh::game::GamePhase p) {
@@ -123,8 +127,14 @@ int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings) {
     return 1;
 }
 
-void ugh_logic_scancode(ugh_logic* logic, int scancode) {
-    if (logic->started) logic->game.scancode(static_cast<uint8_t>(scancode));
+void ugh_logic_key(ugh_logic* logic, int player, int key, int pressed) {
+    if (!logic->started || player < 0 || player > 1 || key < UGH_LOGIC_KEY_UP || key > UGH_LOGIC_KEY_FIRE) return;
+    logic->game.key(player, static_cast<ugh::data::PlayerKey>(key), pressed != 0);
+}
+
+void ugh_logic_menu_key(ugh_logic* logic, int key) {
+    if (!logic->started || key < UGH_LOGIC_MENU_ESCAPE || key > UGH_LOGIC_MENU_OTHER) return;
+    logic->game.menuKey(static_cast<ugh::input::MenuKey>(key));
 }
 
 int ugh_logic_step(ugh_logic* logic) { return logic->started ? result(logic->game.step()) : UGH_LOGIC_GAME_OVER; }

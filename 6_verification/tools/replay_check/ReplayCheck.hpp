@@ -3,11 +3,14 @@
 
 #include <deque>
 #include <string>
+#include <vector>
 
 #include "ReplayFile.hpp"
 #include "ReplayReport.hpp"
 #include "data/GameData.hpp"
 #include "game/Game.hpp"
+#include "keyboard/KeyBinding.hpp"
+#include "keyboard/PcKeyboard.hpp"
 
 namespace ugh::tool {
 
@@ -25,8 +28,9 @@ public:
 
     using Tick = ReplayFile::Tick;
 
-    ReplayCheck(const data::GameData& data, const Options& options, ReplayReport& report)
-        : data_(data), options_(options), report_(report) {}
+    ReplayCheck(const data::GameData& data, const std::vector<keyboard::KeyBinding>& keys, const Options& options,
+                ReplayReport& report)
+        : data_(data), keys_(keys), options_(options), report_(report) {}
 
     /** Plays the file; false when it cannot be read (the reason is on stderr). */
     bool run(const std::string& path);
@@ -35,6 +39,7 @@ private:
     static constexpr size_t RECENT_TICKS = 5;
 
     const data::GameData& data_;
+    const std::vector<keyboard::KeyBinding>& keys_;
     const Options& options_;
     ReplayReport& report_;
     std::deque<std::string> recent_;   // the scancodes of the last ticks, for the report
@@ -42,7 +47,7 @@ private:
     bool start(game::Game& game, const Tick& tick);
     /** Compares; false at a mismatch that stops the check. */
     bool compare(const game::Game& game, const Tick& tick);
-    void apply(game::Game& game, const Tick& tick);
+    void apply(game::Game& game, keyboard::PcKeyboard& keyboard, const Tick& tick);
     void intervene(game::Game& game, const Tick& tick);
     void diagnostics(game::Game& game, long long tick);
 

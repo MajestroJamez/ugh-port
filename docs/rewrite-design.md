@@ -148,10 +148,10 @@ logic/
       blower/               ugh::enemies::blower – Blower, BlowerState, Placed, Blowing, Stunned
       tree/                 ugh::enemies::tree – Tree, TreeState, Placed, Swaying, Resting, Bare
     bonuses/                ugh::bonuses – BonusItem, BonusSlots (12, volný slot od konce), BonusState, Falling, Lying
-    input/                  ugh::input – PcKeyboard: skenkódy PC klávesnice (i E0 páry) → Controls hráčů, poslední
-                            skenkód pro popisek a Esc / P
+    input/                  ugh::input – MenuKey, MenuInput: klávesy smyčky hry (Esc, P, jiná) pro popisek a Esc / P
+                            (od N9b; skenkódy převádí adaptér 6_verification/keyboard/PcKeyboard)
     game/                   ugh::game
-      Game.hpp/.cpp         fasáda: newGame(settings), scancode(code), step() -> GameResult, čtení stavu, cheats()
+      Game.hpp/.cpp         fasáda: newGame(settings), key(player, key, pressed), menuKey(key), step() -> GameResult, čtení stavu, cheats()
       NewGameSettings.hpp   hráči, obtížnost, první level, stav generátoru, řádek deště (kap. 6)
       GameResult.hpp        Continue, GameOver, AllLevelsDone
       GameFlow.hpp/.cpp, PhaseId.hpp, Phase.hpp
@@ -229,6 +229,11 @@ na fáze v konstruktorech. `GameResult` je `enum class`, převod na čísla C AP
 z dat). Logika zná jen `Controls` a dotaz „změnil se poslední skenkód“ (popisek čeká na klávesu, Esc vzdá hru,
 P = nepodporovaná pauza). Replay nese skenkódy, protože to je skutečný záznam vstupu; Unreal později dodá vlastní
 adaptér (UE vstup → `Controls`).
+
+Od N9b logika o PC klávesnici neví: dostává klávesy pilotů (`Game::key`, C API `ugh_logic_key`) a klávesy smyčky
+hry (`Game::menuKey`, `ugh_logic_menu_key`: Esc, P, jiná). `PcKeyboard` je v `6_verification/keyboard/`: tabulku
+kláves čte z dat sám (`KeyFile`, logika záznamy `key` přeskočí) a před snímkem pošle klávesu smyčky, když se poslední
+skenkód od minulého snímku změnil - přesně to, co originál čte (popisek čte každý snímek).
 
 ### Bez výjimek a RTTI
 
@@ -421,13 +426,13 @@ Pokrytí stavů (`GoldenReplayTest`) je dál úplné.
 
 1. tick 0 → `NewGameSettings` z `game.level`, `game.players`, `game.difficulty`, `game.rng`, `game.rainFloor`;
 2. každý další tick: `game.step()`, porovnat `StateWriter` s očekávaným stavem (množina polí i hodnoty, včetně
-   `game.phase`), pak `I` řádek přes `Cheats` a skenkódy přes `game.scancode()`;
+   `game.phase`), pak `I` řádek přes `Cheats` a skenkódy přes adaptér `PcKeyboard` (od N9b);
 3. při první neshodě vypsat tick, fázi, všechna rozdílná pole (očekávané / skutečné), klávesy posledních snímků
    a skončit; přepínač `--continue` počítá dál (pro statistiku), `--only <skupiny>` jen pro rozjezd v N5–N6.
 4. souhrn na řádek: replay, ticků, porovnaných hodnot po skupinách, výsledek. CTest: jeden test na replay.
 
 **C API `include/ugh_logic.h`** (pro UE, krok 10): `ugh_logic_create(data_path, err, size)`, `ugh_logic_destroy`,
-`ugh_logic_new_game(settings)`, `ugh_logic_scancode`, `ugh_logic_step` (→ continue / game over / all done),
+`ugh_logic_new_game(settings)`, `ugh_logic_key` a `ugh_logic_menu_key` (do N9b `ugh_logic_scancode`), `ugh_logic_step` (→ continue / game over / all done),
 `ugh_logic_take_events`, a pohled pro vykreslení `ugh_logic_view` (pole entit: druh, poloha, sprite, bublina; vrtulníky;
 voda; kapky). Žádné nastavování polí zvenku. Návrh hlavičky v N4, pohled v N8.
 

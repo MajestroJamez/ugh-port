@@ -372,3 +372,9 @@ a žádný soubor nad 200 řádků.
   `outOfWater()`, druh ve vodě je dvojice `RoutePassengerKind::swimmer` / `SwimmerKind::land`. V `data/` jsou všechny
   záznamy (druhy, umístění, `Route`, `Rules`, `Animation`, `CollisionMask`) struktury s veřejnými poli, umístění
   navíc s `accept`. 38 testů + 161 replayů zelených. Další: **N9b etapa 4**.
+- 2026-10-03: N9b etapa 4 hotová - logika bez DOSu: `Game::key(player, key, pressed)` / C API `ugh_logic_key` pro
+  klávesy pilotů a `Game::menuKey` / `ugh_logic_menu_key` (Esc, P, jiná) pro smyčku hry (`input::MenuInput`: poslední
+  klávesa platí do další, popisek čeká na novou). `PcKeyboard` a `KeyBinding` jsou v `6_verification/keyboard/`
+  (tabulku kláves čte `KeyFile` z dat, logika záznamy `key` přeskočí); před snímkem pošle klávesu smyčky, když se
+  poslední skenkód od minulého snímku změnil, což přesně odpovídá čtení originálu. Mrtvá `LONGEST_SEQUENCE` smazaná
+  při přesunu. 38 testů logiky + 2 testy klávesnice + 161 replayů zelených. Další: **N9b etapa 5**.

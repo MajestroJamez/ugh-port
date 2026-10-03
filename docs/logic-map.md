@@ -20,8 +20,8 @@ v `4_test_data/verify/.../replay/SemanticProjection.kt`.
 | `game::phases::Playing::nextFrame`, `game::PlayFrame::run` | `GameFlow.kt` `playLevel`; `Frame.kt` `frameFade`, `frameBody`, `frameAfterKeys` | `113b:0c7d .. 0fa4`, `0ca5` |
 | `game::PlayFrame::readKeys` | `Frame.kt` `frameKeys`, `readScancode` | `113b:0fe8`, `44f1` |
 | `game::GameFlow::endAttempt`, `Game::endAttempt` | `GameFlow.kt` `playGame` (po `playLevel`) | `113b:0fa7` |
-| `input::PcKeyboard::deliver` | `Host.kt` `keyboardInterrupt` | `113b:4567` |
-| `input::PcKeyboard::readLastScancode` | `Frame.kt` `readScancode` | `113b:44f1` |
+| `keyboard::PcKeyboard::deliver` (adaptér v `6_verification`) | `Host.kt` `keyboardInterrupt` | `113b:4567` |
+| `input::MenuInput` (`keyboard::PcKeyboard::beforeFrame`) | `Frame.kt` `readScancode` | `113b:44f1` |
 | `world::RandomNumbers::next` | `Draw.kt` `random` | `113b:4f09` |
 | `world::Fade` | `Frame.kt` `frameFade` | `113b:0c7d` |
 

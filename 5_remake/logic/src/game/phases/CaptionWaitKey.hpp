@@ -5,7 +5,7 @@
 
 namespace ugh::game::phases {
 
-/** The caption stays until a key changes the last scancode. */
+/** The caption stays until a key comes. */
 class CaptionWaitKey : public Phase {
 public:
     void enter(GameFlow& flow) override;

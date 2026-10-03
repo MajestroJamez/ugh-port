@@ -14,7 +14,8 @@
 #include "game/GameResult.hpp"
 #include "game/NewGameSettings.hpp"
 #include "enemies/Enemies.hpp"
-#include "input/PcKeyboard.hpp"
+#include "input/MenuInput.hpp"
+#include "input/MenuKey.hpp"
 #include "passengers/Passengers.hpp"
 #include "world/Level.hpp"
 #include "world/PlayContext.hpp"
@@ -23,7 +24,7 @@
 namespace ugh::game {
 
 /**
- * The game (Facade): a new game, the scancodes of the keyboard and one frame after another, until the game is over;
+ * The game (Facade): a new game, the pilots' keys and the keys of the game loop, one frame after another, until the game is over;
  * the state can be read (a renderer, the replays) and the events are reported to listeners. Nothing can be set from
  * outside but through Cheats (the test pilot of the replays).
  */
@@ -39,8 +40,10 @@ public:
     /** A new game; the first step starts it. False (and no game) when a setting is out of range. */
     bool newGame(const NewGameSettings& settings);
 
-    /** A scancode from the keyboard, between two frames. */
-    void scancode(uint8_t code);
+    /** A pilot's key pressed or released, between two frames. */
+    void key(int player, data::PlayerKey key, bool pressed) { level_.copter(player).setKey(key, pressed); }
+    /** A key event the game loop sees (Esc, P, any other), between two frames. */
+    void menuKey(input::MenuKey key) { menu_.receive(key); }
 
     /** One frame (1/70 s). */
     GameResult step() { return flow_.step(); }
@@ -75,7 +78,7 @@ public:
     bool attemptOver() const { return level_.fade().over(); }
     /** The next level when the attempt finished the level, else a life less. */
     GameResult endAttempt();
-    input::PcKeyboard& keyboard() { return keyboard_; }
+    input::MenuInput& menu() { return menu_; }
     void report(const events::Event& event) { events_.onEvent(event); }
 
 private:
@@ -89,7 +92,7 @@ private:
     passengers::Passengers passengers_;
     enemies::Enemies enemies_;
     bonuses::BonusSlots bonuses_;   // they stay from the end of an attempt until the play of the next one
-    input::PcKeyboard keyboard_;
+    input::MenuInput menu_;
     GameFlow flow_;
 
     world::PlayContext context();

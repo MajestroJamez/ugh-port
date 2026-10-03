@@ -22,12 +22,24 @@ add_library(ugh_logic_replay STATIC ${UGH_REPLAY_SOURCES})
 target_include_directories(ugh_logic_replay PUBLIC .)
 target_link_libraries(ugh_logic_replay PUBLIC ugh_logic)
 
+# the PC keyboard of the original: the scancodes of the replays to the inputs of the logic
+file(GLOB UGH_KEYBOARD_SOURCES CONFIGURE_DEPENDS keyboard/*.cpp)
+add_library(ugh_pc_keyboard STATIC ${UGH_KEYBOARD_SOURCES})
+target_include_directories(ugh_pc_keyboard PUBLIC .)
+target_link_libraries(ugh_pc_keyboard PUBLIC ugh_logic)
+
 # the logic against the golden replays
 file(GLOB UGH_CHECK_SOURCES CONFIGURE_DEPENDS tools/replay_check/*.cpp)
 add_executable(replay_check ${UGH_CHECK_SOURCES})
-target_link_libraries(replay_check PRIVATE ugh_logic_replay)
+target_link_libraries(replay_check PRIVATE ugh_logic_replay ugh_pc_keyboard)
 
 set(UGH_REPLAYS "${CMAKE_CURRENT_SOURCE_DIR}/../4_test_data/verify/build/replays" CACHE PATH "Golden replays UGR 1 (.\\gradlew.bat :verify:replays)")
+
+# the tests of the keyboard (with the test framework of the logic)
+add_executable(verification_tests tests/PcKeyboardTest.cpp ../5_remake/logic/tests/TestMain.cpp)
+target_link_libraries(verification_tests PRIVATE ugh_pc_keyboard)
+target_include_directories(verification_tests PRIVATE ../5_remake/logic/tests)
+add_test(NAME keyboard COMMAND verification_tests "${UGH_DATA}")
 
 # one test per golden replay
 file(GLOB UGH_REPLAY_FILES CONFIGURE_DEPENDS "${UGH_REPLAYS}/*.ugr")

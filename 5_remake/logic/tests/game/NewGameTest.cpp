@@ -25,7 +25,7 @@ TEST(the_caption_waits_for_a_key_then_the_play_starts) {
     for (int frame = 1; frame <= 9 + 64 + 10; frame++) g.step();
     CHECK(g.phase() == game::GamePhase::Caption);
     CHECK(g.level().definition() != nullptr);
-    g.scancode(0x39);
+    g.menuKey(input::MenuKey::Other);
     g.step();   // the key: the fade-out starts
     for (int frame = 0; frame < 64; frame++) g.step();
     CHECK(g.phase() == game::GamePhase::Caption);

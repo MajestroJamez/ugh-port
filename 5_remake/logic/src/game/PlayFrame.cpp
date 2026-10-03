@@ -20,9 +20,9 @@ void PlayFrame::run() {
 }
 
 void PlayFrame::readKeys() {
-    uint8_t key = keyboard_.readLastScancode().scancode;
-    if (key == SCANCODE_P) context_.diagnostics.report("pause (P) is not supported");
-    if (key == SCANCODE_ESC) {
+    input::MenuKey key = menu_.last();
+    if (key == input::MenuKey::Pause) context_.diagnostics.report("pause (P) is not supported");
+    if (key == input::MenuKey::Escape) {
         context_.session.giveUp();
         if (!context_.level.fade().fadingOut()) context_.level.fade().startFadeOut();
     }

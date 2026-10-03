@@ -3,7 +3,7 @@
 
 #include "bonuses/BonusSlots.hpp"
 #include "enemies/Enemies.hpp"
-#include "input/PcKeyboard.hpp"
+#include "input/MenuInput.hpp"
 #include "passengers/Passengers.hpp"
 #include "world/PlayContext.hpp"
 
@@ -18,22 +18,20 @@ namespace ugh::game {
  */
 class PlayFrame {
 public:
-    PlayFrame(const world::PlayContext& context, input::PcKeyboard& keyboard, passengers::Passengers& passengers,
+    PlayFrame(const world::PlayContext& context, const input::MenuInput& menu, passengers::Passengers& passengers,
               enemies::Enemies& enemies, bonuses::BonusSlots& bonuses)
-        : context_(context), keyboard_(keyboard), passengers_(passengers), enemies_(enemies), bonuses_(bonuses) {}
+        : context_(context), menu_(menu), passengers_(passengers), enemies_(enemies), bonuses_(bonuses) {}
 
     void run();
 
 private:
-    static constexpr uint8_t SCANCODE_ESC = 1, SCANCODE_P = 25;   // the keys Esc and P of the PC keyboard
-
     const world::PlayContext& context_;
-    input::PcKeyboard& keyboard_;
+    const input::MenuInput& menu_;
     passengers::Passengers& passengers_;
     enemies::Enemies& enemies_;
     bonuses::BonusSlots& bonuses_;
 
-    /** The game loop looks at the last scancode: Esc gives the game up, P would pause. */
+    /** The game loop looks at the last key: Esc gives the game up, P would pause. */
     void readKeys();
     void flyCopters();
     void spinRotors();
