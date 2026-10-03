@@ -391,3 +391,8 @@ a žádný soubor nad 200 řádků.
   pojmenované dotazy (`copterOnWater()`, `copterOnWaterWithRoom()`, `stillCopterOnWaterWithRoom()`), fáze toku hry
   pracují přes `Attempts` (má ho jen `GameFlow`), na fasádě `Game` zůstalo veřejné API. `LONGEST_SEQUENCE` zmizela
   už v etapě 4. 38 testů + 2 + 161 replayů zelených. Další: **N9b etapa 7**.
+- 2026-10-03: N9b etapa 7 hotová - `DataFileReader` (dřív 565 ř.) jen skládá: `UgdTokenizer` (řádky -> `UgdRecord`),
+  `RecordReader` (klíče, čísla, rozsahy, chyby s číslem řádku), `KindsReader` (animace, druhy), `RulesReader`
+  (pravidla, sprity; místo `KeysReader` - klávesy od etapy 4 čte `6_verification`) a `LevelReader` (levely, plošiny,
+  umístění, maska, pořadí); největší soubor 199 ř. `KeyFile` v `6_verification` používá stejný `UgdTokenizer`
+  a `RecordReader`. Texty chyb beze změny. 40 testů + 2 + 161 replayů zelených. Další: **N9b etapa 8**.

@@ -9,7 +9,10 @@
 
 namespace ugh::keyboard {
 
-/** A key of the PC keyboard (the `key` records of the game data): its scancodes (an extended key has two) and what it does. */
+/**
+ * A key of the PC keyboard (the `key` records of the game data): its scancodes (an extended key has two) and what it
+ * does.
+ */
 struct KeyBinding {
     /** A pilot's key pressed or released. */
     struct Action {

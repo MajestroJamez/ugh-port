@@ -23,6 +23,9 @@
 namespace ugh::data {
 
 class DataFileReader;
+class KindsReader;
+class LevelReader;
+class RulesReader;
 
 /**
  * The data of the game (Repository), read-only: the levels in the order of both modes, the kinds of passengers,
@@ -47,6 +50,9 @@ public:
 
 private:
     friend class DataFileReader;
+    friend class KindsReader;
+    friend class LevelReader;
+    friend class RulesReader;
     GameData() = default;
 
     std::vector<std::unique_ptr<Animation>> animations_;

@@ -92,7 +92,8 @@ logic/
       Countdown.hpp         odpočet „sniž, je nula?“: start(n), tick() -> bool
     data/                   ugh::data – neměnná data hry (Repository) a jejich načtení
       GameData.hpp/.cpp     vše načtené: levely v pořadí obou režimů, druhy, pravidla, klávesy, sprity
-      DataFileReader.hpp/.cpp   parser UGD 1 + kontroly (jména existují, indexy plošin platí, trasy mají zastávku)
+      DataFileReader.hpp/.cpp   parser UGD 1 + kontroly (jména existují, indexy plošin platí, trasy mají zastávku);
+                                od N9b jen skládá UgdTokenizer, RecordReader, KindsReader, RulesReader, LevelReader
       Rules.hpp             limity podle obtížnosti (náraz, násobič), bonus za rychlé doručení
       SpriteIds.hpp         pojmenované sprity (stojící / padající / odražený cestující, bubliny, rotor ...)
       Animation.hpp         snímky (sprity) animace (+ případné „přetečení“, viz kap. 6)
