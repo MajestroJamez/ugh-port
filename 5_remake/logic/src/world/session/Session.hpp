@@ -20,7 +20,7 @@ public:
           score_(rules.multiplierLimit(difficulty)),
           random_(random) {}
 
-    /** The game starts: 3 lives, multiplier 1, score 0. */
+    /** The game starts: Lives::START lives, multiplier 1, score 0. */
     void startGame();
 
     int players() const { return players_; }

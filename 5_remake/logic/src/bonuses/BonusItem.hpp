@@ -20,8 +20,9 @@ namespace ugh::bonuses {
 class BonusItem : public world::figure::Figure, public state::StateMachine<BonusItem, world::PlayContext> {
 public:
     /**
-     * A new item of `kind` in `slot` with its middle and bottom at x, y, thrown sideways with `speedX` and up with its
-     * kind's lift and `lift` more (Fixed per frame).
+     * A new item of `kind` in `slot` with its anchor column and half its anchor row at x, y (the middle of an item
+     * that stands on its anchor), thrown sideways with `speedX` and up with its kind's lift and `lift` more (Fixed per
+     * frame).
      */
     BonusItem(int slot, const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX,
               units::Fixed lift);

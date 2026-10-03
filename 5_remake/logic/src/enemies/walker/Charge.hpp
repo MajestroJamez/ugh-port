@@ -1,8 +1,8 @@
 // A walker charging at a copter.
 #pragma once
 
+#include "data/kinds/Facing.hpp"
 #include "units/Fixed.hpp"
-#include "world/figure/Facing.hpp"
 
 namespace ugh::enemies::walker {
 
@@ -11,8 +11,8 @@ class Charge {
 public:
     void start() { speed_ = units::Fixed(); }
     /** One frame of the charge: faster towards `facing`. */
-    void faster(world::figure::Facing facing) {
-        speed_ += units::Fixed::fromRaw(facing == world::figure::Facing::Right ? 1 : -1);
+    void faster(data::kinds::Facing facing) {
+        speed_ += units::Fixed::fromRaw(facing == data::kinds::Facing::Right ? 1 : -1);
     }
     units::Fixed speed() const { return speed_; }
 

@@ -11,8 +11,7 @@ void Recovering::enter(Walker& walker, const EnemyContext&) const { walker.resta
 
 void Recovering::update(Walker& walker, const EnemyContext& context) const {
     if (walker.animate()) {
-        bool right = walker.facing() == world::figure::Facing::Right;
-        const data::kinds::Animation& animation = walker.kind().recover.towards(right);
+        const data::kinds::Animation& animation = walker.kind().recover.towards(walker.facing());
         if (walker.pastEndOf(animation)) {
             walker.continueIn(Placed::instance, context);
             return;

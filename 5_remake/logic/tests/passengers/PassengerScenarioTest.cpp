@@ -2,7 +2,7 @@
 
 #include "TestData.hpp"
 #include "TestFramework.hpp"
-#include "bonuses/BonusState.hpp"
+#include "bonuses/BonusSlots.hpp"
 #include "game/Game.hpp"
 #include "passengers/route/RoutePassenger.hpp"
 #include "passengers/standing/StandingPassenger.hpp"

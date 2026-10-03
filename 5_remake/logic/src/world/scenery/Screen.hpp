@@ -14,7 +14,7 @@ public:
     static constexpr units::Fixed BOTTOM = units::Fixed::fromPixels(data::levels::ScreenSize::HEIGHT);
     /** The middle column. */
     static constexpr units::Fixed MIDDLE = units::Fixed::fromPixels(data::levels::ScreenSize::WIDTH / 2);
-    /** The flyer is wider: it is gone only 32 px past the left edge. */
+    /** The flyer is wider: it is gone only further past the left edge. */
     static constexpr units::Fixed FLYER_LEFT = units::Fixed::fromPixels(-32);
 
     /** x is past the left or the right edge. */

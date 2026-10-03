@@ -133,8 +133,8 @@ typedef struct {
     int level_id;           /* the level in the data (its map), -1 before the first level is loaded */
     int lives, multiplier;
     unsigned score;
-    int energy;             /* 0 .. 23099 */
-    int fade;               /* 0 black .. 256 */
+    int energy;             /* 23099 full; it goes on below 0 and wraps like the original's 16-bit counter */
+    int fade;               /* 0 black .. 256 fully shown; it may overshoot to 258, and ends below 0 (black) */
     int water_level;        /* the water surface, 1/32 px */
     int water_frame;        /* the animation of the surface, 0 .. 2 */
     int copter_count;

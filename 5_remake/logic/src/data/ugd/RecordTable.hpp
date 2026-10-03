@@ -11,7 +11,7 @@ namespace ugh::data::ugd {
 
 /**
  * The record types a reader reads, each with the method that reads one (like method references in Java):
- * `{"pad", &LevelReader::readPad}`. A new record type is one entry and one method.
+ * `{"rules", &RulesReader::readRules}`. A new record type is one entry and one method.
  */
 template <class Reader>
 class RecordTable {

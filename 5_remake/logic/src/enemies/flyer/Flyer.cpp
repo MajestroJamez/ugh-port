@@ -15,7 +15,7 @@ void Flyer::update(const EnemyContext& context) { updateState(context); }
 
 void Flyer::accept(EnemyVisitor& visitor) const { visitor.visit(*this); }
 
-void Flyer::flyTowards(world::figure::Facing side) {
+void Flyer::flyTowards(data::kinds::Facing side) {
     vx_ = headed(vx_, side);
     flight_ = side;
 }

@@ -5,7 +5,7 @@
 
 namespace ugh::world::scenery {
 
-/** A raindrop: its pixel in the background page, which is 384 px wide (64 px more than the screen). */
+/** A raindrop: its pixel in the background page, which is wider than the screen (PAGE_WIDTH). */
 struct Raindrop {
     static constexpr int PAGE_WIDTH = 384;   // the page the original draws on; the screen is what of it is shown
 

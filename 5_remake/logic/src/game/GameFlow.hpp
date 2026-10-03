@@ -15,8 +15,9 @@ namespace ugh::game {
 /**
  * The flow of a game as a state machine of phases; step() is one frame. The phases in their order:
  *
- *   start -> BlackBeforeCaption (8 frames) -> CaptionFadeIn (the attempt starts: the level is loaded; 65 frames)
- *   -> CaptionWaitKey (until a key) -> CaptionFadeOut (65 frames) -> BlackBeforePlay (8 frames)
+ *   start -> BlackBeforeCaption (BlackScreen::FRAMES) -> CaptionFadeIn (the attempt starts: the level is loaded;
+ *   CaptionFadeIn::FADE_FRAMES) -> CaptionWaitKey (until a key) -> CaptionFadeOut (FADE_FRAMES)
+ *   -> BlackBeforePlay (BlackScreen::FRAMES)
  *   -> Playing (until the fade-out at the end of the attempt is over)
  *   -> endAttempt(): CaptionFadeIn of the next attempt, or the end of the game
  */

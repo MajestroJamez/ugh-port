@@ -1,8 +1,6 @@
 // How a thrown thing falls.
 #pragma once
 
-#include <optional>
-
 #include "units/Fixed.hpp"
 #include "world/Level.hpp"
 

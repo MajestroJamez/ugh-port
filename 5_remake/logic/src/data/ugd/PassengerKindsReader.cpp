@@ -63,7 +63,7 @@ bool PassengerKindsReader::readAnimated(kinds::AnimatedPassengerKind& kind) {
 
 bool PassengerKindsReader::link(const std::vector<UgdRecord>& records) {
     for (const UgdRecord& r : records) {
-        if (r.type != "passengerKind") continue;
+        if (r.type != RECORD) continue;
         in_.at(&r);
         auto route = routeKinds_.find(r.name);
         auto swimmer = swimmerKinds_.find(r.name);

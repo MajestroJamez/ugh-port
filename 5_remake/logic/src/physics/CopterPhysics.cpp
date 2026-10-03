@@ -26,7 +26,8 @@ constexpr Speed BUOYANCY = Speed::fromRaw(21);      // floating up in the water
 
 // effort (it spins the rotor) and energy, per frame
 constexpr int STEER_EFFORT = 63, PEDAL_EFFORT = 90;
-constexpr int FLYING_COST = 1, AIRBORNE_COST = 2, PEDAL_COST = 3;
+constexpr int FLYING_COST = 1, PEDAL_COST = 3;
+constexpr int OFF_SURFACE_COST = 2;   // in the air (not on a pad) or under water: not floating on the surface
 
 // how far a copter can go (its top left corner)
 constexpr Fixed LEFT_EDGE = Fixed::fromPixels(-16), RIGHT_EDGE = Fixed::fromPixels(304);
@@ -101,7 +102,7 @@ void CopterPhysics::liftAndFall(world::copter::Copter& copter, Depth depth) {
     Speed vy = copter.motion().speedY();
     bool canPedal = true;
     if (depth == Depth::Below) {
-        context_.level.energy().spend(AIRBORNE_COST);
+        context_.level.energy().spend(OFF_SURFACE_COST);
         if (vy > Speed()) {
             vy -= WATER_BRAKE;
         } else {
@@ -111,7 +112,7 @@ void CopterPhysics::liftAndFall(world::copter::Copter& copter, Depth depth) {
         canPedal = false;
     } else if (depth == Depth::Above && !copter.landed()) {
         vy += GRAVITY;
-        context_.level.energy().spend(AIRBORNE_COST);
+        context_.level.energy().spend(OFF_SURFACE_COST);
         if (copter.controls().down) {
             vy += DIVE;
             copter.rotor().addEffort(PEDAL_EFFORT);
@@ -140,10 +141,10 @@ void CopterPhysics::moveVertically(world::copter::Copter& copter, Depth depth) {
         vy = Speed();
     }
     int surface = context_.level.water().row();
-    if (depth == Depth::Below && target.pixels() - surface + CopterShape::WATERLINE <= 0) {
+    if (depth == Depth::Below && CopterShape::depthAt(target.pixels(), surface) <= 0) {
         // floats up to the surface and stops there
         vy = Speed();
-        target = Fixed::fromPixels(surface - CopterShape::WATERLINE);
+        target = Fixed::fromPixels(CopterShape::floatingY(surface));
     }
     motion.setSpeedY(vy);
     Fixed y = target;

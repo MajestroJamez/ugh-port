@@ -28,7 +28,7 @@ public:
     const Passenger& operator[](int i) const { return *all_[i]; }
 
     /** A standing passenger falling (down, not up) whose hit point is in the box at x, y (an enemy); nullptr if none. */
-    standing::StandingPassenger* fallingOnto(units::Fixed x, units::Fixed y) const;
+    standing::StandingPassenger* fallingOnto(units::Fixed x, units::Fixed y);
 
 private:
     friend class PassengerFactory;

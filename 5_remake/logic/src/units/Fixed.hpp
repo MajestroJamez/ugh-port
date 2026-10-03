@@ -9,7 +9,7 @@ namespace ugh::units {
 
 /**
  * A position, or a distance per frame, in 1/32 px: the fixed point of the game, one 16-bit integer that wraps.
- * Positions are top left corners of sprites; the screen is 320 x 192 px of play.
+ * Positions are top left corners of sprites, on the screen of play (data::levels::ScreenSize).
  */
 class Fixed {
 public:

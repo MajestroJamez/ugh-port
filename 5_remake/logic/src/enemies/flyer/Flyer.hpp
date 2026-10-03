@@ -1,13 +1,13 @@
 // The flyer.
 #pragma once
 
+#include "data/kinds/Facing.hpp"
 #include "data/kinds/FlyerKind.hpp"
 #include "data/levels/FlyerPlacement.hpp"
 #include "enemies/Enemy.hpp"
 #include "enemies/flyer/FlyerState.hpp"
 #include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
-#include "world/figure/Facing.hpp"
 
 namespace ugh::enemies::flyer {
 
@@ -28,7 +28,7 @@ public:
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
     /** It flies towards `side`: its speed and its flight animation point there. */
-    void flyTowards(world::figure::Facing side);
+    void flyTowards(data::kinds::Facing side);
 
     /** The player it hunted last (before its first flight: 1, so that it hunts player 0 first). */
     int lastTarget() const { return lastTarget_; }
@@ -36,7 +36,7 @@ public:
     int takeNextTarget(int players);
 
     /** The side it flies towards (its flight animation). */
-    world::figure::Facing flight() const { return flight_; }
+    data::kinds::Facing flight() const { return flight_; }
 
     int startDelay() const { return startDelay_; }
     /** It stays in its state (hidden, screeching) for `frames` before the next one. */
@@ -57,7 +57,7 @@ private:
     int startDelay_ = 0;
     units::Fixed vx_;
     int lastTarget_ = 1;
-    world::figure::Facing flight_ = world::figure::Facing::Left;
+    data::kinds::Facing flight_ = data::kinds::Facing::Left;
     units::Countdown waitTime_;
     units::Fixed fallSpeed_;
 };

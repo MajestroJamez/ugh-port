@@ -13,7 +13,10 @@ namespace ugh::world::copter {
 class Motion {
 public:
     Motion() = default;
-    /** At x, y with the pixel position the collision probe sees (it may lag behind y, see above), moving at vx, vy. */
+    /**
+     * At x, y with the pixel position the collision probe sees (it may lag behind y, see above), moving at vx, vy (only
+     * the test pilot puts a copter so).
+     */
     Motion(units::Fixed x, units::Fixed y, int pixelX, int pixelY, units::Speed vx, units::Speed vy)
         : x_(x), y_(y), pixelX_(pixelX), pixelY_(pixelY), vx_(vx), vy_(vy) {}
 

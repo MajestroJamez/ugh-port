@@ -25,21 +25,28 @@ The golden replays are checked by `6_verification\build.ps1` (`6_verification/RE
 ## Modules
 
 A folder is a module and a namespace (`src/passengers/route/Waiting.hpp` is `ugh::passengers::route::Waiting`); one
-class per file, named like the file; includes start at `src/`. A module uses only the modules above it (like Java
-packages that never import "down"); a parent module may come after its sub-modules and use them (`data/`, `world/`):
+class per file, named like the file; includes start at `src/`. A module uses only the modules above it in the table
+(like Java packages that never import "down"). A parent module and its sub-modules:
+
+- `data/` and `world/` come after their sub-modules and use them (`GameData` holds the kinds and the levels, `Level`
+  the copters and the scenery); `data/ugd/` comes after `data/`.
+- `passengers/` and `enemies/` are in two parts. The base part comes before the sub-modules, and the sub-modules use
+  only it: the base class, the context and the visitor (`Passenger`, `PassengerContext`, `PassengerVisitor`; `Enemy`,
+  `EnemyContext`, `EnemyVisitor`, and `Stun`, which the walker and the blower share). The collection and the factory
+  come after the sub-modules and use them (`Passengers`, `PassengerFactory`; `Enemies`, `EnemyFactory`).
 
 | Module | What is in it |
 |---|---|
 | `units/` | the arithmetic of the original: `Fixed` (a position in 1/32 px) and `Speed` (1/64 Fixed per frame) wrap at 16 bits like the original (`Int16` inside them); `Countdown`. Everything else is a plain `int` |
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
-| `data/kinds/` | the kinds of the game data: of passengers (`RoutePassengerKind`, its `SwimmerKind` in the water, `StandingPassengerKind`), of enemies (`FlyerKind`, `WalkerKind`, `BlowerKind`, `TreeKind`) and of bonus items (`BonusKind`), and what they are made of (`Animation`, `AnimationPair`, `Box`). Every record of the data is a struct with public fields, read-only through `GameData` |
+| `data/kinds/` | the kinds of the game data: of passengers (`RoutePassengerKind`, its `SwimmerKind` in the water, `StandingPassengerKind`), of enemies (`FlyerKind`, `WalkerKind`, `BlowerKind`, `TreeKind`) and of bonus items (`BonusKind`), and what they are made of (`Animation`, `AnimationPair` with the `Facing` it shows, `Box`). Every record of the data is a struct with public fields, read-only through `GameData` |
 | `data/levels/` | a level as the data defines it: `LevelDefinition` with its `PadDefinition`s, `CollisionMask`, `Wind`, `ScreenSize` (a level is one screen, 320 x 192 px: the one place of that size), and the placements of passengers (with their `Route`) and enemies; the placements have `accept` (Visitor) |
 | `data/` | the game data, read-only: `GameData` (the levels in the order of both modes, the kinds, `Rules`, `SpriteIds`), `Difficulty` |
-| `data/ugd/` | reading `ugh-data.ugd` (format UGD 1) with all checks: `DataFileReader` puts together `UgdTokenizer` (lines to records), `RecordReader` (values and errors with the line) and the readers, each with a table of the record types it reads: `KindsReader` (with `AnimationsReader`, `PassengerKindsReader`), `RulesReader`, `LevelReader` (with `PlacementReader`). The keys of the PC keyboard are skipped (`6_verification/keyboard`) |
+| `data/ugd/` | reading `ugh-data.ugd` (format UGD 1) with all checks: `DataFileReader` puts together `UgdTokenizer` (lines to records), `RecordReader` (values and errors with the line) and the readers: `KindsReader` (with `AnimationsReader`, `PassengerKindsReader`), `RulesReader`, `LevelReader` (with `PlacementReader`); the kinds of the enemies, the rules and the sprites must be there once. The keys of the PC keyboard are skipped (`6_verification/keyboard`) |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |
 | `input/` | `PlayerKey` (the keys a pilot flies with), `MenuKey`, `MenuInput`: the keys the game loop looks at (Esc gives up, P would pause, a caption waits for any key) |
 | `world/session/` | what lasts from one level to the next: `Session` (players, difficulty, level number) with `Lives`, `Score`, `RandomNumbers` |
-| `world/figure/` | what an entity shows: `Figure` (the base of a passenger, an enemy and a bonus item: its index, position, sprite, animation), `Animator`, `Facing` |
+| `world/figure/` | what an entity shows: `Figure` (the base of a passenger, an enemy and a bonus item: its index, position, sprite, animation), `Animator` |
 | `world/scenery/` | the level around the entities: `Pad` (its index, who waits on it), `Water`, `Rain` with its `Raindrop`s, `Screen` (the edges past which a thing is gone) |
 | `world/copter/` | `Copter` (its player, and its parts `Motion`, `Controls`, `Rotor`, `Cabin` with its `Cargo`; the `Pad` it stands on), `CopterShape` (its door, skids, body, outline, waterline - the one place of the copter's geometry), `Copters` (and what the entities ask about them, as `Copter*`) |
 | `world/` | `Level` (the world of the level being played: `Copters`, `Pad`s, water, rain, `Energy`, `Fade`, `Delivery`; how an attempt ends: `passengerFinished`, `crash`, `fadeOut`), `PlayContext` |
@@ -90,8 +97,10 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
 - **Observer**: the logic reports `events::Event`s to `EventListener`s.
 - **Facade**: `game::Game` is the one entry; nothing of the state can be set from outside but by the test pilot
   (`testing::TestPilot`, a test peer outside `src/` and the one friend of `Game`).
-- **Table of methods**: each data reader has a table "record type -> its method" (`RecordTable`, like method
-  references in Java): a new record type is one line in the table and one method.
+- **Table of methods**: the readers of records that stand alone (`KindsReader`, `RulesReader`, `PlacementReader`) have
+  a table "record type -> its method" (`RecordTable`, like method references in Java): a new record type is one line
+  in the table and one method. `LevelReader` reads a level and the parts after it in order, `AnimationsReader` one
+  type: they pick by type in their code.
 - **Template Method**: `passengers::route::OnPickupPad`: the states on the pickup pad check the water and the copters
   every frame, then do their own part (`walk`, `stay`).
 
@@ -122,7 +131,9 @@ text of the error).
   are counted down by a `Countdown` (`tick`, or `tickToZero` for a delay that stays due).
 - The same name in two modules only for the states the replays name so (`flyer::Falling`, `bonuses::Falling`,
   `standing::Falling` ...): the namespace tells them apart, like a Java package.
-- Nothing for the tests in `src/`: the test pilot lives in `testing/`.
+- Nothing for the tests in `src/`: the test pilot lives in `testing/`. It sets state through the constructors that
+  take a whole value - `world::copter::Motion` with its pixel position, `world::Energy(int)` -, the only ones the logic
+  itself does not call.
 - Values of the game are plain `int`s; only `Fixed` and `Speed` keep the 16 bits of the original (and the energy, as
   a named quirk). A quirk of the original lives in the class it belongs to, named and described.
 - The logic knows nothing of DOS, the PC keyboard or the replays: those are in `6_verification/`.
@@ -144,9 +155,10 @@ text of the error).
 | change how long a bonus item lies on a pad | `src/bonuses/Lying.cpp` (`LYING_TIME`) |
 | change the order of the systems in a frame | `src/game/PlayFrame.cpp` |
 | change the caption, the black screens, the end of an attempt | `src/game/phases/`, `src/game/Attempts.cpp` (`end`) |
+| change the order of the phases (caption, black screens, play) | `src/game/GameFlow.cpp` (the constructor gives each phase the next one) |
 | change how a copter hits walls | `src/physics/CollisionProbe.cpp` |
 | change where a copter's door, skids, body or waterline are | `src/world/copter/CopterShape.hpp` |
-| change the size of the screen | `src/data/levels/ScreenSize.hpp` (the collision mask, the edges, the rain follow it) |
+| change the size of the screen | `src/data/levels/ScreenSize.hpp`: the collision mask, `world::scenery::Screen` (where a thing is gone), the rain (its width and `Rain::DROPS`) follow it; the limits of a copter's flight are its own (`src/physics/CopterPhysics.cpp`) |
 | change what ends an attempt (a crash, Esc, the last passenger) | `src/world/Level.cpp` (`crash`, `fadeOut`, `passengerFinished`) |
 | change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`) and `src/api/LogicApi.cpp` |
 | change how the score multiplier works | `src/world/session/Score.hpp` |

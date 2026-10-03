@@ -29,7 +29,6 @@ void Attempts::beforePlay() {
 }
 
 void Attempts::playFrame() {
-    state_.level.fade().advance();
     world::PlayContext c = context();
     PlayFrame(c, state_.menu, state_.passengers, state_.enemies, state_.bonuses).run();
 }

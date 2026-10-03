@@ -23,7 +23,7 @@ void Passengers::hideAll() {
     for (auto& passenger : all_) passenger->hide();
 }
 
-standing::StandingPassenger* Passengers::fallingOnto(units::Fixed x, units::Fixed y) const {
+standing::StandingPassenger* Passengers::fallingOnto(units::Fixed x, units::Fixed y) {
     for (standing::StandingPassenger* passenger : standing_)
         if (passenger->fallsOnto(x, y)) return passenger;
     return nullptr;

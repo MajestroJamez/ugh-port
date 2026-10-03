@@ -12,9 +12,9 @@ namespace ugh::game {
 /**
  * One frame of the play, the systems in the order of the original:
  *
- *   the water, the keys (Esc gives up), the copters (unless the level is still fading in), the passengers, the
- *   enemies, the bonus items, the seen positions of the passengers, the rotors, the rain, the water surface (and the
- *   rain's floor row)
+ *   the fade, the water, the keys (Esc gives up), the copters (unless the level is still fading in), the passengers,
+ *   the enemies, the bonus items, the seen positions of the passengers, the rotors, the rain, the water surface (and
+ *   the rain's floor row)
  */
 class PlayFrame {
 public:

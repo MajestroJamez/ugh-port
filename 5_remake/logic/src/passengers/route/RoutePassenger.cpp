@@ -57,7 +57,7 @@ bool RoutePassenger::stepTowards(int feet) {
 
 bool RoutePassenger::faceTowards(int feet) {
     if (feetX() == feet) return true;
-    show(kind().walking.towards(feetX() < feet));
+    show(kind().walking.towards(feetX() < feet ? data::kinds::Facing::Right : data::kinds::Facing::Left));
     return false;
 }
 

@@ -67,6 +67,11 @@ public:
 
 private:
     Contents contents_;
+
+    /** The order of the levels for `players`: the team order for 2, else the one-player order. */
+    const std::vector<const levels::LevelDefinition*>& order(int players) const {
+        return contents_.order[players == 2 ? 1 : 0];
+    }
 };
 
 }  // namespace ugh::data

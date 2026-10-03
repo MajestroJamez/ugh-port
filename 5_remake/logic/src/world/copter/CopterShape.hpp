@@ -27,8 +27,12 @@ public:
 
     /** From its top to its waterline: it floats when the waterline is at the water surface. */
     static constexpr int WATERLINE = 18;
+    /** How deep its waterline is below the surface at `waterRow` with its top at `y` (pixels; 0: it floats). */
+    static constexpr int depthAt(int y, int waterRow) { return y - waterRow + WATERLINE; }
+    /** Where its top is when it floats on the surface at `waterRow` (pixels). */
+    static constexpr int floatingY(int waterRow) { return waterRow - WATERLINE; }
 
-    /** Its body, which a sprite touches: 5 .. 26 across, 20 high. */
+    /** Its body, which a sprite touches: BODY_LEFT .. BODY_RIGHT across, BODY_HEIGHT high. */
     static constexpr int BODY_LEFT = 5, BODY_RIGHT = 26, BODY_HEIGHT = 20;
 
     /** The outline the collision probe tests against the background starts this far right of its left edge. */

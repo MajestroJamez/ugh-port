@@ -23,7 +23,6 @@ public:
     const data::kinds::RoutePassengerKind& land() const { return *land_; }
     const data::kinds::SwimmerKind& swimmer() const { return *land_->swimmer; }
 
-    bool inWater() const { return inWater_; }
     /** It falls into the water: a swimmer until a copter rescues it. */
     void intoWater() { inWater_ = true; }
     void outOfWater() { inWater_ = false; }

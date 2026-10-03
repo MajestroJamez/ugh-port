@@ -30,11 +30,20 @@ std::string readError(const std::string& text) {
     return data ? "" : error;
 }
 
-const char* const VALID = "UGD 1\n"
+// the kinds of the enemies, each once (5 lines)
+const std::string ENEMY_KINDS = "animation e frames=1\n"
+                                "flyerKind box=1,1,1,1 flight=e,e hitSprite=1,2 score=1\n"
+                                "walkerKind box=1,1,1,1 walk=e,e watch=e,e charge=e,e recover=e,e stunned=e,e score=1\n"
+                                "blowerKind box=1,1,1,1 blowing=e stunnedSprite=1 score=1\n"
+                                "treeKind swaying=e\n";
+
+// a file without levels (9 lines)
+const std::string VALID = "UGD 1\n"
                           "rules crashLimit=1,2,3 multiplierLimit=3,9,99 quickDeliveryBonus=m\n"
                           "sprites standingPassenger=1 droppedPassenger=2 bouncedPassenger=3 shakenTree=4 "
                           "destinationBubbles=5..6 impatientBubble=7 rotor0=8..9 rotor1=10..11\n"
-                          "bonusKind m effect=multiplier amount=0 lift=1 sprite=2 anchor=8,16\n";
+                          "bonusKind m effect=multiplier amount=0 lift=1 sprite=2 anchor=8,16\n" +
+                          ENEMY_KINDS;
 
 }  // namespace
 
@@ -70,25 +79,38 @@ TEST(a_minimal_file_lacks_the_level_orders) {
 }
 
 TEST(extra_spaces_are_allowed_and_an_order_only_once) {
-    CHECK_EQUAL(std::string("a level order missing"), readError(std::string(VALID) + "animation  a   frames=1  \n"));
+    CHECK_EQUAL(std::string("a level order missing"), readError(VALID + "animation  a   frames=1  \n"));
     std::string level = "level 0 toDeliver=1 wind=none start0=0,0 start1=0,0 water=0 waterSpeed=0\n";
     for (int row = 0; row < 192; row++) level += "mask " + std::string(80, '0') + "\n";
-    CHECK_EQUAL(std::string("line 199 (order): a second order of oneplayer"),
-                readError(std::string(VALID) + level + "order oneplayer=0\norder oneplayer=0\n"));
+    CHECK_EQUAL(std::string("line 204 (order): a second order of oneplayer"),
+                readError(VALID + level + "order oneplayer=0\norder oneplayer=0\n"));
 }
 
 TEST(broken_files_are_refused_with_the_line) {
     CHECK_EQUAL(std::string("not a UGD 1 file"), readError("UGD 2\n"));
     CHECK_EQUAL(std::string("line 2 (bogus): unknown record"), readError("UGD 1\nbogus x=1\n"));
-    CHECK_EQUAL(std::string("line 5 (animation): unknown key color"),
-                readError(std::string(VALID) + "animation a frames=1 color=2\n"));
-    CHECK_EQUAL(std::string("line 2 (rules): no bonus kind x"),
-                readError("UGD 1\nrules crashLimit=1,2,3 multiplierLimit=3,9,99 quickDeliveryBonus=x\n"));
-    CHECK_EQUAL(std::string("line 6 (walker): no pad 3"),
-                readError(std::string(VALID) +
+    CHECK_EQUAL(std::string("line 10 (animation): unknown key color"),
+                readError(VALID + "animation a frames=1 color=2\n"));
+    CHECK_EQUAL(std::string("line 7 (rules): no bonus kind x"),
+                readError("UGD 1\n" + ENEMY_KINDS +
+                          "rules crashLimit=1,2,3 multiplierLimit=3,9,99 quickDeliveryBonus=x\n"));
+    CHECK_EQUAL(std::string("line 11 (walker): no pad 3"),
+                readError(VALID +
                           "level 0 toDeliver=1 wind=none start0=0,0 start1=0,0 water=0 waterSpeed=0\n"
                           "walker pad=3 x=0 y=0 speed=0\n"));
-    CHECK_EQUAL(std::string("line 5 (level): level 0: 0 mask rows"),
-                readError(std::string(VALID) +
+    CHECK_EQUAL(std::string("line 10 (level): level 0: 0 mask rows"),
+                readError(VALID +
                           "level 0 toDeliver=1 wind=none start0=0,0 start1=0,0 water=0 waterSpeed=0\n"));
+}
+
+TEST(the_kinds_of_the_enemies_the_rules_and_the_sprites_are_there_once) {
+    std::string withoutTree = ENEMY_KINDS.substr(0, ENEMY_KINDS.rfind("treeKind"));
+    CHECK_EQUAL(std::string("no treeKind"), readError("UGD 1\n" + withoutTree));
+    CHECK_EQUAL(std::string("line 10 (flyerKind): a second flyerKind"),
+                readError(VALID + "flyerKind box=1,1,1,1 flight=e,e hitSprite=1,2 score=1\n"));
+    CHECK_EQUAL(std::string("line 10 (rules): a second rules record"),
+                readError(VALID + "rules crashLimit=1,2,3 multiplierLimit=3,9,99 quickDeliveryBonus=m\n"));
+    CHECK_EQUAL(std::string("line 10 (sprites): a second sprites record"),
+                readError(VALID + "sprites standingPassenger=1 droppedPassenger=2 bouncedPassenger=3 shakenTree=4 "
+                                  "destinationBubbles=5..6 impatientBubble=7 rotor0=8..9 rotor1=10..11\n"));
 }

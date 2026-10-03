@@ -19,8 +19,10 @@ void Riding::board(RoutePassenger& passenger, world::copter::Copter& copter, con
  */
 void Riding::enter(RoutePassenger& passenger, const PassengerContext& context) const {
     world::copter::Copter& copter = *passenger.ride().carrier();
-    int fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
-    passenger.form().outOfWater();   // a rescued swimmer is itself again
+    // the kind it has now pays: a rescued swimmer its water kind, so it is taken before the swimmer is itself again
+    const data::kinds::AnimatedPassengerKind& paying = passenger.kind();
+    passenger.form().outOfWater();
+    int fare = paying.fare, fareMin = paying.fareMin;
     int destination = passenger.route().targetPad().place().number;
     copter.cabin().takeOnBoard(passenger.form().land().look, destination, fare, fareMin);
     passenger.hide();

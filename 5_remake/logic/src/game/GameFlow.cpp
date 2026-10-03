@@ -8,12 +8,13 @@
 
 namespace ugh::game {
 
+/** The order of the phases lives here: each gets the one after it; Playing ends the attempt (endAttempt). */
 GameFlow::GameFlow(Attempts attempts) : attempts_(attempts) {
     slot(PhaseId::BlackBeforeCaption) =
         std::make_unique<phases::BlackScreen>(PhaseId::CaptionFadeIn, GamePhase::BetweenLevels);
-    slot(PhaseId::CaptionFadeIn) = std::make_unique<phases::CaptionFadeIn>();
-    slot(PhaseId::CaptionWaitKey) = std::make_unique<phases::CaptionWaitKey>();
-    slot(PhaseId::CaptionFadeOut) = std::make_unique<phases::CaptionFadeOut>();
+    slot(PhaseId::CaptionFadeIn) = std::make_unique<phases::CaptionFadeIn>(PhaseId::CaptionWaitKey);
+    slot(PhaseId::CaptionWaitKey) = std::make_unique<phases::CaptionWaitKey>(PhaseId::CaptionFadeOut);
+    slot(PhaseId::CaptionFadeOut) = std::make_unique<phases::CaptionFadeOut>(PhaseId::BlackBeforePlay);
     slot(PhaseId::BlackBeforePlay) = std::make_unique<phases::BlackScreen>(PhaseId::Playing, GamePhase::Setup);
     slot(PhaseId::Playing) = std::make_unique<phases::Playing>();
 }

@@ -1,5 +1,7 @@
 #include "bonuses/BonusSlots.hpp"
 
+#include <string>
+
 #include "bonuses/BonusState.hpp"
 
 namespace ugh::bonuses {
@@ -11,7 +13,7 @@ void BonusSlots::drop(const data::kinds::BonusKind& kind, units::Fixed x, units:
         items_[slot].emplace(slot, kind, x, y, speedX, lift);
         return;
     }
-    diagnostics.report("all 12 bonus slots in use: the original would jump into nowhere");
+    diagnostics.report("all " + std::to_string(SLOTS) + " bonus slots in use: the original would jump into nowhere");
 }
 
 void BonusSlots::update(const world::PlayContext& context) {

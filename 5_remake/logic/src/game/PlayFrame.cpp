@@ -6,6 +6,7 @@ namespace ugh::game {
 
 void PlayFrame::run() {
     world::Level& level = context_.level;
+    level.fade().advance();
     level.water().move(level.definition()->waterSpeed);
     readKeys();
     flyCopters();

@@ -25,7 +25,7 @@ public:
         position_ -= STEP;
     }
 
-    /** One frame of the fade (it stops at the top). */
+    /** One frame of the fade. It stops past the top: from FULL it still goes a step up, to FULL + STEP. */
     void advance() {
         if (position_ <= FULL) position_ += out_ ? -STEP : STEP;
     }

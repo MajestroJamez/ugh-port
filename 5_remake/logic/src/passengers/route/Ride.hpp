@@ -15,7 +15,8 @@ public:
         quickDelivery_.start(quickFrames);
     }
     /** The copter that carries it; nullptr before its first ride. */
-    world::copter::Copter* carrier() const { return carrier_; }
+    world::copter::Copter* carrier() { return carrier_; }
+    const world::copter::Copter* carrier() const { return carrier_; }
 
     /** One frame of the ride. */
     void tick() { quickDelivery_.tickToZero(); }

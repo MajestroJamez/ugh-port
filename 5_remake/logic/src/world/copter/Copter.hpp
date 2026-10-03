@@ -46,7 +46,7 @@ public:
     void takeOff() { landedOn_ = nullptr; }
 
     /** How deep its waterline is below the water surface at `waterRow` (pixels; 0: it floats, negative: above). */
-    int depthIn(int waterRow) const { return motion_.pixelY() - waterRow + CopterShape::WATERLINE; }
+    int depthIn(int waterRow) const { return CopterShape::depthAt(motion_.pixelY(), waterRow); }
 
     /** Where what it lets go starts to fall (`CopterShape::DROP`). */
     units::Fixed dropX() const { return motion_.x() + units::Fixed::fromPixels(CopterShape::DROP.x); }

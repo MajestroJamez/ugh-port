@@ -19,6 +19,9 @@ namespace ugh::data::ugd {
  */
 class PassengerKindsReader {
 public:
+    /** The type of the records it reads. */
+    static constexpr const char* RECORD = "passengerKind";
+
     PassengerKindsReader(RecordReader& in, AnimationsReader& animations, GameData::Contents& data)
         : in_(in), animations_(animations), data_(data) {}
 

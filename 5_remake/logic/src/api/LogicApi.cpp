@@ -29,7 +29,12 @@ namespace {
 static_assert(static_cast<int>(ugh::input::PlayerKey::Fire) == UGH_LOGIC_KEY_FIRE);
 static_assert(static_cast<int>(ugh::input::MenuKey::Other) == UGH_LOGIC_MENU_OTHER);
 
-int eventKind(ugh::events::EventKind kind) { return static_cast<int>(kind) + UGH_LOGIC_EVENT_LEVEL_CAPTION; }
+// the events of the C API are the logic's events in the same order, from UGH_LOGIC_EVENT_LEVEL_CAPTION on
+constexpr int eventKind(ugh::events::EventKind kind) { return static_cast<int>(kind) + UGH_LOGIC_EVENT_LEVEL_CAPTION; }
+static_assert(eventKind(ugh::events::EventKind::BonusCollected) == UGH_LOGIC_EVENT_BONUS_COLLECTED);
+
+// every raindrop fits into the view
+static_assert(ugh::world::scenery::Rain::DROPS <= UGH_LOGIC_RAINDROPS);
 
 int phase(ugh::game::GamePhase p) {
     switch (p) {
@@ -124,7 +129,10 @@ void ugh_logic_default_settings(ugh_logic_settings* settings) {
 }
 
 int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings) {
-    if (settings->difficulty < 0 || settings->difficulty > 2) return 0;
+    // no int outside the difficulties becomes one (newGame checks the range as well)
+    if (settings->difficulty < static_cast<int>(ugh::data::Difficulty::Easy) ||
+        settings->difficulty > static_cast<int>(ugh::data::Difficulty::Hard))
+        return 0;
     ugh::game::NewGameSettings s;
     s.players = settings->players;
     s.difficulty = static_cast<ugh::data::Difficulty>(settings->difficulty);

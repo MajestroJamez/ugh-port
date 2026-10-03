@@ -46,7 +46,7 @@ TEST(the_flyer_hunts_the_copter_and_ends_the_attempt) {
     arena.run(flyer, 70);
     CHECK_EQUAL(std::string("Flying"), std::string(flyer.state().name()));
     CHECK_EQUAL(0, flyer.lastTarget());
-    CHECK(flyer.flight() == world::figure::Facing::Left);   // the copter is on the left half: from the right
+    CHECK(flyer.flight() == data::kinds::Facing::Left);   // the copter is on the left half: from the right
     CHECK(flyer.y() == arena.level.level().copters()[0].motion().y());
     arena.run(flyer, 200);
     CHECK(arena.level.level().fade().fadingOut());
@@ -63,7 +63,7 @@ TEST(the_walker_watches_charges_and_throws_the_copter) {
     CHECK_EQUAL(std::string("Watching"), std::string(walker.state().name()));
     arena.run(walker, 140);
     CHECK_EQUAL(std::string("Charging"), std::string(walker.state().name()));
-    CHECK(walker.facing() == world::figure::Facing::Right);
+    CHECK(walker.facing() == data::kinds::Facing::Right);
     for (int frame = 0; frame < 100 && copter.landed(); frame++) arena.run(walker, 1);
     CHECK(!copter.landed());
     CHECK(copter.motion().speedY() > Speed());

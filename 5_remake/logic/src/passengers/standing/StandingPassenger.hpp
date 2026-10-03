@@ -26,7 +26,8 @@ public:
     const data::kinds::StandingPassengerKind& kind() const { return *kind_; }
 
     /** The copter it hangs below (or last hung below); nullptr before. */
-    world::copter::Copter* carrier() const { return carrier_; }
+    world::copter::Copter* carrier() { return carrier_; }
+    const world::copter::Copter* carrier() const { return carrier_; }
     /** A copter with room picked it up. */
     void hangBelow(world::copter::Copter& copter) { carrier_ = &copter; }
 

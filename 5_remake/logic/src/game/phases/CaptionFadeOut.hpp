@@ -9,7 +9,7 @@ namespace ugh::game::phases {
 /** The caption fades out. */
 class CaptionFadeOut : public TimedPhase {
 public:
-    CaptionFadeOut() : TimedPhase(CaptionFadeIn::FADE_FRAMES, PhaseId::BlackBeforePlay) {}
+    explicit CaptionFadeOut(PhaseId next) : TimedPhase(CaptionFadeIn::FADE_FRAMES, next) {}
 
     GamePhase reported() const override { return GamePhase::Caption; }
 };

@@ -2,34 +2,25 @@
 
 namespace ugh::data::ugd {
 
-namespace {
+const RecordTable<RulesReader>::Entry RulesReader::RECORDS[] = {{"rules", &RulesReader::readRules},
+                                                                {"sprites", &RulesReader::readSprites}};
 
-constexpr const char* RULES = "rules";
-constexpr const char* SPRITES = "sprites";
-
-}  // namespace
-
-bool RulesReader::reads(const std::string& type) { return type == RULES || type == SPRITES; }
+bool RulesReader::reads(const std::string& type) { return RecordTable<RulesReader>::has(RECORDS, type); }
 
 bool RulesReader::readAll(const std::vector<UgdRecord>& records) {
-    bool rulesRead = false, spritesRead = false;
     for (const UgdRecord& r : records) {
         in_.at(&r);
-        if (r.type == RULES) {
-            if (!readRules()) return false;
-            rulesRead = true;
-        } else if (r.type == SPRITES) {
-            if (!readSprites()) return false;
-            spritesRead = true;
-        }
+        if (RecordTable<RulesReader>::has(RECORDS, r.type) && !RecordTable<RulesReader>::read(*this, RECORDS, r))
+            return false;
     }
     in_.at(nullptr);
-    return (rulesRead && spritesRead) || in_.fail("rules or sprites missing");
+    return (rulesRead_ && spritesRead_) || in_.fail("rules or sprites missing");
 }
 
-bool RulesReader::readRules() {
+bool RulesReader::readRules(const UgdRecord&) {
     std::vector<int> crash, multiplier;
     std::string bonus;
+    if (rulesRead_) return in_.fail("a second rules record");
     if (!in_.only({"crashLimit", "multiplierLimit", "quickDeliveryBonus"}) ||
         !in_.numbers("crashLimit", 3, crash) || !in_.numbers("multiplierLimit", 3, multiplier) ||
         !in_.text("quickDeliveryBonus", bonus))
@@ -38,20 +29,23 @@ bool RulesReader::readRules() {
     if (!quickDeliveryBonus) return in_.fail("no bonus kind " + bonus);
     data_.rules =
         Rules{{crash[0], crash[1], crash[2]}, {multiplier[0], multiplier[1], multiplier[2]}, quickDeliveryBonus};
+    rulesRead_ = true;
     return true;
 }
 
-bool RulesReader::readSprites() {
+bool RulesReader::readSprites(const UgdRecord&) {
     SpriteIds& s = data_.sprites;
-    return in_.only({"standingPassenger", "droppedPassenger", "bouncedPassenger", "shakenTree", "destinationBubbles",
-                     "impatientBubble", "rotor0", "rotor1"}) &&
-           in_.number("standingPassenger", s.standingPassenger) &&
-           in_.number("droppedPassenger", s.droppedPassenger) &&
-           in_.number("bouncedPassenger", s.bouncedPassenger) && in_.number("shakenTree", s.shakenTree) &&
-           in_.range("destinationBubbles", s.firstDestinationBubble, s.lastDestinationBubble) &&
-           in_.number("impatientBubble", s.impatientBubble) &&
-           in_.range("rotor0", s.firstRotor[0], s.lastRotor[0]) &&
-           in_.range("rotor1", s.firstRotor[1], s.lastRotor[1]);
+    if (spritesRead_) return in_.fail("a second sprites record");
+    spritesRead_ = in_.only({"standingPassenger", "droppedPassenger", "bouncedPassenger", "shakenTree",
+                             "destinationBubbles", "impatientBubble", "rotor0", "rotor1"}) &&
+                   in_.number("standingPassenger", s.standingPassenger) &&
+                   in_.number("droppedPassenger", s.droppedPassenger) &&
+                   in_.number("bouncedPassenger", s.bouncedPassenger) && in_.number("shakenTree", s.shakenTree) &&
+                   in_.range("destinationBubbles", s.firstDestinationBubble, s.lastDestinationBubble) &&
+                   in_.number("impatientBubble", s.impatientBubble) &&
+                   in_.range("rotor0", s.firstRotor[0], s.lastRotor[0]) &&
+                   in_.range("rotor1", s.firstRotor[1], s.lastRotor[1]);
+    return spritesRead_;
 }
 
 }  // namespace ugh::data::ugd

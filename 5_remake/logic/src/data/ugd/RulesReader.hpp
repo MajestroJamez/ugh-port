@@ -7,13 +7,14 @@
 #include "data/GameData.hpp"
 #include "data/ugd/KindsReader.hpp"
 #include "data/ugd/RecordReader.hpp"
+#include "data/ugd/RecordTable.hpp"
 #include "data/ugd/UgdRecord.hpp"
 
 namespace ugh::data::ugd {
 
 /**
  * Reads the rules (crash and multiplier limits, the bonus of a quick delivery) and the sprite numbers the logic
- * names; both must be there.
+ * names; both must be there, each once.
  */
 class RulesReader {
 public:
@@ -25,12 +26,16 @@ public:
     bool readAll(const std::vector<UgdRecord>& records);
 
 private:
+    /** The record types it reads. */
+    static const RecordTable<RulesReader>::Entry RECORDS[];
+
     RecordReader& in_;
     const KindsReader& kinds_;
     GameData::Contents& data_;
+    bool rulesRead_ = false, spritesRead_ = false;
 
-    bool readRules();
-    bool readSprites();
+    bool readRules(const UgdRecord& r);
+    bool readSprites(const UgdRecord& r);
 };
 
 }  // namespace ugh::data::ugd

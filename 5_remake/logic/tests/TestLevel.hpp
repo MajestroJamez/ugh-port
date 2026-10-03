@@ -1,7 +1,8 @@
 // A small level for the tests.
 #pragma once
 
-#include <memory>
+#include <cstdint>
+#include <vector>
 
 #include "data/GameData.hpp"
 #include "data/levels/LevelDefinition.hpp"

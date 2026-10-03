@@ -1,6 +1,7 @@
 // The walker.
 #pragma once
 
+#include "data/kinds/Facing.hpp"
 #include "data/kinds/WalkerKind.hpp"
 #include "data/levels/WalkerPlacement.hpp"
 #include "enemies/Enemy.hpp"
@@ -10,7 +11,6 @@
 #include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
 #include "world/copter/Copter.hpp"
-#include "world/figure/Facing.hpp"
 #include "world/scenery/Pad.hpp"
 
 namespace ugh::enemies::walker {
@@ -25,7 +25,7 @@ public:
 
     /** The walker of `placement` on `pad` (the pad the placement names). */
     Walker(int index, const data::kinds::WalkerKind& kind, const data::levels::WalkerPlacement& placement,
-           world::scenery::Pad& pad);
+           const world::scenery::Pad& pad);
 
     void update(const EnemyContext& context) override;
     void accept(EnemyVisitor& visitor) const override;
@@ -33,19 +33,17 @@ public:
     const data::kinds::WalkerKind& kind() const { return *kind_; }
 
     /** The pad it walks on. */
-    world::scenery::Pad& pad() const { return *pad_; }
+    const world::scenery::Pad& pad() const { return *pad_; }
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
-    world::figure::Facing facing() const { return facing_; }
+    data::kinds::Facing facing() const { return facing_; }
     /** It reached the end of its pad: back the other way. */
     void turnAround();
     /** It faces the copter and runs towards it. */
     void turnTo(const world::copter::Copter& copter);
     /** Shows the frame of the variant of `pair` it faces. */
-    void showFacing(const data::kinds::AnimationPair& pair) {
-        show(pair.towards(facing_ == world::figure::Facing::Right));
-    }
-    /** One frame of its animation delay (4 frames per animation frame; watching a copter: animate(5)). */
+    void showFacing(const data::kinds::AnimationPair& pair) { show(pair.towards(facing_)); }
+    /** One frame of its animation delay (FRAME_DELAY; it watches a copter slower: Watching). */
     bool animate() { return Figure::animate(FRAME_DELAY); }
     using Figure::animate;
 
@@ -58,6 +56,8 @@ public:
     /** How much faster than its walk it charges. */
     Charge& charge() { return charge_; }
     const Charge& charge() const { return charge_; }
+    /** Its speed while it charges: its walk and the charge (Fixed per frame). */
+    units::Fixed chargeSpeed() const { return vx_ + charge_.speed(); }
 
     /** How long it stays stunned. */
     Stun& stun() { return stun_; }
@@ -65,9 +65,9 @@ public:
 
 private:
     const data::kinds::WalkerKind* kind_;
-    world::scenery::Pad* pad_;
+    const world::scenery::Pad* pad_;
     units::Fixed vx_;
-    world::figure::Facing facing_ = world::figure::Facing::Left;
+    data::kinds::Facing facing_ = data::kinds::Facing::Left;
     units::Countdown watchTime_;
     Stun stun_;
     Charge charge_;

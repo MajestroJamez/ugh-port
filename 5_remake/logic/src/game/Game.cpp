@@ -8,6 +8,7 @@ bool Game::newGame(const NewGameSettings& settings) {
     if (settings.players < 1 || settings.players > 2 || settings.firstLevel < 0 ||
         settings.firstLevel >= data_.levelCount(settings.players) || settings.rainFloorRow < 0 || settings.rainFloorRow > 255)
         return false;
+    if (settings.difficulty < data::Difficulty::Easy || settings.difficulty > data::Difficulty::Hard) return false;
     state_.reset(data_.rules(), settings);
     diagnostics_.take();
     flow_.restart();

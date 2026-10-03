@@ -15,6 +15,7 @@ public:
     static constexpr int FULL = 23099;
 
     Energy() = default;
+    /** At `value` (only the test pilot sets the energy so). */
     explicit Energy(int value) : value_(value) {}
 
     void fill() { value_ = FULL; }

@@ -1,7 +1,6 @@
 // The world of the level being played.
 #pragma once
 
-#include <optional>
 #include <span>
 #include <vector>
 

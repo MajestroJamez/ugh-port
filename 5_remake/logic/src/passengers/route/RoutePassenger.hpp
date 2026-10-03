@@ -71,7 +71,11 @@ public:
     bool stepTowards(int feet);
     /** A step (or a swim stroke) towards the copter when its next frame is due; true when it is at the door. */
     bool walkTowards(const world::copter::Copter& copter);
-    /** A swimmer stays on the surface (when it was seen elsewhere). */
+    /**
+     * A swimmer stays on the surface: its feet at the water row. Quirk of the original: it compares the row where its
+     * top was seen with the water row, not with where its top floats (box.y higher), so it is put back every frame -
+     * except in a frame after its top was seen right at the water row.
+     */
     void floatOnSurface(int waterRow);
 
     /** One frame of its kind's animation delay; true when the next frame is due. */

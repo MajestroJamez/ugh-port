@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "data/levels/ScreenSize.hpp"
 #include "data/levels/Wind.hpp"
 #include "events/Diagnostics.hpp"
 #include "world/scenery/Raindrop.hpp"
@@ -11,16 +12,17 @@
 namespace ugh::world::scenery {
 
 /**
- * The rain of the windy levels: 193 drops fall diagonally with the wind, the even ones 3 px a frame, the odd ones
- * 2 px; a drop that reaches the floor row starts again at a random place, which uses up random numbers.
+ * The rain of the windy levels: DROPS drops fall diagonally with the wind, the even ones faster than the odd ones; a
+ * drop that reaches the floor row starts again at a random place, which uses up random numbers.
  *
  * The floor row is the water surface as it was last shown. It lasts from one attempt to the next, so the rain that
- * falls before a windy level starts (577 frames) stops at the water of the level before; a new game takes it from the
- * screens before the game (NewGameSettings).
+ * falls before a windy level starts (PREFALL_FRAMES) stops at the water of the level before; a new game takes it from
+ * the screens before the game (NewGameSettings).
  */
 class Rain {
 public:
-    static constexpr int DROPS = 193;
+    /** One per row down to the row below the water (drops 0 .. its row + 1), with the water on the last row at most. */
+    static constexpr int DROPS = data::levels::ScreenSize::HEIGHT + 1;
 
     /** A windy level starts with the rain already falling. */
     void start(int waterRow, data::levels::Wind wind, session::RandomNumbers& random,

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -44,6 +45,7 @@ private:
     AnimationsReader animations_;
     PassengerKindsReader passengers_;
     std::map<std::string, const kinds::BonusKind*> bonusKinds_;
+    std::set<std::string> enemyKinds_;   // the types of the enemy kinds read so far
 
     bool readPassengerKind(const UgdRecord& r) { return passengers_.readPassengerKind(r); }
     bool readBonusKind(const UgdRecord& r);
@@ -51,6 +53,8 @@ private:
     bool readWalkerKind(const UgdRecord& r);
     bool readBlowerKind(const UgdRecord& r);
     bool readTreeKind(const UgdRecord& r);
+    /** The kind of an enemy of `type` is read the first time (a second one is an error). */
+    bool once(const char* type);
 };
 
 }  // namespace ugh::data::ugd

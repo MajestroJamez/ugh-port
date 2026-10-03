@@ -8,7 +8,7 @@ namespace ugh::game::phases {
 void CaptionWaitKey::enter(GameFlow& flow) { flow.attempts().menu().takeArrived(); }
 
 void CaptionWaitKey::nextFrame(GameFlow& flow) {
-    if (flow.attempts().menu().takeArrived()) flow.goTo(PhaseId::CaptionFadeOut);
+    if (flow.attempts().menu().takeArrived()) flow.goTo(next_);
 }
 
 }  // namespace ugh::game::phases

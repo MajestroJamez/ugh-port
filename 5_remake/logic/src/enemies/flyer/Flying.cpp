@@ -29,10 +29,10 @@ void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
     world::Level& level = context.level;
     const world::copter::Copter& copter = level.copters()[flyer.takeNextTarget(context.session.players())];
     if (copter.motion().x() < Screen::MIDDLE) {
-        flyer.flyTowards(world::figure::Facing::Left);
+        flyer.flyTowards(data::kinds::Facing::Left);
         flyer.moveToX(START_RIGHT);
     } else {
-        flyer.flyTowards(world::figure::Facing::Right);
+        flyer.flyTowards(data::kinds::Facing::Right);
         flyer.moveToX(START_LEFT);
     }
     Fixed y = copter.motion().y() + HEIGHT;
@@ -52,7 +52,7 @@ void Flying::update(Flyer& flyer, const EnemyContext& context) const {
     }
     flyer.moveToX(x);
     if (!flyer.animate(FLAP_DELAY)) return;
-    flyer.show(flyer.kind().flight.towards(flyer.flight() == world::figure::Facing::Right));
+    flyer.show(flyer.kind().flight.towards(flyer.flight()));
     if (flyer.bounceFallingPassenger(context)) {
         context.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
         flyer.changeState(Falling::instance, context);

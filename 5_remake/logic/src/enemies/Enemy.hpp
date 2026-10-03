@@ -1,10 +1,10 @@
 // An enemy.
 #pragma once
 
+#include "data/kinds/Facing.hpp"
 #include "enemies/EnemyContext.hpp"
 #include "enemies/EnemyVisitor.hpp"
 #include "units/Fixed.hpp"
-#include "world/figure/Facing.hpp"
 #include "world/figure/Figure.hpp"
 
 namespace ugh::enemies {
@@ -38,9 +38,9 @@ public:
     void scoreStun(int score, const EnemyContext& context) const;
 
     /** A speed turned to point towards `side` (its size stays). */
-    static units::Fixed headed(units::Fixed speed, world::figure::Facing side) {
+    static units::Fixed headed(units::Fixed speed, data::kinds::Facing side) {
         bool left = speed < units::Fixed();
-        return (side == world::figure::Facing::Left) == left ? speed : -speed;
+        return (side == data::kinds::Facing::Left) == left ? speed : -speed;
     }
 };
 
