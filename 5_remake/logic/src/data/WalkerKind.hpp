@@ -3,7 +3,6 @@
 
 #include "data/AnimationPair.hpp"
 #include "data/Box.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::data {
 
@@ -11,7 +10,7 @@ namespace ugh::data {
 struct WalkerKind {
     Box box;
     AnimationPair walk, watch, charge, recover, stunned;
-    units::Int16 score;   // for stunning it with a passenger
+    int score = 0;   // for stunning it with a passenger
 };
 
 }  // namespace ugh::data

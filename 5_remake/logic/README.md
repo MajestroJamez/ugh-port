@@ -28,7 +28,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 
 | Module | What is in it |
 |---|---|
-| `units/` | the arithmetic of the original: `Int16` (16 bits that wrap), `Fixed` (a position in 1/32 px), `Speed` (1/64 Fixed per frame), `Countdown` |
+| `units/` | the arithmetic of the original: `Fixed` (a position in 1/32 px) and `Speed` (1/64 Fixed per frame) wrap at 16 bits like the original (`Int16` inside them); `Countdown`. Everything else is a plain `int` |
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
 | `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd`, `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds (passengers: `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`), animations, keys, rules. Every record is a struct with public fields, read-only through `GameData`; the placements also have `accept` (Visitor) |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |

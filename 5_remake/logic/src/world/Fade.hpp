@@ -1,8 +1,6 @@
 // The fade of a level attempt.
 #pragma once
 
-#include "units/Int16.hpp"
-
 namespace ugh::world {
 
 /**
@@ -11,9 +9,9 @@ namespace ugh::world {
  */
 class Fade {
 public:
-    static constexpr units::Int16 FULL = 256;
-    static constexpr units::Int16 COPTERS_START = 192;
-    static constexpr units::Int16 STEP = 2;
+    static constexpr int FULL = 256;
+    static constexpr int COPTERS_START = 192;
+    static constexpr int STEP = 2;
 
     /** From black, up. */
     void startFadeIn() {
@@ -37,10 +35,10 @@ public:
     bool over() const { return position_ < 0; }
     /** The copters stand still while the level fades in, until three quarters of the way. */
     bool coptersWaiting() const { return position_ <= COPTERS_START && !out_; }
-    units::Int16 position() const { return position_; }
+    int position() const { return position_; }
 
 private:
-    units::Int16 position_;
+    int position_ = 0;
     bool out_ = false;
 };
 

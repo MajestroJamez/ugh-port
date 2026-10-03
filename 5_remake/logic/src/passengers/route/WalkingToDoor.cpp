@@ -10,7 +10,7 @@ namespace {
 using units::Fixed;
 
 // where a quick delivery's bonus item drops: from the copter's top left corner, in pixels
-constexpr units::Int16 BONUS_DROP_X = 16, BONUS_DROP_Y = 10;
+constexpr int BONUS_DROP_X = 16, BONUS_DROP_Y = 10;
 
 }  // namespace
 
@@ -23,7 +23,7 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
     world::Session& session = context.play.session;
     copter.unload();
     passenger.moveToX(copter.x() + Fixed::fromPixels(RoutePassenger::COPTER_DOOR - passenger.kind().box.x));
-    uint32_t points = static_cast<uint32_t>(copter.fare().bits()) * static_cast<uint32_t>(session.multiplier());
+    uint32_t points = static_cast<uint32_t>(copter.fare()) * static_cast<uint32_t>(session.multiplier());
     session.addScore(points);
     context.play.report({events::EventKind::PassengerPaid, player, passenger.index(), static_cast<int>(points)});
     if (passenger.ride().quick() && session.multiplierBelowLimit()) {
@@ -42,8 +42,8 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
  */
 void WalkingToDoor::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
-    units::Int16 door = context.play.level.pad(passenger.route().targetPad()).place().door;
-    units::Int16 feet = passenger.feetX();
+    int door = context.play.level.pad(passenger.route().targetPad()).place().door;
+    int feet = passenger.feetX();
     if (feet == door) {
         passenger.changeState(GoingIn::instance, context);
         return;

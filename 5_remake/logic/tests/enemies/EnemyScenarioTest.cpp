@@ -87,7 +87,7 @@ TEST(a_passenger_dropped_onto_the_tree_shakes_out_a_bonus_item) {
     while (g.phase() != game::GamePhase::Play) g.step();
     for (int frame = 0; frame < 100; frame++) g.step();   // past the fade-in: the copters fly
     const passengers::Passenger& standing = g.passengers()[2];
-    int x = standing.x().pixels().value() - 8, y = standing.y().pixels().value() - 8;
+    int x = standing.x().pixels() - 8, y = standing.y().pixels() - 8;
     g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
     g.step();   // it hangs below the copter
     g.cheats().placeCopter(0, Fixed::fromPixels(60), Fixed::fromPixels(40), 60, 40, Speed(), Speed(), std::nullopt);

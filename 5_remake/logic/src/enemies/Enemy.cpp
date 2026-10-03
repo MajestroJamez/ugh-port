@@ -12,9 +12,9 @@ bool Enemy::bounceFallingPassenger(const EnemyContext& context, bool showHit) co
     return true;
 }
 
-void Enemy::scoreStun(units::Int16 score, const EnemyContext& context) const {
-    context.play.session.addScore(static_cast<uint32_t>(score.bits()));
-    context.play.report({events::EventKind::EnemyStunned, std::nullopt, index_, score.value()});
+void Enemy::scoreStun(int score, const EnemyContext& context) const {
+    context.play.session.addScore(static_cast<uint32_t>(score));
+    context.play.report({events::EventKind::EnemyStunned, std::nullopt, index_, score});
 }
 
 }  // namespace ugh::enemies

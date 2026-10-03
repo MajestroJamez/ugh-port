@@ -20,9 +20,9 @@ void Riding::board(RoutePassenger& passenger, int player, const PassengerContext
 void Riding::enter(RoutePassenger& passenger, const PassengerContext& context) const {
     world::Level& level = context.play.level;
     int player = *passenger.ride().carrier();
-    units::Int16 fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
+    int fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
     passenger.outOfWater();   // a rescued swimmer is itself again
-    units::Int16 destination = level.pad(passenger.route().targetPad()).place().number;
+    int destination = level.pad(passenger.route().targetPad()).place().number;
     level.copter(player).takeOnBoard(passenger.landKind().look, destination, fare, fareMin);
     passenger.hide();
     level.pad(passenger.route().pickupPad()).vacate();

@@ -4,7 +4,6 @@
 #include "enemies/EnemyContext.hpp"
 #include "enemies/EnemyVisitor.hpp"
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 #include "world/Facing.hpp"
 #include "world/Figure.hpp"
 
@@ -37,7 +36,7 @@ public:
      */
     bool bounceFallingPassenger(const EnemyContext& context, bool showHit) const;
     /** A passenger stunned it: its score. */
-    void scoreStun(units::Int16 score, const EnemyContext& context) const;
+    void scoreStun(int score, const EnemyContext& context) const;
 
     /** A speed turned to point towards `side` (its size stays). */
     static units::Fixed headed(units::Fixed speed, world::Facing side) {
@@ -46,7 +45,7 @@ public:
     }
 
 private:
-    int index_;
+    int index_ = 0;
 };
 
 }  // namespace ugh::enemies

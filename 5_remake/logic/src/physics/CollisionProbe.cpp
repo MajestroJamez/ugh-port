@@ -24,7 +24,7 @@ constexpr Fixed ONE_PIXEL = Fixed::fromPixels(1);
 }  // namespace
 
 std::optional<Fixed> CollisionProbe::stopOnTheWay(const world::Copter& copter, Axis axis, Fixed from, Fixed to) const {
-    int x = copter.pixelX().value() + ORIGIN_OFFSET_X, y = copter.pixelY().value();
+    int x = copter.pixelX() + ORIGIN_OFFSET_X, y = copter.pixelY();
     int dx = axis == Axis::Horizontal ? 1 : 0, dy = axis == Axis::Vertical ? 1 : 0;
     if (to <= from) {
         // left or up: only the pixel next to the copter (the quirk above)

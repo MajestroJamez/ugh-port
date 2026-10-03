@@ -2,7 +2,6 @@
 #pragma once
 
 #include "passengers/route/RouteState.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::passengers::route {
 
@@ -11,7 +10,7 @@ class Calling : public RouteState {
 public:
     static const Calling instance;
     /** How long a passenger calls before it walks to the copter. */
-    static constexpr units::Int16 CALL_TIME = 140;
+    static constexpr int CALL_TIME = 140;
 
     const char* name() const override { return "Calling"; }
     void enter(RoutePassenger& passenger, const PassengerContext& context) const override;

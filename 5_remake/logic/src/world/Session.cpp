@@ -20,8 +20,8 @@ bool Session::loseLife() {
     return true;
 }
 
-void Session::addLives(units::Int16 amount) {
-    lives_ += amount.value();
+void Session::addLives(int amount) {
+    lives_ += amount;
     if (lives_ > MAX_LIVES) lives_ = MAX_LIVES;
 }
 

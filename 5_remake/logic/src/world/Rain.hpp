@@ -5,7 +5,6 @@
 
 #include "data/Wind.hpp"
 #include "events/Diagnostics.hpp"
-#include "units/Int16.hpp"
 #include "world/RandomNumbers.hpp"
 #include "world/Raindrop.hpp"
 
@@ -24,13 +23,13 @@ public:
     static constexpr int DROPS = 193;
 
     /** A windy level starts with the rain already falling. */
-    void start(units::Int16 waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics);
+    void start(int waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics);
 
     /** One frame: the drops above the water fall; one at the floor row starts again. */
-    void move(units::Int16 waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics);
+    void move(int waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics);
 
     /** The water surface shown this frame becomes the floor row. */
-    void stopAt(units::Int16 waterRow) { floorRow_ = waterRow.value(); }
+    void stopAt(int waterRow) { floorRow_ = waterRow; }
 
     int floorRow() const { return floorRow_; }
     void setFloorRow(int row) { floorRow_ = row; }
@@ -38,13 +37,12 @@ public:
 
 private:
     static constexpr int PREFALL_FRAMES = 577;
-    static constexpr int SCREEN_WIDTH = 320;
 
     std::array<Raindrop, DROPS> drops_{};
     int floorRow_ = 0;
 
     /** Drop i starts again on the top edge, or on the side the wind blows from. */
-    void spawn(int i, units::Int16 waterRow, data::Wind wind, RandomNumbers& random);
+    void spawn(int i, int waterRow, data::Wind wind, RandomNumbers& random);
 };
 
 }  // namespace ugh::world

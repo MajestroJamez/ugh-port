@@ -7,7 +7,7 @@ namespace ugh::passengers::route {
 
 bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
     const data::Box& box = passenger.kind().box;
-    units::Int16 surface = context.play.level.water().row();
+    int surface = context.play.level.water().row();
     if ((box.y >> 1) + passenger.seenY() - surface < 0) return false;
     passenger.moveToY(units::Fixed::fromPixels(surface + box.y));
     context.play.level.pad(passenger.route().pickupPad()).vacate();

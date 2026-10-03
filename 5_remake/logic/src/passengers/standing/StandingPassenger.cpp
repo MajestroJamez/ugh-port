@@ -10,7 +10,7 @@ using units::Fixed;
 
 // a falling passenger hits an enemy with this point (from its top left corner) inside the enemy's box (from the
 // enemy's top left corner), in pixels
-constexpr units::Int16 HIT_POINT_X = 12, HIT_POINT_Y = 8, ENEMY_WIDTH = 38, ENEMY_HEIGHT = 28;
+constexpr int HIT_POINT_X = 12, HIT_POINT_Y = 8, ENEMY_WIDTH = 38, ENEMY_HEIGHT = 28;
 
 }  // namespace
 

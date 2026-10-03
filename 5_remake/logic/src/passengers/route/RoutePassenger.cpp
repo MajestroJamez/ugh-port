@@ -30,7 +30,7 @@ void RoutePassenger::standAtDoor(const data::PadDefinition& pad) {
 
 bool RoutePassenger::walkTowards(const world::Copter& copter) {
     bool step = animate();
-    units::Int16 spot = feetX() - COPTER_DOOR;
+    int spot = feetX() - COPTER_DOOR;
     if (spot > copter.pixelX()) {
         show(*kind().walking.left);
         if (step) stepBy(-1);
@@ -44,7 +44,7 @@ bool RoutePassenger::walkTowards(const world::Copter& copter) {
     return true;
 }
 
-void RoutePassenger::floatOnSurface(units::Int16 waterRow) {
+void RoutePassenger::floatOnSurface(int waterRow) {
     if (waterRow != seenY_) moveToY(units::Fixed::fromPixels(waterRow - kind().box.y));
 }
 

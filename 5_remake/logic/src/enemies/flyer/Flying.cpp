@@ -16,7 +16,7 @@ constexpr Fixed SCREEN_MIDDLE = Fixed::fromPixels(160);
 constexpr Fixed START_RIGHT = Fixed::fromPixels(319), START_LEFT = Fixed::fromPixels(-31);   // just off the screen
 constexpr Fixed HEIGHT = Fixed::fromPixels(26);        // it flies no lower than this above the water
 constexpr Fixed CEILING = Fixed::fromPixels(-4);       // and no higher than this
-constexpr units::Int16 FLAP_DELAY = 4;
+constexpr int FLAP_DELAY = 4;
 
 }  // namespace
 

@@ -5,7 +5,6 @@
 namespace ugh::physics {
 
 using units::Fixed;
-using units::Int16;
 
 Ballistics::Result Ballistics::fall(Body& body, const world::Level& level) const {
     Fixed x = body.x + body.speedX;
@@ -20,8 +19,8 @@ Ballistics::Result Ballistics::fall(Body& body, const world::Level& level) const
     Fixed y = before + Fixed::fromRaw(body.fallSpeed);
     if (y >= world::Screen::BOTTOM) return Result::Gone;
     body.y = y;
-    Int16 bottom = y.pixels() + body.anchorY, bottomBefore = before.pixels() + body.anchorY;
-    Int16 middle = body.x.pixels() + body.anchorX;
+    int bottom = y.pixels() + body.anchorY, bottomBefore = before.pixels() + body.anchorY;
+    int middle = body.x.pixels() + body.anchorX;
     for (int i = 0; i < level.padCount(); i++) {
         const data::PadDefinition& pad = level.pad(i).place();
         if (landsOn(pad, bottomBefore, bottom, middle)) {
@@ -32,7 +31,7 @@ Ballistics::Result Ballistics::fall(Body& body, const world::Level& level) const
     return Result::Flying;
 }
 
-bool Ballistics::landsOn(const data::PadDefinition& pad, Int16 bottomBefore, Int16 bottom, Int16 middle) const {
+bool Ballistics::landsOn(const data::PadDefinition& pad, int bottomBefore, int bottom, int middle) const {
     if (landing_ == Landing::Passenger) return bottomBefore <= pad.y && bottom >= pad.y && pad.spans(middle);
     return bottomBefore < pad.y && bottom >= pad.y && middle >= pad.left && middle - 1 <= pad.right;
 }

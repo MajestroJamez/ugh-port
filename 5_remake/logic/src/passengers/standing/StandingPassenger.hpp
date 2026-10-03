@@ -9,7 +9,6 @@
 #include "passengers/standing/StandingState.hpp"
 #include "state/StateMachine.hpp"
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::passengers::standing {
 
@@ -35,18 +34,18 @@ public:
 
     /** Its speed sideways (Fixed per frame) and down (1/32 px per frame; negative: up). */
     units::Fixed dropSpeedX() const { return dropSpeedX_; }
-    units::Int16 fallSpeed() const { return fallSpeed_; }
-    void setFall(units::Fixed speedX, units::Int16 fallSpeed) {
+    int fallSpeed() const { return fallSpeed_; }
+    void setFall(units::Fixed speedX, int fallSpeed) {
         dropSpeedX_ = speedX;
         fallSpeed_ = fallSpeed;
     }
     /** It bounced off an enemy: it goes up with `fallSpeed`, showing that it was hit. */
-    void bounce(units::Int16 fallSpeed, int bouncedSprite) {
+    void bounce(int fallSpeed, int bouncedSprite) {
         fallSpeed_ = fallSpeed;
         showSprite(bouncedSprite);
     }
     /** It bounced off a blower: the same, but it shows no hit. */
-    void bounceUnseen(units::Int16 fallSpeed) { fallSpeed_ = fallSpeed; }
+    void bounceUnseen(int fallSpeed) { fallSpeed_ = fallSpeed; }
 
     /** It falls down (not up) and its hit point is in the box of an enemy at enemyX, enemyY. */
     bool fallsOnto(units::Fixed enemyX, units::Fixed enemyY) const;
@@ -55,7 +54,7 @@ private:
     const data::StandingPassengerKind* kind_;
     std::optional<int> carrier_;
     units::Fixed dropSpeedX_;
-    units::Int16 fallSpeed_;
+    int fallSpeed_ = 0;
 };
 
 }  // namespace ugh::passengers::standing

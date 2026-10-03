@@ -3,16 +3,15 @@
 
 #include "data/EnemyPlacement.hpp"
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::data {
 
 /** A flyer: it waits `startDelay` frames, then flies across the screen at `speed`. */
 struct FlyerPlacement : EnemyPlacement {
-    FlyerPlacement(units::Int16 delay, units::Fixed perFrame) : startDelay(delay), speed(perFrame) {}
+    FlyerPlacement(int delay, units::Fixed perFrame) : startDelay(delay), speed(perFrame) {}
     void accept(EnemyPlacementVisitor& visitor) const override { visitor.visit(*this); }
 
-    units::Int16 startDelay;
+    int startDelay = 0;
     units::Fixed speed;   // per frame
 };
 

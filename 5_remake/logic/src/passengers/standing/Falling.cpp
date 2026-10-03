@@ -11,9 +11,9 @@ namespace {
 
 using units::Fixed;
 
-constexpr units::Int16 GRAVITY = 2;   // 1/32 px per frame, per frame
+constexpr int GRAVITY = 2;   // 1/32 px per frame, per frame
 // where it falls from: from the copter's top left corner, in pixels
-constexpr units::Int16 DROP_X = 16, DROP_Y = 10;
+constexpr int DROP_X = 16, DROP_Y = 10;
 
 }  // namespace
 

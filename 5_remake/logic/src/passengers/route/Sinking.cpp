@@ -19,8 +19,7 @@ void Sinking::update(RoutePassenger& passenger, const PassengerContext& context)
     passenger.show(*passenger.kind().standing);
     units::Speed speed = passenger.swim().sink();
     units::Fixed y = passenger.y() + speed.perFrame();
-    // compared unsigned, as the original does
-    if (units::Int16::unsignedLess(y.raw(), world::Screen::BOTTOM.raw())) {
+    if (y < world::Screen::BOTTOM) {
         passenger.moveToY(y);
         return;
     }

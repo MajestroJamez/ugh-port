@@ -5,7 +5,6 @@
 
 #include "data/Animation.hpp"
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 #include "world/Animator.hpp"
 
 namespace ugh::world {
@@ -35,7 +34,7 @@ public:
     void restartAnimation() { animator_.restart(); }
     void rewindAnimation() { animator_.rewind(); }
     /** One frame of the animation delay; true when the next frame is due. */
-    bool animate(units::Int16 delay) { return animator_.step(delay); }
+    bool animate(int delay) { return animator_.step(delay); }
     /** Shows the frame of `animation`, from its start again after its end. */
     void show(const data::Animation& animation) { sprite_ = animator_.show(animation); }
     /** Shows the frame of `animation` that runs once. */

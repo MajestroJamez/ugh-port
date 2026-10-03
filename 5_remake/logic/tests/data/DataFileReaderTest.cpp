@@ -43,8 +43,8 @@ TEST(the_real_data_has_all_levels) {
     CHECK_EQUAL(69, d.levelCount(1));
     CHECK_EQUAL(81, d.levelCount(2));
     CHECK(d.level(1, 69) == nullptr);
-    CHECK_EQUAL(3100, d.rules().crashLimit(data::Difficulty::Easy).value());
-    CHECK_EQUAL(99, d.rules().multiplierLimit(data::Difficulty::Hard).value());
+    CHECK_EQUAL(3100, d.rules().crashLimit(data::Difficulty::Easy));
+    CHECK_EQUAL(99, d.rules().multiplierLimit(data::Difficulty::Hard));
     CHECK_EQUAL(218, d.sprites().firstRotor[0]);
     CHECK_EQUAL(223, d.sprites().lastRotor[0]);
 }
@@ -52,14 +52,14 @@ TEST(the_real_data_has_all_levels) {
 TEST(the_real_data_has_level_one) {
     const data::LevelDefinition& level = *test::gameData().level(1, 0);
     CHECK_EQUAL(3, static_cast<int>(level.pads.size()));
-    CHECK_EQUAL(4608, level.startX[0].raw().value());
-    CHECK_EQUAL(5520, level.water.raw().value());
+    CHECK_EQUAL(4608, level.startX[0].raw());
+    CHECK_EQUAL(5520, level.water.raw());
     PassengerCounter passengers;
     for (const auto& p : level.passengers) p->accept(passengers);
     CHECK_EQUAL(2, passengers.route);
     CHECK_EQUAL(1, passengers.standing);
     CHECK_EQUAL(size_t{3}, passengers.first->route.stops.size());
-    CHECK_EQUAL(150, passengers.first->route.stops[0].delay.value());
+    CHECK_EQUAL(150, passengers.first->route.stops[0].delay);
     CHECK_EQUAL(2, passengers.first->route.stops[0].targetPad);
     CHECK(!level.mask.solid(-1, 0));
     CHECK(!level.mask.solid(320, 100));

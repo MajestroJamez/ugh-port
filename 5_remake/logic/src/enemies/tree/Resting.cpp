@@ -8,7 +8,7 @@ namespace ugh::enemies::tree {
 
 namespace {
 
-constexpr units::Int16 REST_TIME = 210;
+constexpr int REST_TIME = 210;
 
 }  // namespace
 

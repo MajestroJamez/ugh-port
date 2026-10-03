@@ -3,7 +3,6 @@
 
 #include "data/Animation.hpp"
 #include "units/Countdown.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::world {
 
@@ -24,7 +23,7 @@ public:
     void rewind() { frame_ = 0; }
 
     /** One frame of the delay; true when it ran out: the next frame is due and the delay starts again at `delay`. */
-    bool step(units::Int16 delay) {
+    bool step(int delay) {
         if (!delay_.tick()) return false;
         delay_.start(delay);
         frame_++;
@@ -46,7 +45,7 @@ public:
     bool atLastFrameOf(const data::Animation& animation) const { return animation.endsAt(frame_ + 1); }
 
     int frame() const { return frame_; }
-    units::Int16 delay() const { return delay_.remaining(); }
+    int delay() const { return delay_.remaining(); }
 
 private:
     static constexpr int BEFORE_FIRST_FRAME = -1;

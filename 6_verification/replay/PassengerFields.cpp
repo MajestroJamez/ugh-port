@@ -59,10 +59,10 @@ const char* spotName(passengers::route::WaitingSpot spot) {
 void PassengerFields::common(const passengers::Passenger& p, const std::string& c, const std::string& field) {
     if (field == "sprite") fields_[c + field] = sprite(p.sprite());
     else if (field == "bubble") fields_[c + field] = sprite(p.bubble());
-    else if (field == "x") fields_[c + field] = std::to_string(p.x().raw().value());
-    else if (field == "y") fields_[c + field] = std::to_string(p.y().raw().value());
+    else if (field == "x") fields_[c + field] = std::to_string(p.x().raw());
+    else if (field == "y") fields_[c + field] = std::to_string(p.y().raw());
     else if (field == "animFrame") fields_[c + field] = std::to_string(p.animator().frame());
-    else if (field == "animDelay") fields_[c + field] = std::to_string(p.animator().delay().value());
+    else if (field == "animDelay") fields_[c + field] = std::to_string(p.animator().delay());
 }
 
 void PassengerFields::visit(const passengers::route::RoutePassenger& p) {
@@ -74,15 +74,15 @@ void PassengerFields::visit(const passengers::route::RoutePassenger& p) {
         else if (field == "routeStop") v = std::to_string(p.route().stop());
         else if (field == "pickupPad") v = std::to_string(p.route().pickupPad());
         else if (field == "targetPad") v = std::to_string(p.route().targetPad());
-        else if (field == "seenX") v = std::to_string(p.seenX().value());
-        else if (field == "seenY") v = std::to_string(p.seenY().value());
-        else if (field == "arrivalDelay") v = std::to_string(p.route().arrivalDelay().value());
-        else if (field == "callTime") v = std::to_string(p.call().time().value());
+        else if (field == "seenX") v = std::to_string(p.seenX());
+        else if (field == "seenY") v = std::to_string(p.seenY());
+        else if (field == "arrivalDelay") v = std::to_string(p.route().arrivalDelay());
+        else if (field == "callTime") v = std::to_string(p.call().time());
         else if (field == "waitingSpot") v = spotName(p.call().spot());
         else if (field == "carrier") v = p.ride().carrier() ? std::to_string(*p.ride().carrier()) : "none";
-        else if (field == "quickDeliveryTime") v = std::to_string(p.ride().quickDeliveryTime().value());
-        else if (field == "swimSpeed") v = std::to_string(p.swim().speed().raw().value());
-        else if (field == "swimTime") v = std::to_string(p.swim().afloatTime().value());
+        else if (field == "quickDeliveryTime") v = std::to_string(p.ride().quickDeliveryTime());
+        else if (field == "swimSpeed") v = std::to_string(p.swim().speed().raw());
+        else if (field == "swimTime") v = std::to_string(p.swim().afloatTime());
         else common(p, c, field);
     }
 }
@@ -94,8 +94,8 @@ void PassengerFields::visit(const passengers::standing::StandingPassenger& p) {
         if (field == "kind") v = p.kind().name;
         else if (field == "state") v = p.state().name();
         else if (field == "carrier") v = p.carrier() ? std::to_string(*p.carrier()) : "none";
-        else if (field == "dropSpeedX") v = std::to_string(p.dropSpeedX().raw().value());
-        else if (field == "fallSpeed") v = std::to_string(p.fallSpeed().value());
+        else if (field == "dropSpeedX") v = std::to_string(p.dropSpeedX().raw());
+        else if (field == "fallSpeed") v = std::to_string(p.fallSpeed());
         else common(p, c, field);
     }
 }

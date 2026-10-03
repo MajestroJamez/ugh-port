@@ -41,7 +41,7 @@ public:
     const units::Countdown& watchTime() const { return watchTime_; }
 
     /** How much faster than its walk it charges (Fixed per frame): one more every frame, in the direction it faces. */
-    units::Int16 chargeSpeed() const { return chargeSpeed_; }
+    int chargeSpeed() const { return chargeSpeed_; }
     void startCharge() { chargeSpeed_ = 0; }
     void chargeFaster() { chargeSpeed_ += facing_ == world::Facing::Right ? 1 : -1; }
 
@@ -51,11 +51,11 @@ public:
 
 private:
     const data::WalkerKind* kind_;
-    int pad_;
+    int pad_ = 0;
     units::Fixed vx_;
     world::Facing facing_ = world::Facing::Left;
     units::Countdown watchTime_, stunTime_;
-    units::Int16 chargeSpeed_;
+    int chargeSpeed_ = 0;
 };
 
 }  // namespace ugh::enemies::walker

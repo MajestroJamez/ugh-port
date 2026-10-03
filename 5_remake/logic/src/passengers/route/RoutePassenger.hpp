@@ -13,7 +13,6 @@
 #include "passengers/route/RouteState.hpp"
 #include "passengers/route/Swim.hpp"
 #include "state/StateMachine.hpp"
-#include "units/Int16.hpp"
 #include "world/Copter.hpp"
 
 namespace ugh::passengers::route {
@@ -28,7 +27,7 @@ namespace ugh::passengers::route {
 class RoutePassenger : public Passenger, public state::StateMachine<RoutePassenger, PassengerContext> {
 public:
     /** From the copter's left edge to where a passenger gets in and out, in pixels. */
-    static constexpr units::Int16 COPTER_DOOR = 16;
+    static constexpr int COPTER_DOOR = 16;
 
     RoutePassenger(int index, const data::RoutePassengerPlacement& placement);
 
@@ -56,10 +55,10 @@ public:
 
     // ------------------------------------------------------------ where it is
 
-    units::Int16 seenX() const { return seenX_; }
-    units::Int16 seenY() const { return seenY_; }
+    int seenX() const { return seenX_; }
+    int seenY() const { return seenY_; }
     /** The x of its feet (the middle of its sprite) as seen in the last frame. */
-    units::Int16 feetX() const { return seenX_ + kind().box.x; }
+    int feetX() const { return seenX_ + kind().box.x; }
 
     /** Out of the door: its feet at the door, on the pad, and seen there. */
     void standAtDoor(const data::PadDefinition& pad);
@@ -68,7 +67,7 @@ public:
     /** A step (or a swim stroke) towards the copter; true when it is at the copter's door. */
     bool walkTowards(const world::Copter& copter);
     /** A swimmer stays on the surface (when it was seen elsewhere). */
-    void floatOnSurface(units::Int16 waterRow);
+    void floatOnSurface(int waterRow);
 
     /** One frame of its kind's animation delay; true when the next frame is due. */
     bool animate() { return Figure::animate(kind().animDelay); }
@@ -80,7 +79,7 @@ private:
     PassengerCall call_;
     Ride ride_;
     Swim swim_;
-    units::Int16 seenX_, seenY_;
+    int seenX_ = 0, seenY_ = 0;
 };
 
 }  // namespace ugh::passengers::route

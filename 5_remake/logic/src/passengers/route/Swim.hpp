@@ -2,7 +2,6 @@
 #pragma once
 
 #include "units/Countdown.hpp"
-#include "units/Int16.hpp"
 #include "units/Speed.hpp"
 
 namespace ugh::passengers::route {
@@ -20,10 +19,10 @@ public:
     units::Speed speed() const { return speed_; }
 
     /** It floats on the surface for `frames`. */
-    void startAfloat(units::Int16 frames) { afloat_.start(frames); }
+    void startAfloat(int frames) { afloat_.start(frames); }
     /** One frame afloat; true when the time is up. */
     bool afloatOver() { return afloat_.tick(); }
-    units::Int16 afloatTime() const { return afloat_.remaining(); }
+    int afloatTime() const { return afloat_.remaining(); }
 
 private:
     units::Speed speed_;

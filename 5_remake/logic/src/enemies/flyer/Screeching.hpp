@@ -2,7 +2,6 @@
 #pragma once
 
 #include "enemies/flyer/FlyerState.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::enemies::flyer {
 
@@ -10,7 +9,7 @@ namespace ugh::enemies::flyer {
 class Screeching : public FlyerState {
 public:
     static const Screeching instance;
-    static constexpr units::Int16 SCREECH_TIME = 70;
+    static constexpr int SCREECH_TIME = 70;
 
     const char* name() const override { return "Screeching"; }
     void enter(Flyer& flyer, const EnemyContext& context) const override;

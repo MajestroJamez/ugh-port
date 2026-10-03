@@ -1,8 +1,6 @@
 // Where a sprite stands and how big its touch box is.
 #pragma once
 
-#include "units/Int16.hpp"
-
 namespace ugh::data {
 
 /**
@@ -10,7 +8,7 @@ namespace ugh::data {
  * stands on a pad (x the middle, y the feet); halfWidth and halfHeight are half the size of the box a copter touches.
  */
 struct Box {
-    units::Int16 x, y, halfWidth, halfHeight;
+    int x = 0, y = 0, halfWidth = 0, halfHeight = 0;
 };
 
 }  // namespace ugh::data

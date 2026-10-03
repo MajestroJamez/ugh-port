@@ -2,7 +2,6 @@
 #pragma once
 
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::world {
 
@@ -23,7 +22,7 @@ public:
 
     units::Fixed level() const { return level_; }
     /** The pixel row of the surface. */
-    units::Int16 row() const { return level_.pixels(); }
+    int row() const { return level_.pixels(); }
     bool resting() const { return resting_; }
     /** 0 in the frames the surface moves, 1 in the others. */
     int evenFrame() const { return evenFrame_; }

@@ -11,14 +11,14 @@ void BonusFields::write(const bonuses::BonusItem& item, Fields& f) {
     std::string state = item.state().name();
     f[c + "kind"] = item.kind().name;
     f[c + "state"] = state;
-    f[c + "x"] = std::to_string(item.x().raw().value());
-    f[c + "y"] = std::to_string(item.y().raw().value());
+    f[c + "x"] = std::to_string(item.x().raw());
+    f[c + "y"] = std::to_string(item.y().raw());
     f[c + "sprite"] = std::to_string(item.kind().sprite);
     if (state == "Falling") {
-        f[c + "vx"] = std::to_string(item.speedX().raw().value());
-        f[c + "vy"] = std::to_string(item.fallSpeed().value());
+        f[c + "vx"] = std::to_string(item.speedX().raw());
+        f[c + "vy"] = std::to_string(item.fallSpeed());
     } else {
-        f[c + "lyingTime"] = std::to_string(item.lyingTime().remaining().value());
+        f[c + "lyingTime"] = std::to_string(item.lyingTime().remaining());
     }
 }
 

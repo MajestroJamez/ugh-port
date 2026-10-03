@@ -8,7 +8,7 @@ namespace ugh::enemies::tree {
 
 namespace {
 
-constexpr units::Int16 FRAME_DELAY = 6;
+constexpr int FRAME_DELAY = 6;
 
 }  // namespace
 

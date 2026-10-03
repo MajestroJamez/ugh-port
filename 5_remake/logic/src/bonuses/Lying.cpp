@@ -6,8 +6,8 @@ namespace ugh::bonuses {
 
 namespace {
 
-constexpr units::Int16 LYING_TIME = 560;   // frames
-constexpr units::Int16 TOUCH_HALF_SIZE = 3;   // pixels: a copter touches the 6 x 6 px around its anchor
+constexpr int LYING_TIME = 560;   // frames
+constexpr int TOUCH_HALF_SIZE = 3;   // pixels: a copter touches the 6 x 6 px around its anchor
 
 }  // namespace
 

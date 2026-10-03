@@ -130,11 +130,11 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
             if (!number(it->second, v)) report_.problem(tick.number, "a bad value " + it->first + "=" + it->second);
             return v;
         };
-        units::Fixed x = units::Fixed::fromRaw(value("x", copter.x().raw().value()));
-        units::Fixed y = units::Fixed::fromRaw(value("y", copter.y().raw().value()));
-        units::Int16 pixelX = value("pixelX", copter.pixelX().value()), pixelY = value("pixelY", copter.pixelY().value());
-        units::Speed vx = units::Speed::fromRaw(value("vx", copter.speedX().raw().value()));
-        units::Speed vy = units::Speed::fromRaw(value("vy", copter.speedY().raw().value()));
+        units::Fixed x = units::Fixed::fromRaw(value("x", copter.x().raw()));
+        units::Fixed y = units::Fixed::fromRaw(value("y", copter.y().raw()));
+        int pixelX = value("pixelX", copter.pixelX()), pixelY = value("pixelY", copter.pixelY());
+        units::Speed vx = units::Speed::fromRaw(value("vx", copter.speedX().raw()));
+        units::Speed vy = units::Speed::fromRaw(value("vy", copter.speedY().raw()));
         std::optional<int> pad = copter.landedPad();
         auto landed = tick.inject.find(c + "landedPad");
         if (landed != tick.inject.end()) {
@@ -154,7 +154,6 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
     }
 }
 
-
 bool ReplayCheck::number(const std::string& text, int& out, int base) {
     auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), out, base);
     return error == std::errc() && end == text.data() + text.size() && !text.empty();
@@ -163,6 +162,5 @@ bool ReplayCheck::number(const std::string& text, int& out, int base) {
 void ReplayCheck::diagnostics(game::Game& game, long long tick) {
     for (const std::string& problem : game.diagnostics().take()) report_.problem(tick, "the logic: " + problem);
 }
-
 
 }  // namespace ugh::tool

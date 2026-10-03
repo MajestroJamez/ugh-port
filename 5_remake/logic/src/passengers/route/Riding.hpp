@@ -2,7 +2,6 @@
 #pragma once
 
 #include "passengers/route/RouteState.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::passengers::route {
 
@@ -11,7 +10,7 @@ class Riding : public RouteState {
 public:
     static const Riding instance;
     /** Frames of riding that still earn a bonus item. */
-    static constexpr units::Int16 QUICK_DELIVERY_TIME = 200;
+    static constexpr int QUICK_DELIVERY_TIME = 200;
 
     /** The passenger gets into the copter of `player`. */
     static void board(RoutePassenger& passenger, int player, const PassengerContext& context);

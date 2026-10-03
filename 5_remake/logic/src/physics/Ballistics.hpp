@@ -4,7 +4,6 @@
 #include <optional>
 
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 #include "world/Level.hpp"
 
 namespace ugh::physics {
@@ -17,10 +16,10 @@ class Ballistics {
 public:
     /** Where the thing is, in which point it lands, and how fast it goes. */
     struct Body {
-        units::Fixed x, y;             // top left corner
-        units::Int16 anchorX, anchorY; // from the top left corner to its middle and its bottom, in pixels
-        units::Fixed speedX;           // per frame
-        units::Int16 fallSpeed;        // 1/32 px per frame; negative: up
+        units::Fixed x, y;              // top left corner
+        int anchorX = 0, anchorY = 0;   // from the top left corner to its middle and its bottom, in pixels
+        units::Fixed speedX;            // per frame
+        int fallSpeed = 0;              // 1/32 px per frame; negative: up
     };
 
     /**
@@ -32,16 +31,16 @@ public:
     /** What came of the frame. */
     enum class Result { Flying, Landed, Gone };
 
-    Ballistics(units::Int16 gravity, Landing landing) : gravity_(gravity), landing_(landing) {}
+    Ballistics(int gravity, Landing landing) : gravity_(gravity), landing_(landing) {}
 
     /** One frame of the fall; on landing the body stands on the pad's surface. */
     Result fall(Body& body, const world::Level& level) const;
 
 private:
-    units::Int16 gravity_;
+    int gravity_ = 0;
     Landing landing_;
 
-    bool landsOn(const data::PadDefinition& pad, units::Int16 bottomBefore, units::Int16 bottom, units::Int16 middle) const;
+    bool landsOn(const data::PadDefinition& pad, int bottomBefore, int bottom, int middle) const;
 };
 
 }  // namespace ugh::physics

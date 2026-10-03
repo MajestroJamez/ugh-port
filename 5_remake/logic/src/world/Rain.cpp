@@ -8,13 +8,13 @@ constexpr int EVEN_DROP_STEP = 3, ODD_DROP_STEP = 2;   // pixels per frame, down
 
 }  // namespace
 
-void Rain::start(units::Int16 waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics) {
+void Rain::start(int waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics) {
     for (int i = DROPS - 1; i >= 0; i--) spawn(i, waterRow, wind, random);
     for (int frame = 0; frame < PREFALL_FRAMES; frame++) move(waterRow, wind, random, diagnostics);
 }
 
-void Rain::move(units::Int16 waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics) {
-    int last = waterRow.value() + 1;   // the drops above the water: one per row
+void Rain::move(int waterRow, data::Wind wind, RandomNumbers& random, events::Diagnostics& diagnostics) {
+    int last = waterRow + 1;   // the drops above the water: one per row
     if (last >= DROPS) {
         diagnostics.report("water below the screen: the original moves raindrops past the last one");
         last = DROPS - 1;
@@ -27,10 +27,10 @@ void Rain::move(units::Int16 waterRow, data::Wind wind, RandomNumbers& random, e
     }
 }
 
-void Rain::spawn(int i, units::Int16 waterRow, data::Wind wind, RandomNumbers& random) {
-    int place = random.next(static_cast<uint16_t>(SCREEN_WIDTH + waterRow.value()));
-    if (place < SCREEN_WIDTH) drops_[i] = {place, 0};
-    else drops_[i] = {wind == data::Wind::Left ? SCREEN_WIDTH - 1 : 0, place - SCREEN_WIDTH};
+void Rain::spawn(int i, int waterRow, data::Wind wind, RandomNumbers& random) {
+    int place = random.next(static_cast<uint16_t>(Raindrop::SCREEN_WIDTH + waterRow));
+    if (place < Raindrop::SCREEN_WIDTH) drops_[i] = {place, 0};
+    else drops_[i] = {wind == data::Wind::Left ? Raindrop::SCREEN_WIDTH - 1 : 0, place - Raindrop::SCREEN_WIDTH};
 }
 
 }  // namespace ugh::world

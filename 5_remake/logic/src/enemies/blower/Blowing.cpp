@@ -9,11 +9,11 @@ namespace {
 
 using units::Fixed;
 
-constexpr units::Int16 FRAME_DELAY = 15;
+constexpr int FRAME_DELAY = 15;
 constexpr int BLOW_FRAME = 3;   // the blow is heard with this frame; the frames before it blow one way, the rest back
 constexpr units::Speed BLOW = units::Speed::fromRaw(41);   // the push per frame (1/64 Fixed per frame)
 // where it blows, in pixels from its anchor: 9 .. 30 px above, 16 .. 104 px to the left (and the copter's width)
-constexpr units::Int16 ZONE_BOTTOM = 9, ZONE_TOP = 30, ZONE_NEAR = 16, ZONE_FAR = 104 + 26;
+constexpr int ZONE_BOTTOM = 9, ZONE_TOP = 30, ZONE_NEAR = 16, ZONE_FAR = 104 + 26;
 
 }  // namespace
 

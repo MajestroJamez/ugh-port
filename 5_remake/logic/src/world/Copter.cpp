@@ -4,8 +4,8 @@ namespace ugh::world {
 
 namespace {
 
-constexpr units::Int16 ROTOR_MAX_EFFORT = 90;   // the rotor spins no faster than with this effort
-constexpr units::Int16 ROTOR_PERIOD = 200;      // effort per rotor sprite
+constexpr int ROTOR_MAX_EFFORT = 90;   // the rotor spins no faster than with this effort
+constexpr int ROTOR_PERIOD = 200;      // effort per rotor sprite
 
 }  // namespace
 
@@ -42,7 +42,7 @@ void Copter::land(int pad) {
     vy_ = units::Speed();
 }
 
-void Copter::throwUp(units::Int16 walkerSpeed) {
+void Copter::throwUp(int walkerSpeed) {
     y_ -= units::Fixed::fromPixels(1);
     vx_ = units::Speed::fromRaw(walkerSpeed << 5);
     vy_ = units::Speed::fromRaw(walkerSpeed << 4);
@@ -56,18 +56,18 @@ void Copter::spinRotor(int firstSprite, int lastSprite) {
     rotorSprite_ = rotorSprite_ + 1 > lastSprite ? firstSprite : rotorSprite_ + 1;
 }
 
-void Copter::takeOnBoard(units::Int16 look, units::Int16 destination, units::Int16 fare, units::Int16 fareMin) {
+void Copter::takeOnBoard(int look, int destination, int fare, int fareMin) {
     cargo_ = Cargo{look, destination, fareMin};
     fare_ = fare;
 }
 
-void Copter::pickUpHanging(units::Int16 look) { cargo_ = Cargo{look, std::nullopt, 0}; }
+void Copter::pickUpHanging(int look) { cargo_ = Cargo{look, std::nullopt, 0}; }
 
 void Copter::lowerFare() {
-    if (cargo_ && units::Int16::unsignedLess(cargo_->fareMin, fare_)) fare_ -= 1;
+    if (cargo_ && fare_ > cargo_->fareMin) fare_ -= 1;
 }
 
-void Copter::placeByTestPilot(units::Fixed x, units::Fixed y, units::Int16 pixelX, units::Int16 pixelY, units::Speed vx,
+void Copter::placeByTestPilot(units::Fixed x, units::Fixed y, int pixelX, int pixelY, units::Speed vx,
                               units::Speed vy, std::optional<int> landedPad) {
     x_ = x;
     y_ = y;

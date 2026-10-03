@@ -5,7 +5,6 @@
 
 #include "data/Difficulty.hpp"
 #include "data/Rules.hpp"
-#include "units/Int16.hpp"
 #include "world/RandomNumbers.hpp"
 
 namespace ugh::world {
@@ -42,26 +41,26 @@ public:
     void setLivesByTestPilot(int lives) { lives_ = lives; }
 
     /** A life bonus item: more lives, at most MAX_LIVES. */
-    void addLives(units::Int16 amount);
+    void addLives(int amount);
 
     void addScore(uint32_t points) { score_ += points; }
 
     /** The score multiplier can go higher on this difficulty. */
-    bool multiplierBelowLimit() const { return multiplier_ < rules_->multiplierLimit(difficulty_).value(); }
+    bool multiplierBelowLimit() const { return multiplier_ < rules_->multiplierLimit(difficulty_); }
     /** A multiplier bonus item. */
     void raiseMultiplier();
 
     /** A bounce this hard crashes a copter on this difficulty. */
-    units::Int16 crashLimit() const { return rules_->crashLimit(difficulty_); }
+    int crashLimit() const { return rules_->crashLimit(difficulty_); }
 
     RandomNumbers& random() { return random_; }
     const RandomNumbers& random() const { return random_; }
 
 private:
     const data::Rules* rules_;
-    int players_;
+    int players_ = 0;
     data::Difficulty difficulty_;
-    int levelNumber_;
+    int levelNumber_ = 0;
     int lives_ = 0;
     int multiplier_ = 0;
     uint32_t score_ = 0;

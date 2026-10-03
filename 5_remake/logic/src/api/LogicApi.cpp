@@ -45,24 +45,24 @@ int phase(ugh::game::GamePhase p) {
 void addEntity(ugh_logic_view& view, int kind, int index, ugh::units::Fixed x, ugh::units::Fixed y,
                std::optional<int> sprite, std::optional<int> bubble) {
     if (view.entity_count >= UGH_LOGIC_MAX_ENTITIES) return;
-    view.entities[view.entity_count++] = {kind, index, x.raw().value(), y.raw().value(), sprite.value_or(-1), bubble.value_or(-1)};
+    view.entities[view.entity_count++] = {kind, index, x.raw(), y.raw(), sprite.value_or(-1), bubble.value_or(-1)};
 }
 
 /** The level and its sprites: copters, passengers, enemies, bonus items, rain. */
 void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     const ugh::world::Level& level = game.level();
     view.level_id = level.definition()->id;
-    view.energy = level.energy().value().value();
-    view.fade = level.fade().position().value();
-    view.water_level = level.water().level().raw().value();
+    view.energy = level.energy().value();
+    view.fade = level.fade().position();
+    view.water_level = level.water().level().raw();
     view.water_frame = level.water().surfaceFrame();
     view.copter_count = level.copterCount();
     for (int p = 0; p < level.copterCount(); p++) {
         const ugh::world::Copter& c = level.copter(p);
         const auto& cargo = c.cargo();
-        int destination = !cargo ? 0 : cargo->destination ? cargo->destination->value() : -1;
-        view.copters[p] = {c.x().raw().value(), c.y().raw().value(), c.rotorSprite(), cargo ? cargo->look.value() : 0,
-                           destination, c.fare().value()};
+        int destination = !cargo ? 0 : cargo->destination ? *cargo->destination : -1;
+        view.copters[p] = {c.x().raw(), c.y().raw(), c.rotorSprite(), cargo ? cargo->look : 0,
+                           destination, c.fare()};
     }
     for (int i = 0; i < game.passengers().count(); i++) {
         const ugh::passengers::Passenger& passenger = game.passengers()[i];
@@ -77,10 +77,11 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
         if (item) addEntity(view, UGH_LOGIC_ENTITY_BONUS_ITEM, slot, item->x(), item->y(), item->kind().sprite, std::nullopt);
     }
     if (!level.windy()) return;
-    view.raindrop_count = UGH_LOGIC_RAINDROPS;
-    for (int i = 0; i < UGH_LOGIC_RAINDROPS; i++) {
-        view.raindrops[i][0] = level.rain().drops()[i].x;
-        view.raindrops[i][1] = level.rain().drops()[i].y;
+    for (const ugh::world::Raindrop& drop : level.rain().drops()) {
+        if (!drop.onScreen()) continue;
+        view.raindrops[view.raindrop_count][0] = drop.x;
+        view.raindrops[view.raindrop_count][1] = drop.y;
+        view.raindrop_count++;
     }
 }
 

@@ -26,7 +26,7 @@ TEST(a_copter_falls_and_lands_softly_on_a_pad) {
     fly(t, 40);
     CHECK(copter.landedOn(0));
     CHECK(copter.speedY() == Speed());
-    CHECK_EQUAL(130, copter.pixelY().value());   // the skids (20 px below the top) on the surface
+    CHECK_EQUAL(130, copter.pixelY());   // the skids (20 px below the top) on the surface
     CHECK(!t.level().fade().fadingOut());
 }
 
@@ -50,7 +50,7 @@ TEST(a_copter_under_water_floats_up_to_the_surface) {
     world::Copter& copter = t.level().copter(0);
     copter.placeByTestPilot(Fixed::fromPixels(10), Fixed::fromPixels(110), 10, 110, Speed(), Speed(), std::nullopt);
     fly(t, 200);
-    CHECK_EQUAL(0, copter.depthIn(t.level().water().row()).value());
+    CHECK_EQUAL(0, copter.depthIn(t.level().water().row()));
     CHECK(copter.stillVertically());
 }
 
@@ -76,5 +76,5 @@ TEST(the_probe_going_left_looks_only_one_pixel_ahead) {
     copter.placeByTestPilot(Fixed::fromPixels(70), Fixed::fromPixels(50), 70, 50, Speed(), Speed(), std::nullopt);
     auto stop = probe.stopOnTheWay(copter, physics::CollisionProbe::Axis::Horizontal, copter.x(), copter.x() + Fixed::fromPixels(20));
     CHECK(stop.has_value());
-    CHECK_EQUAL(74, stop->pixels().value());
+    CHECK_EQUAL(74, stop->pixels());
 }

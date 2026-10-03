@@ -7,27 +7,24 @@
 namespace ugh::units {
 
 /**
- * A signed 16-bit integer that wraps on overflow: 32767 + 1 is -32768. The game computes in 16 bits; this type cuts
- * every result the same way without a cast on every line.
+ * A signed 16-bit integer that wraps on overflow: 32767 + 1 is -32768. Only `Fixed` and `Speed` compute with it:
+ * positions and speeds keep the 16 bits of the original. Everything else of the game is a plain int (the replays never
+ * overflow 16 bits there, 2_reverse_engineering/notes/rewrite-audit.md).
  *
  * - An int converts to an Int16 implicitly and is cut to 16 bits.
- * - `<` and `>` compare signed; unsignedLess() compares the same bits unsigned.
  * - `>>` shifts arithmetically (keeps the sign), `<<` shifts left and wraps.
  */
 class Int16 {
 public:
     constexpr Int16() = default;
-    constexpr Int16(int value) : value_(static_cast<int16_t>(value)) {}
+    constexpr Int16(int value) : value_(static_cast<int16_t>(value)) {}   // cut to 16 bits, kept as an int
 
     /** The signed value. */
     constexpr int value() const { return value_; }
-    /** The same 16 bits, unsigned. */
-    constexpr int bits() const { return static_cast<uint16_t>(value_); }
 
     constexpr Int16 operator-() const { return Int16(-value_); }
     constexpr Int16 operator>>(int shift) const { return Int16(value_ >> shift); }
     constexpr Int16 operator<<(int shift) const { return Int16(value_ * (1 << shift)); }
-
     constexpr Int16& operator+=(Int16 other) { return *this = *this + other; }
     constexpr Int16& operator-=(Int16 other) { return *this = *this - other; }
 
@@ -36,11 +33,10 @@ public:
     friend constexpr bool operator==(Int16 a, Int16 b) { return a.value_ == b.value_; }
     friend constexpr std::strong_ordering operator<=>(Int16 a, Int16 b) { return a.value_ <=> b.value_; }
 
-    /** a < b, both taken as unsigned 16-bit numbers. */
-    static constexpr bool unsignedLess(Int16 a, Int16 b) { return a.bits() < b.bits(); }
-
 private:
-    int16_t value_ = 0;
+    // an int, not an int16_t: MSVC of the Build Tools 2026 miscompiles <=> of an int16_t after a negation and a
+    // shift (CopterPhysics::bounceVertically took every bounce off a floor for one off a ceiling)
+    int value_ = 0;
 };
 
 }  // namespace ugh::units

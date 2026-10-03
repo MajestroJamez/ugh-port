@@ -13,10 +13,9 @@ const Calling Calling::instance{};
 void Calling::enter(RoutePassenger& passenger, const PassengerContext& context) const {
     const data::SpriteIds& sprites = context.play.data.sprites();
     passenger.restartAnimation();
-    units::Int16 bubble = sprites.firstDestinationBubble + passenger.route().targetPad();
-    // compared unsigned, as the original does
-    if (units::Int16::unsignedLess(sprites.lastDestinationBubble, bubble)) bubble = sprites.lastDestinationBubble;
-    passenger.showBubble(bubble.value());
+    int bubble = sprites.firstDestinationBubble + passenger.route().targetPad();
+    if (bubble > sprites.lastDestinationBubble) bubble = sprites.lastDestinationBubble;
+    passenger.showBubble(bubble);
     passenger.call().start(CALL_TIME);
 }
 

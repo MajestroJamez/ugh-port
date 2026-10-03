@@ -38,7 +38,7 @@ public:
     /** The side it flies towards (its flight animation). */
     world::Facing flight() const { return flight_; }
 
-    units::Int16 startDelay() const { return startDelay_; }
+    int startDelay() const { return startDelay_; }
     /** How long it stays hidden (it starts from its start delay). */
     units::Countdown& waitTime() { return waitTime_; }
     const units::Countdown& waitTime() const { return waitTime_; }
@@ -47,20 +47,20 @@ public:
     const units::Countdown& screechTime() const { return screechTime_; }
 
     /** Falling: 1/32 px per frame, faster every frame up to a limit. */
-    units::Int16 fallSpeed() const { return fallSpeed_; }
+    int fallSpeed() const { return fallSpeed_; }
     void startFalling() { fallSpeed_ = 0; }
-    void fallFaster(units::Int16 limit) {
+    void fallFaster(int limit) {
         if (fallSpeed_ < limit) fallSpeed_ += 1;
     }
 
 private:
     const data::FlyerKind* kind_;
-    units::Int16 startDelay_;
+    int startDelay_ = 0;
     units::Fixed vx_;
     int lastTarget_ = 1;
     world::Facing flight_ = world::Facing::Left;
     units::Countdown waitTime_, screechTime_;
-    units::Int16 fallSpeed_;
+    int fallSpeed_ = 0;
 };
 
 }  // namespace ugh::enemies::flyer

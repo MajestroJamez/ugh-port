@@ -2,7 +2,6 @@
 #pragma once
 
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 #include "units/Speed.hpp"
 #include "world/Copter.hpp"
 #include "world/PlayContext.hpp"
@@ -26,7 +25,7 @@ private:
     enum class Depth { Above, Surface, Below };
 
     const world::PlayContext& context_;
-    units::Int16 impact_;   // the hardest bounce of this frame
+    int impact_ = 0;   // the hardest bounce of this frame
 
     Depth depthOf(const world::Copter& copter) const;
     void blowWithWind(world::Copter& copter, Depth depth);
@@ -39,7 +38,7 @@ private:
     void checkCrash(int player);
 
     /** A bounce: half the speed back; the impact is the speed it had (twice the half, as the original computes). */
-    static units::Int16 bounce(units::Speed& speed);
+    static int bounce(units::Speed& speed);
 };
 
 }  // namespace ugh::physics

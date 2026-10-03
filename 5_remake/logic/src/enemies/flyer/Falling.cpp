@@ -8,7 +8,7 @@ namespace ugh::enemies::flyer {
 
 namespace {
 
-constexpr units::Int16 MAX_FALL_SPEED = 40;   // 1/32 px per frame
+constexpr int MAX_FALL_SPEED = 40;   // 1/32 px per frame
 
 }  // namespace
 

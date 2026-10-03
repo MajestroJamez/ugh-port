@@ -2,7 +2,6 @@
 #pragma once
 
 #include "passengers/route/RouteState.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::passengers::route {
 
@@ -10,7 +9,7 @@ namespace ugh::passengers::route {
 class Impatient : public RouteState {
 public:
     static const Impatient instance;
-    static constexpr units::Int16 WAVE_TIME = 140;
+    static constexpr int WAVE_TIME = 140;
 
     const char* name() const override { return "Impatient"; }
     void enter(RoutePassenger& passenger, const PassengerContext& context) const override;

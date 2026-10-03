@@ -7,7 +7,7 @@ namespace ugh::bonuses {
 
 namespace {
 
-constexpr units::Int16 GRAVITY = 3;   // 1/32 px per frame, per frame
+constexpr int GRAVITY = 3;   // 1/32 px per frame, per frame
 
 }  // namespace
 

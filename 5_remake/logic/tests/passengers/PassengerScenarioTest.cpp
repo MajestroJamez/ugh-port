@@ -44,7 +44,7 @@ void startLevelOne(game::Game& g) {
 /** The copter of player 0 put onto pad `pad` of the level. */
 void landOn(game::Game& g, int pad) {
     const data::PadDefinition& place = g.level().pad(pad).place();
-    int x = (place.left.value() + place.right.value()) / 2 - 16, y = place.y.value() - 20;
+    int x = (place.left + place.right) / 2 - 16, y = place.y - 20;
     g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), pad);
 }
 
@@ -68,12 +68,12 @@ TEST(a_passenger_comes_out_rides_and_pays) {
     CHECK(stepUntil(g, 0, "Calling", 600, 0));
     CHECK(stepUntil(g, 0, "Riding", 600, 0));
     CHECK(g.level().copter(0).cargo().has_value());
-    CHECK_EQUAL(3, g.level().copter(0).cargo()->destination->value());   // the number of pad 2
+    CHECK_EQUAL(3, *g.level().copter(0).cargo()->destination);   // the number of pad 2
     for (int frame = 0; frame < 50; frame++) {
         g.cheats().setEnergy(20000);
         g.step();
     }
-    CHECK_EQUAL(1100 - 50, g.level().copter(0).fare().value());   // a unit less every frame of the ride
+    CHECK_EQUAL(1100 - 50, g.level().copter(0).fare());   // a unit less every frame of the ride
     landOn(g, 2);
     CHECK(stepUntil(g, 0, "WalkingToDoor", 5, 2));
     CHECK(g.session().score() > 0);
@@ -102,7 +102,7 @@ TEST(the_standing_passenger_is_carried_and_dropped) {
     startLevelOne(g);
     CHECK_EQUAL(std::string("Standing"), stateOf(g, 2));
     const passengers::Passenger& standing = g.passengers()[2];
-    int x = standing.x().pixels().value() - 8, y = standing.y().pixels().value() - 8;
+    int x = standing.x().pixels() - 8, y = standing.y().pixels() - 8;
     g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
     g.step();
     CHECK_EQUAL(std::string("Hanging"), stateOf(g, 2));
@@ -119,7 +119,7 @@ TEST(a_passenger_knocked_into_the_water_drowns) {
     landOn(g, 0);
     CHECK(stepUntil(g, 0, "Waiting", 600, 0));
     const passengers::Passenger& p = g.passengers()[0];
-    int x = p.x().pixels().value() - 8, y = p.y().pixels().value() - 10;
+    int x = p.x().pixels() - 8, y = p.y().pixels() - 10;
     g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
     g.step();
     CHECK_EQUAL(std::string("Splash"), stateOf(g, 0));

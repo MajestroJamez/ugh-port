@@ -4,12 +4,12 @@
 
 namespace ugh::game {
 
-void Cheats::placeCopter(int player, units::Fixed x, units::Fixed y, units::Int16 pixelX, units::Int16 pixelY,
+void Cheats::placeCopter(int player, units::Fixed x, units::Fixed y, int pixelX, int pixelY,
                          units::Speed vx, units::Speed vy, std::optional<int> landedPad) {
     game_.level_.copter(player).placeByTestPilot(x, y, pixelX, pixelY, vx, vy, landedPad);
 }
 
-void Cheats::setEnergy(units::Int16 energy) { game_.level_.energy().setByTestPilot(energy); }
+void Cheats::setEnergy(int energy) { game_.level_.energy().setByTestPilot(energy); }
 
 void Cheats::setLives(int lives) { game_.session_->setLivesByTestPilot(lives); }
 

@@ -15,7 +15,7 @@ void Water::move(units::Fixed speed) {
         resting_ = false;
         return;
     }
-    units::Int16 before = row();
+    int before = row();
     evenFrame_ ^= 1;
     if (evenFrame_ == 0) {
         level_ += speed;

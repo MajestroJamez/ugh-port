@@ -3,7 +3,6 @@
 
 #include "passengers/route/WaitingSpot.hpp"
 #include "units/Countdown.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::passengers::route {
 
@@ -23,10 +22,10 @@ public:
     WaitingSpot spot() const { return spot_; }
 
     /** It calls a copter (or waves at it) for `frames`. */
-    void start(units::Int16 frames) { time_.start(frames); }
+    void start(int frames) { time_.start(frames); }
     /** One frame of calling; true when the time is up. */
     bool over() { return time_.tick(); }
-    units::Int16 time() const { return time_.remaining(); }
+    int time() const { return time_.remaining(); }
 
 private:
     WaitingSpot spot_ = WaitingSpot::Starting;

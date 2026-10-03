@@ -79,14 +79,14 @@ void GameFields::write(const game::Game& game, Fields& f) {
     const world::Level& level = game.level();
     f["game.rainFloor"] = std::to_string(level.rain().floorRow());
     if (!game.levelLoaded()) return;
-    f["game.energy"] = std::to_string(level.energy().value().value());
-    f["game.fade"] = std::to_string(level.fade().position().value());
+    f["game.energy"] = std::to_string(level.energy().value());
+    f["game.fade"] = std::to_string(level.fade().position());
     f["game.fadeDirection"] = level.fade().fadingOut() ? "out" : "in";
     f["game.levelDone"] = level.done() ? "1" : "0";
     f["game.wind"] = windName(level.wind());
     f["game.passengersLeft"] = std::to_string(level.passengersLeft());
     const world::Water& water = level.water();
-    f["game.water.level"] = std::to_string(water.level().raw().value());
+    f["game.water.level"] = std::to_string(water.level().raw());
     f["game.water.resting"] = water.resting() ? "1" : "0";
     f["game.water.evenFrame"] = std::to_string(water.evenFrame());
     f["game.water.surfaceFrame"] = std::to_string(water.surfaceFrame());

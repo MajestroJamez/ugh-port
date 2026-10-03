@@ -248,7 +248,7 @@ v [rewrite-audit.md](../2_reverse_engineering/notes/rewrite-audit.md), kap. 5).
 
 | Zvláštnost | Kde v `logic/` | Jak |
 |---|---|---|
-| 16bitové přetečení poloh a rychlostí | `units/` | `Int16`, `Fixed`, `Speed` přetékají (v replayích se nestane, typ zůstává kvůli věrnosti) |
+| 16bitové přetečení poloh a rychlostí | `units/` | `Int16`, `Fixed`, `Speed` přetékají (v replayích se nestane, typ zůstává kvůli věrnosti) | Od N9b jen `Fixed` a `Speed` (s `Int16` uvnitř), zbytek `int`. |
 | Sonda doleva / nahoru zkouší jen pixel vedle vrtulníku | `physics/CollisionProbe` | pojmenovaná větev, komentář „rychlý vrtulník proletí tenkou zdí doleva / nahoru“ (N1: 25× doleva, 242× nahoru) |
 | Mimo masku nic není pevné | `data/CollisionMask::solid(x, y)` | maska 320 × 192; „bod za okrajem čte sousední řádek“ zaniká (sloupce 320..383 jsou v originálu vždy prázdné, N1) |
 | Dotyk se spritem porovnává jen levý horní roh vrtulníku | `physics/TouchBox` | obdélník zvětšený o tělo vrtulníku |
@@ -262,7 +262,7 @@ v [rewrite-audit.md](../2_reverse_engineering/notes/rewrite-audit.md), kap. 5).
 | Kapky začínají znovu od řádku **poslední vykreslené hladiny** a ten řádek přežívá mezi pokusy; před větrným levelem padá déšť 577 snímků naprázdno | `world/Rain::floorRow`, `NewGameSettings::rainFloorRow` | pravidlo „déšť si pamatuje poslední hladinu“; na začátku hry ho dodá nastavení (hodnota z obrazovky před hrou) |
 | Náhoda: generátor ze 4 slov, stav na začátku hry je vstup | `world/RandomNumbers`, `NewGameSettings::randomSeed` | |
 | Životy: Esc je vynuluje, ztráta pod nulu = konec hry; zbývající cestující nejdou pod nulu | `world/Session`, `world/Level` | pojmenovaná pravidla, ne `& 0x80` |
-| Neznaménková porovnání (energie do plna, jízdné do minima, bublina cíle, dno při potápění) | na místě | `Int16::unsignedLess` se jménem pravidla |
+| Neznaménková porovnání (energie do plna, jízdné do minima, bublina cíle, dno při potápění) | na místě | `Int16::unsignedLess` se jménem pravidla | Od N9b obyčejná porovnání (audit: rozdíl nenastane). |
 | Skóre za doručení = jízdné × násobič (32 bitů) | `passengers/route/WalkingToDoor` | |
 | Animace: pozice snímku zůstává při přepnutí na jinou animaci | `world/Animator` | za koncem seznamu se nikdy nečte (N1), UGD 1 bez přetečení |
 | Vrtulníky stojí, dokud fade-in nedojde na tři čtvrtiny; pokus končí, až fade-out dojde do černé | `world/Fade` | |

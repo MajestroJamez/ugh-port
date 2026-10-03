@@ -10,9 +10,9 @@ TEST(the_water_moves_every_second_frame_and_rests_after_a_new_row) {
     water.fill(units::Fixed::fromRaw(100 * 32));
     water.move(units::Fixed::fromRaw(-20));   // first frame: no move
     CHECK_EQUAL(1, water.evenFrame());
-    CHECK_EQUAL(100, water.row().value());
+    CHECK_EQUAL(100, water.row());
     water.move(units::Fixed::fromRaw(-20));   // second frame: up past a pixel row
-    CHECK_EQUAL(99, water.row().value());
+    CHECK_EQUAL(99, water.row());
     CHECK(water.resting());
     water.move(units::Fixed::fromRaw(-20));   // the rest
     CHECK(!water.resting());

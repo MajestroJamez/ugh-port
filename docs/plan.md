@@ -378,3 +378,10 @@ a žádný soubor nad 200 řádků.
   (tabulku kláves čte `KeyFile` z dat, logika záznamy `key` přeskočí); před snímkem pošle klávesu smyčky, když se
   poslední skenkód od minulého snímku změnil, což přesně odpovídá čtení originálu. Mrtvá `LONGEST_SEQUENCE` smazaná
   při přesunu. 38 testů logiky + 2 testy klávesnice + 161 replayů zelených. Další: **N9b etapa 5**.
+- 2026-10-03: N9b etapa 5 hotová - typy hry místo registrů: jízdné, vzhled, plošiny, životy, energie, časovače
+  (`Countdown`) a ostatní hodnoty jsou `int`, `unsignedLess` a `bits()` zmizely; 16bitové přetečení zůstalo jen
+  uvnitř `Fixed` a `Speed` (`int` rozhraní, `Int16` uvnitř). Zvláštnosti jsou ve svých třídách (`CollisionProbe`,
+  `Copter` pixelová řada po hodu, `Raindrop` stránka 384 px); C API dává jen kapky na obrazovce (`Raindrop::onScreen`).
+  Nalezena chyba překladače MSVC: `<=>` nad `int16_t` po negaci a posunu dával špatný výsledek (každý odraz od
+  podlahy bral jako od stropu) - `Int16` proto drží hodnotu v `int`. 38 testů + 2 + 161 replayů zelených.
+  Další: **N9b etapa 6**.

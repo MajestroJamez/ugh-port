@@ -3,7 +3,6 @@
 
 #include "data/AnimationPair.hpp"
 #include "data/Box.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::data {
 
@@ -12,7 +11,7 @@ struct FlyerKind {
     Box box;
     AnimationPair flight;
     int hitSpriteLeft = 0, hitSpriteRight = 0;   // falling after a passenger hit it
-    units::Int16 score;                          // for hitting it with a passenger
+    int score = 0;                               // for hitting it with a passenger
 };
 
 }  // namespace ugh::data

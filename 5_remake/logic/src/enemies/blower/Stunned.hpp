@@ -2,7 +2,6 @@
 #pragma once
 
 #include "enemies/blower/BlowerState.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::enemies::blower {
 
@@ -10,7 +9,7 @@ namespace ugh::enemies::blower {
 class Stunned : public BlowerState {
 public:
     static const Stunned instance;
-    static constexpr units::Int16 STUN_TIME = 350;
+    static constexpr int STUN_TIME = 350;
 
     const char* name() const override { return "Stunned"; }
     void enter(Blower& blower, const EnemyContext& context) const override;

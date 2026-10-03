@@ -18,8 +18,8 @@ void Waiting::update(RoutePassenger& passenger, const PassengerContext& context)
     if (OnPickupPad::fellIntoWater(passenger, context)) return;
     if (passenger.animate()) {
         const data::AnimatedPassengerKind& kind = passenger.kind();
-        units::Int16 spot = context.play.level.pad(passenger.route().pickupPad()).place().wait;
-        units::Int16 feet = passenger.feetX();
+        int spot = context.play.level.pad(passenger.route().pickupPad()).place().wait;
+        int feet = passenger.feetX();
         if (feet == spot) {
             if (passenger.call().reachSpot()) passenger.rewindAnimation();   // it just got there
             passenger.show(*kind.standing);

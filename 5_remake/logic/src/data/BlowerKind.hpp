@@ -3,7 +3,6 @@
 
 #include "data/Animation.hpp"
 #include "data/Box.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::data {
 
@@ -12,7 +11,7 @@ struct BlowerKind {
     Box box;
     const Animation* blowing = nullptr;
     int stunnedSprite = 0;
-    units::Int16 score;   // for stunning it with a passenger
+    int score = 0;   // for stunning it with a passenger
 };
 
 }  // namespace ugh::data

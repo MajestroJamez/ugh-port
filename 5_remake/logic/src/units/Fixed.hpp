@@ -16,14 +16,14 @@ public:
     constexpr Fixed() = default;
 
     /** From the raw value in 1/32 px. */
-    static constexpr Fixed fromRaw(Int16 raw) { return Fixed(raw); }
+    static constexpr Fixed fromRaw(int raw) { return Fixed(Int16(raw)); }
     /** From whole pixels. */
-    static constexpr Fixed fromPixels(Int16 pixels) { return Fixed(pixels << 5); }
+    static constexpr Fixed fromPixels(int pixels) { return Fixed(Int16(pixels) << 5); }
 
     /** The raw value in 1/32 px. */
-    constexpr Int16 raw() const { return raw_; }
+    constexpr int raw() const { return raw_.value(); }
     /** Whole pixels, rounded down. */
-    constexpr Int16 pixels() const { return raw_ >> 5; }
+    constexpr int pixels() const { return (raw_ >> 5).value(); }
     /** Rounded down to a whole pixel. */
     constexpr Fixed wholePixel() const { return Fixed(Int16(raw_.value() & ~31)); }
 

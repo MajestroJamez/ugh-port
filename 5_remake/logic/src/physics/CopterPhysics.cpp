@@ -9,7 +9,6 @@ namespace ugh::physics {
 namespace {
 
 using units::Fixed;
-using units::Int16;
 using units::Speed;
 using Axis = CollisionProbe::Axis;
 
@@ -25,15 +24,15 @@ constexpr Speed WATER_BRAKE = Speed::fromRaw(193);  // sinking in the water
 constexpr Speed BUOYANCY = Speed::fromRaw(21);      // floating up in the water
 
 // effort (it spins the rotor) and energy, per frame
-constexpr Int16 STEER_EFFORT = 63, PEDAL_EFFORT = 90;
-constexpr Int16 FLYING_COST = 1, AIRBORNE_COST = 2, PEDAL_COST = 3;
+constexpr int STEER_EFFORT = 63, PEDAL_EFFORT = 90;
+constexpr int FLYING_COST = 1, AIRBORNE_COST = 2, PEDAL_COST = 3;
 
 // how far a copter can go (its top left corner)
 constexpr Fixed LEFT_EDGE = Fixed::fromPixels(-16), RIGHT_EDGE = Fixed::fromPixels(304);
 constexpr Fixed TOP_EDGE = Fixed::fromRaw(-608), BOTTOM_EDGE = Fixed::fromRaw(6112);
 
 // from the copter's top left corner to the middle and the bottom of its skids, in pixels
-constexpr Int16 SKIDS_MIDDLE = 16, SKIDS_BOTTOM = 20;
+constexpr int SKIDS_MIDDLE = 16, SKIDS_BOTTOM = 20;
 
 }  // namespace
 
@@ -54,7 +53,7 @@ void CopterPhysics::fly(int player) {
 }
 
 CopterPhysics::Depth CopterPhysics::depthOf(const world::Copter& copter) const {
-    Int16 depth = copter.depthIn(context_.level.water().row());
+    int depth = copter.depthIn(context_.level.water().row());
     return depth < 0 ? Depth::Above : depth == 0 ? Depth::Surface : Depth::Below;
 }
 
@@ -144,7 +143,7 @@ void CopterPhysics::moveVertically(world::Copter& copter, Depth depth) {
         target = BOTTOM_EDGE;
         vy = Speed();
     }
-    Int16 surface = context_.level.water().row();
+    int surface = context_.level.water().row();
     if (depth == Depth::Below && target.pixels() - surface + world::Copter::WATERLINE <= 0) {
         // floats up to the surface and stops there
         vy = Speed();
@@ -165,7 +164,7 @@ void CopterPhysics::moveVertically(world::Copter& copter, Depth depth) {
 /** The bounce off a floor or a ceiling; a soft one on a pad is a touch-down. */
 void CopterPhysics::bounceVertically(world::Copter& copter, Fixed y) {
     Speed vy = copter.speedY();
-    Int16 impact = bounce(vy);
+    int impact = bounce(vy);
     copter.setSpeed(copter.speedX(), vy);
     if (impact > impact_) impact_ = impact;
     if (vy >= Speed()) return;   // hit a ceiling
@@ -175,8 +174,8 @@ void CopterPhysics::bounceVertically(world::Copter& copter, Fixed y) {
 
 /** It lands when its skids are on the surface of a pad. */
 void CopterPhysics::touchDownOnPad(world::Copter& copter, Fixed y) {
-    Int16 skidsY = y.pixels() + SKIDS_BOTTOM;
-    Int16 middle = copter.pixelX() + SKIDS_MIDDLE;
+    int skidsY = y.pixels() + SKIDS_BOTTOM;
+    int middle = copter.pixelX() + SKIDS_MIDDLE;
     for (int i = 0; i < context_.level.padCount(); i++) {
         const data::PadDefinition& pad = context_.level.pad(i).place();
         if (pad.y == skidsY && pad.spans(middle)) {
@@ -193,9 +192,9 @@ void CopterPhysics::checkCrash(int player) {
     context_.report({events::EventKind::CopterCrashed, player});
 }
 
-Int16 CopterPhysics::bounce(Speed& speed) {
+int CopterPhysics::bounce(Speed& speed) {
     speed = (-speed) >> 1;
-    Int16 impact = speed.raw() << 1;
+    int impact = speed.raw() << 1;
     return impact < 0 ? -impact : impact;
 }
 

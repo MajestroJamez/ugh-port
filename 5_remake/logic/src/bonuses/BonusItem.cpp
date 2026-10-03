@@ -6,7 +6,7 @@
 namespace ugh::bonuses {
 
 BonusItem::BonusItem(int slot, const data::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX,
-                     units::Int16 lift)
+                     int lift)
     : StateMachine(Falling::instance),
       slot_(slot),
       kind_(&kind),
@@ -15,7 +15,7 @@ BonusItem::BonusItem(int slot, const data::BonusKind& kind, units::Fixed x, unit
       speedX_(speedX),
       fallSpeed_(-(lift + kind.lift)) {}
 
-void BonusItem::moveTo(units::Fixed x, units::Fixed y, units::Int16 fallSpeed) {
+void BonusItem::moveTo(units::Fixed x, units::Fixed y, int fallSpeed) {
     x_ = x;
     y_ = y;
     fallSpeed_ = fallSpeed;

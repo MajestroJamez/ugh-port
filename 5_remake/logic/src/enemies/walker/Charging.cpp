@@ -8,7 +8,7 @@ namespace ugh::enemies::walker {
 
 namespace {
 
-constexpr units::Int16 FRAME_DELAY = 4;
+constexpr int FRAME_DELAY = 4;
 
 }  // namespace
 

@@ -4,7 +4,6 @@
 #include <optional>
 
 #include "units/Fixed.hpp"
-#include "units/Int16.hpp"
 #include "units/Speed.hpp"
 
 namespace ugh::game {
@@ -19,9 +18,9 @@ class Cheats {
 public:
     explicit Cheats(Game& game) : game_(game) {}
 
-    void placeCopter(int player, units::Fixed x, units::Fixed y, units::Int16 pixelX, units::Int16 pixelY, units::Speed vx,
+    void placeCopter(int player, units::Fixed x, units::Fixed y, int pixelX, int pixelY, units::Speed vx,
                      units::Speed vy, std::optional<int> landedPad);
-    void setEnergy(units::Int16 energy);
+    void setEnergy(int energy);
     void setLives(int lives);
 
 private:

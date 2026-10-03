@@ -132,8 +132,8 @@ typedef struct {
     ugh_logic_copter copters[2];
     int entity_count;
     ugh_logic_entity entities[UGH_LOGIC_MAX_ENTITIES];
-    int raindrop_count;     /* 0 without wind */
-    int raindrops[UGH_LOGIC_RAINDROPS][2];   /* x, y in pixels of a page 384 px wide (x >= 320 is off the screen) */
+    int raindrop_count;     /* the raindrops on the screen; 0 without wind */
+    int raindrops[UGH_LOGIC_RAINDROPS][2];   /* x, y in pixels of the screen */
 } ugh_logic_view;
 
 /** Fills `view` with the state after the last step. */

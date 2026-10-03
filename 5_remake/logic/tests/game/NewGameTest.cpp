@@ -33,5 +33,5 @@ TEST(the_caption_waits_for_a_key_then_the_play_starts) {
     CHECK(g.phase() == game::GamePhase::Setup);
     for (int frame = 0; frame < 8; frame++) g.step();
     CHECK(g.phase() == game::GamePhase::Play);
-    CHECK_EQUAL(0, g.level().fade().position().value());
+    CHECK_EQUAL(0, g.level().fade().position());
 }

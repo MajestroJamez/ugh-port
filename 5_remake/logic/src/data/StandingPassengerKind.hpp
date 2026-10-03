@@ -2,13 +2,12 @@
 #pragma once
 
 #include "data/PassengerKind.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::data {
 
 /** A kind of standing passenger: it waits on its pad to be carried anywhere. */
 struct StandingPassengerKind : PassengerKind {
-    units::Int16 look;   // who hangs below the copter
+    int look = 0;   // who hangs below the copter
 };
 
 }  // namespace ugh::data

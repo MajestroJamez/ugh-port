@@ -2,7 +2,6 @@
 #pragma once
 
 #include "data/Route.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::passengers::route {
 
@@ -27,12 +26,12 @@ public:
         arrivalDelay_ -= 1;
         return arrivalDelay_ == 0;
     }
-    units::Int16 arrivalDelay() const { return arrivalDelay_; }
+    int arrivalDelay() const { return arrivalDelay_; }
 
 private:
     const data::Route* route_;
     int stop_ = 0;
-    units::Int16 arrivalDelay_;
+    int arrivalDelay_ = 0;
 };
 
 }  // namespace ugh::passengers::route

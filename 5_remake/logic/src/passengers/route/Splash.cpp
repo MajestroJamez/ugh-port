@@ -17,7 +17,7 @@ void Splash::enter(RoutePassenger& passenger, const PassengerContext& context) c
 
 void Splash::update(RoutePassenger& passenger, const PassengerContext& context) const {
     const data::AnimatedPassengerKind& kind = passenger.kind();
-    units::Int16 surface = context.play.level.water().row();
+    int surface = context.play.level.water().row();
     passenger.animate();
     passenger.show(*kind.standing);
     units::Speed speed = passenger.swim().splash(passenger.seenY() - kind.box.y - surface < 0);

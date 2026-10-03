@@ -4,7 +4,6 @@
 #include "data/Animation.hpp"
 #include "data/AnimationPair.hpp"
 #include "data/PassengerKind.hpp"
-#include "units/Int16.hpp"
 
 namespace ugh::data {
 
@@ -12,9 +11,9 @@ namespace ugh::data {
 struct AnimatedPassengerKind : PassengerKind {
     const Animation* standing = nullptr;   // in the water: treading water
     const Animation* waving = nullptr;
-    AnimationPair walking;                 // in the water: swimming
-    units::Int16 animDelay;                // frames per animation frame
-    units::Int16 fare, fareMin;            // the fare when boarding drops every frame of the ride to the minimum
+    AnimationPair walking;       // in the water: swimming
+    int animDelay = 0;           // frames per animation frame
+    int fare = 0, fareMin = 0;   // the fare when boarding drops every frame of the ride to the minimum
 };
 
 }  // namespace ugh::data

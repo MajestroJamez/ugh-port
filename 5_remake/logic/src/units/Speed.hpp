@@ -17,12 +17,12 @@ public:
     constexpr Speed() = default;
 
     /** From the raw value in 1/64 Fixed per frame. */
-    static constexpr Speed fromRaw(Int16 raw) { return Speed(raw); }
+    static constexpr Speed fromRaw(int raw) { return Speed(Int16(raw)); }
 
-    constexpr Int16 raw() const { return raw_; }
+    constexpr int raw() const { return raw_.value(); }
 
     /** The distance of one frame (the raw value shifted right by 6). */
-    constexpr Fixed perFrame() const { return Fixed::fromRaw(raw_ >> 6); }
+    constexpr Fixed perFrame() const { return Fixed::fromRaw((raw_ >> 6).value()); }
 
     /** Limited to -limit .. limit. */
     constexpr Speed clamped(Speed limit) const { return *this < -limit ? -limit : *this > limit ? limit : *this; }
