@@ -265,6 +265,18 @@ Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/l
   ohniště s Lumen/RT, voda, mlha; herní rovina zůstává přesně podle kolizní masky.
 - PSO cache pro balení (bez trhání na startu), skript na balení (`NO_PROXY += ::1`).
 
+## Krok 12 - Celá hra v diorámatu
+
+- Všech 81 levelů (oba režimy): `shot.ps1 -Level <n>` (start levelem přes `first_level`) a `levels.ps1`, který bez
+  okna nafotí všechny do přehledu (kontaktní arch PNG); opravit, co v některém levelu nesedí (ohniště, voda, okraje).
+- Vítr a déšť: kapky jako plastelínové čárky, mlha a světlo podle větru; stoupající voda.
+- Menu před hrou: jeden hráč / tým, obtížnost, heslo levelu (`assets/levels.json`), v týmu dva vrtulníky a druhý
+  pilot (W A S D); konec hry zpět do menu.
+- Hotovo když: v přehledu žádný level nemá vadu, celou hru jde spustit z menu v obou režimech, replays zelené.
+
+Výhled (pořadí se může změnit): krok 13 zvuk a hudba (události logiky, původní ADLX z `assets/adlx`), krok 14
+plastelínové modely postav místo tvarů.
+
 ## Průběžně
 
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
