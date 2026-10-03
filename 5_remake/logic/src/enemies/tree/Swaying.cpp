@@ -17,9 +17,9 @@ const Swaying Swaying::instance{};
 void Swaying::update(Tree& tree, const EnemyContext& context) const {
     if (!tree.animate(FRAME_DELAY)) return;
     tree.show(*tree.kind().swaying);
-    passengers::standing::StandingPassenger* passenger = context.passengers.fallingOnto(tree.x(), tree.y());
+    const passengers::standing::StandingPassenger* passenger =
+        tree.bounceFallingPassenger(context, Enemy::Rebound::Half);
     if (!passenger) return;
-    passenger->bounce((-passenger->fallSpeed()).half(), context.data.sprites().bouncedPassenger);
     tree.changeState(Resting::instance, context);
     if (!tree.hasDrops()) {
         context.diagnostics.report("a tree without bonus items to drop");

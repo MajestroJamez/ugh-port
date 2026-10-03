@@ -37,7 +37,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 
 | Module | What is in it |
 |---|---|
-| `units/` | the arithmetic of the original: `Fixed` (a position in 1/32 px) and `Speed` (1/64 Fixed per frame) wrap at 16 bits like the original (`Int16` inside them); `Countdown`. Everything else is a plain `int` |
+| `units/` | the arithmetic of the original: `Fixed` (a position in 1/32 px) and `Speed` (1/64 Fixed per frame) wrap at 16 bits like the original (`Int16` inside them); `Countdown`. Everything else is a plain `int` (and the score, a `uint32_t`) |
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
 | `data/kinds/` | the kinds of the game data: of passengers (`RoutePassengerKind`, its `SwimmerKind` in the water, `StandingPassengerKind`), of enemies (`FlyerKind`, `WalkerKind`, `BlowerKind`, `TreeKind`) and of bonus items (`BonusKind`), and what they are made of (`Animation`, `AnimationPair` with the `Facing` it shows, `Box`). Every record of the data is a struct with public fields, read-only through `GameData` |
 | `data/levels/` | a level as the data defines it: `LevelDefinition` with its `PadDefinition`s, `CollisionMask`, `Wind`, `ScreenSize` (a level is one screen, 320 x 192 px: the one place of that size), and the placements of passengers (with their `Route`) and enemies; the placements have `accept` (Visitor) |
@@ -89,7 +89,7 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
   of them): `changeState(next, context)` runs the entry action now and the update from the next frame on;
   `continueIn(next, context)` runs both now. The states derive from `state::State<Entity, Context>`. The game
   flow is a state machine of `Phase`s too.
-- **Visitor**: the placements of a level (`data::PassengerPlacementVisitor`, `EnemyPlacementVisitor`) and the
+- **Visitor**: the placements of a level (`data::levels::PassengerPlacementVisitor`, `EnemyPlacementVisitor`) and the
   entities by type (`passengers::PassengerVisitor`, `enemies::EnemyVisitor`) - no RTTI.
 - **Factory**: `PassengerFactory`, `EnemyFactory` make the right class from a placement.
 - **Parameter Object**: `world::PlayContext` is what an update gets; `PassengerContext` and `EnemyContext` derive from
@@ -126,16 +126,22 @@ text of the error).
   `data::levels::ScreenSize`, how an attempt ends `world::Level` (`passengerFinished`, `crash`, `fadeOut`); values that
   only happen to be equal keep their own names there.
 - No flag parameters: a `bool` that picks what a method does is two methods (`bounceFallingPassenger`,
-  `bounceFallingPassengerUnseen`) or a small enum, so a call reads without its declaration.
+  `bounceFallingPassengerUnseen`) or a small enum (`Enemy::Rebound`), so a call reads without its declaration.
 - One unit, one type: a position or a speed per frame is a `Fixed`, a copter's or a swimmer's speed a `Speed`; frames
-  are counted down by a `Countdown` (`tick`, or `tickToZero` for a delay that stays due).
+  are counted down by a `Countdown` (`tick`, or `tickToZero` for a delay that stays due). The one exception is the
+  delay of the water surface (`world::scenery::Water`): it runs `SURFACE_DELAY` .. 0 and acts below 0, as the field
+  the replays show. A method that counts a frame down says so: `tick...` (`stun().tick()`, `flyer.tickWait()`,
+  `route().tickArrival()`), once per frame, true when the time ran out.
+- A duration lives in the .cpp of the state that starts it (`Lying.cpp` `LYING_TIME`, `Screeching.cpp`
+  `SCREECH_TIME`), or in the part that counts it when several states start it (`PickupWait::CALL_TIME`, `Stun::TIME`).
 - The same name in two modules only for the states the replays name so (`flyer::Falling`, `bonuses::Falling`,
   `standing::Falling` ...): the namespace tells them apart, like a Java package.
 - Nothing for the tests in `src/`: the test pilot lives in `testing/`. It sets state through the constructors that
   take a whole value - `world::copter::Motion` with its pixel position, `world::Energy(int)` -, the only ones the logic
   itself does not call.
-- Values of the game are plain `int`s; only `Fixed` and `Speed` keep the 16 bits of the original (and the energy, as
-  a named quirk). A quirk of the original lives in the class it belongs to, named and described.
+- Values of the game are plain `int`s - but the score, a `uint32_t` (it grows past 16 bits and never goes below
+  0); only `Fixed` and `Speed` keep the 16 bits of the original (and the energy, as a named quirk). A quirk of the
+  original lives in the class it belongs to, named and described.
 - The logic knows nothing of DOS, the PC keyboard or the replays: those are in `6_verification/`.
 
 ## Where to change what
@@ -149,7 +155,7 @@ text of the error).
 | change what a state of a passenger or an enemy does | the state's file: `src/passengers/route/<State>.cpp`, `src/enemies/<kind>/<State>.cpp` |
 | add an event for the frontend | `src/events/EventKind.hpp` (the kind), `context.report({...})` where it happens, `include/ugh_logic.h` (`UGH_LOGIC_EVENT_...`, in the same order) |
 | add a field to the replays | the entity's writer in `6_verification/replay/` (`PassengerFields.cpp` ...: its rule and its value) and the same field in `4_test_data/verify/.../replay/SemanticProjection.kt` |
-| add a kind of enemy | a folder `src/enemies/<kind>/` (the class and its states, like `flyer/`), its kind in `src/data/kinds/` and placement in `src/data/levels/` (with `EnemyPlacementVisitor`), one line and one method in the tables of `src/data/ugd/KindsReader.cpp` and `PlacementReader.cpp`, `src/enemies/EnemyFactory.cpp`; then its fields in `6_verification/replay/EnemyFields.cpp` |
+| add a kind of enemy | a folder `src/enemies/<kind>/` (the class and its states, like `flyer/`) and its `visit` in `src/enemies/EnemyVisitor.hpp`; its kind in `src/data/kinds/` with a field and an accessor in `src/data/GameData.hpp` (`Contents`), and its placement in `src/data/levels/` (with `EnemyPlacementVisitor`); one line and one method in the tables of `src/data/ugd/KindsReader.cpp` (and its type in `ENEMY_KINDS` there) and `PlacementReader.cpp`; `src/enemies/EnemyFactory.cpp`. A falling standing passenger hits it in the one box of all enemies (`src/passengers/standing/StandingPassenger.cpp`); then its fields in `6_verification/replay/EnemyFields.cpp` |
 | read a new kind of record of the data | one line in the table of the reader it belongs to (`src/data/ugd/KindsReader.cpp`, `PlacementReader.cpp` ...) and its method |
 | change how long a walker or a blower stays stunned | `src/enemies/Stun.hpp` (`TIME`) |
 | change how long a bonus item lies on a pad | `src/bonuses/Lying.cpp` (`LYING_TIME`) |

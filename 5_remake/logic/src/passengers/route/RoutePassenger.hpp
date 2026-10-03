@@ -60,6 +60,9 @@ public:
         if (animate()) show(*kind().waving);
     }
 
+    /** It falls into the water or starts to sink: the bubble goes, its animation and its speed start again. */
+    void plunge();
+
     // ------------------------------------------------------------ where it is
 
     int seenX() const { return seenX_; }

@@ -9,7 +9,6 @@ namespace ugh::enemies::flyer {
 class Screeching : public FlyerState {
 public:
     static const Screeching instance;
-    static constexpr int SCREECH_TIME = 70;
 
     const char* name() const override { return "Screeching"; }
     void enter(Flyer& flyer, const EnemyContext& context) const override;

@@ -5,6 +5,12 @@
 
 namespace ugh::passengers::route {
 
+namespace {
+
+constexpr int QUICK_DELIVERY_TIME = 200;   // frames of riding that still earn a bonus item
+
+}  // namespace
+
 const Riding Riding::instance{};
 
 void Riding::board(RoutePassenger& passenger, world::copter::Copter& copter, const PassengerContext& context) {

@@ -29,7 +29,7 @@ public:
     /** The stop starts: the passenger comes out after the delay of the stop. */
     void startArrival() { arrival_.start(route_->stops[stop_].delay); }
     /** One frame of the delay before it comes out; true when it is over (a delay of 0 is none). */
-    bool arrivalDue() { return arrival_.tickToZero(); }
+    bool tickArrival() { return arrival_.tickToZero(); }
     int arrivalDelay() const { return arrival_.remaining(); }
 
 private:

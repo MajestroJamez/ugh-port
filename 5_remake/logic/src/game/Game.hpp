@@ -26,7 +26,8 @@ namespace ugh::game {
 /**
  * The game (Facade): a new game, the pilots' keys and the keys of the game loop, one frame after another, until the
  * game is over; the state can be read (a renderer, the replays) and the events are reported to listeners. Nothing can
- * be set from outside but by the test pilot of the replays (`testing::TestPilot`).
+ * be set from outside but by the test pilot of the replays (`testing::TestPilot`); the diagnostics are taken (and so
+ * cleared) from outside.
  */
 class Game {
 public:
@@ -59,6 +60,7 @@ public:
     const bonuses::BonusSlots& bonuses() const { return state_.bonuses; }
     /** A level is loaded: its world and its entities are there (caption, setup, play). */
     bool levelLoaded() const;
+    /** What the logic does not support, so far: not only read - whoever takes the problems clears them. */
     events::Diagnostics& diagnostics() { return diagnostics_; }
 
 private:

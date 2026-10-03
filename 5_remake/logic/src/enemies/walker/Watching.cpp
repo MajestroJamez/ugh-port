@@ -21,7 +21,7 @@ void Watching::enter(Walker& walker, const EnemyContext&) const {
 }
 
 void Watching::update(Walker& walker, const EnemyContext& context) const {
-    if (walker.watchOver()) {
+    if (walker.tickWatch()) {
         walker.changeState(Charging::instance, context);
         return;
     }

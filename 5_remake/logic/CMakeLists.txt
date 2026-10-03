@@ -16,9 +16,11 @@ endif()
 file(GLOB_RECURSE UGH_LOGIC_SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_library(ugh_logic STATIC ${UGH_LOGIC_SOURCES})
 target_include_directories(ugh_logic PUBLIC include src)
+# the logic must build as an Unreal Engine module: no exceptions, no RTTI
 if(MSVC)
-    # the logic must build as an Unreal Engine module: no exceptions, no RTTI
     target_compile_options(ugh_logic PRIVATE /GR- /EHs-c- /D_HAS_EXCEPTIONS=0)
+else()
+    target_compile_options(ugh_logic PRIVATE -fno-exceptions -fno-rtti)
 endif()
 
 # the test pilot of the replays (I lines): for the tests and 6_verification, not part of the logic

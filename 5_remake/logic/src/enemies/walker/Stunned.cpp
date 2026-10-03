@@ -14,7 +14,7 @@ void Stunned::enter(Walker& walker, const EnemyContext& context) const {
 }
 
 void Stunned::update(Walker& walker, const EnemyContext& context) const {
-    if (walker.stun().over()) {
+    if (walker.stun().tick()) {
         walker.continueIn(Placed::instance, context);
         return;
     }

@@ -19,7 +19,8 @@ class RecordReader;
  * records and keys, names that exist, pad indexes inside their level, routes with a stop, complete masks, levels in
  * both orders. It puts the parts together: UgdTokenizer (lines to records), RecordReader (values and errors), and the
  * readers of the parts, each with the record types it reads: KindsReader, RulesReader and LevelReader. The kinds of
- * the enemies, the rules and the sprites must be there exactly once.
+ * the enemies, the rules and the sprites must be there exactly once; a level with a standing passenger needs the
+ * passenger kind "standing" (its placement names no kind).
  */
 class DataFileReader {
 public:

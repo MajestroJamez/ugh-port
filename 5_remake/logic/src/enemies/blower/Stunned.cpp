@@ -14,7 +14,7 @@ void Stunned::enter(Blower& blower, const EnemyContext& context) const {
 }
 
 void Stunned::update(Blower& blower, const EnemyContext& context) const {
-    if (blower.stun().over()) blower.continueIn(Placed::instance, context);
+    if (blower.stun().tick()) blower.continueIn(Placed::instance, context);
 }
 
 }  // namespace ugh::enemies::blower

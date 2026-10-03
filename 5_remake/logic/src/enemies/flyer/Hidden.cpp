@@ -14,7 +14,7 @@ void Hidden::enter(Flyer& flyer, const EnemyContext&) const {
 }
 
 void Hidden::update(Flyer& flyer, const EnemyContext& context) const {
-    if (flyer.waitOver()) flyer.changeState(Screeching::instance, context);
+    if (flyer.tickWait()) flyer.changeState(Screeching::instance, context);
 }
 
 }  // namespace ugh::enemies::flyer

@@ -32,7 +32,7 @@ public:
     /** It rests for `frames` after a passenger bounced off it. */
     void startResting(int frames) { restTime_.start(frames); }
     /** One frame of rest; true when it is over. */
-    bool restOver() { return restTime_.tick(); }
+    bool tickRest() { return restTime_.tick(); }
     int restTime() const { return restTime_.remaining(); }
 
 private:

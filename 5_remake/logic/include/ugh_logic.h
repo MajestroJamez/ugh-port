@@ -97,7 +97,7 @@ void ugh_logic_take_events(ugh_logic* logic, void (*callback)(void* ctx, const u
 /** Where the game is. */
 enum {
     UGH_LOGIC_PHASE_START = 0,          /* a new game before its first frame */
-    UGH_LOGIC_PHASE_BETWEEN_LEVELS,     /* the black screen before the first caption */
+    UGH_LOGIC_PHASE_BETWEEN_LEVELS,     /* only the black screen before the first caption (the replays name it so) */
     UGH_LOGIC_PHASE_CAPTION,            /* the caption of a level */
     UGH_LOGIC_PHASE_SETUP,              /* the black screen before the play */
     UGH_LOGIC_PHASE_PLAY                /* the play (also while it fades in and out) */

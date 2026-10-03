@@ -22,13 +22,18 @@ bool RulesReader::readRules(const UgdRecord&) {
     std::string bonus;
     if (rulesRead_) return in_.fail("a second rules record");
     if (!in_.only({"crashLimit", "multiplierLimit", "quickDeliveryBonus"}) ||
-        !in_.numbers("crashLimit", 3, crash) || !in_.numbers("multiplierLimit", 3, multiplier) ||
+        !in_.numbers("crashLimit", DIFFICULTY_COUNT, crash) ||
+        !in_.numbers("multiplierLimit", DIFFICULTY_COUNT, multiplier) ||
         !in_.text("quickDeliveryBonus", bonus))
         return false;
     const kinds::BonusKind* quickDeliveryBonus = kinds_.bonusKind(bonus);
     if (!quickDeliveryBonus) return in_.fail("no bonus kind " + bonus);
-    data_.rules =
-        Rules{{crash[0], crash[1], crash[2]}, {multiplier[0], multiplier[1], multiplier[2]}, quickDeliveryBonus};
+    Rules rules{{}, {}, quickDeliveryBonus};
+    for (int d = 0; d < DIFFICULTY_COUNT; d++) {
+        rules.crashLimits[d] = crash[d];
+        rules.multiplierLimits[d] = multiplier[d];
+    }
+    data_.rules = rules;
     rulesRead_ = true;
     return true;
 }

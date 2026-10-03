@@ -13,6 +13,13 @@ namespace ugh::data::ugd {
 
 using units::Fixed;
 
+namespace {
+
+// a standing passenger placement names no kind: every standing passenger is of the passenger kind of this name
+constexpr const char* STANDING_KIND = "standing";
+
+}  // namespace
+
 const RecordTable<PlacementReader>::Entry PlacementReader::PLACEMENTS[] = {
     {"routePassenger", &PlacementReader::readRoutePassenger},
     {"standingPassenger", &PlacementReader::readStandingPassenger},
@@ -58,8 +65,8 @@ bool PlacementReader::readRoute(std::vector<levels::Route::Stop>& stops) {
 
 bool PlacementReader::readStandingPassenger(const UgdRecord&) {
     int x = 0, y = 0;
-    const kinds::StandingPassengerKind* kind = kinds_.standingKind("standing");
-    if (!kind) return in_.fail("no passenger kind standing");
+    const kinds::StandingPassengerKind* kind = kinds_.standingKind(STANDING_KIND);
+    if (!kind) return in_.fail(std::string("no passenger kind ") + STANDING_KIND);
     if (!in_.only({"x", "y"}) || !in_.number("x", x) || !in_.number("y", y)) return false;
     level_->passengers.push_back(
         std::make_unique<levels::StandingPassengerPlacement>(*kind, Fixed::fromRaw(x), Fixed::fromRaw(y)));

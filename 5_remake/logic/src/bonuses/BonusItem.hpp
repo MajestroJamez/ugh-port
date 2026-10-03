@@ -45,7 +45,8 @@ public:
     void setFallSpeed(units::Fixed fallSpeed) { fallSpeed_ = fallSpeed; }
     /** It lies on a pad until its time is up. */
     void startLying(int frames) { lyingTime_.start(frames); }
-    bool lyingOver() { return lyingTime_.tick(); }
+    /** One frame on the pad; true when it is over. */
+    bool tickLying() { return lyingTime_.tick(); }
     void disappear() { gone_ = true; }
 
 private:

@@ -18,7 +18,7 @@ void Lying::enter(BonusItem& item, const world::PlayContext&) const {
 }
 
 void Lying::update(BonusItem& item, const world::PlayContext& context) const {
-    if (item.lyingOver()) {
+    if (item.tickLying()) {
         item.disappear();
         return;
     }

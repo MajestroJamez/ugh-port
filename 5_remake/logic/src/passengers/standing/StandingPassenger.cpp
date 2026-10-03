@@ -9,7 +9,8 @@ namespace {
 using units::Fixed;
 
 // a falling passenger hits an enemy with this point (from its top left corner) inside the enemy's box (from the
-// enemy's top left corner), in pixels
+// enemy's top left corner), in pixels. Quirk of the original: one box for every enemy - a flyer, a walker, a blower,
+// a tree -, not the box of its kind; a new kind of enemy is hit in this box too
 constexpr int HIT_POINT_X = 12, HIT_POINT_Y = 8, ENEMY_WIDTH = 38, ENEMY_HEIGHT = 28;
 
 }  // namespace

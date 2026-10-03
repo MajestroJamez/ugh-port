@@ -23,7 +23,7 @@ void Swimming::update(RoutePassenger& passenger, const PassengerContext& context
         passenger.changeState(SwimCalling::instance, context);
         return;
     }
-    if (passenger.swim().afloatOver()) passenger.changeState(Sinking::instance, context);
+    if (passenger.swim().tickAfloat()) passenger.changeState(Sinking::instance, context);
 }
 
 }  // namespace ugh::passengers::route

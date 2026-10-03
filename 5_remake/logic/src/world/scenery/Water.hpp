@@ -7,7 +7,9 @@ namespace ugh::world::scenery {
 
 /**
  * The water at the bottom of a level. Its surface moves every second frame; in the frame after its pixel row
- * changed it rests. The surface animation runs 2, 1, 0 and again, a frame of it every 7 frames.
+ * changed it rests. The surface animation runs SURFACE_LAST_FRAME .. 0 and again, a frame of it every SURFACE_DELAY + 1
+ * frames. The delay is counted by hand, not by a `units::Countdown`: it runs SURFACE_DELAY .. 0 and acts when it would
+ * go below 0, the field the replays show; a countdown acts at 0 and starts again above it.
  */
 class Water {
 public:

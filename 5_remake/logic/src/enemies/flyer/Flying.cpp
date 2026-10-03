@@ -53,7 +53,7 @@ void Flying::update(Flyer& flyer, const EnemyContext& context) const {
     flyer.moveToX(x);
     if (!flyer.animate(FLAP_DELAY)) return;
     flyer.show(flyer.kind().flight.towards(flyer.flight()));
-    if (flyer.bounceFallingPassenger(context)) {
+    if (flyer.bounceFallingPassenger(context, Enemy::Rebound::Full)) {
         context.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
         flyer.changeState(Falling::instance, context);
         return;

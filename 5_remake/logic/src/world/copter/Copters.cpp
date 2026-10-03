@@ -16,7 +16,7 @@ Copter* Copters::landedOn(const scenery::Pad& pad) {
     return nullptr;
 }
 
-bool Copters::emptyLandedOn(const scenery::Pad& pad) const {
+bool Copters::landedOnWithRoom(const scenery::Pad& pad) const {
     for (const Copter& copter : all())
         if (copter.landedOn(pad) && copter.cabin().hasRoom()) return true;
     return false;

@@ -21,8 +21,6 @@ namespace ugh::enemies::walker {
  */
 class Walker : public Enemy, public state::StateMachine<Walker, EnemyContext, WalkerState> {
 public:
-    static constexpr int FRAME_DELAY = 4;   // frames per animation frame
-
     /** The walker of `placement` on `pad` (the pad the placement names). */
     Walker(int index, const data::kinds::WalkerKind& kind, const data::levels::WalkerPlacement& placement,
            const world::scenery::Pad& pad);
@@ -50,7 +48,7 @@ public:
     /** It watches a landed copter for `frames` before it charges. */
     void startWatching(int frames) { watchTime_.start(frames); }
     /** One frame of watching; true when it is time to charge. */
-    bool watchOver() { return watchTime_.tick(); }
+    bool tickWatch() { return watchTime_.tick(); }
     int watchTime() const { return watchTime_.remaining(); }
 
     /** How much faster than its walk it charges. */
@@ -64,9 +62,12 @@ public:
     const Stun& stun() const { return stun_; }
 
 private:
+    static constexpr int FRAME_DELAY = 4;   // frames per animation frame
+
     const data::kinds::WalkerKind* kind_;
     const world::scenery::Pad* pad_;
     units::Fixed vx_;
+    // it starts facing left whatever its speed, as in the original: every walker of the data starts walking left
     data::kinds::Facing facing_ = data::kinds::Facing::Left;
     units::Countdown watchTime_;
     Stun stun_;

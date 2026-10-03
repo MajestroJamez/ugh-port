@@ -10,8 +10,6 @@ namespace ugh::passengers::route {
 class Riding : public RouteState {
 public:
     static const Riding instance;
-    /** Frames of riding that still earn a bonus item. */
-    static constexpr int QUICK_DELIVERY_TIME = 200;
 
     /** The passenger gets into `copter`. */
     static void board(RoutePassenger& passenger, world::copter::Copter& copter, const PassengerContext& context);

@@ -9,12 +9,15 @@ const Splash Splash::instance{};
 
 void Splash::enter(RoutePassenger& passenger, const PassengerContext& context) const {
     passenger.route().pickupPad().vacate();
-    passenger.hideBubble();
-    passenger.restartAnimation();
-    passenger.swim().plunge();
+    passenger.plunge();
     context.report({events::EventKind::PassengerInWater, std::nullopt, passenger.index()});
 }
 
+/**
+ * Down into the water and up again to the surface, where it swims. Quirk of the original: both tests take box.y away
+ * from its top instead of adding it (its feet are box.y below its top), so they look at a row above its head: it counts
+ * as above the surface longer, and it comes up until that row is at the surface - then it is put with its feet there.
+ */
 void Splash::update(RoutePassenger& passenger, const PassengerContext& context) const {
     const data::kinds::AnimatedPassengerKind& kind = passenger.kind();
     int surface = context.level.water().row();

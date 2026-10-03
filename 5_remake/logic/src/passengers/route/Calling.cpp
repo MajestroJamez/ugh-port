@@ -21,7 +21,7 @@ void Calling::stay(RoutePassenger& passenger, const PassengerContext& context) c
         return;
     }
     passenger.wave();
-    if (passenger.pickupWait().over()) passenger.changeState(Boarding::instance, context);
+    if (passenger.pickupWait().tick()) passenger.changeState(Boarding::instance, context);
 }
 
 }  // namespace ugh::passengers::route

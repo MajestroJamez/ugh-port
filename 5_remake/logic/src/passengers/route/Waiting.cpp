@@ -26,7 +26,7 @@ void Waiting::walk(RoutePassenger& passenger, const PassengerContext&) const {
 }
 
 void Waiting::stay(RoutePassenger& passenger, const PassengerContext& context) const {
-    if (context.level.copters().emptyLandedOn(passenger.route().pickupPad()))
+    if (context.level.copters().landedOnWithRoom(passenger.route().pickupPad()))
         passenger.changeState(Calling::instance, context);
 }
 

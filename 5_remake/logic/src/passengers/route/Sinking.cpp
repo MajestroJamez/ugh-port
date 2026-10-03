@@ -8,11 +8,7 @@ namespace ugh::passengers::route {
 
 const Sinking Sinking::instance{};
 
-void Sinking::enter(RoutePassenger& passenger, const PassengerContext&) const {
-    passenger.hideBubble();
-    passenger.restartAnimation();
-    passenger.swim().plunge();
-}
+void Sinking::enter(RoutePassenger& passenger, const PassengerContext&) const { passenger.plunge(); }
 
 void Sinking::update(RoutePassenger& passenger, const PassengerContext& context) const {
     passenger.animate();

@@ -495,3 +495,10 @@ Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/l
   v různých balíčcích zůstávají (jsou to jména stavů v replayích). Pole replayů v `6_verification` z tabulek
   (`FieldTable`) místo řetězů `if`. Opravené komentáře (`Raindrop`, `RecordReader`), pravidla 19-22 v
   `rewrite-design.md`. 41 testů + 3 + 161 replayů zelených. Další: **krok 10**.
+- 2026-10-03: N9e hotový (review po N9d; 3 kola: agent opraví, nový agent zreviduje, konec až bez konkrétní
+  vady) - jedno místo pro každý fakt: tvar vrtulníku `world::copter::CopterShape`, rozměr obrazovky
+  `data::levels::ScreenSize`, počet obtížností, `Level::crash`/`fadeOut`; `world/` rozdělen na `session/`,
+  `figure/`, `scenery/`, `copter/`; žádné bool parametry; `PassengerForm`, `PickupWait`, odpočty `tick...`;
+  `static_assert` pořadí událostí C API; čtečka dat hlídá druhy nepřátel, `rules` a `sprites` právě jednou;
+  pravdivé komentáře a rozsahy v `ugh_logic.h`, pojmenované quirky (`Splash`, `floatOnSurface`, box nepřítele).
+  42 testů + 163 kontrol replayů zelených. Další: **krok 10**.

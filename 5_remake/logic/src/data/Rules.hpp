@@ -10,8 +10,8 @@ namespace ugh::data {
 
 /** The rules of the game that the data sets. */
 struct Rules {
-    std::array<int, 3> crashLimits;                  // by difficulty: a bounce this hard crashes the copter
-    std::array<int, 3> multiplierLimits;             // by difficulty: the score multiplier goes no higher
+    std::array<int, DIFFICULTY_COUNT> crashLimits;       // by difficulty: a bounce this hard crashes the copter
+    std::array<int, DIFFICULTY_COUNT> multiplierLimits;  // by difficulty: the score multiplier goes no higher
     const kinds::BonusKind* quickDeliveryBonus = nullptr;   // the bonus item a quick delivery drops
 
     int crashLimit(Difficulty d) const { return crashLimits[static_cast<int>(d)]; }

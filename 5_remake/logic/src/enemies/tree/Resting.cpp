@@ -21,7 +21,7 @@ void Resting::enter(Tree& tree, const EnemyContext& context) const {
 
 /** It sways on from the frame where it was. */
 void Resting::update(Tree& tree, const EnemyContext& context) const {
-    if (!tree.restOver()) return;
+    if (!tree.tickRest()) return;
     if (tree.hasDrops()) tree.changeState(Swaying::instance, context);
     else tree.changeState(Bare::instance, context);
 }

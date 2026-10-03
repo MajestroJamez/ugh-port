@@ -31,7 +31,7 @@ public:
     /** The first copter that stands on the pad; nullptr if none. */
     Copter* landedOn(const scenery::Pad& pad);
     /** A copter with room for a passenger stands on the pad. */
-    bool emptyLandedOn(const scenery::Pad& pad) const;
+    bool landedOnWithRoom(const scenery::Pad& pad) const;
     /** The first copter that floats on the water; nullptr if none. */
     Copter* onWater(const scenery::Water& water) { return firstOnWater(water, Wanted::Any); }
     /** The first copter with room for a passenger that floats on the water. */

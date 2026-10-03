@@ -129,12 +129,9 @@ void ugh_logic_default_settings(ugh_logic_settings* settings) {
 }
 
 int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings) {
-    // no int outside the difficulties becomes one (newGame checks the range as well)
-    if (settings->difficulty < static_cast<int>(ugh::data::Difficulty::Easy) ||
-        settings->difficulty > static_cast<int>(ugh::data::Difficulty::Hard))
-        return 0;
     ugh::game::NewGameSettings s;
     s.players = settings->players;
+    // any int is a value of the enum (its type is int); newGame refuses one outside the difficulties
     s.difficulty = static_cast<ugh::data::Difficulty>(settings->difficulty);
     s.firstLevel = settings->first_level;
     for (int i = 0; i < 4; i++) s.randomSeed[i] = settings->random_seed[i];

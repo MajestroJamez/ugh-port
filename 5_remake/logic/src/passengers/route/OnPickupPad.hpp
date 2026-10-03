@@ -8,7 +8,8 @@ namespace ugh::passengers::route {
 
 /**
  * A state of a passenger on its pickup pad (Waiting, Calling, Impatient, Boarding; Template Method): every frame it
- * falls into the water when the water reaches its knees, and a copter in the air that touches it knocks it in.
+ * falls into the water when the water reaches the middle of its body, and a copter in the air that touches it knocks
+ * it in.
  */
 class OnPickupPad : public RouteState {
 public:

@@ -12,7 +12,7 @@ void OnPickupPad::update(RoutePassenger& passenger, const PassengerContext& cont
     stay(passenger, context);
 }
 
-/** The water rose to its knees: it is in the water. */
+/** The water rose to the middle of its body (half the way from its top to its feet): it is in the water. */
 bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
     const data::kinds::Box& box = passenger.kind().box;
     int surface = context.level.water().row();

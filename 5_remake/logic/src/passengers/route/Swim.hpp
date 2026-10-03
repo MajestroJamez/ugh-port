@@ -23,7 +23,7 @@ public:
     /** It floats on the surface for `frames`. */
     void startAfloat(int frames) { afloat_.start(frames); }
     /** One frame afloat; true when the time is up. */
-    bool afloatOver() { return afloat_.tick(); }
+    bool tickAfloat() { return afloat_.tick(); }
     int afloatTime() const { return afloat_.remaining(); }
 
 private:

@@ -21,7 +21,7 @@ void SwimCalling::update(RoutePassenger& passenger, const PassengerContext& cont
         return;
     }
     passenger.wave();
-    if (passenger.pickupWait().over()) passenger.changeState(SwimBoarding::instance, context);
+    if (passenger.pickupWait().tick()) passenger.changeState(SwimBoarding::instance, context);
 }
 
 }  // namespace ugh::passengers::route

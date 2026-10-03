@@ -6,7 +6,10 @@
 
 namespace ugh::data::levels {
 
-/** A walker on its pad, at x, y, walking at `speed` (Fixed per frame; negative: to the left). */
+/**
+ * A walker on its pad, at x, y, walking at `speed` (Fixed per frame; negative: to the left). Every walker of the data
+ * walks left at first; the walker faces left at first whatever the speed.
+ */
 struct WalkerPlacement : EnemyPlacement {
     WalkerPlacement(int onPad, units::Fixed atX, units::Fixed atY, units::Fixed perFrame)
         : pad(onPad), x(atX), y(atY), speed(perFrame) {}

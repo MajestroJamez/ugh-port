@@ -15,7 +15,7 @@ void SwimWaving::enter(RoutePassenger& passenger, const PassengerContext& contex
 void SwimWaving::update(RoutePassenger& passenger, const PassengerContext& context) const {
     passenger.floatOnSurface(context.level.water().row());
     passenger.wave();
-    if (passenger.pickupWait().over()) passenger.changeState(Sinking::instance, context);
+    if (passenger.pickupWait().tick()) passenger.changeState(Sinking::instance, context);
 }
 
 }  // namespace ugh::passengers::route

@@ -37,6 +37,12 @@ void RoutePassenger::startBoarding() {
     hideBubble();
 }
 
+void RoutePassenger::plunge() {
+    hideBubble();
+    restartAnimation();
+    swim_.plunge();
+}
+
 void RoutePassenger::standAtDoor(const data::levels::PadDefinition& pad) {
     seenY_ = pad.y - kind().box.y;
     seenX_ = pad.door - kind().box.x;

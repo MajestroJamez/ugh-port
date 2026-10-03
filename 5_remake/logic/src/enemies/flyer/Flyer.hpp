@@ -42,7 +42,7 @@ public:
     /** It stays in its state (hidden, screeching) for `frames` before the next one. */
     void wait(int frames) { waitTime_.start(frames); }
     /** One frame of the wait; true when it is over. */
-    bool waitOver() { return waitTime_.tick(); }
+    bool tickWait() { return waitTime_.tick(); }
     int waitTime() const { return waitTime_.remaining(); }
 
     /** Falling: Fixed per frame, faster every frame (by 1/32 px) up to `limit`. */

@@ -34,7 +34,7 @@ public:
     /** It waves impatiently for WAVE_TIME. */
     void startWaving() { time_.start(WAVE_TIME); }
     /** One frame of calling or waving; true when the time is up. */
-    bool over() { return time_.tick(); }
+    bool tick() { return time_.tick(); }
     int time() const { return time_.remaining(); }
 
 private:

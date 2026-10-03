@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include "bonuses/BonusState.hpp"
-
 namespace ugh::bonuses {
 
 void BonusSlots::drop(const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX,

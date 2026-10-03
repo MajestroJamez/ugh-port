@@ -15,8 +15,8 @@ void Impatient::enter(RoutePassenger& passenger, const PassengerContext& context
 
 void Impatient::stay(RoutePassenger& passenger, const PassengerContext& context) const {
     passenger.wave();
-    if (!passenger.pickupWait().over()) return;
-    if (context.level.copters().emptyLandedOn(passenger.route().pickupPad())) {
+    if (!passenger.pickupWait().tick()) return;
+    if (context.level.copters().landedOnWithRoom(passenger.route().pickupPad())) {
         passenger.changeState(Calling::instance, context);
     } else {
         passenger.changeState(Waiting::instance, context);

@@ -4,6 +4,7 @@
 #include "data/kinds/Facing.hpp"
 #include "enemies/EnemyContext.hpp"
 #include "enemies/EnemyVisitor.hpp"
+#include "passengers/standing/StandingPassenger.hpp"
 #include "units/Fixed.hpp"
 #include "world/figure/Figure.hpp"
 
@@ -27,12 +28,12 @@ public:
 
     // ------------------------------------------------------------ for the states
 
-    /**
-     * A standing passenger falling onto the enemy bounces off it (back up as fast as it fell), shown hit; true when one
-     * did.
-     */
-    bool bounceFallingPassenger(const EnemyContext& context) const;
-    /** The same, but the passenger shows no hit (it bounces off a blower). */
+    /** How fast a standing passenger bounces back up off it: as fast as it fell, or half as fast (the tree). */
+    enum class Rebound { Full, Half };
+
+    /** A standing passenger falling onto the enemy bounces off it, shown hit; the passenger, nullptr if none. */
+    passengers::standing::StandingPassenger* bounceFallingPassenger(const EnemyContext& context, Rebound rebound) const;
+    /** A falling standing passenger bounces off as fast as it fell and shows no hit (a blower); true when one did. */
     bool bounceFallingPassengerUnseen(const EnemyContext& context) const;
     /** A passenger stunned it: its score. */
     void scoreStun(int score, const EnemyContext& context) const;

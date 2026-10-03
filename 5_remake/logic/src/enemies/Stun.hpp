@@ -13,7 +13,7 @@ public:
 
     void start() { time_.start(TIME); }
     /** One frame stunned; true when it is over. */
-    bool over() { return time_.tick(); }
+    bool tick() { return time_.tick(); }
     /** Frames left. */
     int time() const { return time_.remaining(); }
 

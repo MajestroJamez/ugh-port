@@ -4,7 +4,7 @@
 #include <span>
 #include <vector>
 
-#include "data/GameData.hpp"
+#include "data/SpriteIds.hpp"
 #include "data/levels/LevelDefinition.hpp"
 #include "events/Diagnostics.hpp"
 #include "events/EventListener.hpp"
