@@ -1,5 +1,7 @@
 #include "bonuses/Lying.hpp"
 
+#include "physics/TouchBox.hpp"
+
 namespace ugh::bonuses {
 
 namespace {
@@ -21,7 +23,8 @@ void Lying::update(model::BonusItem& item, model::Level& level) const {
         return;
     }
     const data::BonusKind& kind = item.kind();
-    int copter = level.copterTouching({kind.x, kind.y, TOUCH_HALF_SIZE, TOUCH_HALF_SIZE}, item.x(), item.y());
+    physics::TouchBox box({kind.x, kind.y, TOUCH_HALF_SIZE, TOUCH_HALF_SIZE}, item.x(), item.y());
+    int copter = box.firstCopterIn(level);
     if (copter == model::Level::NONE) return;
     switch (kind.effect) {
         case data::BonusKind::Effect::Energy: level.energy().refill(kind.amount); break;

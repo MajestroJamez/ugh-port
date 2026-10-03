@@ -1,9 +1,8 @@
 #include "physics/CopterPhysics.hpp"
 
-#include <array>
-#include <utility>
+#include <optional>
 
-#include "data/CollisionMask.hpp"
+#include "physics/CollisionProbe.hpp"
 
 namespace ugh::physics {
 
@@ -12,13 +11,7 @@ namespace {
 using core::Fixed;
 using core::Speed;
 using core::Word;
-
-constexpr int ROW = data::CollisionMask::WIDTH;   // pixels per row of the collision mask
-
-/** The points of the copter's outline the probe tests, in pixels from the probe origin (x, y). */
-constexpr std::array<std::pair<int, int>, 10> PROBE = {
-    {{0, 0}, {12, 0}, {20, 0}, {0, 19}, {12, 19}, {20, 19}, {0, 6}, {20, 6}, {0, 12}, {20, 12}}};
-constexpr int PROBE_OFFSET_X = 5;
+using Axis = CollisionProbe::Axis;
 
 // speeds in 1/64 Fixed per frame, accelerations per frame
 constexpr Speed MAX_SPEED(0x1800);
@@ -94,20 +87,11 @@ void CopterPhysics::moveHorizontally(model::Copter& copter) {
 
     Fixed x = target;
     if (target.pixels() != copter.pixelX()) {
-        bool hit = false;
-        int origin = probeOrigin(copter);
-        if (target <= copter.x()) {
-            // moving left the original probes only the pixel next to the copter, however far it moves (its loop
-            // does not advance the probe)
-            if (probeHits(origin - 1)) { x = copter.x().wholePixel() + Fixed::fromPixels(1); hit = true; }
-        } else {
-            for (x = copter.x();; x += Fixed::fromPixels(1)) {
-                if (probeHits(++origin)) { x = x.wholePixel(); hit = true; break; }
-                if (x + Fixed::fromPixels(1) >= target) break;
-            }
+        std::optional<Fixed> stop = CollisionProbe(level_).stopOnTheWay(copter, Axis::Horizontal, copter.x(), target);
+        if (stop) {
+            x = *stop;
+            copter.setImpact(bounce(vx));
         }
-        if (hit) copter.setImpact(bounce(vx));
-        else x = target;
     }
     copter.setSpeed(vx, copter.speedY());
     copter.moveToX(x);
@@ -160,19 +144,11 @@ void CopterPhysics::moveVertically(model::Copter& copter, Depth depth) {
 
     Fixed y = target;
     if (target.pixels() != copter.pixelY()) {
-        bool hit = false;
-        int origin = probeOrigin(copter);
-        if (target <= copter.y()) {
-            // moving up, like moving left: only the row above the copter is probed
-            if (probeHits(origin - ROW)) { y = copter.y().wholePixel() + Fixed::fromPixels(1); hit = true; }
-        } else {
-            for (y = copter.y();; y += Fixed::fromPixels(1)) {
-                if (probeHits(origin += ROW)) { y = y.wholePixel(); hit = true; break; }
-                if (y + Fixed::fromPixels(1) >= target) break;
-            }
+        std::optional<Fixed> stop = CollisionProbe(level_).stopOnTheWay(copter, Axis::Vertical, copter.y(), target);
+        if (stop) {
+            y = *stop;
+            bounceVertically(copter, y);
         }
-        if (hit) bounceVertically(copter, y);
-        else y = target;
     }
     copter.moveToY(y);
 }
@@ -206,16 +182,6 @@ void CopterPhysics::checkCrash(const model::Copter& copter, int player) {
     if (copter.impact() < level_.session().crashLimit() || level_.fade().fadingOut()) return;
     level_.fade().startFadeOut();
     level_.report({core::EventKind::CopterCrashed, player});
-}
-
-bool CopterPhysics::probeHits(int origin) const {
-    for (auto [dx, dy] : PROBE)
-        if (level_.solid(origin + dy * ROW + dx)) return true;
-    return false;
-}
-
-int CopterPhysics::probeOrigin(const model::Copter& copter) {
-    return copter.pixelY().value() * ROW + copter.pixelX().value() + PROBE_OFFSET_X;
 }
 
 Word CopterPhysics::bounce(Speed& speed) {

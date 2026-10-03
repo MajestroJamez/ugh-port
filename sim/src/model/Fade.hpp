@@ -13,6 +13,7 @@ class Fade {
 public:
     static constexpr core::Word FULL = 0x100;            // the level fully visible
     static constexpr core::Word COPTERS_START = 0xc0;    // the copters fly from here on while it fades in
+    static constexpr core::Word STEP = 2;                // per frame
 
     Fade() = default;
     Fade(core::Word position, core::Word step) : position_(position), step_(step) {}
@@ -20,13 +21,13 @@ public:
     /** The start of an attempt: from black, up. */
     void startFadeIn() {
         position_ = 0;
-        step_ = 2;
+        step_ = STEP;
     }
 
     /** Starts the fade-out that ends the level attempt. */
     void startFadeOut() {
-        step_ = -2;
-        position_ -= 2;
+        step_ = -STEP;
+        position_ -= STEP;
     }
 
     /** 113b:0c7d - one frame of the fade (it stops at the top). */

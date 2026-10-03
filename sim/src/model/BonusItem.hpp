@@ -41,7 +41,7 @@ public:
     bool inUse() const { return s_.sprite != data::NO_SPRITE; }
 
     /** The slot can take a new item: the original looks only at the sign of the sprite word. */
-    bool freeForDrop() const { return (s_.sprite & 0x8000) != 0; }
+    bool freeForDrop() const { return core::Word(s_.sprite) < 0; }
 
     /**
      * 113b:2b96 - a new item of `kind` with its middle / bottom at x, y, flying sideways with `vx` and up with its

@@ -1,6 +1,7 @@
 #include "enemies/walker/Charging.hpp"
 
 #include "enemies/walker/Recovering.hpp"
+#include "physics/TouchBox.hpp"
 
 namespace ugh::enemies {
 
@@ -30,7 +31,7 @@ void Charging::update(model::Enemy& enemy, model::Level& level) const {
     enemy.turnTo(level.copter(copter));
     enemy.timer().speedUpBy(enemy.facing().direction());
     enemy.moveToX(enemy.x() + (enemy.timer().speed() + enemy.speedX()));
-    int hit = level.copterTouching(enemy.kind().box, enemy.x(), enemy.y());
+    int hit = physics::TouchBox(enemy.kind().box, enemy.x(), enemy.y()).firstCopterIn(level);
     if (hit == model::Level::NONE) return;
     level.copter(hit).throwUp(enemy.speedX().raw() + enemy.timer().word());
     enemy.changeState(Recovering::instance, level);

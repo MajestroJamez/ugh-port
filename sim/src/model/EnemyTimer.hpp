@@ -3,6 +3,7 @@
 
 #include "core/Fixed.hpp"
 #include "core/Word.hpp"
+#include "model/SharedWord.hpp"
 
 namespace ugh::model {
 
@@ -10,10 +11,10 @@ namespace ugh::model {
  * The enemy's timer word: a countdown in most states, the speed of a hit flyer falling out of the sky, and how much
  * faster a charging walker runs.
  */
-class EnemyTimer {
+class EnemyTimer : public SharedWord {
 public:
     EnemyTimer() = default;
-    explicit EnemyTimer(core::Word word) : word_(word) {}
+    explicit EnemyTimer(core::Word word) : SharedWord(word) {}
 
     void startCountdown(core::Word frames) { word_ = frames; }
     /** One frame of the countdown: true when it just reached zero. */
@@ -33,12 +34,9 @@ public:
     /** The fall or the extra charge speed, per frame. */
     core::Fixed speed() const { return core::Fixed(word_); }
 
-    core::Word word() const { return word_; }
 
 private:
     static constexpr core::Word MAX_FALL_SPEED = 0x28;
-
-    core::Word word_;
 };
 
 }  // namespace ugh::model

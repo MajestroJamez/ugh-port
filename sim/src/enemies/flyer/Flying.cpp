@@ -4,6 +4,7 @@
 
 #include "enemies/flyer/FlyerFalling.hpp"
 #include "enemies/flyer/FlyerInit.hpp"
+#include "physics/TouchBox.hpp"
 
 namespace ugh::enemies {
 
@@ -65,7 +66,7 @@ void Flying::update(model::Enemy& enemy, model::Level& level) const {
         enemy.changeState(FlyerFalling::instance, level);
         return;
     }
-    int copter = level.copterTouching(enemy.kind().box, enemy.x(), enemy.y());
+    int copter = physics::TouchBox(enemy.kind().box, enemy.x(), enemy.y()).firstCopterIn(level);
     if (copter == model::Level::NONE || copter != enemy.facing().target() || level.fade().fadingOut()) return;
     level.fade().startFadeOut();
     level.report({core::EventKind::CopterCrashed, copter});

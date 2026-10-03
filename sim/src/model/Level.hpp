@@ -8,7 +8,6 @@
 #include "core/Event.hpp"
 #include "core/EventListener.hpp"
 #include "core/Fixed.hpp"
-#include "data/Box.hpp"
 #include "data/GameData.hpp"
 #include "model/BonusSlots.hpp"
 #include "model/Copter.hpp"
@@ -130,8 +129,6 @@ public:
     /** A copter floating on the water; `withRoom`: with room for a passenger, `still`: not moving up or down. */
     int copterOnWater(bool withRoom, bool still) const;
 
-    /** 113b:2276, 22f1, 2207 - the first copter touching the box of a sprite at x, y; NONE when there is none. */
-    int copterTouching(const data::Box& box, core::Fixed x, core::Fixed y) const;
 
     /** 113b:2196 - a standing passenger falling from a copter close to the enemy; NONE when there is none. */
     int fallingPassengerNear(const Enemy& enemy) const;

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "core/Word.hpp"
+#include "model/SharedWord.hpp"
 
 namespace ugh::model {
 
@@ -11,10 +12,10 @@ namespace ugh::model {
  * - whether a waiting passenger stands at its waiting spot (1) or still walks there (0, -1 when it just started),
  * - the copter that carries it (player * 2) while it rides or hangs.
  */
-class PassengerCounter {
+class PassengerCounter : public SharedWord {
 public:
     PassengerCounter() = default;
-    explicit PassengerCounter(core::Word word) : word_(word) {}
+    explicit PassengerCounter(core::Word word) : SharedWord(word) {}
 
     void startCountdown(core::Word frames) { word_ = frames; }
     /** One frame of the countdown: true when it just reached zero. */
@@ -28,11 +29,6 @@ public:
 
     void setCarrier(int player) { word_ = player * 2; }
     int carrier() const { return word_.value() / 2; }
-
-    core::Word word() const { return word_; }
-
-private:
-    core::Word word_;
 };
 
 }  // namespace ugh::model

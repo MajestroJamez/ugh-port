@@ -1,6 +1,7 @@
 #include "passengers/walking/OnPickupPad.hpp"
 
 #include "passengers/swimming/Splash.hpp"
+#include "physics/TouchBox.hpp"
 
 namespace ugh::passengers {
 
@@ -16,7 +17,7 @@ bool OnPickupPad::fellIntoWater(model::Passenger& passenger, model::Level& level
 }
 
 bool OnPickupPad::knockedIntoWater(model::Passenger& passenger, model::Level& level) {
-    int copter = level.copterTouching(passenger.kind().box, passenger.x(), passenger.y());
+    int copter = physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(level);
     if (copter == model::Level::NONE || level.copter(copter).landed()) return false;
     intoWater(passenger, level);
     return true;

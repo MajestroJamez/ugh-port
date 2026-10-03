@@ -269,6 +269,22 @@ shodný s výchozím stavem v obou režimech. Odchylky od návrhu výše:
 10. `sim/README.md`.
 11. Kontrola hotového (níže) a `/code-review` na `high`; opravit vše, co se týká čitelnosti.
 
+**Jak dopadl krok 9c** (2026-10-03): všechny etapy hotové, po každé 323 testů zelených a výstup přehrávače shodný
+s výchozím stavem (oba režimy). Odchylky od návrhu výše:
+- `CollisionProbe::stopOnTheWay` je jedna smyčka pro obě osy (dřív dvě kopie); `TouchBox` volají přímo stavy,
+  `Level::copterTouching` zmizel.
+- Fáze toku: `TimedPhase` (odpočet přes `Countdown`) a z ní `BlackScreen`, `CaptionFadeIn`, `CaptionFadeOut`;
+  dál `CaptionWaitKey` a `Playing`. Konec pokusu není fáze, ale `GameFlow::endAttempt()` (nečeká na retrace).
+  `GameOver` fáze není – konec hry je `result_` ve `GameFlow`.
+- Visitor: `Field` (text / read / fill) a `FieldVisitor::visit(name, field)`; zkratky `signedWord`, `byte`, `hex`,
+  `index` … převádějí typy modelu na `WordField` / `IndexField`. Sdílená slova mají základ `model::SharedWord`.
+  Zvláštní pole jedné entity (klíče, trasa, tabulka nepřítele …) jsou malé třídy v jejím `…Fields.cpp`.
+- Ponecháno z review: `StateField` a `KindField` jsou ve třech / dvou souborech skoro stejné (liší se typem
+  ukazatele); sjednocení by chtělo šablonu, kterou zásada 7 zakazuje.
+- Testy: `TestFramework.hpp` (TEST / CHECK), `TestMain.cpp`, fixture `LevelSetup`, 25 testů ve složkách po modulech
+  (nové: `CollisionProbeTest`, `TouchBoxTest`, `GameFlowTest` s přesným počtem snímků fází). Testy nepřátel
+  a plavajícího / stojícího cestujícího zatím nejsou (kryjí je replaye).
+
 ## Hotovo když
 
 - 161 replayů projde celých i po přechodech se stejným počtem porovnaných hodnot jako dnes; testy jednotek po

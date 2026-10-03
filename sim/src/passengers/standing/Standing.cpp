@@ -1,6 +1,7 @@
 #include "passengers/standing/Standing.hpp"
 
 #include "passengers/standing/Hanging.hpp"
+#include "physics/TouchBox.hpp"
 
 namespace ugh::passengers {
 
@@ -17,7 +18,7 @@ void Standing::enter(model::Passenger& passenger, model::Level&) const { passeng
 
 /** 113b:1c27 - waits for a copter with room to touch it. */
 void Standing::update(model::Passenger& passenger, model::Level& level) const {
-    int copter = level.copterTouching(passenger.kind().box, passenger.x(), passenger.y());
+    int copter = physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(level);
     if (copter != model::Level::NONE && level.copter(copter).hasRoom()) {
         passenger.counter().setCarrier(copter);
         passenger.changeState(Hanging::instance, level);

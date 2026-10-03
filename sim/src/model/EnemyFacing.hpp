@@ -2,22 +2,26 @@
 #pragma once
 
 #include "core/Word.hpp"
+#include "model/SharedWord.hpp"
 
 namespace ugh::model {
 
 /**
  * The enemy's word 2d57: the direction a walker faces (0 left, 2 right), or the player a flyer hunts (0 or 1).
  */
-class EnemyFacing {
+class EnemyFacing : public SharedWord {
 public:
     EnemyFacing() = default;
-    explicit EnemyFacing(core::Word word) : word_(word) {}
+    explicit EnemyFacing(core::Word word) : SharedWord(word) {}
+
+    /** The walker's directions: the offsets of its two-word tables (left, right). */
+    static constexpr core::Word LEFT = 0, RIGHT = 2;
 
     // ------------------------------------------------------------ a walker
-    void faceLeft() { word_ = 0; }
-    void faceRight() { word_ = 2; }
-    void turnAround() { word_ = word_ ^ 2; }
-    bool right() const { return word_ != 0; }
+    void faceLeft() { word_ = LEFT; }
+    void faceRight() { word_ = RIGHT; }
+    void turnAround() { word_ = word_ ^ RIGHT; }
+    bool right() const { return word_ != LEFT; }
     /** -1 facing left, 1 facing right. */
     core::Word direction() const { return word_ - 1; }
 
@@ -32,11 +36,6 @@ public:
         return target.value();
     }
     int target() const { return word_.value(); }
-
-    core::Word word() const { return word_; }
-
-private:
-    core::Word word_;
 };
 
 }  // namespace ugh::model

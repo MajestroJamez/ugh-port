@@ -3,6 +3,7 @@
 
 #include "core/Fixed.hpp"
 #include "core/Word.hpp"
+#include "model/SharedWord.hpp"
 
 namespace ugh::model {
 
@@ -12,10 +13,10 @@ namespace ugh::model {
  * - the x speed of the standing passenger dropped from a copter (1/32 px per frame),
  * - how long a swimmer stays afloat.
  */
-class PassengerTimer {
+class PassengerTimer : public SharedWord {
 public:
     PassengerTimer() = default;
-    explicit PassengerTimer(core::Word word) : word_(word) {}
+    explicit PassengerTimer(core::Word word) : SharedWord(word) {}
 
     void startArrivalDelay(core::Word frames) { word_ = frames; }
     /** 113b:1509 - one frame of the delay before appearing: true when it is over (a delay of 0 is none). */
@@ -27,11 +28,6 @@ public:
     void startSwimTime(core::Word frames) { word_ = frames; }
     /** One frame afloat: true when the time is up. */
     bool swimTimeUp() { return --word_ == 0; }
-
-    core::Word word() const { return word_; }
-
-private:
-    core::Word word_;
 };
 
 }  // namespace ugh::model

@@ -36,10 +36,6 @@ private:
     void touchDownOnPad(model::Copter& copter, core::Fixed y);
     void checkCrash(const model::Copter& copter, int player);
 
-    /** 113b:1457 - Game.kt probe: a point of the copter's outline, around `origin`, hits the background. */
-    bool probeHits(int origin) const;
-    /** The probe origin of a copter: its pixel position, 5 px to the right, as a pixel index of the mask. */
-    static int probeOrigin(const model::Copter& copter);
     /** A bounce: half the speed back; the impact is the speed it had (the doubled half, as the original computes). */
     static core::Word bounce(core::Speed& speed);
 };

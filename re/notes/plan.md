@@ -200,3 +200,8 @@ adaptér replayů jako Visitor, rozdělený přehrávač a testy, `sim/README.md
   třídy s `enter/update`, `EnemyBehavior` jako Strategy, `CopterPhysics` s pojmenovanými kroky. V logice není
   `static_cast<int16_t>`, šablona ani `std::function`. 323 testů zelených, výstup přehrávače shodný s výchozím
   (stejné počty porovnaných hodnot). Odchylky od návrhu v [core-design.md](core-design.md). Další: **krok 9c**.
+- 2026-10-03: krok 9c hotový - `physics/CollisionProbe` + `TouchBox`, tok hry jako automat fází (`GameFlow`,
+  `phases/`, `PlayFrame`; korutiny pryč), adaptér replayů jako Visitor (jeden seznam polí na entitu, bez šablon
+  a `std::function`), přehrávač rozdělený (`tools/ugh_replay/`), testy po modulech (`TestFramework.hpp`, 25 testů),
+  průvodce `sim/README.md`. 323 testů zelených, výstup přehrávače shodný s výchozím. `/code-review high`: 8 nálezů,
+  7 opraveno, 1 ponechán (viz [core-design.md](core-design.md)). Další: **krok 10**.

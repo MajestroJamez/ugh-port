@@ -16,7 +16,7 @@ set(UGH_CORE src/core/Random.cpp)
 set(UGH_DATA src/data/CollisionMask.cpp src/data/GameData.cpp src/data/GameDataLoader.cpp)
 set(UGH_MODEL src/model/BonusItem.cpp src/model/BonusSlots.cpp src/model/Copter.cpp src/model/Enemy.cpp
     src/model/GameSession.cpp src/model/Level.cpp src/model/Passenger.cpp src/model/Rain.cpp src/model/Water.cpp)
-set(UGH_PHYSICS src/physics/CopterPhysics.cpp)
+set(UGH_PHYSICS src/physics/CollisionProbe.cpp src/physics/CopterPhysics.cpp src/physics/TouchBox.cpp)
 set(UGH_PASSENGERS src/passengers/Gone.cpp src/passengers/PassengerState.cpp src/passengers/PassengerStates.cpp
     src/passengers/walking/Appearing.cpp src/passengers/walking/Arriving.cpp src/passengers/walking/Boarding.cpp
     src/passengers/walking/Calling.cpp src/passengers/walking/Entering.cpp src/passengers/walking/Impatient.cpp
@@ -38,25 +38,40 @@ set(UGH_ENEMIES src/enemies/EnemyBehavior.cpp src/enemies/EnemyState.cpp src/ene
     src/enemies/tree/TreeSwaying.cpp src/enemies/tree/TreeWait.cpp)
 set(UGH_BONUSES src/bonuses/BonusState.cpp src/bonuses/BonusStates.cpp src/bonuses/Falling.cpp src/bonuses/Lying.cpp)
 set(UGH_INPUT src/input/Keyboard.cpp)
-set(UGH_GAME src/game/Game.cpp src/game/LevelLoader.cpp)
-set(UGH_REPLAY src/replay/ReplayProjection.cpp)
+set(UGH_GAME src/game/Game.cpp src/game/GameFlow.cpp src/game/LevelLoader.cpp src/game/PlayFrame.cpp
+    src/game/phases/CaptionFadeIn.cpp src/game/phases/CaptionFadeOut.cpp
+    src/game/phases/CaptionWaitKey.cpp src/game/phases/Playing.cpp src/game/phases/TimedPhase.cpp)
+set(UGH_REPLAY src/replay/BonusFields.cpp src/replay/CopterFields.cpp src/replay/EnemyFields.cpp src/replay/FieldReader.cpp
+    src/replay/FieldVisitor.cpp src/replay/FieldWriter.cpp src/replay/GameFields.cpp src/replay/PadFields.cpp
+    src/replay/PassengerFields.cpp src/replay/ReplayProjection.cpp src/replay/ReplayText.cpp)
 set(UGH_API src/api/SimApi.cpp)
 
 add_library(ugh_sim STATIC ${UGH_CORE} ${UGH_DATA} ${UGH_MODEL} ${UGH_PHYSICS} ${UGH_PASSENGERS} ${UGH_ENEMIES}
             ${UGH_BONUSES} ${UGH_INPUT} ${UGH_GAME} ${UGH_REPLAY} ${UGH_API})
 target_include_directories(ugh_sim PUBLIC include PRIVATE src)
 
-add_executable(ugh_replay tools/ugh_replay.cpp)
+# The replay player: the C++ core against the golden replays, through the C API only.
+add_executable(ugh_replay tools/ugh_replay/main.cpp tools/ugh_replay/ReplayFile.cpp tools/ugh_replay/ReplayPlayer.cpp
+               tools/ugh_replay/ReplayReport.cpp tools/ugh_replay/TwinCores.cpp)
 target_link_libraries(ugh_replay PRIVATE ugh_sim)
 
 set(UGH_SIM_DATA "${CMAKE_CURRENT_SOURCE_DIR}/../assets/sim/ugh-sim.bin" CACHE FILEPATH "Data exported by the extractor")
 set(UGH_REPLAYS "${CMAKE_CURRENT_SOURCE_DIR}/../verify/build/replays" CACHE PATH "Directory of the golden replays")
 enable_testing()
 
-# Unit tests of the services and state machines (they need the data).
-add_executable(ugh_sim_tests tests/unit_tests.cpp)
+# Unit tests by module, next to the sources they test (they need the data).
+add_executable(ugh_sim_tests tests/TestMain.cpp tests/LevelSetup.cpp
+    tests/core/CountdownTest.cpp tests/core/FixedTest.cpp tests/core/RandomTest.cpp tests/core/SpeedTest.cpp
+    tests/core/WordTest.cpp
+    tests/data/CollisionMaskTest.cpp tests/data/GameDataLoaderTest.cpp
+    tests/model/WaterTest.cpp
+    tests/physics/CollisionProbeTest.cpp tests/physics/CopterPhysicsTest.cpp tests/physics/TouchBoxTest.cpp
+    tests/input/KeyboardTest.cpp
+    tests/passengers/WalkingPassengerTest.cpp
+    tests/bonuses/BonusTest.cpp
+    tests/game/GameFlowTest.cpp)
 target_link_libraries(ugh_sim_tests PRIVATE ugh_sim)
-target_include_directories(ugh_sim_tests PRIVATE src)
+target_include_directories(ugh_sim_tests PRIVATE src tests)
 add_test(NAME unit COMMAND ugh_sim_tests "${UGH_SIM_DATA}")
 
 # Two tests per golden replay: the whole game, and every transition on its own (recorded by .\gradlew.bat :verify:replays, data from .\gradlew.bat :extractor:run).
