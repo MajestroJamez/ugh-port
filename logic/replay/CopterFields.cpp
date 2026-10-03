@@ -1,0 +1,34 @@
+#include "replay/CopterFields.hpp"
+
+#include <string>
+
+namespace ugh::replay {
+
+void CopterFields::write(const world::Copter& copter, int player, Fields& f) {
+    std::string c = "copter." + std::to_string(player) + ".";
+    f[c + "x"] = std::to_string(copter.x().raw().value());
+    f[c + "y"] = std::to_string(copter.y().raw().value());
+    f[c + "pixelX"] = std::to_string(copter.pixelX().value());
+    f[c + "pixelY"] = std::to_string(copter.pixelY().value());
+    f[c + "vx"] = std::to_string(copter.speedX().raw().value());
+    f[c + "vy"] = std::to_string(copter.speedY().raw().value());
+    f[c + "landedPad"] = copter.landedPad() ? std::to_string(*copter.landedPad()) : "none";
+    f[c + "rotorSprite"] = std::to_string(copter.rotorSprite());
+    f[c + "rotorCounter"] = std::to_string(copter.rotorCounter().value());
+    const world::Controls& keys = copter.controls();
+    std::string held;
+    if (keys.up) held += 'U';
+    if (keys.down) held += 'D';
+    if (keys.left) held += 'L';
+    if (keys.right) held += 'R';
+    if (keys.fire) held += 'F';
+    f[c + "keys"] = held.empty() ? "-" : held;
+    const auto& cargo = copter.cargo();
+    f[c + "cargoLook"] = cargo ? std::to_string(cargo->look.value()) : "none";
+    f[c + "destination"] = !cargo ? "none" : cargo->destination ? std::to_string(cargo->destination->value()) : "hanging";
+    f[c + "fare"] = std::to_string(copter.fare().value());
+    f[c + "effort"] = std::to_string(copter.effort().value());
+    if (cargo && cargo->destination) f[c + "fareMin"] = std::to_string(cargo->fareMin.value());
+}
+
+}  // namespace ugh::replay

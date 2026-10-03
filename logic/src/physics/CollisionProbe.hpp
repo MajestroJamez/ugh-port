@@ -1,0 +1,39 @@
+// Where a moving copter hits the background.
+#pragma once
+
+#include <optional>
+
+#include "units/Fixed.hpp"
+#include "world/Copter.hpp"
+#include "world/Level.hpp"
+
+namespace ugh::physics {
+
+/**
+ * Ten points of the copter's outline tested against the collision mask of the level. The physics moves a copter
+ * pixel by pixel along one axis and stops it at the first pixel where a point of its outline would be in something
+ * solid.
+ *
+ * Quirk of the original: moving left or up, only the pixel next to the copter is probed, however far the copter
+ * moves in the frame. A fast copter can fly through a thin wall to the left or upwards, never to the right or down.
+ */
+class CollisionProbe {
+public:
+    enum class Axis { Horizontal, Vertical };
+
+    explicit CollisionProbe(const world::Level& level) : level_(level) {}
+
+    /**
+     * The copter moves along `axis` from `from` (its position on that axis now) to `to`: where it stops when it hits
+     * something on the way; nothing when it gets there.
+     */
+    std::optional<units::Fixed> stopOnTheWay(const world::Copter& copter, Axis axis, units::Fixed from, units::Fixed to) const;
+
+private:
+    const world::Level& level_;
+
+    /** A point of the outline is solid with the copter's probe origin at x, y (pixels). */
+    bool hits(int x, int y) const;
+};
+
+}  // namespace ugh::physics

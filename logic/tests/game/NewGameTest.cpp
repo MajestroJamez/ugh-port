@@ -18,3 +18,20 @@ TEST(a_new_game_starts_after_eight_black_frames) {
     g.step();
     CHECK(g.phase() == game::GamePhase::Caption);
 }
+
+TEST(the_caption_waits_for_a_key_then_the_play_starts) {
+    game::Game g(test::gameData());
+    g.newGame({});
+    for (int frame = 1; frame <= 9 + 64 + 10; frame++) g.step();
+    CHECK(g.phase() == game::GamePhase::Caption);
+    CHECK(g.level().definition() != nullptr);
+    g.scancode(0x39);
+    g.step();   // the key: the fade-out starts
+    for (int frame = 0; frame < 64; frame++) g.step();
+    CHECK(g.phase() == game::GamePhase::Caption);
+    g.step();
+    CHECK(g.phase() == game::GamePhase::Setup);
+    for (int frame = 0; frame < 8; frame++) g.step();
+    CHECK(g.phase() == game::GamePhase::Play);
+    CHECK_EQUAL(0, g.level().fade().position().value());
+}

@@ -577,3 +577,14 @@ umístění cestujících a nepřátel přes Visitor), `events/`, `world/Session
 Odchylky od návrhu: `DataFileReader` vrací `std::unique_ptr<const GameData>` (data drží ukazatele na své prvky, nesmí
 se kopírovat); `Wind` a `Difficulty` jsou v `data/` (data je potřebují a jsou před `world/`); `replay_check` má navíc
 `--skip` a `--until <pole>=<hodnota>` (rozjezd po krocích); stav „před hrou“ jako `GamePhase::Start`.
+
+### N5 (2026-10-03)
+
+`world/` (Level, Copter, Cargo, Controls, Pad, Water, Rain, Raindrop, Energy, Fade, Animator, Screen, Facing,
+PlayContext), `physics/` (CopterPhysics, CollisionProbe, TouchBox), `game/` (PlayFrame, Cheats; načtení levelu je
+`world::Level::startAttempt`), zápis polí hry, vrtulníků a plošin do UGR 1, zásahy pilota v `replay_check`. 24 testů.
+Všech 8 replayů levelu 1 souhlasí v `game.*`, `copter.*`, `pad.*` (bez skóre, cestujících, nákladu a `waiting`) až do
+prvního nástupu, náhodné replaye celé; ze zbylých 153 replayů jich 134 souhlasí taky, 19 se rozejde jen kvůli
+chybějícím nepřátelům (foukač ±41 v `vx`, walker odhodí vrtulník, flyer ukončí pokus). Odchylky od návrhu: `LevelLoader`
+není samostatná třída světa (svět načte `world::Level`, entity přidá N6/N7); `impact` je jen v `CopterPhysics`;
+vrtulník drží `fare` mimo `Cargo` (originál ho po vystoupení nemaže).

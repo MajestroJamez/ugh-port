@@ -1,6 +1,8 @@
 #include "replay/GameFields.hpp"
 
+#include <cstdint>
 #include <cstdio>
+#include <vector>
 
 namespace ugh::replay {
 
@@ -26,6 +28,39 @@ const char* difficultyName(data::Difficulty difficulty) {
     return "";
 }
 
+const char* windName(data::Wind wind) {
+    switch (wind) {
+        case data::Wind::None: return "none";
+        case data::Wind::Left: return "left";
+        case data::Wind::Right: return "right";
+    }
+    return "";
+}
+
+/** CRC-32 (zlib). */
+uint32_t crc32(const std::vector<uint8_t>& bytes) {
+    uint32_t crc = 0xffffffffu;
+    for (uint8_t b : bytes) {
+        crc ^= b;
+        for (int k = 0; k < 8; k++) crc = (crc >> 1) ^ (0xedb88320u & (0u - (crc & 1)));
+    }
+    return ~crc;
+}
+
+/** The raindrops 0 .. 192 as little-endian int16 pairs x, y, CRC-32 in 8 hex digits. */
+std::string rainChecksum(const world::Rain& rain) {
+    std::vector<uint8_t> bytes;
+    for (const world::Raindrop& drop : rain.drops()) {
+        for (int v : {drop.x, drop.y}) {
+            bytes.push_back(static_cast<uint8_t>(v));
+            bytes.push_back(static_cast<uint8_t>(v >> 8));
+        }
+    }
+    char buf[16];
+    std::snprintf(buf, sizeof buf, "%08x", crc32(bytes));
+    return buf;
+}
+
 }  // namespace
 
 void GameFields::write(const game::Game& game, Fields& f) {
@@ -41,7 +76,22 @@ void GameFields::write(const game::Game& game, Fields& f) {
     char rng[20];
     std::snprintf(rng, sizeof rng, "%04x%04x%04x%04x", words[3], words[2], words[1], words[0]);
     f["game.rng"] = rng;
-    f["game.rainFloor"] = std::to_string(game.level().rain().floorRow());
+    const world::Level& level = game.level();
+    f["game.rainFloor"] = std::to_string(level.rain().floorRow());
+    if (!game.levelLoaded()) return;
+    f["game.energy"] = std::to_string(level.energy().value().value());
+    f["game.fade"] = std::to_string(level.fade().position().value());
+    f["game.fadeDirection"] = level.fade().fadingOut() ? "out" : "in";
+    f["game.levelDone"] = level.done() ? "1" : "0";
+    f["game.wind"] = windName(level.wind());
+    f["game.passengersLeft"] = std::to_string(level.passengersLeft());
+    const world::Water& water = level.water();
+    f["game.water.level"] = std::to_string(water.level().raw().value());
+    f["game.water.resting"] = water.resting() ? "1" : "0";
+    f["game.water.evenFrame"] = std::to_string(water.evenFrame());
+    f["game.water.surfaceFrame"] = std::to_string(water.surfaceFrame());
+    f["game.water.surfaceDelay"] = std::to_string(water.surfaceDelay());
+    f["game.rain"] = level.windy() ? rainChecksum(level.rain()) : "none";
 }
 
 }  // namespace ugh::replay

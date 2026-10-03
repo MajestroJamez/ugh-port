@@ -38,6 +38,9 @@ public:
     /** Esc gives the game up: the attempt that ends is the last one. */
     void giveUp() { lives_ = 0; }
 
+    /** The test pilot of the replays sets the lives (Cheats only). */
+    void setLivesByTestPilot(int lives) { lives_ = lives; }
+
     /** A life bonus item: more lives, at most MAX_LIVES. */
     void addLives(units::Int16 amount);
 

@@ -101,6 +101,7 @@ bool ReplayCheck::compare(const game::Game& game, const Tick& tick) {
 
 /** After the tick: the test pilot's interventions, then the scancodes. */
 void ReplayCheck::apply(game::Game& game, const Tick& tick) {
+    if (!tick.inject.empty()) intervene(game, tick);
     std::string keys = std::to_string(tick.number) + ":";
     for (int code : tick.scancodes) {
         game.scancode(static_cast<uint8_t>(code));
@@ -110,6 +111,39 @@ void ReplayCheck::apply(game::Game& game, const Tick& tick) {
     }
     recent_.push_back(keys);
     if (recent_.size() > RECENT_TICKS) recent_.pop_front();
+}
+
+/** The I line through Cheats: a copter put somewhere (the fields not in the line stay), energy, lives. */
+void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
+    game::Cheats cheats = game.cheats();
+    for (int player = 0; player < game.level().copterCount(); player++) {
+        std::string c = "copter." + std::to_string(player) + ".";
+        const world::Copter& copter = game.level().copter(player);
+        bool moved = false;
+        auto value = [&](const char* field, int current) {
+            auto it = tick.inject.find(c + field);
+            if (it == tick.inject.end()) return current;
+            moved = true;
+            return std::stoi(it->second);
+        };
+        units::Fixed x = units::Fixed::fromRaw(value("x", copter.x().raw().value()));
+        units::Fixed y = units::Fixed::fromRaw(value("y", copter.y().raw().value()));
+        units::Int16 pixelX = value("pixelX", copter.pixelX().value()), pixelY = value("pixelY", copter.pixelY().value());
+        units::Speed vx = units::Speed::fromRaw(value("vx", copter.speedX().raw().value()));
+        units::Speed vy = units::Speed::fromRaw(value("vy", copter.speedY().raw().value()));
+        std::optional<int> pad = copter.landedPad();
+        auto landed = tick.inject.find(c + "landedPad");
+        if (landed != tick.inject.end()) {
+            moved = true;
+            pad = landed->second == "none" ? std::nullopt : std::optional<int>(std::stoi(landed->second));
+        }
+        if (moved) cheats.placeCopter(player, x, y, pixelX, pixelY, vx, vy, pad);
+    }
+    for (const auto& [field, value] : tick.inject) {
+        if (field == "game.energy") cheats.setEnergy(std::stoi(value));
+        else if (field == "game.lives") cheats.setLives(std::stoi(value));
+        else if (field.rfind("copter.", 0) != 0) report_.problem(tick.number, "an intervention the logic does not allow: " + field);
+    }
 }
 
 bool ReplayCheck::compared(const std::string& field) const {
@@ -127,8 +161,8 @@ bool ReplayCheck::compared(const std::string& field) const {
 bool ReplayCheck::stopsAt(const Tick& tick) const {
     if (options_.untilField.empty()) return false;
     auto it = tick.state.find(options_.untilField);
-    std::string value = it == tick.state.end() ? "~" : it->second;
-    return options_.untilNot ? value != options_.untilValue : value == options_.untilValue;
+    if (options_.untilNot) return it != tick.state.end() && it->second != options_.untilValue;
+    return it != tick.state.end() && it->second == options_.untilValue;
 }
 
 void ReplayCheck::diagnostics(game::Game& game, long long tick) {

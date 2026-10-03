@@ -17,8 +17,8 @@ struct CheckOptions {
     bool continueAfterMismatch = false;   // count all mismatches (for statistics) instead of stopping at the first
     std::vector<std::string> only;        // field prefixes to compare ("game.", "copter."); empty: all
     std::vector<std::string> skip;        // fields not compared, N for any index ("copter.N.cargoLook")
-    std::string untilField, untilValue;   // stop before the first tick where the field has (or, `untilNot`, has not)
-    bool untilNot = false;                //   this value
+    std::string untilField, untilValue;   // stop before the first tick where the field is there and has (or,
+    bool untilNot = false;                //   `untilNot`, has not) this value
 };
 
 /**
@@ -46,6 +46,7 @@ private:
     /** Compares; false at a mismatch that stops the check. */
     bool compare(const game::Game& game, const Tick& tick);
     void apply(game::Game& game, const Tick& tick);
+    void intervene(game::Game& game, const Tick& tick);
     bool compared(const std::string& field) const;
     bool stopsAt(const Tick& tick) const;
     void diagnostics(game::Game& game, long long tick);

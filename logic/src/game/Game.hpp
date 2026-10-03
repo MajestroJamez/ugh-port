@@ -7,12 +7,14 @@
 #include "data/GameData.hpp"
 #include "events/Diagnostics.hpp"
 #include "events/EventBroadcast.hpp"
+#include "game/Cheats.hpp"
 #include "game/GameFlow.hpp"
 #include "game/GamePhase.hpp"
 #include "game/GameResult.hpp"
 #include "game/NewGameSettings.hpp"
 #include "input/PcKeyboard.hpp"
 #include "world/Level.hpp"
+#include "world/PlayContext.hpp"
 #include "world/Session.hpp"
 
 namespace ugh::game {
@@ -40,12 +42,17 @@ public:
     /** One frame (1/70 s). */
     GameResult step() { return flow_.step(); }
 
+    /** The test pilot of the replays. */
+    Cheats cheats() { return Cheats(*this); }
+
     // ------------------------------------------------------------ reading
 
     GamePhase phase() const { return flow_.phase(); }
     /** The session of the game; only after newGame(). */
     const world::Session& session() const { return *session_; }
     const world::Level& level() const { return level_; }
+    /** A level is loaded: its world and its entities are there (caption, setup, play). */
+    bool levelLoaded() const;
     events::Diagnostics& diagnostics() { return diagnostics_; }
 
     // ------------------------------------------------------------ for the phases of the flow
@@ -59,13 +66,15 @@ public:
     /** One frame of the play. */
     void playFrame();
     /** The attempt is over (its fade-out reached black). */
-    bool attemptOver() const;
+    bool attemptOver() const { return level_.fade().over(); }
     /** The next level when the attempt finished the level, else a life less. */
     GameResult endAttempt();
     input::PcKeyboard& keyboard() { return keyboard_; }
     void report(const events::Event& event) { events_.onEvent(event); }
 
 private:
+    friend class Cheats;
+
     const data::GameData& data_;
     events::EventBroadcast events_;
     events::Diagnostics diagnostics_;
@@ -73,6 +82,8 @@ private:
     world::Level level_;
     input::PcKeyboard keyboard_;
     GameFlow flow_;
+
+    world::PlayContext context();
 };
 
 }  // namespace ugh::game
