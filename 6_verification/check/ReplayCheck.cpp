@@ -1,4 +1,4 @@
-#include "ReplayCheck.hpp"
+#include "check/ReplayCheck.hpp"
 
 #include <charconv>
 #include <cstdio>
@@ -6,13 +6,13 @@
 #include "replay/StateWriter.hpp"
 #include "testing/TestPilot.hpp"
 
-namespace ugh::tool {
+namespace ugh::check {
 
-bool ReplayCheck::run(const std::string& path) {
+void ReplayCheck::run(const std::string& path) {
     ReplayFile file(path);
     if (!file.open()) {
-        std::fprintf(stderr, "%s\n", file.error().c_str());
-        return false;
+        report_.unreadable(file.error());
+        return;
     }
     game::Game game(data_);
     keyboard::PcKeyboard keyboard(keys_);
@@ -20,26 +20,22 @@ bool ReplayCheck::run(const std::string& path) {
     bool started = false;
     while (file.next(tick)) {
         if (!started) {
-            if (!start(game, tick)) return true;
+            if (!start(game, tick)) return;
             started = true;
         } else {
             apply(game, keyboard, previous);
             game::GameResult result = game.step();
             if (result != game::GameResult::Continue) {
                 report_.problem(tick.number, "the logic ended the game");
-                return true;
+                return;
             }
         }
         diagnostics(game, tick.number);
         report_.tick();
-        if (!compare(game, tick)) return true;
+        if (!compare(game, tick)) return;
         previous = tick;
     }
-    if (!file.error().empty()) {
-        std::fprintf(stderr, "%s\n", file.error().c_str());
-        return false;
-    }
-    return true;
+    if (!file.error().empty()) report_.unreadable(file.error());
 }
 
 /** Tick 0: the settings of the new game. */
@@ -165,4 +161,4 @@ void ReplayCheck::diagnostics(game::Game& game, long long tick) {
     for (const std::string& problem : game.diagnostics().take()) report_.problem(tick, "the logic: " + problem);
 }
 
-}  // namespace ugh::tool
+}  // namespace ugh::check

@@ -502,3 +502,15 @@ Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/l
   `static_assert` pořadí událostí C API; čtečka dat hlídá druhy nepřátel, `rules` a `sprites` právě jednou;
   pravdivé komentáře a rozsahy v `ugh_logic.h`, pojmenované quirky (`Splash`, `floatOnSurface`, box nepřítele).
   42 testů + 163 kontrol replayů zelených. Další: **krok 10**.
+- 2026-10-03: krok 10 hotový - `5_remake/game/` (UE 5.8, bez map a assetů: scénu staví
+  `AUghGameMode` z kódu). Modul `UghLogic` překládá zdrojáky `logic/src` na místě (Build.cs generuje obal na každý
+  .cpp, UBT nesnese stejná jména souborů jako `Falling.cpp`), C API exportované (`UGH_LOGIC_EXPORTS/IMPORTS`); v
+  editoru i testy `Ugh.Replays.*` přes knihovnu `6_verification/check/` (přesun z `tools/replay_check`). C API má
+  pozadí levelu (`ugh_logic_pad_count`, `ugh_logic_get_pad`, `ugh_logic_solid`) a hodnoty pro frontend (obrazovka,
+  tělo vrtulníku, plná energie, plně zobrazený level, snímky za 1000 s); diagnostiky po každém kroku zahodí.
+  Frontend `UghGame`: pevný tik 70,086 Hz + interpolace, klávesy (šipky + pravý Ctrl / mezerník, pilot 2 W A S D,
+  Esc, P), maska slitá do kostek, plošiny s čísly, voda, postavy velikosti spritů, HUD, DLSS/FSR/TSR (U) a frame
+  generation (G). Slunce bez stínů (na natažených kostkách dělají pruhy). Skripty `setup.ps1` (pluginy z UghTrial,
+  mimo git), `build.ps1`, `test.ps1`, `shot.ps1` (level 1 sám bez okna do PNG), `play.ps1`. Review agentem: 8 nálezů
+  opraveno. 43 testů + 3 + 161 replayů (CMake) a 161 replayů v UE zelených, Jan level 1 odehrál
+  (`play.ps1`). Další: **krok 11**.

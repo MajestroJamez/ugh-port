@@ -5,13 +5,13 @@
 #include <cstring>
 #include <string>
 
-#include "ReplayCheck.hpp"
-#include "ReplayReport.hpp"
+#include "check/ReplayCheck.hpp"
+#include "check/ReplayReport.hpp"
 #include "data/ugd/DataFileReader.hpp"
 #include "keyboard/KeyFile.hpp"
 
 int main(int argc, char** argv) {
-    ugh::tool::ReplayCheck::Options options;
+    ugh::check::ReplayCheck::Options options;
     int i = 1;
     for (; i < argc && std::strncmp(argv[i], "--", 2) == 0; i++) {
         std::string option = argv[i];
@@ -39,11 +39,8 @@ int main(int argc, char** argv) {
     }
     bool ok = true;
     for (int r = i + 1; r < argc; r++) {
-        ugh::tool::ReplayReport report;
-        if (!ugh::tool::ReplayCheck(*data, keys, options, report).run(argv[r])) {
-            ok = false;
-            continue;
-        }
+        ugh::check::ReplayReport report;
+        ugh::check::ReplayCheck(*data, keys, options, report).run(argv[r]);
         report.print(argv[r]);
         ok = ok && report.passed();
     }

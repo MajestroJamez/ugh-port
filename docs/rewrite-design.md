@@ -204,10 +204,12 @@ logic/
       PlayFrame.hpp/.cpp    jeden snímek hry: pořadí systémů
     api/
       LogicApi.cpp          C API nad Game
-  replay/                   ugh::replay – knihovna ugh_logic_replay (jen pro nástroj a testy, ne pro UE)
+  6_verification/replay/    ugh::replay – knihovna ugh_logic_replay (pro kontrolu replayů; v UE jen v editoru, testy)
     StateWriter.hpp/.cpp    sémantický stav hry jako pole UGR 1 (jen čte)
     GameFields, CopterFields, PadFields, PassengerFields, EnemyFields, BonusFields (.hpp/.cpp)
-  tools/replay_check/       ugh::tool – ReplayFile (parser UGR 1), ReplayCheck, ReplayReport, main.cpp
+  6_verification/check/     ugh::check – knihovna ugh_replay_check: ReplayFile (parser UGR 1), ReplayCheck, ReplayReport
+                            (i pro testy replayů v UE, 5_remake/game)
+  6_verification/tools/replay_check/  main.cpp: replay_check nad soubory z příkazové řádky
   testing/                  ugh::testing – TestPilot (knihovna ugh_logic_testing, kap. 9): zásahy testovacího pilota
                             (přemístit vrtulník, energie, životy) pro testy a 6_verification; není součástí logiky
   tests/                    po modulech (units/, data/, world/, physics/, passengers/, enemies/, bonuses/, input/, game/)
@@ -474,7 +476,8 @@ Pokrytí stavů (`GoldenReplayTest`) je dál úplné.
 
 ## 10. Nástroj `replay_check` a C API
 
-**`tools/replay_check`** (C++, linkuje `ugh_logic` + `ugh_logic_replay`, ne C API):
+**`check/` + `tools/replay_check`** (C++, linkuje `ugh_logic` + `ugh_logic_replay`, ne C API; stejná kontrola běží
+v UE jako automatické testy `Ugh.Replays.*`):
 
 1. tick 0 → `NewGameSettings` z `game.level`, `game.players`, `game.difficulty`, `game.rng`, `game.rainFloor`;
 2. každý další tick: `game.step()`, porovnat `StateWriter` s očekávaným stavem (množina polí i hodnoty, včetně
@@ -486,7 +489,9 @@ Pokrytí stavů (`GoldenReplayTest`) je dál úplné.
 **C API `include/ugh_logic.h`** (pro UE, krok 10): `ugh_logic_create(data_path, err, size)`, `ugh_logic_destroy`,
 `ugh_logic_new_game(settings)`, `ugh_logic_key` a `ugh_logic_menu_key` (do N9b `ugh_logic_scancode`), `ugh_logic_step` (→ continue / game over / all done),
 `ugh_logic_take_events`, a pohled pro vykreslení `ugh_logic_view` (pole entit: druh, poloha, sprite, bublina; vrtulníky;
-voda; kapky). Žádné nastavování polí zvenku. Návrh hlavičky v N4, pohled v N8.
+voda; kapky), pozadí levelu (`ugh_logic_pad_count`, `ugh_logic_get_pad`, `ugh_logic_solid`, od kroku 10) a rozměry
+(obrazovka, tělo vrtulníku, plná energie; hlídané `static_assert`). Žádné nastavování polí zvenku. Návrh hlavičky v N4,
+pohled v N8. V UE je C API exportované z modulu `UghLogic` (`UGH_LOGIC_API`).
 
 ## 11. Kroky
 

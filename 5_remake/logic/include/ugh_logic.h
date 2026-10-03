@@ -11,6 +11,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/*
+ * In a DLL (the Unreal Engine module UghLogic in the editor) the functions are exported by the DLL that defines
+ * UGH_LOGIC_EXPORTS and imported by the ones that define UGH_LOGIC_IMPORTS; in a static library they are plain.
+ */
+#if defined(UGH_LOGIC_EXPORTS)
+#define UGH_LOGIC_API __declspec(dllexport)
+#elif defined(UGH_LOGIC_IMPORTS)
+#define UGH_LOGIC_API __declspec(dllimport)
+#else
+#define UGH_LOGIC_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,8 +30,8 @@ extern "C" {
 typedef struct ugh_logic ugh_logic;
 
 /** Loads the game data (assets/logic/ugh-data.ugd). NULL on failure, the reason in err. */
-ugh_logic* ugh_logic_create(const char* data_path, char* err, size_t err_size);
-void ugh_logic_destroy(ugh_logic* logic);
+UGH_LOGIC_API ugh_logic* ugh_logic_create(const char* data_path, char* err, size_t err_size);
+UGH_LOGIC_API void ugh_logic_destroy(ugh_logic* logic);
 
 /**
  * What a new game starts with: what the menu chose, and two values the original takes from the screens before the
@@ -37,16 +49,16 @@ typedef struct {
  * The settings of a one-player game on medium from the first level: the random seed 0 (any seed plays a fair game)
  * and the rain row as after the program start.
  */
-void ugh_logic_default_settings(ugh_logic_settings* settings);
+UGH_LOGIC_API void ugh_logic_default_settings(ugh_logic_settings* settings);
 
 /** A new game; 0 when a setting is out of range. */
-int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings);
+UGH_LOGIC_API int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings);
 
 /** The keys a pilot flies with. */
 enum { UGH_LOGIC_KEY_UP = 0, UGH_LOGIC_KEY_DOWN, UGH_LOGIC_KEY_LEFT, UGH_LOGIC_KEY_RIGHT, UGH_LOGIC_KEY_FIRE };
 
 /** A pilot's key (UGH_LOGIC_KEY_...) pressed (1) or released (0), between two frames; player 0 or 1. */
-void ugh_logic_key(ugh_logic* logic, int player, int key, int pressed);
+UGH_LOGIC_API void ugh_logic_key(ugh_logic* logic, int player, int key, int pressed);
 
 /** The keys the game loop sees besides the pilots' keys. */
 enum { UGH_LOGIC_MENU_ESCAPE = 0, UGH_LOGIC_MENU_PAUSE, UGH_LOGIC_MENU_OTHER };
@@ -56,12 +68,15 @@ enum { UGH_LOGIC_MENU_ESCAPE = 0, UGH_LOGIC_MENU_PAUSE, UGH_LOGIC_MENU_OTHER };
  * until the next key event), P pressed (pause, not supported), or any other key pressed or released - also a
  * pilot's key. A caption waits for one.
  */
-void ugh_logic_menu_key(ugh_logic* logic, int key);
+UGH_LOGIC_API void ugh_logic_menu_key(ugh_logic* logic, int key);
 
 enum { UGH_LOGIC_CONTINUE = 0, UGH_LOGIC_GAME_OVER = 1, UGH_LOGIC_ALL_LEVELS_DONE = 2 };
 
-/** One frame (70.086 Hz): UGH_LOGIC_CONTINUE while the game goes on (UGH_LOGIC_GAME_OVER before a new game). */
-int ugh_logic_step(ugh_logic* logic);
+/** The frame rate of the original (VGA): 70.086 frames a second, as frames per 1000 s. */
+enum { UGH_LOGIC_FRAMES_PER_1000_S = 70086 };
+
+/** One frame: UGH_LOGIC_CONTINUE while the game goes on (UGH_LOGIC_GAME_OVER before a new game). */
+UGH_LOGIC_API int ugh_logic_step(ugh_logic* logic);
 
 /** What happened (ugh_logic_take_events). */
 enum {
@@ -90,7 +105,8 @@ typedef struct {
 } ugh_logic_event;
 
 /** Calls back with the events since the last call (and forgets them). */
-void ugh_logic_take_events(ugh_logic* logic, void (*callback)(void* ctx, const ugh_logic_event* event), void* ctx);
+UGH_LOGIC_API void ugh_logic_take_events(ugh_logic* logic, void (*callback)(void* ctx, const ugh_logic_event* event),
+                                         void* ctx);
 
 /* ------------------------------------------------------------------ what to draw */
 
@@ -124,7 +140,11 @@ typedef struct {
     int fare;
 } ugh_logic_copter;
 
-enum { UGH_LOGIC_MAX_ENTITIES = 40, UGH_LOGIC_RAINDROPS = 193 };
+enum {
+    UGH_LOGIC_MAX_ENTITIES = 40, UGH_LOGIC_RAINDROPS = 193,
+    UGH_LOGIC_FULL_ENERGY = 23099,   /* a full tank */
+    UGH_LOGIC_FADE_SHOWN = 256       /* the level fully shown */
+};
 
 /** Everything a frontend draws of a frame. */
 typedef struct {
@@ -133,8 +153,8 @@ typedef struct {
     int level_id;           /* the level in the data (its map), -1 before the first level is loaded */
     int lives, multiplier;
     unsigned score;
-    int energy;             /* 23099 full; it goes on below 0 and wraps like the original's 16-bit counter */
-    int fade;               /* 0 black .. 256 fully shown; it may overshoot to 258, and ends below 0 (black) */
+    int energy;             /* UGH_LOGIC_FULL_ENERGY full; below 0 it goes on and wraps like the original's 16 bits */
+    int fade;               /* 0 black .. UGH_LOGIC_FADE_SHOWN fully shown; it may overshoot by 2, and ends below 0 */
     int water_level;        /* the water surface, 1/32 px */
     int water_frame;        /* the animation of the surface, 0 .. 2 */
     int copter_count;
@@ -146,7 +166,34 @@ typedef struct {
 } ugh_logic_view;
 
 /** Fills `view` with the state after the last step. */
-void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view);
+UGH_LOGIC_API void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view);
+
+/**
+ * The screen of a level in pixels, and the positions of the view: 1/32 px. A copter's body (what a sprite touches)
+ * is from BODY_LEFT to BODY_RIGHT across and BODY_HEIGHT high, in pixels from its top left corner.
+ */
+enum {
+    UGH_LOGIC_SCREEN_WIDTH = 320, UGH_LOGIC_SCREEN_HEIGHT = 192, UGH_LOGIC_SUBPIXELS = 32,
+    UGH_LOGIC_COPTER_BODY_LEFT = 5, UGH_LOGIC_COPTER_BODY_RIGHT = 26, UGH_LOGIC_COPTER_BODY_HEIGHT = 20
+};
+
+/* ------------------------------------------------------------------ the background of the level being played */
+
+/** A pad, in pixels. */
+typedef struct {
+    int left, right;   /* the landing area */
+    int y;             /* its surface */
+    int number;        /* shown in the bubbles */
+} ugh_logic_pad;
+
+/** The pads of the level being played (ugh_logic_view.level_id); 0 before the first level is loaded. */
+UGH_LOGIC_API int ugh_logic_pad_count(const ugh_logic* logic);
+
+/** Fills `pad` with pad `index` (0 .. count - 1) of the level being played; 0 when there is none. */
+UGH_LOGIC_API int ugh_logic_get_pad(const ugh_logic* logic, int index, ugh_logic_pad* pad);
+
+/** 1 when pixel x, y of the level being played is solid (its collision mask); 0 if not, outside, before a level. */
+UGH_LOGIC_API int ugh_logic_solid(const ugh_logic* logic, int x, int y);
 
 #ifdef __cplusplus
 }

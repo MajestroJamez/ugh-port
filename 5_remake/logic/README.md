@@ -3,7 +3,8 @@
 The game logic of UGH! (1992), written anew in C++20 without dependencies. It computes every frame exactly as the
 original DOS game does - same keys in, same state out, frame by frame - but it knows nothing of the original's
 memory: it reads named game data and keeps its state in classes of the game's concepts. No drawing and no sound: a
-frontend (Unreal Engine, step 10 of `docs/plan.md`) reads the state through the C API `include/ugh_logic.h` and
+frontend (Unreal Engine, `5_remake/game`, which compiles these sources as its module `UghLogic`) reads the state and
+the background of the level (its pads and solid pixels) through the C API `include/ugh_logic.h` and
 plays sounds and effects from the events.
 
 Exactness is checked by the golden replays: 161 recordings of the original (every level of both modes, 434 000
@@ -104,7 +105,8 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
 - **Template Method**: `passengers::route::OnPickupPad`: every frame the states on the pickup pad check the water (it
   may fall in), do their own `walk`, check a copter in the air (it may knock it in), then do their own `stay`.
 
-No exceptions, no RTTI, no macros (the library builds as an Unreal Engine module), templates only where they remove
+No exceptions, no RTTI, no macros (the library builds as an Unreal Engine module; the one macro, `UGH_LOGIC_API` in
+the C API, exports it from that module), templates only where they remove
 copies (`state/`, `RecordTable`): errors come back as values (`DataFileReader::read` returns nullptr and the
 text of the error).
 
@@ -166,7 +168,7 @@ text of the error).
 | change where a copter's door, skids, body or waterline are | `src/world/copter/CopterShape.hpp` |
 | change the size of the screen | `src/data/levels/ScreenSize.hpp`: the collision mask, `world::scenery::Screen` (where a thing is gone), the rain (its width and `Rain::DROPS`) follow it; the limits of a copter's flight are its own (`src/physics/CopterPhysics.cpp`) |
 | change what ends an attempt (a crash, Esc, the last passenger) | `src/world/Level.cpp` (`crash`, `fadeOut`, `passengerFinished`) |
-| change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`) and `src/api/LogicApi.cpp` |
+| change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`, the background: `ugh_logic_pad`, `ugh_logic_solid`) and `src/api/LogicApi.cpp` |
 | change how the score multiplier works | `src/world/session/Score.hpp` |
 | change what a passenger does on its pickup pad every frame (the water, a copter flying into it) | `src/passengers/route/OnPickupPad.cpp` |
 

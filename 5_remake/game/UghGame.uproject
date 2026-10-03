@@ -1,0 +1,32 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.8",
+	"Category": "",
+	"Description": "UGH! remake - grey boxes over the C++ game logic",
+	"Modules": [
+		{
+			"Name": "UghLogic",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UghGame",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "DLSS",
+			"Enabled": true
+		},
+		{
+			"Name": "Streamline",
+			"Enabled": true
+		},
+		{
+			"Name": "FSR",
+			"Enabled": true
+		}
+	]
+}

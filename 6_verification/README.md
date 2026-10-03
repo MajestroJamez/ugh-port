@@ -29,7 +29,8 @@ build\replay_check.exe ..\assets\logic\ugh-data.ugd ..\4_test_data\verify\build\
 | `replay/` | library `ugh_logic_replay`: the semantic state of the game as the fields of `UGR 1` (`StateWriter`, one writer per entity, `FieldRules` when a field is defined, `FieldTable` its value); it only reads the game |
 | `keyboard/` | library `ugh_pc_keyboard`: the PC keyboard of the original (Adapter). `KeyFile` reads the `key` records of the data (the logic skips them), `PcKeyboard` turns the scancodes of a replay into the pilots' keys and, before a frame, a menu key when the last scancode changed |
 | `tests/` | `verification_tests`: the tests of the keyboard |
-| `tools/replay_check/` | `replay_check`: reads a replay tick by tick, feeds its keys and the test pilot's settings to the logic and compares the fields |
+| `check/` | library `ugh_replay_check`: `ReplayCheck` reads a replay tick by tick (`ReplayFile`), feeds its keys and the test pilot's settings to the logic and compares the fields into a `ReplayReport`; also the replay tests inside Unreal Engine (`5_remake/game`) |
+| `tools/replay_check/` | `replay_check`: the check of the replays given on its command line |
 
 The format of the replays and the table of fields: `docs/rewrite-design.md`, chap. 9.
 
@@ -50,7 +51,7 @@ The format of the replays and the table of fields: `docs/rewrite-design.md`, cha
 | I want to ... | Go to |
 |---|---|
 | add a field to the replays | the rule and a line of the value table in the entity's writer (`replay/PassengerFields.cpp` ...), and the same field in `4_test_data/verify/.../replay/SemanticProjection.kt` |
-| change what a mismatch report shows | `tools/replay_check/ReplayReport.cpp` |
-| read a new kind of line of a replay | `tools/replay_check/ReplayFile.cpp` |
-| let the test pilot set something new (an I line) | `tools/replay_check/ReplayCheck.cpp` (`intervene`) and `5_remake/logic/testing/TestPilot.hpp` |
+| change what a mismatch report shows | `check/ReplayReport.cpp` |
+| read a new kind of line of a replay | `check/ReplayFile.cpp` |
+| let the test pilot set something new (an I line) | `check/ReplayCheck.cpp` (`intervene`) and `5_remake/logic/testing/TestPilot.hpp` |
 | change how the keys of a replay reach the logic | `keyboard/PcKeyboard.cpp` |

@@ -18,3 +18,14 @@ build/
 .idea/
 .kotlin/
 *.iml
+
+# Unreal Engine project: build output and caches, and the vendor plugins (DLSS, FSR: copied by 5_remake/game/setup.ps1)
+5_remake/game/Binaries/
+5_remake/game/Intermediate/
+5_remake/game/Saved/
+5_remake/game/DerivedDataCache/
+5_remake/game/Plugins/
+5_remake/game/.vs/
+5_remake/game/*.sln
+# written by the engine with its defaults (the game takes raw key events, no input settings)
+5_remake/game/Config/DefaultInput.ini

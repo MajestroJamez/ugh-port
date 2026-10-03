@@ -12,6 +12,7 @@
 #include "events/EventQueue.hpp"
 #include "game/Game.hpp"
 #include "passengers/Passenger.hpp"
+#include "world/copter/CopterShape.hpp"
 
 struct ugh_logic {
     std::unique_ptr<const ugh::data::GameData> data;
@@ -34,7 +35,8 @@ static_assert(static_cast<int>(ugh::input::MenuKey::Other) == UGH_LOGIC_MENU_OTH
 constexpr int eventKind(ugh::events::EventKind kind) { return static_cast<int>(kind) + UGH_LOGIC_EVENT_LEVEL_CAPTION; }
 static_assert(eventKind(ugh::events::EventKind::BonusCollected) == UGH_LOGIC_EVENT_BONUS_COLLECTED);
 
-// every raindrop fits into the view
+// a full tank, a fully shown level; every raindrop fits into the view
+static_assert(ugh::world::Energy::FULL == UGH_LOGIC_FULL_ENERGY && ugh::world::Fade::FULL == UGH_LOGIC_FADE_SHOWN);
 static_assert(ugh::world::scenery::Rain::DROPS <= UGH_LOGIC_RAINDROPS);
 
 // the values ugh_logic.h documents: the effect of a collected bonus item, the difficulty
@@ -44,6 +46,14 @@ static_assert(static_cast<int>(ugh::data::kinds::BonusEffect::Energy) == 0 &&
 static_assert(static_cast<int>(ugh::data::Difficulty::Easy) == 0 &&
               static_cast<int>(ugh::data::Difficulty::Medium) == 1 &&
               static_cast<int>(ugh::data::Difficulty::Hard) == 2);
+
+// the screen, the positions and the copter's body of ugh_logic.h
+static_assert(ugh::data::levels::ScreenSize::WIDTH == UGH_LOGIC_SCREEN_WIDTH &&
+              ugh::data::levels::ScreenSize::HEIGHT == UGH_LOGIC_SCREEN_HEIGHT);
+static_assert(ugh::units::Fixed::fromPixels(1).raw() == UGH_LOGIC_SUBPIXELS);
+static_assert(ugh::world::copter::CopterShape::BODY_LEFT == UGH_LOGIC_COPTER_BODY_LEFT &&
+              ugh::world::copter::CopterShape::BODY_RIGHT == UGH_LOGIC_COPTER_BODY_RIGHT &&
+              ugh::world::copter::CopterShape::BODY_HEIGHT == UGH_LOGIC_COPTER_BODY_HEIGHT);
 
 // the words of the random numbers
 constexpr size_t SEED_WORDS = std::tuple_size_v<ugh::world::session::RandomNumbers::Words>;
@@ -100,6 +110,11 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
         view.raindrops[view.raindrop_count][1] = drop.y;
         view.raindrop_count++;
     }
+}
+
+/** The level being played, nullptr before the first one is loaded. */
+const ugh::data::levels::LevelDefinition* levelPlayed(const ugh_logic* logic) {
+    return logic->started && logic->game.levelLoaded() ? logic->game.level().definition() : nullptr;
 }
 
 int result(ugh::game::GameResult r) {
@@ -165,7 +180,12 @@ void ugh_logic_menu_key(ugh_logic* logic, int key) {
     logic->game.menuKey(static_cast<ugh::input::MenuKey>(key));
 }
 
-int ugh_logic_step(ugh_logic* logic) { return logic->started ? result(logic->game.step()) : UGH_LOGIC_GAME_OVER; }
+int ugh_logic_step(ugh_logic* logic) {
+    if (!logic->started) return UGH_LOGIC_GAME_OVER;
+    const int status = result(logic->game.step());
+    logic->game.diagnostics().take();   // what the logic does not support: only the replay check reports it
+    return status;
+}
 
 void ugh_logic_take_events(ugh_logic* logic, void (*callback)(void* ctx, const ugh_logic_event* event), void* ctx) {
     for (const ugh::events::Event& e : logic->events.take()) {
@@ -186,6 +206,23 @@ void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view) {
     view->multiplier = session.score().multiplier();
     view->score = session.score().points();
     if (game.levelLoaded()) viewLevel(game, *view);
+}
+
+int ugh_logic_pad_count(const ugh_logic* logic) {
+    const ugh::data::levels::LevelDefinition* level = levelPlayed(logic);
+    return level ? static_cast<int>(level->pads.size()) : 0;
+}
+
+int ugh_logic_get_pad(const ugh_logic* logic, int index, ugh_logic_pad* pad) {
+    if (index < 0 || index >= ugh_logic_pad_count(logic)) return 0;
+    const ugh::data::levels::PadDefinition& p = levelPlayed(logic)->pads[index];
+    *pad = ugh_logic_pad{p.left, p.right, p.y, p.number};
+    return 1;
+}
+
+int ugh_logic_solid(const ugh_logic* logic, int x, int y) {
+    const ugh::data::levels::LevelDefinition* level = levelPlayed(logic);
+    return level && level->mask.solid(x, y) ? 1 : 0;
 }
 
 }

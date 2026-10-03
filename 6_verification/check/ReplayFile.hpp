@@ -7,7 +7,7 @@
 
 #include "replay/Fields.hpp"
 
-namespace ugh::tool {
+namespace ugh::check {
 
 /**
  * A golden replay "UGR 1" (4_test_data/verify/.../replay/ReplayWriter.kt), read tick by tick: a T line has the tick number, the
@@ -45,4 +45,4 @@ private:
     static replay::Fields pairs(const std::string& text);
 };
 
-}  // namespace ugh::tool
+}  // namespace ugh::check

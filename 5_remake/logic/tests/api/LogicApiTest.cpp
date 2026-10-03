@@ -56,3 +56,29 @@ TEST(the_c_api_plays_a_game_and_shows_it) {
     CHECK_EQUAL(0, view.raindrop_count);
     ugh_logic_destroy(logic);
 }
+
+TEST(the_c_api_shows_the_background_of_the_level) {
+    char err[200] = "";
+    ugh_logic* logic = ugh_logic_create(ugh::test::dataPath().c_str(), err, sizeof err);
+    CHECK(logic != nullptr);
+    if (!logic) return;
+    CHECK_EQUAL(0, ugh_logic_pad_count(logic));   // no level yet
+    ugh_logic_settings settings;
+    ugh_logic_default_settings(&settings);
+    CHECK_EQUAL(1, ugh_logic_new_game(logic, &settings));
+    for (int frame = 0; frame < 9; frame++) ugh_logic_step(logic);   // the caption loads the first level
+    CHECK_EQUAL(3, ugh_logic_pad_count(logic));
+    ugh_logic_pad pad{};
+    CHECK_EQUAL(1, ugh_logic_get_pad(logic, 0, &pad));
+    CHECK_EQUAL(208, pad.left);
+    CHECK_EQUAL(320, pad.right);
+    CHECK_EQUAL(36, pad.y);
+    CHECK_EQUAL(1, pad.number);
+    CHECK_EQUAL(0, ugh_logic_get_pad(logic, 3, &pad));
+    int solid = 0;
+    for (int y = 0; y < UGH_LOGIC_SCREEN_HEIGHT; y++)
+        for (int x = 0; x < UGH_LOGIC_SCREEN_WIDTH; x++) solid += ugh_logic_solid(logic, x, y);
+    CHECK(solid > 0 && solid < UGH_LOGIC_SCREEN_WIDTH * UGH_LOGIC_SCREEN_HEIGHT);
+    CHECK_EQUAL(0, ugh_logic_solid(logic, -1, 0));
+    ugh_logic_destroy(logic);
+}

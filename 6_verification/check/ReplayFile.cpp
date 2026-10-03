@@ -1,9 +1,9 @@
-#include "ReplayFile.hpp"
+#include "check/ReplayFile.hpp"
 
 #include <charconv>
 #include <sstream>
 
-namespace ugh::tool {
+namespace ugh::check {
 
 ReplayFile::ReplayFile(const std::string& path) : path_(path), in_(path, std::ios::binary) {}
 
@@ -98,4 +98,4 @@ replay::Fields ReplayFile::pairs(const std::string& text) {
     return fields;
 }
 
-}  // namespace ugh::tool
+}  // namespace ugh::check

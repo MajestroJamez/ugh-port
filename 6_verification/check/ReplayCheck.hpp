@@ -5,14 +5,14 @@
 #include <string>
 #include <vector>
 
-#include "ReplayFile.hpp"
-#include "ReplayReport.hpp"
+#include "check/ReplayFile.hpp"
+#include "check/ReplayReport.hpp"
 #include "data/GameData.hpp"
 #include "game/Game.hpp"
 #include "keyboard/KeyBinding.hpp"
 #include "keyboard/PcKeyboard.hpp"
 
-namespace ugh::tool {
+namespace ugh::check {
 
 /**
  * Plays a golden replay "UGR 1" on the logic: tick 0 gives the new game's settings, every later tick is one step of
@@ -32,8 +32,8 @@ public:
                 ReplayReport& report)
         : data_(data), keys_(keys), options_(options), report_(report) {}
 
-    /** Plays the file; false when it cannot be read (the reason is on stderr). */
-    bool run(const std::string& path);
+    /** Plays the file into the report (a file that cannot be read is a problem of the report too). */
+    void run(const std::string& path);
 
 private:
     static constexpr size_t RECENT_TICKS = 5;
@@ -55,4 +55,4 @@ private:
     static bool number(const std::string& text, int& out, int base = 10);
 };
 
-}  // namespace ugh::tool
+}  // namespace ugh::check
