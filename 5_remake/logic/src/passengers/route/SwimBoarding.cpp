@@ -15,14 +15,14 @@ void SwimBoarding::enter(RoutePassenger& passenger, const PassengerContext& cont
 }
 
 void SwimBoarding::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    const world::Level& level = context.play.level;
+    world::Level& level = context.level;
     passenger.floatOnSurface(level.water().row());
-    std::optional<int> copter = level.copters().onWaterWithRoom(level.water());
+    world::Copter* copter = level.copters().onWaterWithRoom(level.water());
     if (!copter) {
         passenger.changeState(SwimWaving::instance, context);
         return;
     }
-    if (passenger.walkTowards(level.copters()[*copter])) Riding::board(passenger, *copter, context);
+    if (passenger.walkTowards(*copter)) Riding::board(passenger, *copter, context);
 }
 
 }  // namespace ugh::passengers::route

@@ -9,7 +9,6 @@ namespace ugh::enemies::walker {
 class Stunned : public WalkerState {
 public:
     static const Stunned instance;
-    static constexpr int STUN_TIME = 350;
 
     const char* name() const override { return "Stunned"; }
     void enter(Walker& walker, const EnemyContext& context) const override;

@@ -1,20 +1,20 @@
 // A passenger riding in a copter.
 #pragma once
 
-#include <optional>
+#include "world/Copter.hpp"
 
 namespace ugh::passengers::route {
 
 /** A passenger riding in a copter: the copter that carries it and how long a delivery still counts as quick. */
 class Ride {
 public:
-    /** It gets into the copter of `player`; a delivery within `quickFrames` drops a bonus item. */
-    void start(int player, int quickFrames) {
-        carrier_ = player;
+    /** It gets into `copter`; a delivery within `quickFrames` drops a bonus item. */
+    void start(world::Copter& copter, int quickFrames) {
+        carrier_ = &copter;
         quickDeliveryTime_ = quickFrames;
     }
-    /** The copter that carries it. */
-    std::optional<int> carrier() const { return carrier_; }
+    /** The copter that carries it; nullptr before its first ride. */
+    world::Copter* carrier() const { return carrier_; }
 
     /** One frame of the ride. */
     void tick() {
@@ -24,7 +24,7 @@ public:
     int quickDeliveryTime() const { return quickDeliveryTime_; }
 
 private:
-    std::optional<int> carrier_;
+    world::Copter* carrier_ = nullptr;
     int quickDeliveryTime_ = 0;
 };
 

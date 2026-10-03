@@ -8,15 +8,14 @@ namespace ugh::passengers::standing {
 const Hanging Hanging::instance{};
 
 void Hanging::enter(StandingPassenger& passenger, const PassengerContext& context) const {
-    int player = *passenger.carrier();
-    context.play.level.copters()[player].cabin().pickUpHanging(passenger.kind().look);
+    world::Copter& copter = *passenger.carrier();
+    copter.cabin().pickUpHanging(passenger.kind().look);
     passenger.hide();
-    context.play.report({events::EventKind::PassengerBoarded, player, passenger.index()});
+    context.report({events::EventKind::PassengerBoarded, copter.player(), passenger.index()});
 }
 
 void Hanging::update(StandingPassenger& passenger, const PassengerContext& context) const {
-    if (context.play.level.copters()[*passenger.carrier()].controls().fire)
-        passenger.changeState(Falling::instance, context);
+    if (passenger.carrier()->controls().fire) passenger.changeState(Falling::instance, context);
 }
 
 }  // namespace ugh::passengers::standing

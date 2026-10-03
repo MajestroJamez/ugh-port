@@ -42,7 +42,7 @@ originál v oracle + Kotlin port ──► verify ──► verify/build/replays
 | Doména závisí na C API | `core/Event.hpp` a `Game` používají `UGH_SIM_*` | vlastní `enum class`, převod jen v `api/` |
 | DRY | balistický pád dvakrát (cestující, bonus), okraje obrazovky ve 4 souborech, `WIND_TO_THE_LEFT` dvakrát | `physics::Ballistics`, `world::Screen`, `enum class Wind` |
 | Balíčky | „složka = namespace“ neplatí v podsložkách, dvě třídy `Falling` | složka = namespace všude |
-| Zadní vrátka | `restore(Snapshot)` obchází zapouzdření, logika má obranné kontroly kvůli replayům | žádný zápis stavu zvenku kromě `Cheats` (kap. 9) |
+| Zadní vrátka | `restore(Snapshot)` obchází zapouzdření, logika má obranné kontroly kvůli replayům | žádný zápis stavu zvenku kromě testovacího pilota (od N9c `testing::TestPilot` mimo `src/`, kap. 9) |
 | Pasti pro juniora | `GameFlow` konstruuje fáze s referencemi na ještě nezkonstruované členy | fáze přes `PhaseId`, žádné závislosti na pořadí konstrukce |
 | Nový stav = 4 místa | hpp, cpp, ruční registr stavů, `CMakeLists` | bez registru (replay se jen zapisuje), CMake po modulech |
 
@@ -66,11 +66,13 @@ originál v oracle + Kotlin port ──► verify ──► verify/build/replays
    `-1`; výčet je `enum class` (`Wind`, `Difficulty`, `Facing`, `BonusEffect`, `PlayerKey`). Logika nemá obranné
    kontroly – vstup kontroluje jen loader dat.
 8. **Povolené C++:** třídy, virtuální metody, `enum class`, `std::array`, `std::vector`, `std::unique_ptr`,
-   `std::optional`, `std::string`, `std::string_view`, malé vlastní šablony (od N9b `state/StateMachine`).
-   **Zakázané:** makra (kromě `tests/TestFramework.hpp`), korutiny, `std::function`, ukazatele na členy, **výjimky a RTTI** (`dynamic_cast`,
-   `typeid`) – Unreal Engine je ve výchozím stavu nemá; chyby vrací `std::optional` / struktura s textem chyby.
-9. **Závislosti jen jedním směrem:** `units` ← `data` ← `events` ← `world` ← (`physics`, `passengers`, `enemies`,
-   `bonuses`) ← `input` ← `game` ← `api`. `replay/` a `tools/` jen čtou `game`. Nic v `src/` neincluduje
+   `std::optional`, `std::string`, `std::string_view`, `std::span`, malé vlastní šablony (od N9b `state/StateMachine`).
+   **Zakázané:** makra (kromě `tests/TestFramework.hpp`), korutiny, `std::function`, ukazatele na členy (jediná
+   výjimka od N9c: tabulky čtenářů dat `RecordTable` - „typ záznamu → metoda“ jako odkazy na metody v Javě,
+   volané jen v `RecordTable::read`), **výjimky a RTTI** (`dynamic_cast`, `typeid`) – Unreal Engine je ve výchozím
+   stavu nemá; chyby vrací `nullptr` / `false` a text chyby.
+9. **Závislosti jen jedním směrem:** `units` ← `data` ← `events` ← `input` ← `world` ← (`physics`, `passengers`,
+   `enemies`, `bonuses`) ← `game` ← `api`; uvnitř dat (od N9c) `data/kinds` ← `data/levels` ← `data` ← `data/ugd`. `replay/` a `tools/` jen čtou `game`. Nic v `src/` neincluduje
    `include/ugh_logic.h` kromě `api/`. `state` (šablony automatu, od N9b) nezávisí na ničem.
 10. **Metody krátké** (~30 řádků), pojmenované slovesem; každá třída a veřejná metoda má jednořádkový komentář,
     co dělá v pojmech hry.
@@ -90,6 +92,18 @@ Od N9b navíc (výsledek review po N8):
 15. **Logika bez DOSu:** žádné skenkódy, stránky VGA ani formát replayů; klávesy pilotů a klávesy smyčky hry přes
     C API, adaptér PC klávesnice a zápis replayů jsou v `6_verification/`.
 
+Od N9c navíc (výsledek review po N9b):
+
+16. **Objekty, ne indexy:** logika pracuje s `world::Copter&` / `Copter*` a `world::Pad&`; čísla hráčů, plošin
+    a entit jen tam, kde je potřebuje svět venku (eventy, C API, replaye: `Copter::player()`, `Pad::index()`) a kde je
+    pojmenují data (trasa, walker na plošině: `passenger.route().pickupPad(level)`).
+17. **Žádný `friend` do cizích vnitřků:** stav hry je `game::GameState`, s nímž `Game` a `Attempts` pracují
+    explicitně; `GameData` vzniká z `GameData::Contents`. `friend` jen továrny svých kolekcí
+    (`PassengerFactory`, `EnemyFactory`) a testovací pilot (bod 18).
+18. **Nic navíc pro testy v `src/`:** testovací pilot replayů (`testing::TestPilot`, knihovna `ugh_logic_testing`
+    v `5_remake/logic/testing/`) je mimo logiku; třídy, které mění (`Motion`, `Copter`, `Energy`, `Session`, `Game`),
+    ho jen jmenují jako `friend` (vzor test peer). Žádné metody `*ByTestPilot`.
+
 ## 4. Moduly a třídy
 
 ```
@@ -101,28 +115,24 @@ logic/
   src/
     units/                  ugh::units – hodnotové typy originálu
       Int16.hpp             16bitové celé číslo, které přetéká jako registr; < > znaménkově, unsignedLess()
-      Fixed.hpp             poloha / vzdálenost v 1/32 px: fromPixels(), pixels(), wholePixel()
-      Speed.hpp             rychlost v 1/64 Fixed za snímek: perFrame(), clamped()
+      Fixed.hpp             poloha / vzdálenost v 1/32 px: fromPixels(), pixels(), wholePixel(), half()
+      Speed.hpp             rychlost v 1/64 Fixed za snímek: perFrame(), twicePerFrame(), clamped()
       Countdown.hpp         odpočet „sniž, je nula?“: start(n), tick() -> bool
-    data/                   ugh::data – neměnná data hry (Repository) a jejich načtení
-      GameData.hpp/.cpp     vše načtené: levely v pořadí obou režimů, druhy, pravidla, klávesy, sprity
-      DataFileReader.hpp/.cpp   parser UGD 1 + kontroly (jména existují, indexy plošin platí, trasy mají zastávku);
-                                od N9b jen skládá UgdTokenizer, RecordReader, KindsReader, RulesReader, LevelReader
+    data/                   ugh::data – neměnná data hry (Repository); od N9c po balíčcích
+      GameData.hpp/.cpp     vše načtené (z `GameData::Contents`): levely v pořadí obou režimů, druhy, pravidla, sprity
       Rules.hpp             limity podle obtížnosti (náraz, násobič), bonus za rychlé doručení
       SpriteIds.hpp         pojmenované sprity (stojící / padající / odražený cestující, bubliny, rotor ...)
-      Animation.hpp         snímky (sprity) animace (+ případné „přetečení“, viz kap. 6)
-      AnimationPair.hpp     varianta doleva a doprava
-      Box.hpp               kotva a poloviční rozměr dotykového obdélníku spritu
-      PassengerKind.hpp     druh cestujícího (od N9b: `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`)
-      FlyerKind.hpp, WalkerKind.hpp, BlowerKind.hpp, TreeKind.hpp   druhy nepřátel, každý jen se svými poli
-      BonusKind.hpp         druh bonusu (efekt, množství, výskok, sprite, kotva)
-      Route.hpp             trasa cestujícího: zastávky (plošina, zpoždění ve snímcích)
-      LevelDefinition.hpp   level: plošiny, umístění, start vrtulníků, voda, vítr, maska
-      PadDefinition.hpp
-      RoutePassengerPlacement.hpp, StandingPassengerPlacement.hpp
-      FlyerPlacement.hpp, WalkerPlacement.hpp, BlowerPlacement.hpp, TreePlacement.hpp
-      CollisionMask.hpp/.cpp    384 × 192 px; solid(x, y) včetně přetékání řádků (kap. 6)
-      KeyBinding.hpp        sekvence skenkódů → hráč, klávesa, stisk / uvolnění
+      Difficulty.hpp
+      kinds/                ugh::data::kinds – druhy: PassengerKind, AnimatedPassengerKind, RoutePassengerKind,
+                            SwimmerKind, StandingPassengerKind; FlyerKind, WalkerKind, BlowerKind, TreeKind;
+                            BonusKind, BonusEffect; z čeho jsou: Animation, AnimationPair, Box (kotva a poloviční
+                            rozměr dotykového obdélníku spritu)
+      levels/               ugh::data::levels – LevelDefinition (plošiny, umístění, start vrtulníků, voda, vítr,
+                            maska), PadDefinition, CollisionMask (320 × 192), Wind, Route; umístění cestujících
+                            a nepřátel (`*Placement`) a jejich Visitory
+      ugd/                  ugh::data::ugd – čtení souboru UGD 1 s kontrolami: DataFileReader (jen skládá),
+                            UgdTokenizer, UgdRecord, RecordReader, RecordTable, KindsReader (+ AnimationsReader,
+                            PassengerKindsReader), RulesReader, LevelReader (+ PlacementReader)
     events/                 ugh::events
       EventKind.hpp, Event.hpp, EventListener.hpp, EventQueue.hpp, EventBroadcast.hpp
       Diagnostics.hpp       situace, které jádro nepodporuje (pauza, 12 bonusů naráz)
@@ -132,13 +142,14 @@ logic/
       Level.hpp/.cpp        běžící pokus: vrtulníky, plošiny, cestující, nepřátelé, bonusy, voda, déšť, energie,
                             fade; dotazy (který vrtulník přistál na plošině, který plave na vodě ...)
       PlayContext.hpp       co dostane každý update: Level&, Session&, const GameData&, EventListener&, Diagnostics&
+      Copters.hpp/.cpp      vrtulníky levelu a dotazy na ně (Copter*: přistál na plošině, plave na vodě ...)
       Copter.hpp/.cpp, Cargo.hpp   vrtulník; náklad (kdo, kam, za kolik)
       Controls.hpp          držené klávesy hráče
       Pad.hpp               plošina za hry (definice + kdo na ní čeká)
       Water.hpp/.cpp, Rain.hpp/.cpp, Raindrop.hpp, Energy.hpp, Fade.hpp
       Animator.hpp          snímek animace a odpočet do dalšího (cestující i nepřátelé)
       Screen.hpp            okraje hrací plochy (kdy předmět „odletí z obrazovky“)
-      Wind.hpp, Difficulty.hpp, Facing.hpp
+      Facing.hpp
     physics/                ugh::physics
       CopterPhysics.hpp/.cpp    let jednoho snímku v pojmenovaných krocích
       CollisionProbe.hpp/.cpp   10 bodů obrysu nad maskou, zvláštnost „doleva / nahoru jen o pixel“
@@ -157,29 +168,32 @@ logic/
     enemies/                ugh::enemies
       Enemy.hpp/.cpp        základ: pořadí v seznamu, poloha, sprite, Animator; update()
       EnemyFactory.hpp/.cpp vytvoří správnou třídu z umístění v levelu (Factory)
+      Stun.hpp              omráčení walkera a foukače (jedna doba)
       flyer/                ugh::enemies::flyer – Flyer, FlyerState, Placed, Hidden, Screeching, Flying, Falling
       walker/               ugh::enemies::walker – Walker, WalkerState, Placed, Walking, Watching, Charging,
                             Recovering, Stunned
       blower/               ugh::enemies::blower – Blower, BlowerState, Placed, Blowing, Stunned
       tree/                 ugh::enemies::tree – Tree, TreeState, Placed, Swaying, Resting, Bare
     bonuses/                ugh::bonuses – BonusItem, BonusSlots (12, volný slot od konce), BonusState, Falling, Lying
-    input/                  ugh::input – MenuKey, MenuInput: klávesy smyčky hry (Esc, P, jiná) pro popisek a Esc / P
+    input/                  ugh::input – PlayerKey (klávesy pilota), MenuKey, MenuInput: klávesy smyčky hry (Esc, P, jiná)
                             (od N9b; skenkódy převádí adaptér 6_verification/keyboard/PcKeyboard)
     game/                   ugh::game
-      Game.hpp/.cpp         fasáda: newGame(settings), key(player, key, pressed), menuKey(key), step() -> GameResult, čtení stavu, cheats()
+      Game.hpp/.cpp         fasáda: newGame(settings), key(player, key, pressed), menuKey(key), step() -> GameResult, čtení stavu
+      GameState.hpp/.cpp    co se za hry mění: session, level, cestující, nepřátelé, bonusy, klávesy smyčky
+      Attempts.hpp/.cpp     co fáze dělají se stavem hry: začátek hry a pokusu, snímek hry, konec pokusu
       NewGameSettings.hpp   hráči, obtížnost, první level, stav generátoru, řádek deště (kap. 6)
       GameResult.hpp        Continue, GameOver, AllLevelsDone
       GameFlow.hpp/.cpp, PhaseId.hpp, Phase.hpp
       phases/               ugh::game::phases – BlackScreen, CaptionFadeIn, CaptionWaitKey, CaptionFadeOut, Playing
       PlayFrame.hpp/.cpp    jeden snímek hry: pořadí systémů
-      LevelLoader.hpp/.cpp  nový pokus o level z jeho definice
-      Cheats.hpp/.cpp       zásahy testovacího pilota (kap. 9): přemístit vrtulník, energie, životy
     api/
       LogicApi.cpp          C API nad Game
   replay/                   ugh::replay – knihovna ugh_logic_replay (jen pro nástroj a testy, ne pro UE)
     StateWriter.hpp/.cpp    sémantický stav hry jako pole UGR 1 (jen čte)
     GameFields, CopterFields, PadFields, PassengerFields, EnemyFields, BonusFields (.hpp/.cpp)
   tools/replay_check/       ugh::tool – ReplayFile (parser UGR 1), ReplayCheck, ReplayReport, main.cpp
+  testing/                  ugh::testing – TestPilot (knihovna ugh_logic_testing, kap. 9): zásahy testovacího pilota
+                            (přemístit vrtulník, energie, životy) pro testy a 6_verification; není součástí logiky
   tests/                    po modulech (units/, data/, world/, physics/, passengers/, enemies/, bonuses/, input/, game/)
 ```
 
@@ -205,8 +219,9 @@ logic/
 ### Kontext updatu (Parameter Object)
 
 `PlayContext` nese `Level&`, `Session&`, `const GameData&`, `EventListener&`, `Diagnostics&`. Stav dostane kontext
-a entitu (`update(Walker&, PlayContext&)`); `Level` tím přestane být skladem všeho a je jen „co je v levelu
-a dotazy na to“.
+a entitu (`update(Walker&, EnemyContext&)`); `Level` tím přestane být skladem všeho a je jen „co je v levelu
+a dotazy na to“. Od N9c `PassengerContext` a `EnemyContext` z `PlayContext` dědí a přidají své (bonusy, cestující),
+takže stav píše `context.level`.
 
 ### Rozdělená sdílená slova (nejdůležitější změna modelu)
 
@@ -216,7 +231,7 @@ a dotazy na to“.
 | `PassengerTimer` | `RoutePassenger::arrivalDelay`, `swimTime`; `StandingPassenger::dropSpeedX` |
 | `Passenger::vy` | `StandingPassenger::fallSpeed` (Int16, 1/32 px), `RoutePassenger::swimSpeed` (Speed) |
 | `Passenger::bonusTimer` | `RoutePassenger::quickDeliveryTime` |
-| `EnemyTimer` | `Flyer::waitTime`, `screechTime`, `fallSpeed`; `Walker::watchTime`, `chargeSpeed`, `stunTime`; `Blower::stunTime`; `Tree::restTime` |
+| `EnemyTimer` | `Flyer::waitTime` (skrytý i křičí: jeden odpočet, stavy se vylučují; replay ho píše jako `waitTime` / `screechTime`), `fallSpeed`; `Walker::watchTime`, `chargeSpeed`, `stun`; `Blower::stun` (`enemies::Stun`); `Tree::restTime` |
 | `EnemyFacing` | `Walker::facing` (enum Facing); `Flyer::lastTarget` (hráč) |
 | `EnemyTable` | `Flyer::flight` (AnimationPair strana), `Tree::nextDrop` (index v seznamu bonusů) |
 | `BonusTimer` | `BonusItem::speedX` (Falling), `lyingTime` (Lying) |
@@ -252,7 +267,7 @@ skenkód od minulého snímku změnil - přesně to, co originál čte (popisek 
 
 ### Bez výjimek a RTTI
 
-Loader vrací `std::optional<GameData>` a text chyby; žádná část `src/` nehází výjimky. Kód se tak bez úprav přeloží
+Loader vrací `std::unique_ptr<const GameData>` (nebo `nullptr`) a text chyby; žádná část `src/` nehází výjimky. Kód se tak bez úprav přeloží
 jako modul Unreal Engine (krok 10).
 
 ## 6. Zvláštnosti originálu, které zůstávají (pojmenované chování)
@@ -358,7 +373,7 @@ I <pole>=<hodnota> ...
 - `T` řádek = stav **po** snímku; jen pole, která se změnila (`~` = pole zmizelo); první `T` (tick 0, fáze `start`)
   je celý. `k=` jsou skenkódy doručené **po** snímku (vstup dalšího snímku). Bez `w=` (adresa) a bez řádků `B`.
 - `I` řádek = zásah testovacího pilota mezi snímky. Smí obsahovat jen `copter.N.x/y/pixelX/pixelY/vx/vy/landedPad`,
-  `game.energy`, `game.lives`; nástroj je převede na `Cheats` (nic jiného zvenku nastavit nejde).
+  `game.energy`, `game.lives`; nástroj je převede na `testing::TestPilot` (nic jiného zvenku nastavit nejde).
 - Hodnoty: celá čísla desítkově (polohy v 1/32 px, rychlosti v 1/64 z toho, sprity = čísla `assets/sprites/NNN.png`),
   jména pro výčty, stavy a druhy, `none` pro chybějící hodnotu, `0/1` pro ano/ne.
 - **Pravidlo úplnosti:** pole je ve stavu, právě když je definované – buď ovlivňuje budoucí průběh (stav entity ho
@@ -441,7 +456,7 @@ Pokrytí stavů (`GoldenReplayTest`) je dál úplné.
 
 1. tick 0 → `NewGameSettings` z `game.level`, `game.players`, `game.difficulty`, `game.rng`, `game.rainFloor`;
 2. každý další tick: `game.step()`, porovnat `StateWriter` s očekávaným stavem (množina polí i hodnoty, včetně
-   `game.phase`), pak `I` řádek přes `Cheats` a skenkódy přes adaptér `PcKeyboard` (od N9b);
+   `game.phase`), pak `I` řádek přes `testing::TestPilot` a skenkódy přes adaptér `PcKeyboard` (od N9b);
 3. při první neshodě vypsat tick, fázi, všechna rozdílná pole (očekávané / skutečné), klávesy posledních snímků
    a skončit; přepínač `--continue` počítá dál (pro statistiku), `--only <skupiny>` jen pro rozjezd v N5–N6.
 4. souhrn na řádek: replay, ticků, porovnaných hodnot po skupinách, výsledek. CTest: jeden test na replay.

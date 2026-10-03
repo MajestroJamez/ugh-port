@@ -5,13 +5,13 @@
 
 namespace ugh::bonuses {
 
-BonusItem::BonusItem(int slot, const data::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX,
+BonusItem::BonusItem(int slot, const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX,
                      int lift)
     : StateMachine(Falling::instance),
       slot_(slot),
       kind_(&kind),
       x_(x - units::Fixed::fromPixels(kind.anchorX)),
-      y_(y - units::Fixed::fromRaw(kind.anchorY << 4)),   // half its height
+      y_(y - units::Fixed::fromPixels(kind.anchorY).half()),   // half its height
       speedX_(speedX),
       fallSpeed_(-(lift + kind.lift)) {}
 

@@ -21,12 +21,17 @@ if(MSVC)
     target_compile_options(ugh_logic PRIVATE /GR- /EHs-c- /D_HAS_EXCEPTIONS=0)
 endif()
 
+# the test pilot of the replays (I lines): for the tests and 6_verification, not part of the logic
+add_library(ugh_logic_testing STATIC testing/TestPilot.cpp)
+target_include_directories(ugh_logic_testing PUBLIC .)   # "testing/TestPilot.hpp"
+target_link_libraries(ugh_logic_testing PUBLIC ugh_logic)
+
 set(UGH_DATA "${CMAKE_CURRENT_SOURCE_DIR}/../../assets/logic/ugh-data.ugd" CACHE FILEPATH "Game data (.\\gradlew.bat :extractor:run)")
 enable_testing()
 
 # tests by module (they need the data)
 file(GLOB_RECURSE UGH_TEST_SOURCES CONFIGURE_DEPENDS tests/*.cpp)
 add_executable(ugh_logic_tests ${UGH_TEST_SOURCES})
-target_link_libraries(ugh_logic_tests PRIVATE ugh_logic)
+target_link_libraries(ugh_logic_tests PRIVATE ugh_logic_testing)
 target_include_directories(ugh_logic_tests PRIVATE tests)
 add_test(NAME unit COMMAND ugh_logic_tests "${UGH_DATA}")

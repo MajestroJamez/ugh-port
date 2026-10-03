@@ -15,7 +15,7 @@ struct NewGameSettings {
     data::Difficulty difficulty = data::Difficulty::Medium;
     int firstLevel = 0;   // from 0, in the order of the mode (a password starts later)
     world::RandomNumbers::Words randomSeed{};
-    int rainFloorRow = 180;
+    int rainFloorRow = 180;   // as after the program start
 };
 
 }  // namespace ugh::game

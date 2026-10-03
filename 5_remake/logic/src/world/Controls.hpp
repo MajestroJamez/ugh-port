@@ -1,7 +1,7 @@
 // The keys a pilot holds.
 #pragma once
 
-#include "data/PlayerKey.hpp"
+#include "input/PlayerKey.hpp"
 
 namespace ugh::world {
 
@@ -10,13 +10,13 @@ struct Controls {
     bool up = false, down = false, left = false, right = false, fire = false;
 
     /** A key pressed (true) or released. */
-    void set(data::PlayerKey key, bool held) {
+    void set(input::PlayerKey key, bool held) {
         switch (key) {
-            case data::PlayerKey::Up: up = held; break;
-            case data::PlayerKey::Down: down = held; break;
-            case data::PlayerKey::Left: left = held; break;
-            case data::PlayerKey::Right: right = held; break;
-            case data::PlayerKey::Fire: fire = held; break;
+            case input::PlayerKey::Up: up = held; break;
+            case input::PlayerKey::Down: down = held; break;
+            case input::PlayerKey::Left: left = held; break;
+            case input::PlayerKey::Right: right = held; break;
+            case input::PlayerKey::Fire: fire = held; break;
         }
     }
 };

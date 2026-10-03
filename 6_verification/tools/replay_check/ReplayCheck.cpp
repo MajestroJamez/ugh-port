@@ -4,6 +4,7 @@
 #include <cstdio>
 
 #include "replay/StateWriter.hpp"
+#include "testing/TestPilot.hpp"
 
 namespace ugh::tool {
 
@@ -115,9 +116,9 @@ void ReplayCheck::apply(game::Game& game, keyboard::PcKeyboard& keyboard, const 
     if (recent_.size() > RECENT_TICKS) recent_.pop_front();
 }
 
-/** The I line through Cheats: a copter put somewhere (the fields not in the line stay), energy, lives. */
+/** The I line through the test pilot: a copter put somewhere (the fields not in the line stay), energy, lives. */
 void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
-    game::Cheats cheats = game.cheats();
+    testing::TestPilot pilot(game);
     for (int player = 0; player < game.level().copters().count(); player++) {
         std::string c = "copter." + std::to_string(player) + ".";
         const world::Copter& copter = game.level().copters()[player];
@@ -142,14 +143,14 @@ void ReplayCheck::intervene(game::Game& game, const Tick& tick) {
             int v = 0;
             pad = landed->second != "none" && number(landed->second, v) ? std::optional<int>(v) : std::nullopt;
         }
-        if (moved) cheats.placeCopter(player, x, y, pixelX, pixelY, vx, vy, pad);
+        if (moved) pilot.placeCopter(player, x, y, pixelX, pixelY, vx, vy, pad);
     }
     for (const auto& [field, value] : tick.inject) {
         int v = 0;
         bool known = field == "game.energy" || field == "game.lives";
         if (known && !number(value, v)) report_.problem(tick.number, "a bad value " + field + "=" + value);
-        else if (field == "game.energy") cheats.setEnergy(v);
-        else if (field == "game.lives") cheats.setLives(v);
+        else if (field == "game.energy") pilot.setEnergy(v);
+        else if (field == "game.lives") pilot.setLives(v);
         else if (field.rfind("copter.", 0) != 0) report_.problem(tick.number, "an intervention the logic does not allow: " + field);
     }
 }

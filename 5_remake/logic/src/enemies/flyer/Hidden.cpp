@@ -10,11 +10,11 @@ const Hidden Hidden::instance{};
 void Hidden::enter(Flyer& flyer, const EnemyContext&) const {
     flyer.restartAnimation();
     flyer.hide();
-    flyer.waitTime().start(flyer.startDelay());
+    flyer.wait(flyer.startDelay());
 }
 
 void Hidden::update(Flyer& flyer, const EnemyContext& context) const {
-    if (flyer.waitTime().tick()) flyer.changeState(Screeching::instance, context);
+    if (flyer.waitOver()) flyer.changeState(Screeching::instance, context);
 }
 
 }  // namespace ugh::enemies::flyer

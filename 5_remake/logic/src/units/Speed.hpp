@@ -23,6 +23,8 @@ public:
 
     /** The distance of one frame (the raw value shifted right by 6). */
     constexpr Fixed perFrame() const { return Fixed::fromRaw((raw_ >> 6).value()); }
+    /** Twice the distance of one frame (the raw value shifted right by 5: one bit finer than 2 * perFrame()). */
+    constexpr Fixed twicePerFrame() const { return Fixed::fromRaw((raw_ >> 5).value()); }
 
     /** Limited to -limit .. limit. */
     constexpr Speed clamped(Speed limit) const { return *this < -limit ? -limit : *this > limit ? limit : *this; }

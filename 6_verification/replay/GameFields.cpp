@@ -28,11 +28,11 @@ const char* difficultyName(data::Difficulty difficulty) {
     return "";
 }
 
-const char* windName(data::Wind wind) {
+const char* windName(data::levels::Wind wind) {
     switch (wind) {
-        case data::Wind::None: return "none";
-        case data::Wind::Left: return "left";
-        case data::Wind::Right: return "right";
+        case data::levels::Wind::None: return "none";
+        case data::levels::Wind::Left: return "left";
+        case data::levels::Wind::Right: return "right";
     }
     return "";
 }

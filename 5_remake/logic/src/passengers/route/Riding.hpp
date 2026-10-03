@@ -2,6 +2,7 @@
 #pragma once
 
 #include "passengers/route/RouteState.hpp"
+#include "world/Copter.hpp"
 
 namespace ugh::passengers::route {
 
@@ -12,8 +13,8 @@ public:
     /** Frames of riding that still earn a bonus item. */
     static constexpr int QUICK_DELIVERY_TIME = 200;
 
-    /** The passenger gets into the copter of `player`. */
-    static void board(RoutePassenger& passenger, int player, const PassengerContext& context);
+    /** The passenger gets into `copter`. */
+    static void board(RoutePassenger& passenger, world::Copter& copter, const PassengerContext& context);
 
     const char* name() const override { return "Riding"; }
     void enter(RoutePassenger& passenger, const PassengerContext& context) const override;

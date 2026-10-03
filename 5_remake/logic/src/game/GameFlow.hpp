@@ -4,15 +4,13 @@
 #include <array>
 #include <memory>
 
-#include "game/GamePhase.hpp"
 #include "game/Attempts.hpp"
+#include "game/GamePhase.hpp"
 #include "game/GameResult.hpp"
 #include "game/Phase.hpp"
 #include "game/PhaseId.hpp"
 
 namespace ugh::game {
-
-class Game;
 
 /**
  * The flow of a game as a state machine of phases; step() is one frame. The phases in their order:
@@ -24,7 +22,7 @@ class Game;
  */
 class GameFlow {
 public:
-    explicit GameFlow(Game& game);
+    explicit GameFlow(Attempts attempts);
     GameFlow(const GameFlow&) = delete;
     GameFlow& operator=(const GameFlow&) = delete;
 

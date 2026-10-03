@@ -49,5 +49,5 @@ The format of the replays and the table of fields: `docs/rewrite-design.md`, cha
 | add a field to the replays | the rule and the value in the entity's writer (`replay/PassengerFields.cpp` ...), and the same field in `4_test_data/verify/.../replay/SemanticProjection.kt` |
 | change what a mismatch report shows | `tools/replay_check/ReplayReport.cpp` |
 | read a new kind of line of a replay | `tools/replay_check/ReplayFile.cpp` |
-| let the test pilot set something new (an I line) | `tools/replay_check/ReplayCheck.cpp` (`intervene`) and `5_remake/logic/src/game/Cheats.hpp` |
+| let the test pilot set something new (an I line) | `tools/replay_check/ReplayCheck.cpp` (`intervene`) and `5_remake/logic/testing/TestPilot.hpp` |
 | change how the keys of a replay reach the logic | `keyboard/PcKeyboard.cpp` |

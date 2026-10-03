@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "data/LevelDefinition.hpp"
+#include "data/levels/LevelDefinition.hpp"
 #include "passengers/Passenger.hpp"
 #include "passengers/standing/StandingPassenger.hpp"
 
@@ -14,7 +14,7 @@ namespace ugh::passengers {
 class Passengers {
 public:
     /** The passengers of a new attempt at `definition`. */
-    void load(const data::LevelDefinition& definition);
+    void load(const data::levels::LevelDefinition& definition);
 
     /** Every passenger's state, in order. */
     void update(const PassengerContext& context);

@@ -214,6 +214,42 @@ Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/l
 `changeState` mimo `state/`, `protected:` s daty. Žádná třída nad ~15 veřejnými metodami (kromě fasády `Game`)
 a žádný soubor nad 200 řádků.
 
+### N9c - C++ jádro: objekty místo indexů, balíčky, nic navíc pro testy
+
+Review 2026-10-03 po N9b: jádro je čisté (žádné adresy, registry ani scancody), ale zbylo myšlení originálu (entity
+přes čísla v polích), `friend` přístupy do cizích vnitřků, háčky testovacího pilota v doménovém modelu, plochá
+složka `data/` (47 souborů, model i čtení souboru) a nekonzistentní zapouzdření nepřátel. Etapy (po každé zelené):
+
+1. **Objekty místo indexů:** logika pracuje s `world::Copter&` / `Copter*` a `world::Pad&`, ne s čísly hráčů a plošin
+   (`Copters::landedOn`, `TouchBox::firstCopterIn`, nosič cestujícího, cíl flyeru). Vrtulník zná své `player()`,
+   plošina své `index()` - čísla jen pro eventy, C API a replaye. Kontexty bez mezikroku: `PassengerContext`
+   a `EnemyContext` jsou `PlayContext` + své navíc (`context.level`, ne `context.play.level`); cestující má dotazy
+   `pickupPad(level)` / `targetPad(level)` místo řetězů `level.pad(passenger.route().pickupPad()).place()`.
+2. **Bez `friend` do cizích vnitřků:** stav hry (session, level, cestující, nepřátelé, bonusy, menu) je
+   `game::GameState`; `Game` (fasáda) i `Attempts` s ním pracují explicitně. Čtenáři dat plní `GameData::Contents`,
+   ze kterého vznikne neměnné `GameData` (žádný `friend`).
+3. **Testovací pilot pryč z logiky:** `Cheats` a metody `*ByTestPilot` se přesunou do `6_verification` jako
+   `TestPilot`; v logice zůstane jen deklarace `friend class ugh::testing::TestPilot;` u tříd, které pilot mění
+   (vzor test peer, žádný kód). `State::name()` zůstává (je to jméno stavu, ne háček) a stavy `Placed` taky
+   (je to stav entity před první aktualizací, replaye ho vidí během popisku).
+4. **Balíčky:** `data/` rozdělit na `data/` (`GameData`, `Rules`, `SpriteIds`, `Animation`, `Box`, bonusy),
+   `data/kinds/` (druhy cestujících a nepřátel), `data/level/` (definice levelu, plošiny, maska, vítr, trasy,
+   umístění a jejich Visitory) a `data/ugd/` (čtení souboru UGD 1: tokenizer, `RecordReader`, čtenáři,
+   `DataFileReader`, builder). `PlayerKey` do `input/`.
+5. **Čtení dat DRY:** jedna tabulka typů záznamů místo tří seznamů (`KNOWN`, `isEnemyKind`, `isLevelPart`);
+   `readLevelPart` rozdělit na metodu po typu záznamu; `RecordReader` čte aktuální záznam (bez opakování `r`
+   v každém volání); plošina po jménech polí, ne `int p[7]`.
+6. **Zapouzdření nepřátel:** žádné `Countdown&` ven; záměry (`stun()`, `stunOver()`, `hideFor()`, `restOver()` ...),
+   omráčení walkera a foukače jedna část `enemies::Stun` (jedna `STUN_TIME`).
+7. **API a jednotky:** `ugh_logic_default_settings()` (frontend nemusí znát řádek deště 180 ani tvar semínka);
+   převody jednotek pojmenované (`Fixed::half()`, `Speed` na `Fixed` ...) místo holých posunů `<< 4`, `>> 5`.
+8. **Dokumentace a kontrola:** README logiky a verifikace, `rewrite-design.md`, `logic-map.md`; `/code-review high`
+   bez nálezů; junior test.
+
+Hotovo když: po každé etapě 161 replayů a testy zelené. Grep v `5_remake/logic/src`: žádné `friend` kromě
+`TestPilot` a továren svých kolekcí, žádné `ByTestPilot`, `Cheats`, `std::optional<int>` pro vrtulník, žádné
+`context.play.`; žádný soubor nad 200 řádků.
+
 ## Krok 10 - UE projekt v repu, šedé kostky
 
 - `5_remake/game/` (UE 5.8 C++ projekt), C++ jádro `5_remake/logic/` jako UE modul (stejné zdrojáky), pluginy DLSS/FSR jako v UghTrial
@@ -408,3 +444,44 @@ a žádný soubor nad 200 řádků.
   (`CopterPhysics.cpp` `GRAVITY`) a počet životů (`Session.hpp` `START_LIVES`) jeden soubor; mávání netrpělivého
   cestujícího README neukazovalo - doplněn řádek (`Impatient.hpp` `WAVE_TIME`), testy berou `START_LIVES`.
   40 testů logiky + 3 klávesnice + 161 replayů zelených. Krok N9 hotový. Další: **krok 10**.
+- 2026-10-03: N9c etapa 1 hotová - objekty místo indexů: `Copters` vrací `Copter*` (`landedOn(pad)`,
+  `onWater...`, `all()`), `TouchBox::firstCopterIn(copters)`, `CopterPhysics::fly(copter)`, nosič cestujícího je
+  `Copter*`, vrtulník zná `player()`, plošina `index()`, `Level::pads()`. Cestující s trasou má
+  `route().pickupPad(level)` / `targetPad(level)`, walker `pad(level)`; `PassengerContext` a `EnemyContext` dědí
+  `PlayContext` (žádné `context.play.`). 40 testů + 3 + 161 replayů zelených. Další: **N9c etapa 2**.
+- 2026-10-03: N9c etapa 2 hotová - bez `friend` do cizích vnitřků: měnící se stav hry je `game::GameState`
+  (`reset` pro novou hru), `Attempts` a `Cheats` dostanou jen to, s čím pracují (data, stav, posluchač, diagnostika),
+  `GameFlow` dostane `Attempts`. Čtenáři dat plní `GameData::Contents`, `GameData(contents)` je pak neměnné. Zbylé
+  `friend` jen továrny svých kolekcí. 40 testů + 3 + 161 replayů zelených. Další: **N9c etapa 3**.
+- 2026-10-03: N9c etapa 3 hotová - testovací pilot mimo logiku: `Cheats` a metody `*ByTestPilot` zmizely ze
+  `src/`; `testing::TestPilot` je knihovna `ugh_logic_testing` v `5_remake/logic/testing/` (testy jednotek
+  a `replay_check`), doména ho jen jmenuje jako `friend` (`Motion`, `Copter`, `Energy`, `Session`, `Game`).
+  40 testů + 3 + 161 replayů zelených. Další: **N9c etapa 4**.
+- 2026-10-03: N9c etapa 4 hotová - balíčky: `data/` (jádro: `GameData`, `Rules`, `SpriteIds`, `Animation`, `Box`,
+  bonusy), `data/kinds/` (druhy cestujících a nepřátel), `data/levels/` (definice levelu, plošina, maska, vítr,
+  trasa, umístění a jejich Visitory), `data/ugd/` (čtení souboru UGD 1); namespace `levels`, ne `level`, ať se nebije
+  s proměnnými. `PlayerKey` v `input/`. 40 testů + 3 + 161 replayů zelených. Další: **N9c etapa 5**.
+- 2026-10-03: N9c etapa 5 hotová - čtení dat DRY: každý čtenář ví, které typy záznamů čte (`reads`, tabulka typ ->
+  metoda, `RecordTable`), a má své `readAll`; `DataFileReader` je jen skládá (neznámý záznam = žádný
+  čtenář ho nečte). `LevelReader` má metodu na každou část levelu (dřív 75řádkový if-else), plošinu čte po jménech,
+  `RecordReader` čte aktuální záznam (bez `r` v každém volání). Z `KindsReader` se oddělily `AnimationsReader`
+  a `PassengerKindsReader`, z `LevelReader` umístění (`PlacementReader`); každý soubor pod 200 ř. Texty chyb beze
+  změny (u souboru s více chybami může být první jiná: pravidla se teď čtou celá před levely). 40 testů + 3 + 161 replayů zelených.
+  Další: **N9c etapa 6**.
+- 2026-10-03: N9c etapa 6 hotová - nepřátelé bez `Countdown&` ven: záměry (`startWatching` / `watchOver`,
+  `startResting` / `restOver`, flyer jeden odpočet `wait` / `waitOver` pro skrytí i křik - stavy se vylučují);
+  omráčení walkera a foukače je část `enemies::Stun` s jedinou `Stun::TIME`. 40 testů + 3 + 161 replayů zelených.
+  Další: **N9c etapa 7**.
+- 2026-10-03: N9c etapa 7 hotová - C API `ugh_logic_default_settings()` (frontend nemusí znát řádek deště ani
+  semínko; popis polí v `ugh_logic.h`); převody jednotek pojmenované: `Fixed::half()`, `Speed::twicePerFrame()`,
+  `* 32` / `* 2` místo posunů doleva. Zbylé posuny jsou aritmetika originálu s komentářem (odraz, polovina
+  a čtvrtina rychlosti, generátor náhodných čísel). 41 testů + 3 + 161 replayů zelených. Další: **N9c etapa 8**.
+- 2026-10-03: N9c etapa 8 hotová - dokumentace: README logiky (moduly po balíčcích `data/kinds` ← `data/levels` ←
+  `data` ← `data/ugd`, `testing/`, vzory Table of methods a test peer, pravidla „objekty, ne indexy“, „žádný
+  `friend` do cizích vnitřků“, kam sáhnout), README verifikace, `rewrite-design.md` (pravidla 16-18, výjimka
+  z pravidla 8 pro `RecordTable`, strom modulů). Při kontrole ještě: `Animation`, `AnimationPair`, `Box`,
+  `BonusKind` přešly do `data/kinds` (bez kruhu mezi složkami dat), `RecordTable` zvlášť od `RecordReader`,
+  `walker::Charge`, `route().pickupPad(level)` (nejvíc 16 veřejných metod: `RoutePassenger`, `Figure`), includy
+  seřazené. `/code-review high`: 7 nálezů, 5 opraveno, 2 záměrně ponechány (podpis tabulky; `type` cestujícího je
+  hodnota pole). Junior test: 2 ze 3 požadavků jen z README, třetí (doba ležení bonusu) doplněn do „kam sáhnout“.
+  41 testů + 3 + 161 replayů zelených. Krok N9c hotový. Další: **krok 10**.

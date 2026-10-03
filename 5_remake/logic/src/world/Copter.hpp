@@ -8,18 +8,28 @@
 #include "world/Cabin.hpp"
 #include "world/Controls.hpp"
 #include "world/Motion.hpp"
+#include "world/Pad.hpp"
 #include "world/Rotor.hpp"
+
+namespace ugh::testing {
+class TestPilot;   // the test pilot of the replays (5_remake/logic/testing)
+}
 
 namespace ugh::world {
 
 /**
- * A copter (player 0 or 1): where it is and how fast it goes (`Motion`), the pad it stands on, the keys of its pilot,
+ * A copter of player 0 or 1: where it is and how fast it goes (`Motion`), the pad it stands on, the keys of its pilot,
  * its rotor and its cabin. The physics flies it; passengers board it, a walker throws it, a blower pushes it.
  */
 class Copter : public Motion {
 public:
     /** From the top of the copter to its waterline, in pixels. */
     static constexpr int WATERLINE = 18;
+
+    explicit Copter(int player = 0) : player_(player) {}
+
+    /** Whose copter it is: the events, the rotor sprites and the replays name it so. */
+    int player() const { return player_; }
 
     /** At the start of an attempt: in the air at x, y, empty, the rotor at its first sprite. */
     void placeAtStart(units::Fixed x, units::Fixed y, int firstRotorSprite);
@@ -32,11 +42,12 @@ public:
     Cabin& cabin() { return cabin_; }
     const Cabin& cabin() const { return cabin_; }
 
-    std::optional<int> landedPad() const { return landedPad_; }
     bool landed() const { return landedPad_.has_value(); }
-    bool landedOn(int pad) const { return landedPad_ == pad; }
+    bool landedOn(const Pad& pad) const { return landedPad_ == pad.index(); }
+    /** The index of the pad it stands on. */
+    std::optional<int> landedPad() const { return landedPad_; }
     /** Standing on a pad: no speed. */
-    void land(int pad);
+    void land(const Pad& pad);
     void takeOff() { landedPad_.reset(); }
 
     /** How deep its waterline is below the water surface at `waterRow` (pixels; 0: it floats, negative: above). */
@@ -48,11 +59,10 @@ public:
      */
     void throwUp(int walkerSpeed);
 
-    /** Puts the copter anywhere (Cheats only, the test pilot of the replays). */
-    void placeByTestPilot(units::Fixed x, units::Fixed y, int pixelX, int pixelY, units::Speed vx, units::Speed vy,
-                          std::optional<int> landedPad);
-
 private:
+    friend class testing::TestPilot;   // it puts a copter onto a pad
+
+    int player_;
     std::optional<int> landedPad_;
     Controls controls_;
     Rotor rotor_;

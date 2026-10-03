@@ -4,7 +4,7 @@
 
 namespace ugh::enemies::flyer {
 
-Flyer::Flyer(int index, const data::FlyerKind& kind, const data::FlyerPlacement& placement)
+Flyer::Flyer(int index, const data::kinds::FlyerKind& kind, const data::levels::FlyerPlacement& placement)
     : Enemy(index),
       StateMachine(Placed::instance),
       kind_(&kind),

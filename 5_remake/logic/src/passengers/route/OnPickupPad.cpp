@@ -14,11 +14,11 @@ void OnPickupPad::update(RoutePassenger& passenger, const PassengerContext& cont
 
 /** The water rose to its knees: it is in the water. */
 bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
-    const data::Box& box = passenger.kind().box;
-    int surface = context.play.level.water().row();
+    const data::kinds::Box& box = passenger.kind().box;
+    int surface = context.level.water().row();
     if ((box.y >> 1) + passenger.seenY() - surface < 0) return false;
     passenger.moveToY(units::Fixed::fromPixels(surface + box.y));
-    context.play.level.pad(passenger.route().pickupPad()).vacate();
+    passenger.route().pickupPad(context.level).vacate();
     passenger.hideBubble();
     intoWater(passenger, context);
     return true;
@@ -26,9 +26,9 @@ bool OnPickupPad::fellIntoWater(RoutePassenger& passenger, const PassengerContex
 
 /** A copter in the air touched it: it is knocked into the water. */
 bool OnPickupPad::knockedIntoWater(RoutePassenger& passenger, const PassengerContext& context) {
-    std::optional<int> copter =
-        physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.play.level);
-    if (!copter || context.play.level.copters()[*copter].landed()) return false;
+    const world::Copter* copter =
+        physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.level.copters());
+    if (!copter || copter->landed()) return false;
     intoWater(passenger, context);
     return true;
 }

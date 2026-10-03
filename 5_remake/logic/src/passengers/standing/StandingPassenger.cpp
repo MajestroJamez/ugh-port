@@ -14,7 +14,7 @@ constexpr int HIT_POINT_X = 12, HIT_POINT_Y = 8, ENEMY_WIDTH = 38, ENEMY_HEIGHT 
 
 }  // namespace
 
-StandingPassenger::StandingPassenger(int index, const data::StandingPassengerPlacement& placement)
+StandingPassenger::StandingPassenger(int index, const data::levels::StandingPassengerPlacement& placement)
     : Passenger(index, placement.x, placement.y), StateMachine(Placed::instance), kind_(placement.kind) {}
 
 void StandingPassenger::update(const PassengerContext& context) { updateState(context); }

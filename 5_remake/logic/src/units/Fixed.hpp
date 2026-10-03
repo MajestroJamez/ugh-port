@@ -26,6 +26,8 @@ public:
     constexpr int pixels() const { return (raw_ >> 5).value(); }
     /** Rounded down to a whole pixel. */
     constexpr Fixed wholePixel() const { return Fixed(Int16(raw_.value() & ~31)); }
+    /** Half of it, rounded down. */
+    constexpr Fixed half() const { return Fixed(raw_ >> 1); }
 
     constexpr Fixed operator-() const { return Fixed(-raw_); }
     constexpr Fixed& operator+=(Fixed other) { raw_ += other.raw_; return *this; }

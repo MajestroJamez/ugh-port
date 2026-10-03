@@ -1,22 +1,26 @@
 // What the phases of the game flow do to the game.
 #pragma once
 
+#include "data/GameData.hpp"
+#include "events/Diagnostics.hpp"
 #include "events/Event.hpp"
+#include "events/EventListener.hpp"
 #include "game/GameResult.hpp"
+#include "game/GameState.hpp"
 #include "input/MenuInput.hpp"
 #include "world/PlayContext.hpp"
 
 namespace ugh::game {
 
-class Game;
-
 /**
- * What the phases of the game flow do to the game: start the game, start an attempt at a level, play its frames and
- * end it. Only GameFlow has it, so that the facade Game keeps only what a frontend and the replays use.
+ * What the phases of the game flow do to the game state: start the game, start an attempt at a level, play its
+ * frames and end it. Only GameFlow has it, so that the facade Game keeps only what a frontend and the replays use.
  */
 class Attempts {
 public:
-    explicit Attempts(Game& game) : game_(game) {}
+    Attempts(const data::GameData& data, GameState& state, events::EventListener& events,
+             events::Diagnostics& diagnostics)
+        : data_(data), state_(state), events_(events), diagnostics_(diagnostics) {}
 
     /** The game starts: lives, multiplier, score. */
     void startGame();
@@ -31,11 +35,14 @@ public:
     /** The next level when the attempt finished the level, else a life less. */
     GameResult end();
 
-    input::MenuInput& menu();
-    void report(const events::Event& event);
+    input::MenuInput& menu() { return state_.menu; }
+    void report(const events::Event& event) { events_.onEvent(event); }
 
 private:
-    Game& game_;
+    const data::GameData& data_;
+    GameState& state_;
+    events::EventListener& events_;
+    events::Diagnostics& diagnostics_;
 
     world::PlayContext context();
 };

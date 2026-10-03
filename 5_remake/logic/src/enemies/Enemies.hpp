@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "data/GameData.hpp"
-#include "data/LevelDefinition.hpp"
+#include "data/levels/LevelDefinition.hpp"
 #include "enemies/Enemy.hpp"
 
 namespace ugh::enemies {
@@ -14,7 +14,7 @@ namespace ugh::enemies {
 class Enemies {
 public:
     /** The enemies of a new attempt at `definition`. */
-    void load(const data::LevelDefinition& definition, const data::GameData& data);
+    void load(const data::levels::LevelDefinition& definition, const data::GameData& data);
 
     /** Every enemy's state, in order. */
     void update(const EnemyContext& context);

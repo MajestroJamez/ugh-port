@@ -8,6 +8,10 @@
 #include "world/RandomNumbers.hpp"
 #include "world/Score.hpp"
 
+namespace ugh::testing {
+class TestPilot;   // the test pilot of the replays (5_remake/logic/testing)
+}
+
 namespace ugh::world {
 
 /** The game being played: the players, the difficulty, the level number, lives, score, multiplier, random numbers. */
@@ -44,9 +48,6 @@ public:
     /** Esc gives the game up: the attempt that ends is the last one. */
     void giveUp() { lives_ = 0; }
 
-    /** The test pilot of the replays sets the lives (Cheats only). */
-    void setLivesByTestPilot(int lives) { lives_ = lives; }
-
     /** A life bonus item: more lives, at most MAX_LIVES. */
     void addLives(int amount);
 
@@ -57,6 +58,8 @@ public:
     const RandomNumbers& random() const { return random_; }
 
 private:
+    friend class testing::TestPilot;   // it keeps the lives up
+
     const data::Rules* rules_;
     int players_ = 0;
     data::Difficulty difficulty_;

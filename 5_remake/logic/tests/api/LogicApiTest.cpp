@@ -11,6 +11,22 @@ TEST(the_c_api_refuses_a_missing_data_file) {
     CHECK(std::string(err).find("cannot open") != std::string::npos);
 }
 
+TEST(the_default_settings_start_a_one_player_game) {
+    ugh_logic_settings settings;
+    ugh_logic_default_settings(&settings);
+    CHECK_EQUAL(1, settings.players);
+    CHECK_EQUAL(1, settings.difficulty);
+    CHECK_EQUAL(0, settings.first_level);
+    CHECK_EQUAL(180, settings.rain_floor_row);
+    char err[200] = "";
+    ugh_logic* logic = ugh_logic_create(ugh::test::dataPath().c_str(), err, sizeof err);
+    CHECK(logic != nullptr);
+    if (!logic) return;
+    CHECK_EQUAL(1, ugh_logic_new_game(logic, &settings));
+    CHECK_EQUAL(static_cast<int>(UGH_LOGIC_CONTINUE), ugh_logic_step(logic));
+    ugh_logic_destroy(logic);
+}
+
 TEST(the_c_api_plays_a_game_and_shows_it) {
     char err[200] = "";
     ugh_logic* logic = ugh_logic_create(ugh::test::dataPath().c_str(), err, sizeof err);

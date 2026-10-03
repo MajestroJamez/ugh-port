@@ -9,14 +9,14 @@ namespace ugh::passengers::standing {
 const Standing Standing::instance{};
 
 void Standing::update(StandingPassenger& passenger, const PassengerContext& context) const {
-    std::optional<int> copter =
-        physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.play.level);
-    if (copter && context.play.level.copters()[*copter].cabin().hasRoom()) {
-        passenger.setCarrier(*copter);
+    world::Copter* copter =
+        physics::TouchBox(passenger.kind().box, passenger.x(), passenger.y()).firstCopterIn(context.level.copters());
+    if (copter && copter->cabin().hasRoom()) {
+        passenger.hangBelow(*copter);
         passenger.changeState(Hanging::instance, context);
         return;
     }
-    passenger.showSprite(context.play.data.sprites().standingPassenger);
+    passenger.showSprite(context.data.sprites().standingPassenger);
 }
 
 }  // namespace ugh::passengers::standing

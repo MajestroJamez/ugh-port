@@ -16,7 +16,7 @@ namespace ugh::tool {
 
 /**
  * Plays a golden replay "UGR 1" on the logic: tick 0 gives the new game's settings, every later tick is one step of
- * the logic with the recorded scancodes and the test pilot's interventions (I lines, through Cheats), and after every
+ * the logic with the recorded scancodes and the test pilot's interventions (I lines, through `testing::TestPilot`), and after every
  * tick the state of the logic (StateWriter) must be the recorded one: the same fields with the same values.
  */
 class ReplayCheck {

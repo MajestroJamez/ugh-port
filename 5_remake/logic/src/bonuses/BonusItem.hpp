@@ -1,7 +1,7 @@
 // A bonus item.
 #pragma once
 
-#include "data/BonusKind.hpp"
+#include "data/kinds/BonusKind.hpp"
 #include "state/StateMachine.hpp"
 #include "units/Countdown.hpp"
 #include "units/Fixed.hpp"
@@ -19,10 +19,10 @@ namespace ugh::bonuses {
 class BonusItem : public state::StateMachine<BonusItem, world::PlayContext> {
 public:
     /** A new item of `kind` with its middle and bottom at x, y, thrown sideways with `speedX` and up with `lift`. */
-    BonusItem(int slot, const data::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX, int lift);
+    BonusItem(int slot, const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX, int lift);
 
     int slot() const { return slot_; }
-    const data::BonusKind& kind() const { return *kind_; }
+    const data::kinds::BonusKind& kind() const { return *kind_; }
     units::Fixed x() const { return x_; }
     units::Fixed y() const { return y_; }
     units::Fixed speedX() const { return speedX_; }
@@ -44,7 +44,7 @@ public:
 
 private:
     int slot_ = 0;
-    const data::BonusKind* kind_;
+    const data::kinds::BonusKind* kind_;
     units::Fixed x_, y_;
     units::Fixed speedX_;
     int fallSpeed_ = 0;

@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#include "data/Animation.hpp"
+#include "data/kinds/Animation.hpp"
 #include "units/Fixed.hpp"
 #include "world/Animator.hpp"
 
@@ -36,11 +36,11 @@ public:
     /** One frame of the animation delay; true when the next frame is due. */
     bool animate(int delay) { return animator_.step(delay); }
     /** Shows the frame of `animation`, from its start again after its end. */
-    void show(const data::Animation& animation) { sprite_ = animator_.show(animation); }
+    void show(const data::kinds::Animation& animation) { sprite_ = animator_.show(animation); }
     /** Shows the frame of `animation` that runs once. */
-    void showFrameOf(const data::Animation& animation) { sprite_ = animator_.frameOf(animation); }
-    bool pastEndOf(const data::Animation& animation) const { return animator_.pastEndOf(animation); }
-    bool atLastFrameOf(const data::Animation& animation) const { return animator_.atLastFrameOf(animation); }
+    void showFrameOf(const data::kinds::Animation& animation) { sprite_ = animator_.frameOf(animation); }
+    bool pastEndOf(const data::kinds::Animation& animation) const { return animator_.pastEndOf(animation); }
+    bool atLastFrameOf(const data::kinds::Animation& animation) const { return animator_.atLastFrameOf(animation); }
 
 protected:
     Figure() = default;

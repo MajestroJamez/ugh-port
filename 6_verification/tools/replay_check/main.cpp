@@ -7,7 +7,7 @@
 
 #include "ReplayCheck.hpp"
 #include "ReplayReport.hpp"
-#include "data/DataFileReader.hpp"
+#include "data/ugd/DataFileReader.hpp"
 #include "keyboard/KeyFile.hpp"
 
 int main(int argc, char** argv) {
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
         return 2;
     }
     std::string error;
-    auto data = ugh::data::DataFileReader::read(argv[i], error);
+    auto data = ugh::data::ugd::DataFileReader::read(argv[i], error);
     if (!data) {
         std::fprintf(stderr, "%s\n", error.c_str());
         return 2;

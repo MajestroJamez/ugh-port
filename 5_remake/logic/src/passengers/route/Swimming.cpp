@@ -15,7 +15,7 @@ void Swimming::enter(RoutePassenger& passenger, const PassengerContext&) const {
 
 /** A kind that cannot be rescued only waits to sink. */
 void Swimming::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    const world::Level& level = context.play.level;
+    world::Level& level = context.level;
     passenger.animate();
     passenger.show(*passenger.kind().waving);
     passenger.floatOnSurface(level.water().row());

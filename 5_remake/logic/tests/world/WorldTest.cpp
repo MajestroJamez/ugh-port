@@ -40,7 +40,7 @@ TEST(a_raindrop_blown_past_the_page_goes_on_in_the_next_row) {
 }
 
 TEST(the_rain_starts_again_at_the_floor_row) {
-    test::TestLevel t(100, data::Wind::Right);
+    test::TestLevel t(100, data::levels::Wind::Right);
     t.level().rain().setFloorRow(100);
     t.start();
     for (const world::Raindrop& drop : t.level().rain().drops()) CHECK(drop.y < 100);

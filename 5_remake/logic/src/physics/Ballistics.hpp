@@ -40,7 +40,7 @@ private:
     int gravity_ = 0;
     Landing landing_;
 
-    bool landsOn(const data::PadDefinition& pad, int bottomBefore, int bottom, int middle) const;
+    bool landsOn(const data::levels::PadDefinition& pad, int bottomBefore, int bottom, int middle) const;
 };
 
 }  // namespace ugh::physics

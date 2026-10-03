@@ -8,16 +8,16 @@ namespace ugh::passengers::route {
 const Splash Splash::instance{};
 
 void Splash::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    context.play.level.pad(passenger.route().pickupPad()).vacate();
+    passenger.route().pickupPad(context.level).vacate();
     passenger.hideBubble();
     passenger.restartAnimation();
     passenger.swim().plunge();
-    context.play.report({events::EventKind::PassengerInWater, std::nullopt, passenger.index()});
+    context.report({events::EventKind::PassengerInWater, std::nullopt, passenger.index()});
 }
 
 void Splash::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    const data::AnimatedPassengerKind& kind = passenger.kind();
-    int surface = context.play.level.water().row();
+    const data::kinds::AnimatedPassengerKind& kind = passenger.kind();
+    int surface = context.level.water().row();
     passenger.animate();
     passenger.show(*kind.standing);
     units::Speed speed = passenger.swim().splash(passenger.seenY() - kind.box.y - surface < 0);

@@ -2,31 +2,31 @@
 
 #include "TestData.hpp"
 #include "TestFramework.hpp"
-#include "data/DataFileReader.hpp"
-#include "data/FlyerPlacement.hpp"
-#include "data/RoutePassengerPlacement.hpp"
-#include "data/StandingPassengerPlacement.hpp"
-#include "data/TreePlacement.hpp"
+#include "data/levels/FlyerPlacement.hpp"
+#include "data/levels/RoutePassengerPlacement.hpp"
+#include "data/levels/StandingPassengerPlacement.hpp"
+#include "data/levels/TreePlacement.hpp"
+#include "data/ugd/DataFileReader.hpp"
 
 using namespace ugh;
 
 namespace {
 
 /** Counts the passenger placements of a level by type. */
-class PassengerCounter : public data::PassengerPlacementVisitor {
+class PassengerCounter : public data::levels::PassengerPlacementVisitor {
 public:
     int route = 0, standing = 0;
-    const data::RoutePassengerPlacement* first = nullptr;
-    void visit(const data::RoutePassengerPlacement& p) override {
+    const data::levels::RoutePassengerPlacement* first = nullptr;
+    void visit(const data::levels::RoutePassengerPlacement& p) override {
         if (!first) first = &p;
         route++;
     }
-    void visit(const data::StandingPassengerPlacement&) override { standing++; }
+    void visit(const data::levels::StandingPassengerPlacement&) override { standing++; }
 };
 
 std::string readError(const std::string& text) {
     std::string error;
-    auto data = data::DataFileReader::parse(text, error);
+    auto data = data::ugd::DataFileReader::parse(text, error);
     return data ? "" : error;
 }
 
@@ -50,7 +50,7 @@ TEST(the_real_data_has_all_levels) {
 }
 
 TEST(the_real_data_has_level_one) {
-    const data::LevelDefinition& level = *test::gameData().level(1, 0);
+    const data::levels::LevelDefinition& level = *test::gameData().level(1, 0);
     CHECK_EQUAL(3, static_cast<int>(level.pads.size()));
     CHECK_EQUAL(4608, level.startX[0].raw());
     CHECK_EQUAL(5520, level.water.raw());

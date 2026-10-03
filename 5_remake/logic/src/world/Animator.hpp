@@ -1,7 +1,7 @@
 // Where an entity is in its animation.
 #pragma once
 
-#include "data/Animation.hpp"
+#include "data/kinds/Animation.hpp"
 #include "units/Countdown.hpp"
 
 namespace ugh::world {
@@ -31,18 +31,18 @@ public:
     }
 
     /** The sprite of the frame in `animation`, from its start again after its end. */
-    int show(const data::Animation& animation) {
+    int show(const data::kinds::Animation& animation) {
         if (animation.endsAt(frame_)) frame_ = 0;
         return animation.frame(frame_);
     }
 
     /** The sprite of the frame in `animation` (an animation that runs once). */
-    int frameOf(const data::Animation& animation) const { return animation.frame(frame_); }
+    int frameOf(const data::kinds::Animation& animation) const { return animation.frame(frame_); }
 
     /** The animation that runs once is over. */
-    bool pastEndOf(const data::Animation& animation) const { return animation.endsAt(frame_); }
+    bool pastEndOf(const data::kinds::Animation& animation) const { return animation.endsAt(frame_); }
     /** The frame is the last one of `animation`. */
-    bool atLastFrameOf(const data::Animation& animation) const { return animation.endsAt(frame_ + 1); }
+    bool atLastFrameOf(const data::kinds::Animation& animation) const { return animation.endsAt(frame_ + 1); }
 
     int frame() const { return frame_; }
     int delay() const { return delay_.remaining(); }

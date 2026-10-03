@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "data/GameData.hpp"
-#include "data/LevelDefinition.hpp"
+#include "data/levels/LevelDefinition.hpp"
 #include "events/Diagnostics.hpp"
 #include "events/EventQueue.hpp"
 #include "world/Level.hpp"
@@ -19,7 +19,7 @@ namespace ugh::test {
  */
 class TestLevel {
 public:
-    explicit TestLevel(int waterRow = 190, data::Wind wind = data::Wind::None);
+    explicit TestLevel(int waterRow = 190, data::levels::Wind wind = data::levels::Wind::None);
 
     /** A solid pixel in the mask (before start()). */
     void solid(int x, int y);
@@ -36,7 +36,7 @@ public:
 private:
     static const data::GameData& gameData();
 
-    data::LevelDefinition definition_;
+    data::levels::LevelDefinition definition_;
     std::vector<uint8_t> mask_;
     world::Level level_;
     world::Session session_;

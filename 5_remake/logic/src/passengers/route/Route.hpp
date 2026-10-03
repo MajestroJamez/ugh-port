@@ -1,20 +1,25 @@
 // Where a passenger is on its route.
 #pragma once
 
-#include "data/Route.hpp"
+#include "data/levels/Route.hpp"
+#include "world/Level.hpp"
+#include "world/Pad.hpp"
 
 namespace ugh::passengers::route {
 
 /** Where a passenger is on its route: the stop it is on and the delay before it comes out of the door there. */
 class Route {
 public:
-    explicit Route(const data::Route& route) : route_(&route) {}
+    explicit Route(const data::levels::Route& route) : route_(&route) {}
 
     /** The stop it is on (the stop count when the route is done). */
     int stop() const { return stop_; }
     bool finished() const { return stop_ >= static_cast<int>(route_->stops.size()); }
-    int pickupPad() const { return route_->stops[stop_].pickupPad; }
-    int targetPad() const { return route_->stops[stop_].targetPad; }
+    int pickupPadIndex() const { return route_->stops[stop_].pickupPad; }
+    int targetPadIndex() const { return route_->stops[stop_].targetPad; }
+    /** The pickup pad and the target pad of the stop in `level`. */
+    world::Pad& pickupPad(world::Level& level) const { return level.pad(pickupPadIndex()); }
+    world::Pad& targetPad(world::Level& level) const { return level.pad(targetPadIndex()); }
     /** On to the next stop. */
     void next() { stop_++; }
 
@@ -29,7 +34,7 @@ public:
     int arrivalDelay() const { return arrivalDelay_; }
 
 private:
-    const data::Route* route_;
+    const data::levels::Route* route_;
     int stop_ = 0;
     int arrivalDelay_ = 0;
 };

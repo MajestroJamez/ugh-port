@@ -6,6 +6,7 @@
 #include "game/Game.hpp"
 #include "passengers/route/RoutePassenger.hpp"
 #include "passengers/standing/StandingPassenger.hpp"
+#include "testing/TestPilot.hpp"
 
 using namespace ugh;
 using units::Fixed;
@@ -43,9 +44,9 @@ void startLevelOne(game::Game& g) {
 
 /** The copter of player 0 put onto pad `pad` of the level. */
 void landOn(game::Game& g, int pad) {
-    const data::PadDefinition& place = g.level().pad(pad).place();
+    const data::levels::PadDefinition& place = g.level().pad(pad).place();
     int x = (place.left + place.right) / 2 - 16, y = place.y - 20;
-    g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), pad);
+    testing::TestPilot(g).placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), pad);
 }
 
 /** Steps until passenger `passenger` is in `state` (at most `frames`); false when it never gets there. */
@@ -53,7 +54,7 @@ bool stepUntil(game::Game& g, int passenger, const std::string& state, int frame
     for (int frame = 0; frame < frames; frame++) {
         if (stateOf(g, passenger) == state) return true;
         if (pad >= 0) landOn(g, pad);   // the copter keeps standing there (the energy runs low otherwise)
-        g.cheats().setEnergy(20000);
+        testing::TestPilot(g).setEnergy(20000);
         g.step();
     }
     return stateOf(g, passenger) == state;
@@ -70,7 +71,7 @@ TEST(a_passenger_comes_out_rides_and_pays) {
     CHECK(g.level().copters()[0].cabin().cargo().has_value());
     CHECK_EQUAL(3, *g.level().copters()[0].cabin().cargo()->destination);   // the number of pad 2
     for (int frame = 0; frame < 50; frame++) {
-        g.cheats().setEnergy(20000);
+        testing::TestPilot(g).setEnergy(20000);
         g.step();
     }
     CHECK_EQUAL(1100 - 50, g.level().copters()[0].cabin().fare());   // a unit less every frame of the ride
@@ -103,11 +104,11 @@ TEST(the_standing_passenger_is_carried_and_dropped) {
     CHECK_EQUAL(std::string("Standing"), stateOf(g, 2));
     const passengers::Passenger& standing = g.passengers()[2];
     int x = standing.x().pixels() - 8, y = standing.y().pixels() - 8;
-    g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
+    testing::TestPilot(g).placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
     g.step();
     CHECK_EQUAL(std::string("Hanging"), stateOf(g, 2));
     CHECK(!g.level().copters()[0].cabin().cargo()->destination.has_value());
-    g.key(0, data::PlayerKey::Fire, true);
+    g.key(0, input::PlayerKey::Fire, true);
     g.step();
     CHECK_EQUAL(std::string("Falling"), stateOf(g, 2));
     CHECK(g.level().copters()[0].cabin().hasRoom());
@@ -120,7 +121,7 @@ TEST(a_passenger_knocked_into_the_water_drowns) {
     CHECK(stepUntil(g, 0, "Waiting", 600, 0));
     const passengers::Passenger& p = g.passengers()[0];
     int x = p.x().pixels() - 8, y = p.y().pixels() - 10;
-    g.cheats().placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
+    testing::TestPilot(g).placeCopter(0, Fixed::fromPixels(x), Fixed::fromPixels(y), x, y, Speed(), Speed(), std::nullopt);
     g.step();
     CHECK_EQUAL(std::string("Splash"), stateOf(g, 0));
     CHECK(g.level().pad(0).free());

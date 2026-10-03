@@ -31,7 +31,7 @@ target_link_libraries(ugh_pc_keyboard PUBLIC ugh_logic)
 # the logic against the golden replays
 file(GLOB UGH_CHECK_SOURCES CONFIGURE_DEPENDS tools/replay_check/*.cpp)
 add_executable(replay_check ${UGH_CHECK_SOURCES})
-target_link_libraries(replay_check PRIVATE ugh_logic_replay ugh_pc_keyboard)
+target_link_libraries(replay_check PRIVATE ugh_logic_replay ugh_pc_keyboard ugh_logic_testing)
 
 set(UGH_REPLAYS "${CMAKE_CURRENT_SOURCE_DIR}/../4_test_data/verify/build/replays" CACHE PATH "Golden replays UGR 1 (.\\gradlew.bat :verify:replays)")
 

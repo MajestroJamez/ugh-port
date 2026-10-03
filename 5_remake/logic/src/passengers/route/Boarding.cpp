@@ -15,12 +15,12 @@ void Boarding::enter(RoutePassenger& passenger, const PassengerContext&) const {
 }
 
 void Boarding::stay(RoutePassenger& passenger, const PassengerContext& context) const {
-    std::optional<int> copter = context.play.level.copters().landedOn(passenger.route().pickupPad());
+    world::Copter* copter = context.level.copters().landedOn(passenger.route().pickupPad(context.level));
     if (!copter) {
         passenger.changeState(Impatient::instance, context);
         return;
     }
-    if (passenger.walkTowards(context.play.level.copters()[*copter])) Riding::board(passenger, *copter, context);
+    if (passenger.walkTowards(*copter)) Riding::board(passenger, *copter, context);
 }
 
 }  // namespace ugh::passengers::route

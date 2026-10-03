@@ -1,14 +1,13 @@
 // The standing passenger.
 #pragma once
 
-#include <optional>
-
-#include "data/StandingPassengerKind.hpp"
-#include "data/StandingPassengerPlacement.hpp"
+#include "data/kinds/StandingPassengerKind.hpp"
+#include "data/levels/StandingPassengerPlacement.hpp"
 #include "passengers/Passenger.hpp"
 #include "passengers/standing/StandingState.hpp"
 #include "state/StateMachine.hpp"
 #include "units/Fixed.hpp"
+#include "world/Copter.hpp"
 
 namespace ugh::passengers::standing {
 
@@ -19,16 +18,17 @@ namespace ugh::passengers::standing {
 class StandingPassenger : public Passenger,
                           public state::StateMachine<StandingPassenger, PassengerContext, StandingState> {
 public:
-    StandingPassenger(int index, const data::StandingPassengerPlacement& placement);
+    StandingPassenger(int index, const data::levels::StandingPassengerPlacement& placement);
 
     void update(const PassengerContext& context) override;
     void accept(PassengerVisitor& visitor) const override;
 
-    const data::StandingPassengerKind& kind() const { return *kind_; }
+    const data::kinds::StandingPassengerKind& kind() const { return *kind_; }
 
-    /** The copter it hangs below. */
-    std::optional<int> carrier() const { return carrier_; }
-    void setCarrier(int player) { carrier_ = player; }
+    /** The copter it hangs below (or last hung below); nullptr before. */
+    world::Copter* carrier() const { return carrier_; }
+    /** A copter with room picked it up. */
+    void hangBelow(world::Copter& copter) { carrier_ = &copter; }
 
     // ------------------------------------------------------------ falling
 
@@ -51,8 +51,8 @@ public:
     bool fallsOnto(units::Fixed enemyX, units::Fixed enemyY) const;
 
 private:
-    const data::StandingPassengerKind* kind_;
-    std::optional<int> carrier_;
+    const data::kinds::StandingPassengerKind* kind_;
+    world::Copter* carrier_ = nullptr;
     units::Fixed dropSpeedX_;
     int fallSpeed_ = 0;
 };

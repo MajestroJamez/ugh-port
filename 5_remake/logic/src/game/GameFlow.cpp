@@ -8,7 +8,7 @@
 
 namespace ugh::game {
 
-GameFlow::GameFlow(Game& game) : attempts_(game) {
+GameFlow::GameFlow(Attempts attempts) : attempts_(attempts) {
     phases_[static_cast<int>(PhaseId::BlackBeforeCaption)] =
         std::make_unique<phases::BlackScreen>(PhaseId::CaptionFadeIn, GamePhase::BetweenLevels);
     phases_[static_cast<int>(PhaseId::CaptionFadeIn)] = std::make_unique<phases::CaptionFadeIn>();

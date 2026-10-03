@@ -3,6 +3,10 @@
 
 #include "units/Int16.hpp"
 
+namespace ugh::testing {
+class TestPilot;   // the test pilot of the replays (5_remake/logic/testing)
+}
+
 namespace ugh::world {
 
 /**
@@ -24,10 +28,9 @@ public:
     }
 
     int value() const { return value_; }
-    /** The test pilot of the replays sets it (Cheats only). */
-    void setByTestPilot(int value) { value_ = value; }
-
 private:
+    friend class testing::TestPilot;   // it keeps the energy up
+
     int value_ = 0;
 };
 

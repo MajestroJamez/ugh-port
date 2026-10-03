@@ -18,20 +18,19 @@ const WalkingToDoor WalkingToDoor::instance{};
 
 /** It pays the fare times the score multiplier; a quick delivery drops a bonus item that raises the multiplier. */
 void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& context) const {
-    int player = *passenger.ride().carrier();
-    world::Copter& copter = context.play.level.copters()[player];
-    world::Session& session = context.play.session;
+    world::Copter& copter = *passenger.ride().carrier();
+    world::Session& session = context.session;
     copter.cabin().unload();
     passenger.moveToX(copter.x() + Fixed::fromPixels(RoutePassenger::COPTER_DOOR - passenger.kind().box.x));
     uint32_t points = static_cast<uint32_t>(copter.cabin().fare()) * static_cast<uint32_t>(session.score().multiplier());
     session.score().add(points);
-    context.play.report({events::EventKind::PassengerPaid, player, passenger.index(), static_cast<int>(points)});
+    context.report({events::EventKind::PassengerPaid, copter.player(), passenger.index(), static_cast<int>(points)});
     if (passenger.ride().quick() && session.score().multiplierBelowLimit()) {
-        context.bonuses.drop(*context.play.data.rules().quickDeliveryBonus, copter.x() + Fixed::fromPixels(BONUS_DROP_X),
-                             copter.y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), 0, context.play.diagnostics);
-        context.play.report({events::EventKind::QuickDelivery, player, passenger.index()});
+        context.bonuses.drop(*context.data.rules().quickDeliveryBonus, copter.x() + Fixed::fromPixels(BONUS_DROP_X),
+                             copter.y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), 0, context.diagnostics);
+        context.report({events::EventKind::QuickDelivery, copter.player(), passenger.index()});
     }
-    const data::PadDefinition& target = context.play.level.pad(passenger.route().targetPad()).place();
+    const data::levels::PadDefinition& target = passenger.route().targetPad(context.level).place();
     passenger.moveToY(Fixed::fromPixels(target.y - passenger.kind().box.y));
     passenger.restartAnimation();
 }
@@ -42,7 +41,7 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
  */
 void WalkingToDoor::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
-    int door = context.play.level.pad(passenger.route().targetPad()).place().door;
+    int door = passenger.route().targetPad(context.level).place().door;
     if (passenger.stepTowards(door)) {
         passenger.changeState(GoingIn::instance, context);
         return;

@@ -18,7 +18,8 @@ class CopterPhysics {
 public:
     explicit CopterPhysics(const world::PlayContext& context) : context_(context) {}
 
-    void fly(int player);
+    /** One frame of the copter's flight. */
+    void fly(world::Copter& copter);
 
 private:
     /** Where the copter is against the water surface. */
@@ -38,7 +39,7 @@ private:
     void moveVertically(world::Copter& copter, Depth depth);
     void bounceVertically(world::Copter& copter, units::Fixed y);
     void touchDownOnPad(world::Copter& copter, units::Fixed y);
-    void checkCrash(int player);
+    void checkCrash(const world::Copter& copter);
 
     /** A bounce: half the speed back; the impact is the speed it had (twice the half, as the original computes). */
     static int bounce(units::Speed& speed);

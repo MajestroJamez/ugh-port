@@ -10,11 +10,11 @@ const Stunned Stunned::instance{};
 void Stunned::enter(Walker& walker, const EnemyContext& context) const {
     walker.scoreStun(walker.kind().score, context);
     walker.restartAnimation();
-    walker.stunTime().start(STUN_TIME);
+    walker.stun().start();
 }
 
 void Stunned::update(Walker& walker, const EnemyContext& context) const {
-    if (walker.stunTime().tick()) {
+    if (walker.stun().over()) {
         walker.continueIn(Placed::instance, context);
         return;
     }

@@ -36,8 +36,7 @@ constexpr int SKIDS_MIDDLE = 16, SKIDS_BOTTOM = 20;
 
 }  // namespace
 
-void CopterPhysics::fly(int player) {
-    world::Copter& copter = context_.level.copters()[player];
+void CopterPhysics::fly(world::Copter& copter) {
     context_.level.energy().spend(FLYING_COST);
     copter.rotor().newFrame();
     impact_ = 0;
@@ -49,13 +48,13 @@ void CopterPhysics::fly(int player) {
     }
     liftAndFall(copter, depth);
     moveVertically(copter, depth);
-    checkCrash(player);
+    checkCrash(copter);
 }
 
 /** In the air the wind pushes the copter sideways and a little down. */
 void CopterPhysics::blowWithWind(world::Copter& copter, Depth depth) {
     if (depth != Depth::Above || !context_.level.windy()) return;
-    Speed push = context_.level.wind() == data::Wind::Left ? -WIND_PUSH : WIND_PUSH;
+    Speed push = context_.level.wind() == data::levels::Wind::Left ? -WIND_PUSH : WIND_PUSH;
     copter.setSpeed(copter.speedX() + push, copter.speedY() + WIND_DOWN);
 }
 
@@ -171,20 +170,19 @@ void CopterPhysics::bounceVertically(world::Copter& copter, Fixed y) {
 void CopterPhysics::touchDownOnPad(world::Copter& copter, Fixed y) {
     int skidsY = y.pixels() + SKIDS_BOTTOM;
     int middle = copter.pixelX() + SKIDS_MIDDLE;
-    for (int i = 0; i < context_.level.padCount(); i++) {
-        const data::PadDefinition& pad = context_.level.pad(i).place();
-        if (pad.y == skidsY && pad.spans(middle)) {
-            copter.land(i);
+    for (const world::Pad& pad : context_.level.pads()) {
+        if (pad.place().y == skidsY && pad.place().spans(middle)) {
+            copter.land(pad);
             return;
         }
     }
 }
 
 /** Too hard a bounce ends the attempt. */
-void CopterPhysics::checkCrash(int player) {
+void CopterPhysics::checkCrash(const world::Copter& copter) {
     if (impact_ < context_.session.crashLimit() || context_.level.fade().fadingOut()) return;
     context_.level.fade().startFadeOut();
-    context_.report({events::EventKind::CopterCrashed, player});
+    context_.report({events::EventKind::CopterCrashed, copter.player()});
 }
 
 int CopterPhysics::bounce(Speed& speed) {

@@ -9,7 +9,6 @@ namespace ugh::enemies::blower {
 class Stunned : public BlowerState {
 public:
     static const Stunned instance;
-    static constexpr int STUN_TIME = 350;
 
     const char* name() const override { return "Stunned"; }
     void enter(Blower& blower, const EnemyContext& context) const override;

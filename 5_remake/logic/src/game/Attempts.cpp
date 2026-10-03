@@ -1,19 +1,18 @@
 #include "game/Attempts.hpp"
 
-#include "game/Game.hpp"
 #include "game/PlayFrame.hpp"
 
 namespace ugh::game {
 
-void Attempts::startGame() { game_.session_->startGame(); }
+void Attempts::startGame() { state_.session->startGame(); }
 
 /** The level exists: the game starts at one (newGame checks it) and ends after the last (end). */
 void Attempts::start() {
-    world::Session& session = *game_.session_;
-    const data::LevelDefinition& definition = *game_.data_.level(session.players(), session.levelNumber());
-    game_.level_.startAttempt(definition, game_.data_.sprites(), session.random(), game_.diagnostics_);
-    game_.passengers_.load(definition);
-    game_.enemies_.load(definition, game_.data_);
+    world::Session& session = *state_.session;
+    const data::levels::LevelDefinition& definition = *data_.level(session.players(), session.levelNumber());
+    state_.level.startAttempt(definition, data_.sprites(), session.random(), diagnostics_);
+    state_.passengers.load(definition);
+    state_.enemies.load(definition, data_);
 }
 
 /**
@@ -22,35 +21,29 @@ void Attempts::start() {
  */
 void Attempts::beforePlay() {
     world::PlayContext c = context();
-    game_.enemies_.update({c, game_.passengers_, game_.bonuses_});
-    game_.passengers_.update({c, game_.bonuses_});
-    game_.enemies_.hideAll();
-    game_.passengers_.hideAll();
-    game_.bonuses_.clear();
+    state_.enemies.update({c, state_.passengers, state_.bonuses});
+    state_.passengers.update({c, state_.bonuses});
+    state_.enemies.hideAll();
+    state_.passengers.hideAll();
+    state_.bonuses.clear();
 }
 
 void Attempts::playFrame() {
-    game_.level_.fade().advance();
+    state_.level.fade().advance();
     world::PlayContext c = context();
-    PlayFrame(c, game_.menu_, game_.passengers_, game_.enemies_, game_.bonuses_).run();
+    PlayFrame(c, state_.menu, state_.passengers, state_.enemies, state_.bonuses).run();
 }
 
-bool Attempts::over() const { return game_.level_.fade().over(); }
+bool Attempts::over() const { return state_.level.fade().over(); }
 
 GameResult Attempts::end() {
-    world::Session& session = *game_.session_;
-    if (game_.level_.delivery().done())
-        return session.nextLevel(game_.data_.levelCount(session.players())) ? GameResult::Continue
-                                                                           : GameResult::AllLevelsDone;
+    world::Session& session = *state_.session;
+    if (state_.level.delivery().done())
+        return session.nextLevel(data_.levelCount(session.players())) ? GameResult::Continue
+                                                                      : GameResult::AllLevelsDone;
     return session.loseLife() ? GameResult::Continue : GameResult::GameOver;
 }
 
-input::MenuInput& Attempts::menu() { return game_.menu_; }
-
-void Attempts::report(const events::Event& event) { game_.events_.onEvent(event); }
-
-world::PlayContext Attempts::context() {
-    return {game_.level_, *game_.session_, game_.data_, game_.events_, game_.diagnostics_};
-}
+world::PlayContext Attempts::context() { return {state_.level, *state_.session, data_, events_, diagnostics_}; }
 
 }  // namespace ugh::game

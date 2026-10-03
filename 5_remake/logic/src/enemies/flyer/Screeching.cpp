@@ -8,12 +8,12 @@ namespace ugh::enemies::flyer {
 const Screeching Screeching::instance{};
 
 void Screeching::enter(Flyer& flyer, const EnemyContext& context) const {
-    flyer.screechTime().start(SCREECH_TIME);
-    context.play.report({events::EventKind::FlyerScreech, std::nullopt, flyer.index()});
+    flyer.wait(SCREECH_TIME);
+    context.report({events::EventKind::FlyerScreech, std::nullopt, flyer.index()});
 }
 
 void Screeching::update(Flyer& flyer, const EnemyContext& context) const {
-    if (flyer.screechTime().tick()) flyer.changeState(Flying::instance, context);
+    if (flyer.waitOver()) flyer.changeState(Flying::instance, context);
 }
 
 }  // namespace ugh::enemies::flyer

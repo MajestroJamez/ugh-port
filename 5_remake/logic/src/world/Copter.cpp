@@ -11,20 +11,14 @@ void Copter::placeAtStart(units::Fixed x, units::Fixed y, int firstRotorSprite) 
     setSpeed(units::Speed(), units::Speed());
 }
 
-void Copter::land(int pad) {
-    landedPad_ = pad;
+void Copter::land(const Pad& pad) {
+    landedPad_ = pad.index();
     setSpeed(units::Speed(), units::Speed());
 }
 
 void Copter::throwUp(int walkerSpeed) {
     thrown(walkerSpeed);
     landedPad_.reset();
-}
-
-void Copter::placeByTestPilot(units::Fixed x, units::Fixed y, int pixelX, int pixelY, units::Speed vx, units::Speed vy,
-                              std::optional<int> landedPad) {
-    place(x, y, pixelX, pixelY, vx, vy);
-    landedPad_ = landedPad;
 }
 
 }  // namespace ugh::world

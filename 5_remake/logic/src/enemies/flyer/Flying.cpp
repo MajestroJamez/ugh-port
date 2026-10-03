@@ -24,8 +24,8 @@ const Flying Flying::instance{};
 
 /** It takes its next target and comes in from the side away from the target's copter. */
 void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
-    world::Level& level = context.play.level;
-    const world::Copter& copter = level.copters()[flyer.takeNextTarget(context.play.session.players())];
+    world::Level& level = context.level;
+    const world::Copter& copter = level.copters()[flyer.takeNextTarget(context.session.players())];
     if (copter.x() < SCREEN_MIDDLE) {
         flyer.flyTowards(world::Facing::Left);
         flyer.moveToX(START_RIGHT);
@@ -38,13 +38,13 @@ void Flying::enter(Flyer& flyer, const EnemyContext& context) const {
     y -= HEIGHT;
     if (y < CEILING) y = CEILING;
     flyer.moveToY(y);
-    context.play.report({events::EventKind::FlyerFlapStart, std::nullopt, flyer.index()});
+    context.report({events::EventKind::FlyerFlapStart, std::nullopt, flyer.index()});
 }
 
 void Flying::update(Flyer& flyer, const EnemyContext& context) const {
     Fixed x = flyer.x() + flyer.speedX();
     if (world::Screen::pastSide(x, world::Screen::FLYER_LEFT)) {
-        context.play.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
+        context.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
         flyer.continueIn(Placed::instance, context);
         return;
     }
@@ -52,14 +52,15 @@ void Flying::update(Flyer& flyer, const EnemyContext& context) const {
     if (!flyer.animate(FLAP_DELAY)) return;
     flyer.show(flyer.kind().flight.towards(flyer.flight() == world::Facing::Right));
     if (flyer.bounceFallingPassenger(context, true)) {
-        context.play.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
+        context.report({events::EventKind::FlyerFlapStop, std::nullopt, flyer.index()});
         flyer.changeState(Falling::instance, context);
         return;
     }
-    std::optional<int> copter = physics::TouchBox(flyer.kind().box, flyer.x(), flyer.y()).firstCopterIn(context.play.level);
-    if (!copter || *copter != flyer.lastTarget() || context.play.level.fade().fadingOut()) return;
-    context.play.level.fade().startFadeOut();
-    context.play.report({events::EventKind::CopterCrashed, *copter});
+    const world::Copter* copter =
+        physics::TouchBox(flyer.kind().box, flyer.x(), flyer.y()).firstCopterIn(context.level.copters());
+    if (!copter || copter->player() != flyer.lastTarget() || context.level.fade().fadingOut()) return;
+    context.level.fade().startFadeOut();
+    context.report({events::EventKind::CopterCrashed, copter->player()});
 }
 
 }  // namespace ugh::enemies::flyer

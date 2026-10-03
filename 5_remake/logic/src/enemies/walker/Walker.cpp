@@ -4,7 +4,7 @@
 
 namespace ugh::enemies::walker {
 
-Walker::Walker(int index, const data::WalkerKind& kind, const data::WalkerPlacement& placement)
+Walker::Walker(int index, const data::kinds::WalkerKind& kind, const data::levels::WalkerPlacement& placement)
     : Enemy(index, placement.x, placement.y),
       StateMachine(Placed::instance),
       kind_(&kind),

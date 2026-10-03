@@ -4,7 +4,7 @@
 
 namespace ugh::passengers {
 
-void Passengers::load(const data::LevelDefinition& definition) {
+void Passengers::load(const data::levels::LevelDefinition& definition) {
     all_.clear();
     standing_.clear();
     PassengerFactory factory(*this);

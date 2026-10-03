@@ -10,24 +10,24 @@ const Charging Charging::instance{};
 
 void Charging::enter(Walker& walker, const EnemyContext&) const {
     walker.restartAnimation();
-    walker.startCharge();
+    walker.charge().start();
 }
 
 void Charging::update(Walker& walker, const EnemyContext& context) const {
-    world::Level& level = context.play.level;
+    world::Level& level = context.level;
     if (walker.animate()) walker.showFacing(walker.kind().charge);
     if (stunnedByPassenger(walker, context)) return;
-    std::optional<int> copter = level.copters().landedOn(walker.pad());
+    const world::Copter* copter = level.copters().landedOn(walker.pad(level));
     if (!copter) {
         walker.changeState(Recovering::instance, context);
         return;
     }
-    walker.turnTo(level.copters()[*copter]);
-    walker.chargeFaster();
-    walker.moveToX(walker.x() + (units::Fixed::fromRaw(walker.chargeSpeed()) + walker.speedX()));
-    std::optional<int> hit = physics::TouchBox(walker.kind().box, walker.x(), walker.y()).firstCopterIn(level);
+    walker.turnTo(*copter);
+    walker.charge().faster(walker.facing());
+    walker.moveToX(walker.x() + (units::Fixed::fromRaw(walker.charge().speed()) + walker.speedX()));
+    world::Copter* hit = physics::TouchBox(walker.kind().box, walker.x(), walker.y()).firstCopterIn(level.copters());
     if (!hit) return;
-    level.copters()[*hit].throwUp(walker.speedX().raw() + walker.chargeSpeed());
+    hit->throwUp(walker.speedX().raw() + walker.charge().speed());
     walker.changeState(Recovering::instance, context);
 }
 

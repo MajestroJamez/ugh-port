@@ -17,22 +17,22 @@ const Watching Watching::instance{};
 
 void Watching::enter(Walker& walker, const EnemyContext&) const {
     walker.restartAnimation();
-    walker.watchTime().start(WATCH_TIME);
+    walker.startWatching(WATCH_TIME);
 }
 
 void Watching::update(Walker& walker, const EnemyContext& context) const {
-    if (walker.watchTime().tick()) {
+    if (walker.watchOver()) {
         walker.changeState(Charging::instance, context);
         return;
     }
     if (walker.animate(FRAME_DELAY)) walker.showFacing(walker.kind().watch);
     if (stunnedByPassenger(walker, context)) return;
-    std::optional<int> copter = context.play.level.copters().landedOn(walker.pad());
+    const world::Copter* copter = context.level.copters().landedOn(walker.pad(context.level));
     if (!copter) {
         walker.continueIn(Placed::instance, context);
         return;
     }
-    walker.turnTo(context.play.level.copters()[*copter]);
+    walker.turnTo(*copter);
 }
 
 }  // namespace ugh::enemies::walker

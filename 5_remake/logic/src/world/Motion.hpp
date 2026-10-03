@@ -4,6 +4,10 @@
 #include "units/Fixed.hpp"
 #include "units/Speed.hpp"
 
+namespace ugh::testing {
+class TestPilot;   // the test pilot of the replays (5_remake/logic/testing)
+}
+
 namespace ugh::world {
 
 /**
@@ -38,19 +42,13 @@ protected:
     /** A pixel up and into the air with `walkerSpeed` (sideways 32 times, up 16 times as much); the pixel row stays. */
     void thrown(int walkerSpeed) {
         y_ -= units::Fixed::fromPixels(1);
-        vx_ = units::Speed::fromRaw(walkerSpeed << 5);
-        vy_ = units::Speed::fromRaw(walkerSpeed << 4);
-    }
-    /** Anywhere, the pixel position too (the test pilot). */
-    void place(units::Fixed x, units::Fixed y, int pixelX, int pixelY, units::Speed vx, units::Speed vy) {
-        x_ = x;
-        y_ = y;
-        pixelX_ = pixelX;
-        pixelY_ = pixelY;
-        setSpeed(vx, vy);
+        vx_ = units::Speed::fromRaw(walkerSpeed * 32);
+        vy_ = units::Speed::fromRaw(walkerSpeed * 16);
     }
 
 private:
+    friend class testing::TestPilot;   // it puts a copter anywhere
+
     units::Fixed x_, y_;
     int pixelX_ = 0, pixelY_ = 0;
     units::Speed vx_, vy_;

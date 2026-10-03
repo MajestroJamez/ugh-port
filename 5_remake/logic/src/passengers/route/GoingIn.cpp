@@ -11,7 +11,7 @@ void GoingIn::enter(RoutePassenger& passenger, const PassengerContext&) const { 
 
 void GoingIn::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
-    const data::Animation& door = *passenger.kinds().land().goingIn;
+    const data::kinds::Animation& door = *passenger.kinds().land().goingIn;
     passenger.showFrameOf(door);
     if (!passenger.atLastFrameOf(door)) return;
     passenger.route().next();

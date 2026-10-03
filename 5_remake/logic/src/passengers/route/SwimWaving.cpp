@@ -14,7 +14,7 @@ void SwimWaving::enter(RoutePassenger& passenger, const PassengerContext& contex
 }
 
 void SwimWaving::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    passenger.floatOnSurface(context.play.level.water().row());
+    passenger.floatOnSurface(context.level.water().row());
     if (passenger.animate()) passenger.show(*passenger.kind().waving);
     if (passenger.call().over()) passenger.changeState(Sinking::instance, context);
 }

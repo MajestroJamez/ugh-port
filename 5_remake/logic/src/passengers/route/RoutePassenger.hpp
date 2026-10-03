@@ -1,8 +1,8 @@
 // A passenger with a route.
 #pragma once
 
-#include "data/PadDefinition.hpp"
-#include "data/RoutePassengerPlacement.hpp"
+#include "data/levels/PadDefinition.hpp"
+#include "data/levels/RoutePassengerPlacement.hpp"
 #include "passengers/Passenger.hpp"
 #include "passengers/route/PassengerCall.hpp"
 #include "passengers/route/Ride.hpp"
@@ -27,14 +27,14 @@ public:
     /** From the copter's left edge to where a passenger gets in and out, in pixels. */
     static constexpr int COPTER_DOOR = 16;
 
-    RoutePassenger(int index, const data::RoutePassengerPlacement& placement);
+    RoutePassenger(int index, const data::levels::RoutePassengerPlacement& placement);
 
     void update(const PassengerContext& context) override;
     void frameShown() override;
     void accept(PassengerVisitor& visitor) const override;
 
     /** Its kind as it is now: on land or in the water (`kinds()`). */
-    const data::AnimatedPassengerKind& kind() const { return kinds_.current(); }
+    const data::kinds::AnimatedPassengerKind& kind() const { return kinds_.current(); }
     RouteKinds& kinds() { return kinds_; }
     const RouteKinds& kinds() const { return kinds_; }
 
@@ -53,7 +53,7 @@ public:
     int seenY() const { return seenY_; }
 
     /** Out of the door: its feet at the door, on the pad, and seen there. */
-    void standAtDoor(const data::PadDefinition& pad);
+    void standAtDoor(const data::levels::PadDefinition& pad);
     /**
      * A step towards `feet` (the x of its feet): shown walking that way, one pixel further when `stepDue`; true when
      * its feet (as seen in the last frame) are there.

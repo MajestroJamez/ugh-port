@@ -7,7 +7,7 @@
 #include <optional>
 #include <string>
 
-#include "data/DataFileReader.hpp"
+#include "data/ugd/DataFileReader.hpp"
 #include "events/EventQueue.hpp"
 #include "game/Game.hpp"
 #include "passengers/Passenger.hpp"
@@ -26,7 +26,7 @@ struct ugh_logic {
 namespace {
 
 // the keys of the C API are the logic's keys in the same order
-static_assert(static_cast<int>(ugh::data::PlayerKey::Fire) == UGH_LOGIC_KEY_FIRE);
+static_assert(static_cast<int>(ugh::input::PlayerKey::Fire) == UGH_LOGIC_KEY_FIRE);
 static_assert(static_cast<int>(ugh::input::MenuKey::Other) == UGH_LOGIC_MENU_OTHER);
 
 int eventKind(ugh::events::EventKind kind) { return static_cast<int>(kind) + UGH_LOGIC_EVENT_LEVEL_CAPTION; }
@@ -57,11 +57,10 @@ void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
     view.water_level = level.water().level().raw();
     view.water_frame = level.water().surfaceFrame();
     view.copter_count = level.copters().count();
-    for (int p = 0; p < level.copters().count(); p++) {
-        const ugh::world::Copter& c = level.copters()[p];
+    for (const ugh::world::Copter& c : level.copters().all()) {
         const auto& cargo = c.cabin().cargo();
         int destination = !cargo ? 0 : cargo->destination ? *cargo->destination : -1;
-        view.copters[p] = {c.x().raw(), c.y().raw(), c.rotor().sprite(), cargo ? cargo->look : 0,
+        view.copters[c.player()] = {c.x().raw(), c.y().raw(), c.rotor().sprite(), cargo ? cargo->look : 0,
                            destination, c.cabin().fare()};
     }
     for (int i = 0; i < game.passengers().count(); i++) {
@@ -100,7 +99,7 @@ extern "C" {
 
 ugh_logic* ugh_logic_create(const char* data_path, char* err, size_t err_size) {
     std::string error;
-    auto data = ugh::data::DataFileReader::read(data_path, error);
+    auto data = ugh::data::ugd::DataFileReader::read(data_path, error);
     if (!data) {
         if (err && err_size) {
             size_t n = std::min(error.size(), err_size - 1);
@@ -113,6 +112,16 @@ ugh_logic* ugh_logic_create(const char* data_path, char* err, size_t err_size) {
 }
 
 void ugh_logic_destroy(ugh_logic* logic) { delete logic; }
+
+void ugh_logic_default_settings(ugh_logic_settings* settings) {
+    const ugh::game::NewGameSettings defaults;
+    *settings = ugh_logic_settings{};
+    settings->players = defaults.players;
+    settings->difficulty = static_cast<int>(defaults.difficulty);
+    settings->first_level = defaults.firstLevel;
+    for (int i = 0; i < 4; i++) settings->random_seed[i] = defaults.randomSeed[i];
+    settings->rain_floor_row = defaults.rainFloorRow;
+}
 
 int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings) {
     if (settings->difficulty < 0 || settings->difficulty > 2) return 0;
@@ -130,7 +139,7 @@ int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings) {
 
 void ugh_logic_key(ugh_logic* logic, int player, int key, int pressed) {
     if (!logic->started || player < 0 || player > 1 || key < UGH_LOGIC_KEY_UP || key > UGH_LOGIC_KEY_FIRE) return;
-    logic->game.key(player, static_cast<ugh::data::PlayerKey>(key), pressed != 0);
+    logic->game.key(player, static_cast<ugh::input::PlayerKey>(key), pressed != 0);
 }
 
 void ugh_logic_menu_key(ugh_logic* logic, int key) {

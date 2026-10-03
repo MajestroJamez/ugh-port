@@ -1,8 +1,8 @@
 // The flyer.
 #pragma once
 
-#include "data/FlyerKind.hpp"
-#include "data/FlyerPlacement.hpp"
+#include "data/kinds/FlyerKind.hpp"
+#include "data/levels/FlyerPlacement.hpp"
 #include "enemies/Enemy.hpp"
 #include "enemies/flyer/FlyerState.hpp"
 #include "state/StateMachine.hpp"
@@ -18,12 +18,12 @@ namespace ugh::enemies::flyer {
  */
 class Flyer : public Enemy, public state::StateMachine<Flyer, EnemyContext> {
 public:
-    Flyer(int index, const data::FlyerKind& kind, const data::FlyerPlacement& placement);
+    Flyer(int index, const data::kinds::FlyerKind& kind, const data::levels::FlyerPlacement& placement);
 
     void update(const EnemyContext& context) override;
     void accept(EnemyVisitor& visitor) const override;
 
-    const data::FlyerKind& kind() const { return *kind_; }
+    const data::kinds::FlyerKind& kind() const { return *kind_; }
 
     /** Fixed per frame; negative: to the left. */
     units::Fixed speedX() const { return vx_; }
@@ -39,12 +39,11 @@ public:
     world::Facing flight() const { return flight_; }
 
     int startDelay() const { return startDelay_; }
-    /** How long it stays hidden (it starts from its start delay). */
-    units::Countdown& waitTime() { return waitTime_; }
-    const units::Countdown& waitTime() const { return waitTime_; }
-    /** How long it screeches before it flies. */
-    units::Countdown& screechTime() { return screechTime_; }
-    const units::Countdown& screechTime() const { return screechTime_; }
+    /** It stays in its state (hidden, screeching) for `frames` before the next one. */
+    void wait(int frames) { waitTime_.start(frames); }
+    /** One frame of the wait; true when it is over. */
+    bool waitOver() { return waitTime_.tick(); }
+    int waitTime() const { return waitTime_.remaining(); }
 
     /** Falling: 1/32 px per frame, faster every frame up to a limit. */
     int fallSpeed() const { return fallSpeed_; }
@@ -54,12 +53,12 @@ public:
     }
 
 private:
-    const data::FlyerKind* kind_;
+    const data::kinds::FlyerKind* kind_;
     int startDelay_ = 0;
     units::Fixed vx_;
     int lastTarget_ = 1;
     world::Facing flight_ = world::Facing::Left;
-    units::Countdown waitTime_, screechTime_;
+    units::Countdown waitTime_;
     int fallSpeed_ = 0;
 };
 

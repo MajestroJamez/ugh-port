@@ -4,7 +4,7 @@
 
 namespace ugh::passengers::route {
 
-RoutePassenger::RoutePassenger(int index, const data::RoutePassengerPlacement& placement)
+RoutePassenger::RoutePassenger(int index, const data::levels::RoutePassengerPlacement& placement)
     : Passenger(index), StateMachine(NextStop::instance), kinds_(*placement.kind), route_(placement.route) {}
 
 void RoutePassenger::update(const PassengerContext& context) { updateState(context); }
@@ -17,7 +17,7 @@ void RoutePassenger::frameShown() {
 
 void RoutePassenger::accept(PassengerVisitor& visitor) const { visitor.visit(*this); }
 
-void RoutePassenger::standAtDoor(const data::PadDefinition& pad) {
+void RoutePassenger::standAtDoor(const data::levels::PadDefinition& pad) {
     seenY_ = pad.y - kind().box.y;
     seenX_ = pad.door - kind().box.x;
     moveTo(units::Fixed::fromPixels(seenX_), units::Fixed::fromPixels(seenY_));

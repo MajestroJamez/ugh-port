@@ -26,7 +26,7 @@ TEST(an_extended_key_is_two_scancodes) {
     const keyboard::KeyBinding::Action* up = keyboard.match(0x48);   // the arrow key up
     CHECK(up != nullptr);
     CHECK_EQUAL(0, up->player);
-    CHECK(up->key == data::PlayerKey::Up);
+    CHECK(up->key == input::PlayerKey::Up);
     CHECK(up->press);
     const keyboard::KeyBinding::Action* numpadUp = keyboard.match(0x48);   // the numeric keypad's 8
     CHECK(numpadUp != nullptr);

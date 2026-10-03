@@ -16,7 +16,7 @@ void Waiting::enter(RoutePassenger& passenger, const PassengerContext&) const {
 /** A step per animation frame to the waiting spot of the pad; it stands there. */
 void Waiting::walk(RoutePassenger& passenger, const PassengerContext& context) const {
     if (!passenger.animate()) return;
-    int spot = context.play.level.pad(passenger.route().pickupPad()).place().wait;
+    int spot = passenger.route().pickupPad(context.level).place().wait;
     if (!passenger.stepTowards(spot)) {
         passenger.call().walkToSpot();
         return;
@@ -26,7 +26,7 @@ void Waiting::walk(RoutePassenger& passenger, const PassengerContext& context) c
 }
 
 void Waiting::stay(RoutePassenger& passenger, const PassengerContext& context) const {
-    if (context.play.level.copters().emptyLandedOn(passenger.route().pickupPad()))
+    if (context.level.copters().emptyLandedOn(passenger.route().pickupPad(context.level)))
         passenger.changeState(Calling::instance, context);
 }
 

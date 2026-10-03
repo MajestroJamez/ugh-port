@@ -21,14 +21,23 @@ typedef struct ugh_logic ugh_logic;
 ugh_logic* ugh_logic_create(const char* data_path, char* err, size_t err_size);
 void ugh_logic_destroy(ugh_logic* logic);
 
-/** What a new game starts with. */
+/**
+ * What a new game starts with: what the menu chose, and two values the original takes from the screens before the
+ * game (the replays set them; a frontend keeps the defaults).
+ */
 typedef struct {
     int players;            /* 1, or 2 for the team mode */
     int difficulty;         /* 0 easy, 1 medium, 2 hard */
-    int first_level;        /* from 0 in the order of the mode */
-    uint16_t random_seed[4];   /* the state of the random numbers */
-    int rain_floor_row;     /* the row where raindrops start again (180 after the program start) */
+    int first_level;        /* from 0 in the order of the mode (a password starts later) */
+    uint16_t random_seed[4];   /* the state of the random numbers: any (a frontend may take the time) */
+    int rain_floor_row;     /* the row where raindrops start again before the first windy level, 0 .. 255 */
 } ugh_logic_settings;
+
+/**
+ * The settings of a one-player game on medium from the first level: the random seed 0 (any seed plays a fair game)
+ * and the rain row as after the program start.
+ */
+void ugh_logic_default_settings(ugh_logic_settings* settings);
 
 /** A new game; 0 when a setting is out of range. */
 int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings);

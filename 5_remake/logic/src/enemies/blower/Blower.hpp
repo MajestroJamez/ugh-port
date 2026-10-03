@@ -1,32 +1,32 @@
 // The blower.
 #pragma once
 
-#include "data/BlowerKind.hpp"
-#include "data/BlowerPlacement.hpp"
+#include "data/kinds/BlowerKind.hpp"
+#include "data/levels/BlowerPlacement.hpp"
 #include "enemies/Enemy.hpp"
+#include "enemies/Stun.hpp"
 #include "enemies/blower/BlowerState.hpp"
 #include "state/StateMachine.hpp"
-#include "units/Countdown.hpp"
 
 namespace ugh::enemies::blower {
 
 /** The blower: it blows copters in front of it to and fro with its animation; a passenger dropped onto it stuns it. */
 class Blower : public Enemy, public state::StateMachine<Blower, EnemyContext> {
 public:
-    Blower(int index, const data::BlowerKind& kind, const data::BlowerPlacement& placement);
+    Blower(int index, const data::kinds::BlowerKind& kind, const data::levels::BlowerPlacement& placement);
 
     void update(const EnemyContext& context) override;
     void accept(EnemyVisitor& visitor) const override;
 
-    const data::BlowerKind& kind() const { return *kind_; }
+    const data::kinds::BlowerKind& kind() const { return *kind_; }
 
     /** How long it stays stunned. */
-    units::Countdown& stunTime() { return stunTime_; }
-    const units::Countdown& stunTime() const { return stunTime_; }
+    Stun& stun() { return stun_; }
+    const Stun& stun() const { return stun_; }
 
 private:
-    const data::BlowerKind* kind_;
-    units::Countdown stunTime_;
+    const data::kinds::BlowerKind* kind_;
+    Stun stun_;
 };
 
 }  // namespace ugh::enemies::blower

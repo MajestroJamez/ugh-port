@@ -17,31 +17,38 @@ Windows PowerShell 5.1, with VS Build Tools (MSVC, CMake, Ninja):
 powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\logic\build.ps1
 ```
 
-It builds `build\ugh_logic.lib` and the tests `build\ugh_logic_tests.exe`, then runs them (by module, `tests/`).
+It builds `build\ugh_logic.lib`, the test pilot `build\ugh_logic_testing.lib` and the tests
+`build\ugh_logic_tests.exe`, then runs them (by module, `tests/`).
 `-NoTest` only builds. The tests need the game data `assets\logic\ugh-data.ugd` (`.\gradlew.bat :extractor:run`).
 The golden replays are checked by `6_verification\build.ps1` (`6_verification/README.md`).
 
 ## Modules
 
 A folder is a module and a namespace (`src/passengers/route/Waiting.hpp` is `ugh::passengers::route::Waiting`); one
-class per file, named like the file; includes start at `src/`. A module uses only the modules above it:
+class per file, named like the file; includes start at `src/`. A module uses only the modules above it (like Java
+packages that never import "down"):
 
 | Module | What is in it |
 |---|---|
 | `units/` | the arithmetic of the original: `Fixed` (a position in 1/32 px) and `Speed` (1/64 Fixed per frame) wrap at 16 bits like the original (`Int16` inside them); `Countdown`. Everything else is a plain `int` |
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
-| `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd` (it puts together `UgdTokenizer`: lines to records, `RecordReader`: values and errors with the line, `KindsReader`, `RulesReader`, `LevelReader`), `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds (passengers: `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`), animations, rules (the keys of the PC keyboard are skipped: `6_verification/keyboard`). Every record is a struct with public fields, read-only through `GameData`; the placements also have `accept` (Visitor) |
+| `data/kinds/` | the kinds of the game data: of passengers (`RoutePassengerKind`, its `SwimmerKind` in the water, `StandingPassengerKind`), of enemies (`FlyerKind`, `WalkerKind`, `BlowerKind`, `TreeKind`) and of bonus items (`BonusKind`), and what they are made of (`Animation`, `AnimationPair`, `Box`). Every record of the data is a struct with public fields, read-only through `GameData` |
+| `data/levels/` | a level as the data defines it: `LevelDefinition` with its `PadDefinition`s, `CollisionMask`, `Wind`, and the placements of passengers (`Route`) and enemies; the placements have `accept` (Visitor) |
+| `data/` | the game data, read-only: `GameData` (the levels in the order of both modes, the kinds, `Rules`, `SpriteIds`), `Difficulty` |
+| `data/ugd/` | reading `ugh-data.ugd` (format UGD 1) with all checks: `DataFileReader` puts together `UgdTokenizer` (lines to records), `RecordReader` (values and errors with the line) and the readers, each with a table of the record types it reads: `KindsReader` (with `AnimationsReader`, `PassengerKindsReader`), `RulesReader`, `LevelReader` (with `PlacementReader`). The keys of the PC keyboard are skipped (`6_verification/keyboard`) |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |
-| `world/` | the world of the game: `Session` (lives, `Score`, level number, random numbers), `Level` (`Copters` - and what the entities ask about them -, pads, water, rain, energy, fade, `Delivery`), `Copter` (its `Motion`, `Controls`, `Rotor`, `Cabin`), `Pad`, `Water`, `Rain`, `Figure` (what a passenger or an enemy shows: position, sprite, animation), `Animator`, `PlayContext` |
+| `input/` | `PlayerKey` (the keys a pilot flies with), `MenuKey`, `MenuInput`: the keys the game loop looks at (Esc gives up, P would pause, a caption waits for any key) |
+| `world/` | the world of the game: `Session` (lives, `Score`, level number, random numbers), `Level` (`Copters` - and what the entities ask about them, as `Copter*` -, `Pad`s, water, rain, energy, fade, `Delivery`), `Copter` (its player, `Motion`, `Controls`, `Rotor`, `Cabin`), `Pad` (its index, who waits on it), `Water`, `Rain`, `Figure` (what a passenger or an enemy shows: position, sprite, animation), `Animator`, `PlayContext` |
 | `physics/` | `CopterPhysics` (one frame of a copter's flight), `CollisionProbe` (a copter against the background), `TouchBox` (a copter against a sprite), `Ballistics` (anything thrown that falls) |
 | `bonuses/` | the bonus items: `BonusSlots`, `BonusItem`, their states `Falling` and `Lying` |
 | `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `RouteKinds`, `Route`, `PassengerCall`, `Ride`, `Swim`; `OnPickupPad` the base of the states on the pickup pad), `standing/` the standing passenger (5 states) |
-| `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`; `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
-| `input/` | `MenuKey`, `MenuInput`: the keys the game loop looks at (Esc gives up, P would pause, a caption waits for any key); the pilots' keys go straight to the copters (`Game::key`) |
-| `game/` | `Game` (the facade), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play), `Cheats` (the test pilot of the replays) |
+| `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`, `Stun` (a walker or a blower stunned); `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
+| `game/` | `Game` (the facade), `GameState` (what changes during a game), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game state: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play) |
 | `api/` | `LogicApi.cpp`: the C API over `Game` |
 
-`tests/` holds the tests by module. The fields of the replays (`ugh_logic_replay`) and the replay check live in
+`testing/` is not part of the logic: `testing::TestPilot` (library `ugh_logic_testing`), the test pilot of the replays
+(it puts a copter anywhere, keeps the energy and the lives up) for the tests and `6_verification`; the classes it
+changes only name it as a `friend`. `tests/` holds the tests by module. The fields of the replays (`ugh_logic_replay`) and the replay check live in
 `6_verification/`; the logic does not know them.
 
 ## One frame
@@ -74,14 +81,19 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
 - **Visitor**: the placements of a level (`data::PassengerPlacementVisitor`, `EnemyPlacementVisitor`) and the
   entities by type (`passengers::PassengerVisitor`, `enemies::EnemyVisitor`) - no RTTI.
 - **Factory**: `PassengerFactory`, `EnemyFactory` make the right class from a placement.
-- **Parameter Object**: `world::PlayContext` (and `PassengerContext`, `EnemyContext`) is what an update gets.
+- **Parameter Object**: `world::PlayContext` is what an update gets; `PassengerContext` and `EnemyContext` derive from
+  it and add what only they need (the bonus items, the passengers), so a state writes `context.level`.
 - **Observer**: the logic reports `events::Event`s to `EventListener`s.
-- **Facade**: `game::Game` is the one entry; nothing of the state can be set from outside but through `Cheats`.
+- **Facade**: `game::Game` is the one entry; nothing of the state can be set from outside but by the test pilot
+  (`testing::TestPilot`, a test peer outside `src/`).
+- **Table of methods**: each data reader has a table "record type -> its method" (`RecordTable`, like method
+  references in Java): a new record type is one line in the table and one method.
 - **Template Method**: `passengers::route::OnPickupPad`: the states on the pickup pad check the water and the copters
   every frame, then do their own part (`walk`, `stay`).
 
 No exceptions, no RTTI, no macros (the library builds as an Unreal Engine module), templates only where they remove
-copies (`state/`): errors come back as values (`DataFileReader::read` returns nullptr and the text of the error).
+copies (`state/`, `RecordTable`): errors come back as values (`DataFileReader::read` returns nullptr and the
+text of the error).
 
 ## Rules of the code
 
@@ -90,6 +102,11 @@ copies (`state/`): errors come back as values (`DataFileReader::read` returns nu
   `RoutePassenger` has `Route`, `PassengerCall`, `Ride`, `Swim`), and the states call their intents
   (`passenger.ride().start(...)`), not setters.
 - No `protected` data: what the kinds of an entity share is a base class with its own methods (`world::Figure`).
+- Objects, not indexes: the logic hands copters and pads around (`Copter&`, `Copter*`, `Pad&`); a number only where
+  the world outside needs one (events, the C API, the replays: `Copter::player()`, `Pad::index()`) or the data names
+  one (`passenger.route().pickupPad(level)`).
+- No `friend` into the insides of another class: the factories of their own collections and the test pilot only.
+- Nothing for the tests in `src/`: the test pilot lives in `testing/`.
 - Values of the game are plain `int`s; only `Fixed` and `Speed` keep the 16 bits of the original (and the energy, as
   a named quirk). A quirk of the original lives in the class it belongs to, named and described.
 - The logic knows nothing of DOS, the PC keyboard or the replays: those are in `6_verification/`.
@@ -105,7 +122,10 @@ copies (`state/`): errors come back as values (`DataFileReader::read` returns nu
 | change what a state of a passenger or an enemy does | the state's file: `src/passengers/route/<State>.cpp`, `src/enemies/<kind>/<State>.cpp` |
 | add an event for the frontend | `src/events/EventKind.hpp` (the kind), `context.report({...})` where it happens, `include/ugh_logic.h` (`UGH_LOGIC_EVENT_...`, in the same order) |
 | add a field to the replays | the entity's writer in `6_verification/replay/` (`PassengerFields.cpp` ...: its rule and its value) and the same field in `4_test_data/verify/.../replay/SemanticProjection.kt` |
-| add a kind of enemy | a folder `src/enemies/<kind>/` (the class and its states, like `flyer/`), its placement in `src/data/` (with `EnemyPlacementVisitor`, its kind in `KindsReader`, its placement in `LevelReader`), `src/enemies/EnemyFactory.cpp`; then its fields in `6_verification/replay/EnemyFields.cpp` |
+| add a kind of enemy | a folder `src/enemies/<kind>/` (the class and its states, like `flyer/`), its kind in `src/data/kinds/` and placement in `src/data/levels/` (with `EnemyPlacementVisitor`), one line and one method in the tables of `src/data/ugd/KindsReader.cpp` and `PlacementReader.cpp`, `src/enemies/EnemyFactory.cpp`; then its fields in `6_verification/replay/EnemyFields.cpp` |
+| read a new kind of record of the data | one line in the table of the reader it belongs to (`src/data/ugd/KindsReader.cpp`, `PlacementReader.cpp` ...) and its method |
+| change how long a walker or a blower stays stunned | `src/enemies/Stun.hpp` (`TIME`) |
+| change how long a bonus item lies on a pad | `src/bonuses/Lying.cpp` (`LYING_TIME`) |
 | change the order of the systems in a frame | `src/game/PlayFrame.cpp` |
 | change the caption, the black screens, the end of an attempt | `src/game/phases/`, `src/game/Attempts.cpp` (`end`) |
 | change how a copter hits walls | `src/physics/CollisionProbe.cpp` |

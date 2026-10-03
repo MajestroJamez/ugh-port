@@ -1,12 +1,10 @@
 // Whether a copter touches a sprite.
 #pragma once
 
-#include <optional>
-
-#include "data/Box.hpp"
+#include "data/kinds/Box.hpp"
 #include "units/Fixed.hpp"
 #include "world/Copter.hpp"
-#include "world/Level.hpp"
+#include "world/Copters.hpp"
 
 namespace ugh::physics {
 
@@ -17,14 +15,14 @@ namespace ugh::physics {
 class TouchBox {
 public:
     /** The box of a sprite at x, y (its top left corner) with the anchor and the half size of `box`. */
-    TouchBox(const data::Box& box, units::Fixed x, units::Fixed y);
+    TouchBox(const data::kinds::Box& box, units::Fixed x, units::Fixed y);
     /** The area the copter's top left corner touches when it is between these corners (a blower's zone). */
     static TouchBox between(units::Fixed left, units::Fixed right, units::Fixed top, units::Fixed bottom);
 
     bool touches(const world::Copter& copter) const;
 
-    /** The first copter of the level that touches the box. */
-    std::optional<int> firstCopterIn(const world::Level& level) const;
+    /** The first copter that touches the box; nullptr if none. */
+    world::Copter* firstCopterIn(world::Copters& copters) const;
 
 private:
     TouchBox(units::Fixed left, units::Fixed right, units::Fixed top, units::Fixed bottom)

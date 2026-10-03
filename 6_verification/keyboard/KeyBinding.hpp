@@ -5,7 +5,7 @@
 #include <optional>
 #include <vector>
 
-#include "data/PlayerKey.hpp"
+#include "input/PlayerKey.hpp"
 
 namespace ugh::keyboard {
 
@@ -17,7 +17,7 @@ struct KeyBinding {
     /** A pilot's key pressed or released. */
     struct Action {
         int player = 0;
-        data::PlayerKey key = data::PlayerKey::Up;
+        input::PlayerKey key = input::PlayerKey::Up;
         bool press = false;
     };
 

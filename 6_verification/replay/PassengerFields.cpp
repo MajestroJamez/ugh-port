@@ -72,14 +72,14 @@ void PassengerFields::visit(const passengers::route::RoutePassenger& p) {
         if (field == "kind") v = p.kind().name;
         else if (field == "state") v = p.state().name();
         else if (field == "routeStop") v = std::to_string(p.route().stop());
-        else if (field == "pickupPad") v = std::to_string(p.route().pickupPad());
-        else if (field == "targetPad") v = std::to_string(p.route().targetPad());
+        else if (field == "pickupPad") v = std::to_string(p.route().pickupPadIndex());
+        else if (field == "targetPad") v = std::to_string(p.route().targetPadIndex());
         else if (field == "seenX") v = std::to_string(p.seenX());
         else if (field == "seenY") v = std::to_string(p.seenY());
         else if (field == "arrivalDelay") v = std::to_string(p.route().arrivalDelay());
         else if (field == "callTime") v = std::to_string(p.call().time());
         else if (field == "waitingSpot") v = spotName(p.call().spot());
-        else if (field == "carrier") v = p.ride().carrier() ? std::to_string(*p.ride().carrier()) : "none";
+        else if (field == "carrier") v = p.ride().carrier() ? std::to_string(p.ride().carrier()->player()) : "none";
         else if (field == "quickDeliveryTime") v = std::to_string(p.ride().quickDeliveryTime());
         else if (field == "swimSpeed") v = std::to_string(p.swim().speed().raw());
         else if (field == "swimTime") v = std::to_string(p.swim().afloatTime());
@@ -93,7 +93,7 @@ void PassengerFields::visit(const passengers::standing::StandingPassenger& p) {
         std::string& v = fields_[c + field];
         if (field == "kind") v = p.kind().name;
         else if (field == "state") v = p.state().name();
-        else if (field == "carrier") v = p.carrier() ? std::to_string(*p.carrier()) : "none";
+        else if (field == "carrier") v = p.carrier() ? std::to_string(p.carrier()->player()) : "none";
         else if (field == "dropSpeedX") v = std::to_string(p.dropSpeedX().raw());
         else if (field == "fallSpeed") v = std::to_string(p.fallSpeed());
         else common(p, c, field);

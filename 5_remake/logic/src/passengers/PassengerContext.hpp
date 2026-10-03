@@ -7,8 +7,7 @@
 namespace ugh::passengers {
 
 /** What the update of a passenger gets: the play, and the bonus items (a quick delivery drops one). */
-struct PassengerContext {
-    const world::PlayContext& play;
+struct PassengerContext : world::PlayContext {
     bonuses::BonusSlots& bonuses;
 };
 

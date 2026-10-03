@@ -6,8 +6,8 @@ namespace ugh::test {
 
 const data::GameData& TestLevel::gameData() { return test::gameData(); }
 
-TestLevel::TestLevel(int waterRow, data::Wind wind)
-    : mask_(data::CollisionMask::WIDTH / 8 * data::CollisionMask::HEIGHT),
+TestLevel::TestLevel(int waterRow, data::levels::Wind wind)
+    : mask_(data::levels::CollisionMask::WIDTH / 8 * data::levels::CollisionMask::HEIGHT),
       session_(gameData().rules(), 1, data::Difficulty::Medium, 0, world::RandomNumbers({1, 2, 3, 4})) {
     definition_.wind = wind;
     definition_.water = units::Fixed::fromPixels(waterRow);
@@ -18,11 +18,11 @@ TestLevel::TestLevel(int waterRow, data::Wind wind)
 }
 
 void TestLevel::solid(int x, int y) {
-    mask_[y * (data::CollisionMask::WIDTH / 8) + x / 8] |= static_cast<uint8_t>(0x80 >> (x % 8));
+    mask_[y * (data::levels::CollisionMask::WIDTH / 8) + x / 8] |= static_cast<uint8_t>(0x80 >> (x % 8));
 }
 
 void TestLevel::start() {
-    definition_.mask = data::CollisionMask{mask_};
+    definition_.mask = data::levels::CollisionMask{mask_};
     level_.startAttempt(definition_, gameData().sprites(), session_.random(), diagnostics);
 }
 

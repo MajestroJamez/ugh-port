@@ -23,18 +23,17 @@ const Blowing Blowing::instance{};
 void Blowing::enter(Blower& blower, const EnemyContext&) const { blower.restartAnimation(); }
 
 void Blowing::update(Blower& blower, const EnemyContext& context) const {
-    const data::Box& box = blower.kind().box;
+    const data::kinds::Box& box = blower.kind().box;
     if (blower.animate(FRAME_DELAY)) {
         if (blower.animator().frame() == BLOW_FRAME)
-            context.play.report({events::EventKind::BlowerBlow, std::nullopt, blower.index()});
+            context.report({events::EventKind::BlowerBlow, std::nullopt, blower.index()});
         blower.show(*blower.kind().blowing);
     }
     physics::TouchBox zone = physics::TouchBox::between(
         blower.x() + Fixed::fromPixels(box.x - ZONE_FAR), blower.x() + Fixed::fromPixels(box.x - ZONE_NEAR),
         blower.y() + Fixed::fromPixels(box.y - ZONE_TOP), blower.y() + Fixed::fromPixels(box.y - ZONE_BOTTOM));
-    world::Level& level = context.play.level;
-    for (int c = 0; c < level.copters().count(); c++) {
-        world::Copter& copter = level.copters()[c];
+    world::Level& level = context.level;
+    for (world::Copter& copter : level.copters().all()) {
         if (zone.touches(copter))
             copter.setSpeed(copter.speedX() + (blower.animator().frame() < BLOW_FRAME ? BLOW : -BLOW), copter.speedY());
     }

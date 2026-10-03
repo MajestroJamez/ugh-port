@@ -4,7 +4,7 @@
 
 namespace ugh::bonuses {
 
-void BonusSlots::drop(const data::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX, int lift,
+void BonusSlots::drop(const data::kinds::BonusKind& kind, units::Fixed x, units::Fixed y, units::Fixed speedX, int lift,
                       events::Diagnostics& diagnostics) {
     for (int slot = SLOTS - 1; slot >= 0; slot--) {
         if (items_[slot]) continue;
