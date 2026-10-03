@@ -6,6 +6,12 @@
 #include <vector>
 
 #include "bonuses.hpp"
+#include "core/AmigaScale.hpp"
+#include "core/Countdown.hpp"
+#include "core/Fixed.hpp"
+#include "core/Random.hpp"
+#include "core/Speed.hpp"
+#include "core/Word.hpp"
 #include "data.hpp"
 #include "game.hpp"
 #include "keyboard.hpp"
@@ -88,6 +94,59 @@ void random() {
     r.state = {0xffff, 0xffff, 0, 0};   // the carries run through the chain
     CHECK(r.next(1) == 0);
     CHECK((r.state == std::array<uint16_t, 4>{1, 0, 1, 1}));
+    for (int i = 0; i < 1000; i++) CHECK(r.next(7) < 7);
+}
+
+void words() {
+    using core::Word;
+    CHECK(Word(0x7fff) + 1 == Word(-0x8000));            // wraps like a register
+    CHECK(Word(0x12345) == Word(0x2345));                // an int is cut to 16 bits
+    CHECK(Word(-1).bits() == 0xffff && Word(-1).value() == -1);
+    CHECK((Word(-5) >> 1) == Word(-3));                  // SAR rounds down
+    CHECK((Word(0x4001) << 1) == Word(-0x7ffe));         // SHL wraps
+    CHECK(Word(-1) < Word(1));                           // signed (JL)
+    CHECK(Word::unsignedLess(Word(1), Word(-1)));        // unsigned (JB)
+    Word w = 0;
+    CHECK(--w == Word(-1));
+}
+
+void coreFixedPoint() {
+    using core::Fixed;
+    CHECK(Fixed(0x7fff) + Fixed(1) == Fixed(-0x8000));   // wraps like a register
+    CHECK(Fixed(-1).pixels() == -1);                     // SAR rounds down
+    CHECK(Fixed(63).pixels() == 1);
+    CHECK(Fixed(-33).wholePixel() == Fixed(-64));
+    CHECK(Fixed::fromPixels(0x400) == Fixed(-0x8000));
+    CHECK(core::amigaRowsToPc(-5) == -3);                // -5 - (-5 >> 2) = -5 + 2
+    CHECK(core::amigaFramesToPc(7) == 10);
+}
+
+void speed() {
+    using core::Speed;
+    CHECK(Speed(-0x41).perFrame() == core::Fixed(-2));   // SAR 6 rounds down
+    CHECK(Speed(0x40).perFrame() == core::Fixed(1));
+    CHECK(Speed(0x2000).clamped(Speed(0x1800)) == Speed(0x1800));
+    CHECK(Speed(-0x2000).clamped(Speed(0x1800)) == Speed(-0x1800));
+    CHECK((Speed(-0x3f) >> 1) == Speed(-0x20));
+}
+
+void countdown() {
+    core::Countdown c;
+    c.start(2);
+    CHECK(!c.tick());
+    CHECK(c.tick());                                     // done on the second tick
+    CHECK(c.remaining() == 0);
+    CHECK(!c.tick() && c.remaining() == -1);             // from zero it runs through the whole word
+}
+
+void coreRandom() {
+    core::Random r;
+    CHECK(r.next(0x140) == 3);   // worked by hand: the words add up 0x140, 0x140, 0x140, then 0x280
+    CHECK((r.snapshot() == core::Random::Snapshot{0x280, 0x140, 0x140, 0x140}));
+    CHECK(r.next(0x140) == 14);
+    r.restore({0xffff, 0xffff, 0, 0});   // the carries run through the chain
+    CHECK(r.next(1) == 0);
+    CHECK((r.snapshot() == core::Random::Snapshot{1, 0, 1, 1}));
     for (int i = 0; i < 1000; i++) CHECK(r.next(7) < 7);
 }
 
@@ -276,6 +335,11 @@ int main(int argc, char** argv) {
     }
     data = loaded.get();
     const std::vector<std::pair<const char*, std::function<void()>>> tests = {
+        {"words", words},
+        {"core fixed point", coreFixedPoint},
+        {"speed", speed},
+        {"countdown", countdown},
+        {"core random", coreRandom},
         {"fixed point", fixedPoint},
         {"random numbers", random},
         {"collision mask", collisionMask},

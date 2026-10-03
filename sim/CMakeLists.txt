@@ -11,7 +11,7 @@ else()
     add_compile_options(-Wall -Wextra)
 endif()
 
-add_library(ugh_sim STATIC src/api.cpp src/bonuses.cpp src/copter.cpp src/data.cpp src/enemies.cpp src/game.cpp
+add_library(ugh_sim STATIC src/core/Random.cpp src/api.cpp src/bonuses.cpp src/copter.cpp src/data.cpp src/enemies.cpp src/game.cpp
             src/keyboard.cpp src/level.cpp src/passengers.cpp src/replay_projection.cpp src/water.cpp)
 target_include_directories(ugh_sim PUBLIC include PRIVATE src)
 
