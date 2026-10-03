@@ -27,7 +27,7 @@ void WalkingToDoor::enter(RoutePassenger& passenger, const PassengerContext& con
     session.addScore(points);
     context.play.report({events::EventKind::PassengerPaid, player, passenger.index(), static_cast<int>(points)});
     if (passenger.ride().quick() && session.multiplierBelowLimit()) {
-        context.bonuses.drop(context.play.data.rules().quickDeliveryBonus(), copter.x() + Fixed::fromPixels(BONUS_DROP_X),
+        context.bonuses.drop(*context.play.data.rules().quickDeliveryBonus, copter.x() + Fixed::fromPixels(BONUS_DROP_X),
                              copter.y() + Fixed::fromPixels(BONUS_DROP_Y), Fixed(), 0, context.play.diagnostics);
         context.play.report({events::EventKind::QuickDelivery, player, passenger.index()});
     }

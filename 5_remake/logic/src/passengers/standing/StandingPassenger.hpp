@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#include "data/PassengerKind.hpp"
+#include "data/StandingPassengerKind.hpp"
 #include "data/StandingPassengerPlacement.hpp"
 #include "passengers/Passenger.hpp"
 #include "passengers/standing/StandingState.hpp"
@@ -25,7 +25,7 @@ public:
     void update(const PassengerContext& context) override;
     void accept(PassengerVisitor& visitor) const override;
 
-    const data::PassengerKind& kind() const { return *kind_; }
+    const data::StandingPassengerKind& kind() const { return *kind_; }
 
     /** The copter it hangs below. */
     std::optional<int> carrier() const { return carrier_; }
@@ -52,7 +52,7 @@ public:
     bool fallsOnto(units::Fixed enemyX, units::Fixed enemyY) const;
 
 private:
-    const data::PassengerKind* kind_;
+    const data::StandingPassengerKind* kind_;
     std::optional<int> carrier_;
     units::Fixed dropSpeedX_;
     units::Int16 fallSpeed_;

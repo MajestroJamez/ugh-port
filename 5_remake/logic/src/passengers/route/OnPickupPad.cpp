@@ -25,7 +25,7 @@ bool OnPickupPad::knockedIntoWater(RoutePassenger& passenger, const PassengerCon
 }
 
 void OnPickupPad::intoWater(RoutePassenger& passenger, const PassengerContext& context) {
-    passenger.switchKind();
+    passenger.intoWater();
     passenger.changeState(Splash::instance, context);
 }
 

@@ -7,17 +7,11 @@
 namespace ugh::data {
 
 /** A blower at x, y. */
-class BlowerPlacement : public EnemyPlacement {
-public:
-    BlowerPlacement(units::Fixed x, units::Fixed y) : x_(x), y_(y) {}
-
-    units::Fixed x() const { return x_; }
-    units::Fixed y() const { return y_; }
-
+struct BlowerPlacement : EnemyPlacement {
+    BlowerPlacement(units::Fixed atX, units::Fixed atY) : x(atX), y(atY) {}
     void accept(EnemyPlacementVisitor& visitor) const override { visitor.visit(*this); }
 
-private:
-    units::Fixed x_, y_;
+    units::Fixed x, y;
 };
 
 }  // namespace ugh::data

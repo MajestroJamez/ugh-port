@@ -6,8 +6,7 @@
 namespace ugh::data {
 
 /** A passenger of a level as the data defines it. */
-class PassengerPlacement {
-public:
+struct PassengerPlacement {
     virtual ~PassengerPlacement() = default;
     virtual void accept(PassengerPlacementVisitor& visitor) const = 0;
 };

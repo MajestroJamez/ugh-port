@@ -21,9 +21,9 @@ void Riding::enter(RoutePassenger& passenger, const PassengerContext& context) c
     world::Level& level = context.play.level;
     int player = *passenger.ride().carrier();
     units::Int16 fare = passenger.kind().fare, fareMin = passenger.kind().fareMin;
-    if (passenger.kind().type == data::PassengerKind::Type::Water) passenger.switchKind();
+    passenger.outOfWater();   // a rescued swimmer is itself again
     units::Int16 destination = level.pad(passenger.route().targetPad()).place().number;
-    level.copter(player).takeOnBoard(passenger.kind().look, destination, fare, fareMin);
+    level.copter(player).takeOnBoard(passenger.landKind().look, destination, fare, fareMin);
     passenger.hide();
     level.pad(passenger.route().pickupPad()).vacate();
     context.play.report({events::EventKind::PassengerBoarded, player, passenger.index()});

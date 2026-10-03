@@ -7,20 +7,13 @@
 namespace ugh::data {
 
 /** A walker on its pad, at x, y, walking at `speed` (Fixed per frame; negative: to the left). */
-class WalkerPlacement : public EnemyPlacement {
-public:
-    WalkerPlacement(int pad, units::Fixed x, units::Fixed y, units::Fixed speed) : pad_(pad), x_(x), y_(y), speed_(speed) {}
-
-    int pad() const { return pad_; }
-    units::Fixed x() const { return x_; }
-    units::Fixed y() const { return y_; }
-    units::Fixed speed() const { return speed_; }
-
+struct WalkerPlacement : EnemyPlacement {
+    WalkerPlacement(int onPad, units::Fixed atX, units::Fixed atY, units::Fixed perFrame)
+        : pad(onPad), x(atX), y(atY), speed(perFrame) {}
     void accept(EnemyPlacementVisitor& visitor) const override { visitor.visit(*this); }
 
-private:
-    int pad_;
-    units::Fixed x_, y_, speed_;
+    int pad;
+    units::Fixed x, y, speed;
 };
 
 }  // namespace ugh::data

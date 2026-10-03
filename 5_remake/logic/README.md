@@ -30,7 +30,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 |---|---|
 | `units/` | the arithmetic of the original: `Int16` (16 bits that wrap), `Fixed` (a position in 1/32 px), `Speed` (1/64 Fixed per frame), `Countdown` |
 | `state/` | `State` and `StateMachine`: the state of an entity and how its states change it (templates, used by every entity) |
-| `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd`, `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds, animations, keys, rules |
+| `data/` | the game data, read-only: `DataFileReader` reads and checks `ugh-data.ugd`, `GameData` holds the levels (`LevelDefinition` with its pads and the placements of passengers and enemies), the kinds (passengers: `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`), animations, keys, rules. Every record is a struct with public fields, read-only through `GameData`; the placements also have `accept` (Visitor) |
 | `events/` | `Event`s for the frontend (sounds, effects) and their listeners; `Diagnostics` for what the logic does not support |
 | `world/` | the world of the game: `Session` (lives, score, level number, random numbers), `Level` (copters, pads, water, rain, energy, fade - and the questions the entities ask about it), `Copter`, `Pad`, `Water`, `Rain`, `Figure` (what a passenger or an enemy shows: position, sprite, animation), `Animator`, `PlayContext` |
 | `physics/` | `CopterPhysics` (one frame of a copter's flight), `CollisionProbe` (a copter against the background), `TouchBox` (a copter against a sprite), `Ballistics` (anything thrown that falls) |

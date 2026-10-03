@@ -150,58 +150,70 @@ bool DataFileReader::readAnimation(const Record& r) {
     if (!only(r, {"frames"}) || !numbers(r, "frames", 0, frames)) return false;
     if (r.name.empty() || frames.empty()) return fail("an animation without a name or frames");
     if (animations_.count(r.name)) return fail("animation " + r.name + " twice");
-    data_->animations_.push_back(std::make_unique<Animation>(r.name, frames));
+    data_->animations_.push_back(std::make_unique<Animation>(Animation{r.name, frames}));
     animations_[r.name] = data_->animations_.back().get();
     return true;
 }
 
 bool DataFileReader::readPassengerKind(const Record& r) {
-    auto kind = std::make_unique<PassengerKind>();
-    kind->name = r.name;
     std::string type;
-    if (r.name.empty() || passengerKinds_.count(r.name)) return fail("a passenger kind without a name or twice");
-    if (!text(r, "type", type) || !box(r, kind->box)) return false;
+    Box kindBox;
+    if (r.name.empty() || passengerKindNames_.count(r.name)) return fail("a passenger kind without a name or twice");
+    if (!text(r, "type", type) || !box(r, kindBox)) return false;
+    passengerKindNames_.insert(r.name);
+    int look = 0;
     if (type == "route") {
-        kind->type = PassengerKind::Type::Route;
+        auto kind = std::make_unique<RoutePassengerKind>();
         if (!only(r, {"type", "box", "standing", "waving", "walk", "comingOut", "goingIn", "animDelay", "fare",
                       "fareMin", "look", "waterKind"}) ||
-            !animation(r, "comingOut", kind->comingOut) || !animation(r, "goingIn", kind->goingIn))
+            !animation(r, "comingOut", kind->comingOut) || !animation(r, "goingIn", kind->goingIn) ||
+            !animated(r, *kind) || !number(r, "look", look))
             return false;
+        kind->look = look;
+        named(*kind, r.name, kindBox);
+        routeKinds_[r.name] = kind.get();
+        data_->routePassengerKinds_.push_back(std::move(kind));
     } else if (type == "water") {
-        kind->type = PassengerKind::Type::Water;
+        auto kind = std::make_unique<SwimmerKind>();
         int swimTime = 0, rescuable = 0;
         if (!only(r, {"type", "box", "standing", "waving", "walk", "animDelay", "fare", "fareMin", "swimTime",
                       "landKind", "rescuable"}) ||
-            !number(r, "swimTime", swimTime) || !number(r, "rescuable", rescuable))
+            !number(r, "swimTime", swimTime) || !number(r, "rescuable", rescuable) || !animated(r, *kind))
             return false;
         kind->swimTime = swimTime;
         kind->rescuable = rescuable != 0;
+        named(*kind, r.name, kindBox);
+        swimmerKinds_[r.name] = kind.get();
+        data_->swimmerKinds_.push_back(std::move(kind));
     } else if (type == "standing") {
-        kind->type = PassengerKind::Type::Standing;
-        int look = 0;
+        auto kind = std::make_unique<StandingPassengerKind>();
         if (!only(r, {"type", "box", "look"}) || !number(r, "look", look)) return false;
         kind->look = look;
+        named(*kind, r.name, kindBox);
+        standingKinds_[r.name] = kind.get();
+        data_->standingPassengerKinds_.push_back(std::move(kind));
     } else {
         return fail("unknown passenger type " + type);
     }
-    if (kind->type != PassengerKind::Type::Standing) {
-        int animDelay = 0, fare = 0, fareMin = 0;
-        if (!animation(r, "standing", kind->standing) || !animation(r, "waving", kind->waving) ||
-            !pair(r, "walk", kind->walking) || !number(r, "animDelay", animDelay) || !number(r, "fare", fare) ||
-            !number(r, "fareMin", fareMin))
-            return false;
-        kind->animDelay = animDelay;
-        kind->fare = fare;
-        kind->fareMin = fareMin;
-        if (kind->type == PassengerKind::Type::Route) {
-            int look = 0;
-            if (!number(r, "look", look)) return false;
-            kind->look = look;
-        }
-    }
-    passengerKinds_[r.name] = kind.get();
-    data_->passengerKinds_.push_back(std::move(kind));
     return true;
+}
+
+/** What a passenger with a route shows and pays, on land and in the water. */
+bool DataFileReader::animated(const Record& r, AnimatedPassengerKind& kind) {
+    int animDelay = 0, fare = 0, fareMin = 0;
+    if (!animation(r, "standing", kind.standing) || !animation(r, "waving", kind.waving) ||
+        !pair(r, "walk", kind.walking) || !number(r, "animDelay", animDelay) || !number(r, "fare", fare) ||
+        !number(r, "fareMin", fareMin))
+        return false;
+    kind.animDelay = animDelay;
+    kind.fare = fare;
+    kind.fareMin = fareMin;
+    return true;
+}
+
+void DataFileReader::named(PassengerKind& kind, const std::string& name, const Box& box) {
+    kind.name = name;
+    kind.box = box;
 }
 
 /** A route kind and its water kind name each other. */
@@ -209,17 +221,22 @@ bool DataFileReader::linkPassengerKinds(const std::vector<Record>& records) {
     for (const Record& r : records) {
         if (r.type != "passengerKind") continue;
         current_ = &r;
-        PassengerKind& kind = *passengerKinds_.at(r.name);
-        if (kind.type == PassengerKind::Type::Standing) continue;
-        const char* key = kind.type == PassengerKind::Type::Route ? "waterKind" : "landKind";
+        auto route = routeKinds_.find(r.name);
+        auto swimmer = swimmerKinds_.find(r.name);
+        if (route == routeKinds_.end() && swimmer == swimmerKinds_.end()) continue;
+        const char* key = route != routeKinds_.end() ? "waterKind" : "landKind";
         std::string other;
         if (!text(r, key, other)) return false;
-        auto it = passengerKinds_.find(other);
-        if (it == passengerKinds_.end()) return fail("no passenger kind " + other);
-        PassengerKind::Type expected = kind.type == PassengerKind::Type::Route ? PassengerKind::Type::Water
-                                                                                : PassengerKind::Type::Route;
-        if (it->second->type != expected) return fail(std::string(key) + " " + other + " is of the wrong type");
-        kind.other = it->second;
+        if (!passengerKindNames_.count(other)) return fail("no passenger kind " + other);
+        if (route != routeKinds_.end()) {
+            auto it = swimmerKinds_.find(other);
+            if (it == swimmerKinds_.end()) return fail(std::string(key) + " " + other + " is of the wrong type");
+            route->second->swimmer = it->second;
+        } else {
+            auto it = routeKinds_.find(other);
+            if (it == routeKinds_.end()) return fail(std::string(key) + " " + other + " is of the wrong type");
+            swimmer->second->land = it->second;
+        }
     }
     return true;
 }
@@ -287,8 +304,7 @@ bool DataFileReader::readRules(const Record& r) {
         return false;
     auto it = bonusKinds_.find(bonus);
     if (it == bonusKinds_.end()) return fail("no bonus kind " + bonus);
-    data_->rules_.emplace(std::array<units::Int16, 3>{crash[0], crash[1], crash[2]},
-                          std::array<units::Int16, 3>{multiplier[0], multiplier[1], multiplier[2]}, *it->second);
+    data_->rules_ = Rules{{crash[0], crash[1], crash[2]}, {multiplier[0], multiplier[1], multiplier[2]}, it->second};
     return true;
 }
 
@@ -365,7 +381,7 @@ bool DataFileReader::readLevel(const std::vector<Record>& records, size_t& i) {
     }
     current_ = &r;
     if (maskRows != CollisionMask::HEIGHT) return fail("level " + r.name + ": " + std::to_string(maskRows) + " mask rows");
-    level->mask = CollisionMask(std::move(mask));
+    level->mask = CollisionMask{std::move(mask)};
     levels_[level->id] = level.get();
     data_->levels_.push_back(std::move(level));
     return true;
@@ -384,8 +400,8 @@ bool DataFileReader::readLevelPart(const Record& r, LevelDefinition& level, std:
     } else if (r.type == "routePassenger") {
         std::string kindName, route;
         if (!only(r, {"kind", "route"}) || !text(r, "kind", kindName) || !text(r, "route", route)) return false;
-        auto kind = passengerKinds_.find(kindName);
-        if (kind == passengerKinds_.end() || kind->second->type != PassengerKind::Type::Route)
+        auto kind = routeKinds_.find(kindName);
+        if (kind == routeKinds_.end())
             return fail("no route passenger kind " + kindName);
         std::vector<Route::Stop> stops;
         std::vector<std::string> entries = split(route, ',');
@@ -400,10 +416,10 @@ bool DataFileReader::readLevelPart(const Record& r, LevelDefinition& level, std:
             if (!last) stops.push_back({padValue, delay, 0});
         }
         if (stops.empty()) return fail("a route without a stop");
-        level.passengers.push_back(std::make_unique<RoutePassengerPlacement>(*kind->second, Route(std::move(stops))));
+        level.passengers.push_back(std::make_unique<RoutePassengerPlacement>(*kind->second, Route{std::move(stops)}));
     } else if (r.type == "standingPassenger") {
-        auto kind = passengerKinds_.find("standing");
-        if (kind == passengerKinds_.end()) return fail("no passenger kind standing");
+        auto kind = standingKinds_.find("standing");
+        if (kind == standingKinds_.end()) return fail("no passenger kind standing");
         if (!only(r, {"x", "y"}) || !number(r, "x", x) || !number(r, "y", y)) return false;
         level.passengers.push_back(std::make_unique<StandingPassengerPlacement>(
             *kind->second, units::Fixed::fromRaw(x), units::Fixed::fromRaw(y)));

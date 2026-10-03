@@ -3,8 +3,8 @@
 
 namespace ugh::data {
 
-class RoutePassengerPlacement;
-class StandingPassengerPlacement;
+struct RoutePassengerPlacement;
+struct StandingPassengerPlacement;
 
 /** Visitor of the passenger placements of a level (a factory makes the right passenger of each). */
 class PassengerPlacementVisitor {

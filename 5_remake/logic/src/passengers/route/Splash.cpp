@@ -16,7 +16,7 @@ void Splash::enter(RoutePassenger& passenger, const PassengerContext& context) c
 }
 
 void Splash::update(RoutePassenger& passenger, const PassengerContext& context) const {
-    const data::PassengerKind& kind = passenger.kind();
+    const data::AnimatedPassengerKind& kind = passenger.kind();
     units::Int16 surface = context.play.level.water().row();
     passenger.animate();
     passenger.show(*kind.standing);

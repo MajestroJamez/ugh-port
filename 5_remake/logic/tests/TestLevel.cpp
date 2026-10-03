@@ -22,7 +22,7 @@ void TestLevel::solid(int x, int y) {
 }
 
 void TestLevel::start() {
-    definition_.mask = data::CollisionMask(mask_);
+    definition_.mask = data::CollisionMask{mask_};
     level_.startAttempt(definition_, gameData().sprites(), session_.random(), diagnostics);
 }
 

@@ -366,3 +366,9 @@ a žádný soubor nad 200 řádků.
   a potápění, čas na hladině); stavy volají záměry místo setterů. Časovače nepřátel jsou `Countdown` části
   (`watchTime().start(...)`), letec `flyTowards(side)` místo dvou setterů. 38 testů + 161 replayů zelených.
   Další: **N9b etapa 3**.
+- 2026-10-03: N9b etapa 3 hotová - druhy cestujících po jednom: `PassengerKind` (jméno, box) ← `AnimatedPassengerKind`
+  (animace, jízdné) ← `RoutePassengerKind` / `SwimmerKind`, a `StandingPassengerKind`; žádný `Type` ani pole platná
+  jen pro část typů. Cestující s trasou drží svůj druh na souši a `inWater()`; do vody a zpět `intoWater()` /
+  `outOfWater()`, druh ve vodě je dvojice `RoutePassengerKind::swimmer` / `SwimmerKind::land`. V `data/` jsou všechny
+  záznamy (druhy, umístění, `Route`, `Rules`, `Animation`, `CollisionMask`) struktury s veřejnými poli, umístění
+  navíc s `accept`. 38 testů + 161 replayů zelených. Další: **N9b etapa 4**.

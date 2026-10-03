@@ -6,8 +6,7 @@
 namespace ugh::data {
 
 /** An enemy of a level as the data defines it. */
-class EnemyPlacement {
-public:
+struct EnemyPlacement {
     virtual ~EnemyPlacement() = default;
     virtual void accept(EnemyPlacementVisitor& visitor) const = 0;
 };

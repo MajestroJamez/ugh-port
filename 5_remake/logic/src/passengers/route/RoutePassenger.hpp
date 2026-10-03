@@ -2,8 +2,10 @@
 #pragma once
 
 #include "data/PadDefinition.hpp"
-#include "data/PassengerKind.hpp"
+#include "data/AnimatedPassengerKind.hpp"
+#include "data/RoutePassengerKind.hpp"
 #include "data/RoutePassengerPlacement.hpp"
+#include "data/SwimmerKind.hpp"
 #include "passengers/Passenger.hpp"
 #include "passengers/route/PassengerCall.hpp"
 #include "passengers/route/Ride.hpp"
@@ -20,8 +22,8 @@ namespace ugh::passengers::route {
  * A passenger that rides its route from pad to pad. Its parts keep what belongs together: `route()` the stop it is on,
  * `call()` waiting and calling a copter, `ride()` the copter it rides in, `swim()` the water. It decides from where it
  * was seen in the last frame (seenX, seenY): the position is taken at the end of a frame while it is shown, so a
- * hidden passenger keeps it. A passenger that falls into the water stays the same passenger: only its kind turns into
- * the water kind, and back when a copter rescues it.
+ * hidden passenger keeps it. A passenger that falls into the water stays the same passenger: its kind is the swimmer kind of
+ * its land kind (`swimmerKind()`) until a copter rescues it.
  */
 class RoutePassenger : public Passenger, public state::StateMachine<RoutePassenger, PassengerContext> {
 public:
@@ -34,9 +36,14 @@ public:
     void frameShown() override;
     void accept(PassengerVisitor& visitor) const override;
 
-    const data::PassengerKind& kind() const { return *kind_; }
-    /** Into the water and out of it: the kind turns into its counterpart. */
-    void switchKind() { kind_ = kind_->other; }
+    /** Its kind as it is now: on land or in the water. */
+    const data::AnimatedPassengerKind& kind() const;
+    const data::RoutePassengerKind& landKind() const { return *land_; }
+    const data::SwimmerKind& swimmerKind() const { return *land_->swimmer; }
+    bool inWater() const { return inWater_; }
+    /** It falls into the water and is a swimmer, until a copter rescues it. */
+    void intoWater() { inWater_ = true; }
+    void outOfWater() { inWater_ = false; }
 
     Route& route() { return route_; }
     const Route& route() const { return route_; }
@@ -52,7 +59,7 @@ public:
     units::Int16 seenX() const { return seenX_; }
     units::Int16 seenY() const { return seenY_; }
     /** The x of its feet (the middle of its sprite) as seen in the last frame. */
-    units::Int16 feetX() const { return seenX_ + kind_->box.x; }
+    units::Int16 feetX() const { return seenX_ + kind().box.x; }
 
     /** Out of the door: its feet at the door, on the pad, and seen there. */
     void standAtDoor(const data::PadDefinition& pad);
@@ -64,10 +71,11 @@ public:
     void floatOnSurface(units::Int16 waterRow);
 
     /** One frame of its kind's animation delay; true when the next frame is due. */
-    bool animate() { return Figure::animate(kind_->animDelay); }
+    bool animate() { return Figure::animate(kind().animDelay); }
 
 private:
-    const data::PassengerKind* kind_;
+    const data::RoutePassengerKind* land_;
+    bool inWater_ = false;
     Route route_;
     PassengerCall call_;
     Ride ride_;

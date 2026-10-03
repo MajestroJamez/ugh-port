@@ -8,8 +8,8 @@ Flyer::Flyer(int index, const data::FlyerKind& kind, const data::FlyerPlacement&
     : Enemy(index),
       StateMachine(Placed::instance),
       kind_(&kind),
-      startDelay_(placement.startDelay()),
-      vx_(placement.speed()) {}
+      startDelay_(placement.startDelay),
+      vx_(placement.speed) {}
 
 void Flyer::update(const EnemyContext& context) { updateState(context); }
 

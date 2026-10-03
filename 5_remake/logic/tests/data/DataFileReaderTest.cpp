@@ -58,9 +58,9 @@ TEST(the_real_data_has_level_one) {
     for (const auto& p : level.passengers) p->accept(passengers);
     CHECK_EQUAL(2, passengers.route);
     CHECK_EQUAL(1, passengers.standing);
-    CHECK_EQUAL(3, passengers.first->route().stopCount());
-    CHECK_EQUAL(150, passengers.first->route().stop(0).delay.value());
-    CHECK_EQUAL(2, passengers.first->route().stop(0).targetPad);
+    CHECK_EQUAL(size_t{3}, passengers.first->route.stops.size());
+    CHECK_EQUAL(150, passengers.first->route.stops[0].delay.value());
+    CHECK_EQUAL(2, passengers.first->route.stops[0].targetPad);
     CHECK(!level.mask.solid(-1, 0));
     CHECK(!level.mask.solid(320, 100));
 }

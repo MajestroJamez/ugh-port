@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -37,7 +38,10 @@ private:
     const Record* current_ = nullptr;   // the record being read, for the error text
 
     std::map<std::string, const Animation*> animations_;
-    std::map<std::string, PassengerKind*> passengerKinds_;
+    std::set<std::string> passengerKindNames_;
+    std::map<std::string, RoutePassengerKind*> routeKinds_;
+    std::map<std::string, SwimmerKind*> swimmerKinds_;
+    std::map<std::string, const StandingPassengerKind*> standingKinds_;
     std::map<std::string, const BonusKind*> bonusKinds_;
     std::map<int, const LevelDefinition*> levels_;
 
@@ -47,6 +51,8 @@ private:
     bool readAll(const std::vector<Record>& records);
     bool readAnimation(const Record& r);
     bool readPassengerKind(const Record& r);
+    bool animated(const Record& r, AnimatedPassengerKind& kind);
+    static void named(PassengerKind& kind, const std::string& name, const Box& box);
     bool linkPassengerKinds(const std::vector<Record>& records);
     bool readBonusKind(const Record& r);
     bool readEnemyKind(const Record& r);

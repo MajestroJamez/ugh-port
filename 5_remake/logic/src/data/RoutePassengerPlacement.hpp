@@ -3,25 +3,20 @@
 
 #include <utility>
 
-#include "data/PassengerKind.hpp"
 #include "data/PassengerPlacement.hpp"
 #include "data/Route.hpp"
+#include "data/RoutePassengerKind.hpp"
 
 namespace ugh::data {
 
 /** A passenger that rides its route from pad to pad. */
-class RoutePassengerPlacement : public PassengerPlacement {
-public:
-    RoutePassengerPlacement(const PassengerKind& kind, Route route) : kind_(&kind), route_(std::move(route)) {}
-
-    const PassengerKind& kind() const { return *kind_; }
-    const Route& route() const { return route_; }
-
+struct RoutePassengerPlacement : PassengerPlacement {
+    RoutePassengerPlacement(const RoutePassengerKind& itsKind, Route itsRoute)
+        : kind(&itsKind), route(std::move(itsRoute)) {}
     void accept(PassengerPlacementVisitor& visitor) const override { visitor.visit(*this); }
 
-private:
-    const PassengerKind* kind_;
-    Route route_;
+    const RoutePassengerKind* kind;
+    Route route;
 };
 
 }  // namespace ugh::data

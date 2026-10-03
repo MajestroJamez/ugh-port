@@ -98,7 +98,7 @@ logic/
       Animation.hpp         snímky (sprity) animace (+ případné „přetečení“, viz kap. 6)
       AnimationPair.hpp     varianta doleva a doprava
       Box.hpp               kotva a poloviční rozměr dotykového obdélníku spritu
-      PassengerKind.hpp     druh cestujícího (typ, animace, jízdné, čas na vodě, vzhled, protějšek na vodě)
+      PassengerKind.hpp     druh cestujícího (od N9b: `RoutePassengerKind`, `SwimmerKind`, `StandingPassengerKind`)
       FlyerKind.hpp, WalkerKind.hpp, BlowerKind.hpp, TreeKind.hpp   druhy nepřátel, každý jen se svými poli
       BonusKind.hpp         druh bonusu (efekt, množství, výskok, sprite, kotva)
       Route.hpp             trasa cestujícího: zastávky (plošina, zpoždění ve snímcích)
@@ -176,7 +176,7 @@ logic/
   bublina, `Animator`, `virtual void update(PlayContext&)`). `RoutePassenger` a `StandingPassenger` jsou potomci,
   každý se svými poli a vlastním stavovým automatem.
 - Cestující s trasou, který spadne do vody, **zůstává stejný objekt** (stejné pořadí, stejná trasa); jen přepne druh
-  na svůj vodní protějšek (`PassengerKind::waterKind`) a jeho stavy jsou vodní. Proto jsou vodní stavy v `route/`.
+  na svůj vodní protějšek (od N9b `RoutePassengerKind::swimmer`) a jeho stavy jsou vodní. Proto jsou vodní stavy v `route/`.
 - `Enemy` je základ, `Flyer`, `Walker`, `Blower`, `Tree` jsou potomci, `EnemyFactory` je vytvoří z umístění.
 - `Level` drží seznam cestujících a seznam nepřátel **v pořadí z definice levelu** (`std::vector<std::unique_ptr<…>>`)
   – na pořadí updatů záleží. Kde stav potřebuje konkrétního potomka (nepřítel odrazí padajícího stojícího

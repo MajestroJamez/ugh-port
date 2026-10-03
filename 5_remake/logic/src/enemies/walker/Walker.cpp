@@ -5,11 +5,11 @@
 namespace ugh::enemies::walker {
 
 Walker::Walker(int index, const data::WalkerKind& kind, const data::WalkerPlacement& placement)
-    : Enemy(index, placement.x(), placement.y()),
+    : Enemy(index, placement.x, placement.y),
       StateMachine(Placed::instance),
       kind_(&kind),
-      pad_(placement.pad()),
-      vx_(placement.speed()) {}
+      pad_(placement.pad),
+      vx_(placement.speed) {}
 
 void Walker::update(const EnemyContext& context) { updateState(context); }
 

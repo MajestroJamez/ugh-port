@@ -10,7 +10,7 @@ const Swimming Swimming::instance{};
 
 void Swimming::enter(RoutePassenger& passenger, const PassengerContext&) const {
     passenger.restartAnimation();
-    passenger.swim().startAfloat(passenger.kind().swimTime);
+    passenger.swim().startAfloat(passenger.swimmerKind().swimTime);
 }
 
 /** A kind that cannot be rescued only waits to sink. */
@@ -18,7 +18,7 @@ void Swimming::update(RoutePassenger& passenger, const PassengerContext& context
     passenger.animate();
     passenger.show(*passenger.kind().waving);
     passenger.floatOnSurface(context.play.level.water().row());
-    if (passenger.kind().rescuable && context.play.level.copterOnWater(true, true)) {
+    if (passenger.swimmerKind().rescuable && context.play.level.copterOnWater(true, true)) {
         passenger.changeState(SwimCalling::instance, context);
         return;
     }

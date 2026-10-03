@@ -3,10 +3,10 @@
 
 namespace ugh::data {
 
-class FlyerPlacement;
-class WalkerPlacement;
-class BlowerPlacement;
-class TreePlacement;
+struct FlyerPlacement;
+struct WalkerPlacement;
+struct BlowerPlacement;
+struct TreePlacement;
 
 /** Visitor of the enemy placements of a level (a factory makes the right enemy of each). */
 class EnemyPlacementVisitor {

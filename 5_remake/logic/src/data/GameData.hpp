@@ -13,9 +13,11 @@
 #include "data/FlyerKind.hpp"
 #include "data/KeyBinding.hpp"
 #include "data/LevelDefinition.hpp"
-#include "data/PassengerKind.hpp"
+#include "data/RoutePassengerKind.hpp"
 #include "data/Rules.hpp"
 #include "data/SpriteIds.hpp"
+#include "data/StandingPassengerKind.hpp"
+#include "data/SwimmerKind.hpp"
 #include "data/TreeKind.hpp"
 #include "data/WalkerKind.hpp"
 
@@ -50,7 +52,9 @@ private:
     GameData() = default;
 
     std::vector<std::unique_ptr<Animation>> animations_;
-    std::vector<std::unique_ptr<PassengerKind>> passengerKinds_;
+    std::vector<std::unique_ptr<RoutePassengerKind>> routePassengerKinds_;
+    std::vector<std::unique_ptr<SwimmerKind>> swimmerKinds_;
+    std::vector<std::unique_ptr<StandingPassengerKind>> standingPassengerKinds_;
     std::vector<std::unique_ptr<BonusKind>> bonusKinds_;
     FlyerKind flyerKind_;
     WalkerKind walkerKind_;

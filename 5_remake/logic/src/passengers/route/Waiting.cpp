@@ -17,7 +17,7 @@ void Waiting::enter(RoutePassenger& passenger, const PassengerContext&) const {
 void Waiting::update(RoutePassenger& passenger, const PassengerContext& context) const {
     if (OnPickupPad::fellIntoWater(passenger, context)) return;
     if (passenger.animate()) {
-        const data::PassengerKind& kind = passenger.kind();
+        const data::AnimatedPassengerKind& kind = passenger.kind();
         units::Int16 spot = context.play.level.pad(passenger.route().pickupPad()).place().wait;
         units::Int16 feet = passenger.feetX();
         if (feet == spot) {

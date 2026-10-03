@@ -15,7 +15,7 @@ constexpr units::Int16 HIT_POINT_X = 12, HIT_POINT_Y = 8, ENEMY_WIDTH = 38, ENEM
 }  // namespace
 
 StandingPassenger::StandingPassenger(int index, const data::StandingPassengerPlacement& placement)
-    : Passenger(index, placement.x(), placement.y()), StateMachine(Placed::instance), kind_(&placement.kind()) {}
+    : Passenger(index, placement.x, placement.y), StateMachine(Placed::instance), kind_(placement.kind) {}
 
 void StandingPassenger::update(const PassengerContext& context) { updateState(context); }
 
