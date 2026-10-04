@@ -3,6 +3,7 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "UghAssets.h"
+#include "UghElectricDreams.h"
 #include "UghShapes.h"
 
 namespace
@@ -11,30 +12,32 @@ namespace
 	using EShape = UghShapes::EShape;
 
 	/**
-	 * How a kind of decoration is drawn: its models (ids of UghAssets), whether they cast shadows (the grass and the
-	 * flowers do not: thousands of cut-out tufts in the shadow maps), whether ray tracing sees them (Lumen's light
-	 * bouncing: the solid ones; the cut-out leaves would cost more than they show).
+	 * How a kind of decoration is drawn: its models (the scanned ones of UghElectricDreams where they were copied, else
+	 * the free ones of UghAssets), whether they cast shadows (the grass and the flowers do not: thousands of cut-out
+	 * tufts in the shadow maps), whether ray tracing sees them (Lumen's light bouncing: the solid ones; the cut-out
+	 * leaves would cost more than they show).
 	 */
 	struct FLook
 	{
 		EKind Kind;
-		TConstArrayView<const TCHAR*> Ids;
+		TConstArrayView<const TCHAR*> Scanned, Ids;
 		bool bShadow, bRayTraced;
 	};
+	namespace ED = UghElectricDreams;
 	const FLook Looks[] = {
-		{ EKind::Grass, UghAssets::Grasses, false, false },
-		{ EKind::Flower, UghAssets::Flowers, false, false },
-		{ EKind::Rock, UghAssets::Rocks, true, true },
-		{ EKind::Bones, { &UghAssets::Bones, 1 }, true, true },
-		{ EKind::Fern, { &UghAssets::Fern, 1 }, true, false },
-		{ EKind::Bush, UghAssets::Bushes, true, false },
-		{ EKind::Plant, UghAssets::Plants, true, false },
-		{ EKind::Stump, { &UghAssets::Stump, 1 }, true, true },
-		{ EKind::Palm, { &UghAssets::Palm, 1 }, true, false },
-		{ EKind::Totem, { &UghAssets::Totem, 1 }, true, true },
-		{ EKind::Hut, { &UghAssets::Hut, 1 }, true, true },
-		{ EKind::Vine, { &UghAssets::Vines, 1 }, true, false },
-		{ EKind::Creeper, { &UghAssets::Vines, 1 }, true, false } };
+		{ EKind::Grass, ED::Grasses, UghAssets::Grasses, false, false },
+		{ EKind::Flower, ED::Flowers, UghAssets::Flowers, false, false },
+		{ EKind::Rock, ED::Rocks, UghAssets::Rocks, true, true },
+		{ EKind::Bones, {}, { &UghAssets::Bones, 1 }, true, true },
+		{ EKind::Fern, ED::Ferns, { &UghAssets::Fern, 1 }, true, false },
+		{ EKind::Bush, ED::Bushes, UghAssets::Bushes, true, false },
+		{ EKind::Plant, ED::Plants, UghAssets::Plants, true, false },
+		{ EKind::Stump, ED::Stumps, { &UghAssets::Stump, 1 }, true, true },
+		{ EKind::Palm, ED::Palms, { &UghAssets::Palm, 1 }, true, false },
+		{ EKind::Totem, {}, { &UghAssets::Totem, 1 }, true, true },
+		{ EKind::Hut, {}, { &UghAssets::Hut, 1 }, true, true },
+		{ EKind::Vine, ED::Vines, { &UghAssets::Vines, 1 }, true, false },
+		{ EKind::Creeper, ED::Creepers, { &UghAssets::Vines, 1 }, true, false } };
 
 	/** A part of a kind's clay look: a shape of a colour filling a part of its box (fractions, y down from its top). */
 	struct FClayPart
@@ -122,7 +125,8 @@ void AUghScenery::BeginPlay()
 	for (const FLook& Look : Looks)
 	{
 		First.Add(Meshes.Num());
-		Meshes.Append(UghAssets::Meshes(Look.Ids));
+		const TArray<UStaticMesh*> Found = UghElectricDreams::Meshes(Look.Scanned);
+		Meshes.Append(Found.IsEmpty() ? UghAssets::Meshes(Look.Ids) : Found);
 	}
 	First.Add(Meshes.Num());
 	for (const FClayPart& Part : ClayParts)

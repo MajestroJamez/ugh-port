@@ -9,6 +9,7 @@
 #include "Misc/Paths.h"
 #include "UghBackground.h"
 #include "UghCampfire.h"
+#include "UghCliffDressing.h"
 #include "UghCopters.h"
 #include "UghDecorations.h"
 #include "UghFigures.h"
@@ -83,7 +84,7 @@ void AUghGameMode::StartPlay()
 
 /**
  * The stage (light, air, camera), the level's background, the copters, the figures, the campfire, the decorations,
- * the speaker.
+ * the rock dressing, the speaker.
  */
 void AUghGameMode::BuildStage()
 {
@@ -94,6 +95,7 @@ void AUghGameMode::BuildStage()
 	Figures = World->SpawnActor<AUghFigures>();
 	Campfire = World->SpawnActor<AUghCampfire>();
 	Scenery = World->SpawnActor<AUghScenery>();
+	Dressing = World->SpawnActor<AUghCliffDressing>();
 	Speaker = World->SpawnActor<AUghSpeaker>();
 	if (APlayerController* Controller = World->GetFirstPlayerController())
 	{
@@ -163,7 +165,10 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Stage->FitCamera(CloseUp.Get(UghShapes::Screen()));
 }
 
-/** The diorama of the level the view shows: the rock coloured by its drawing, the campfires and the decorations. */
+/**
+ * The diorama of the level the view shows: the rock coloured by its drawing, the campfires, the decorations and the
+ * scanned rock dressing the cliff.
+ */
 void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
 	BackgroundLevel = View.level_id;
@@ -181,6 +186,12 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 		(FPlatformTime::Seconds() - Started) * 1000, *UghDecorations::Summary(Decorations));
 	Campfire->Place(Decorations, View.wind);
 	Scenery->Show(Decorations);
+	const TArray<FUghRockPiece> Pieces =
+		View.level_id < 0 ? TArray<FUghRockPiece>() : UghRockDressing::Plan(Logic, Field, View.level_id, Decorations);
+	const int32 Roots =
+		Pieces.FilterByPredicate([](const FUghRockPiece& Piece) { return Piece.Kind == FUghRockPiece::EKind::Root; }).Num();
+	UE_LOG(LogTemp, Display, TEXT("UGH rock dressing: %d cliffs, %d roots"), Pieces.Num() - Roots, Roots);
+	Dressing->Show(Pieces);
 	Stage->SetWind(View.wind);
 }
 

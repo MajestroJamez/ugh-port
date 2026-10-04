@@ -2,14 +2,16 @@
 // this file. Its inputs: Position (world, cm), VertexNormal (world), ScreenUV (the screen of the original, 0 .. 1),
 // Shade the vertex colour (r how open the surface is, g how deep behind the slab of the play), Art the drawing of the
 // level (softened), and for each layer (Rock, Stone, Grass, Moss, Soil) its maps <Layer>BaseColor, <Layer>Normal,
-// <Layer>Roughness (green), <Layer>Height (red) and <Layer>Size (metres one texture covers). It returns the base
-// colour; CliffNormal (world), CliffRough and CliffOcclusion are its other outputs.
+// <Layer>Roughness (green), <Layer>Height (its relief: the channels of <Layer>HeightMask) and <Layer>Size (metres one
+// texture covers). It returns the base colour; CliffNormal (world), CliffRough and CliffOcclusion are its other
+// outputs.
 //
 // Each map is seen from the three axes and blended by the way the surface faces (triplanar: nothing stretches), only
 // the projections and layers that count are sampled. The layers: grass on what faces up, soil on slopes, moss where
 // the drawing is green and on deep floors, else rock - warm where the drawing is warm (its rock), grey where it is
-// grey (its cave walls); where two meet, the higher relief of the two wins (height blend). The drawing tints it all a
-// little, so that each level keeps its colours.
+// grey (its cave walls); where two meet, the higher relief of the two wins (height blend). Large patches of it are
+// lighter or darker (no tiles repeating), the drawing tints it all a little, so that each level keeps its colours; the
+// warm rock is muted towards sandstone.
 
 #define UGH_WRAP View.MaterialTextureBilinearWrapedSampler
 float3 n = normalize(VertexNormal);
@@ -57,12 +59,13 @@ W[1] = rest - W[0];
 // where two meet, the one whose relief is higher there
 float H[5] = { 0, 0, 0, 0, 0 };
 float4 h;
-#define UGH_HEIGHT(I, T, Size) [branch] if (W[I] > 0.005) { UGH_TRI(T, 1 / (Size), h); H[I] = h.r; }
-UGH_HEIGHT(0, RockHeight, RockSize)
-UGH_HEIGHT(1, StoneHeight, StoneSize)
-UGH_HEIGHT(2, GrassHeight, GrassSize)
-UGH_HEIGHT(3, MossHeight, MossSize)
-UGH_HEIGHT(4, SoilHeight, SoilSize)
+#define UGH_HEIGHT(I, Layer) [branch] if (W[I] > 0.005) { UGH_TRI(Layer##Height, 1 / Layer##Size, h); \
+	H[I] = dot(h.rgb, Layer##HeightMask.rgb); }
+UGH_HEIGHT(0, Rock)
+UGH_HEIGHT(1, Stone)
+UGH_HEIGHT(2, Grass)
+UGH_HEIGHT(3, Moss)
+UGH_HEIGHT(4, Soil)
 float top = 0;
 [unroll] for (int i = 0; i < 5; ++i) { top = max(top, W[i] > 0.005 ? W[i] + H[i] : 0); }
 float sum = 0;
@@ -84,9 +87,14 @@ base /= sum;
 bump /= sum;
 rough /= sum;
 
+// large patches lighter and darker (the rock's relief seen eight times larger), so its tiles do not repeat visibly
+UGH_TRI(RockHeight, 1 / (RockSize * 8), h);
+base *= lerp(0.75, 1.25, saturate(dot(h.rgb, RockHeightMask.rgb)));
 // the drawing's hue and lightness a little, deep in the cave a little darker
 float3 hue = art / lum;
-base *= lerp(1, hue, 0.3) * lerp(1, saturate(lum * 2.5), 0.3) * lerp(1, 0.55, back);
+base *= lerp(1, hue, 0.25) * lerp(1, saturate(lum * 2.5), 0.15) * lerp(1, 0.55, back);
+// the warm rock muted towards sandstone (as the scanned cliffs of the cave are)
+base = lerp(base, dot(base, float3(0.3, 0.59, 0.11)) * float3(1.3, 1.0, 0.68), 0.8 * W[0] / sum);
 CliffNormal = normalize(n + bump);
 CliffRough = rough;
 CliffOcclusion = lerp(0.5, 1, open);

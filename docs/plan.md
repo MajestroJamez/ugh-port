@@ -337,6 +337,27 @@ změny. Pravidla navíc:
 - Hotovo když: každý level má dekorace, nic nezakrývá vrtulník, cestující, plošiny ani čísla plošin (test: průnik
   dekorací s herní rovinou), archy bez vad.
 
+## Krok 18b - Fotorealistický svět z Electric Dreams
+
+Jan hru vyzkoušel: vypadá jako hra z GameMakeru. Chce moderní, skoro fotorealistický vzhled (jako level dnešního Unreal
+Tournamentu): opravdu naskenované skály, fotorealistické palmy s velkými listy, kořeny prorůstající skálou. Skripty
+z Blenderu a CC0 assety nestačí. Zdroj: Epicův vzorek **Electric Dreams Environment** (Megascans: džungle, skály,
+rostliny, stromy, kořeny, mech; licence pro použití v projektech Unreal Engine), stažený v
+`C:\Users\Ja079591\IdeaProjects\Unreal Projects\ElectricDreamsEnv` (UE 5.8, ~56 GB) - jen ke čtení, nikdy se neukládá.
+
+- **Inventura:** v `ElectricDreamsEnv/Content` najít skály, útesy a balvany (Nanite), materiály skal, kořeny,
+  kapradiny, rostliny s velkými listy, palmy, mech, trávu, liány; seznam s velikostmi v poznámkách kroku.
+- **Přenos:** skript, který zkopíruje jen vybrané assety a jejich závislosti do `Content/External/ElectricDreams`
+  (gitignore, nikdy v gitu; jak ho znovu vyrobit, je v README), celkem pár GB.
+- **Použití:** hrana skály v rovině hry zůstává přesně na kolizní masce (test `Ugh.Rock`), ale čelo a zadní stěna
+  dostanou naskenovanou skálu (Nanite skály podél obrysu za deskou hry a v plné skále, naskenované textury na síti
+  skály), kořeny prorůstající skálou, rostliny Electric Dreams místo CC0 / Blenderu, kde jsou lepší (palmy s velkými
+  listy, kapradiny, mech, liány); pravidla chráněných objemů kroku 18 (test `Ugh.Scenery`) platí dál, bez externího
+  obsahu se repo přeloží a testy projdou.
+- **Světlo a post:** Lumen, dobrá expozice, barevné ladění, jemná mlha - fotorealisticky, ne tma.
+- Hotovo když: snímky jsou proti kroku 18 jasně fotorealističtější (1p-01, 1p-03, 1p-43, team-21), archy
+  `levels.ps1` zkontrolované, testy zelené, fps v logu (Radeon 890M, medián aspoň 25), dokumentace a zápis do Stavu.
+
 ## Krok 19 - Voda, déšť, obloha, světlo
 
 - Voda jako moderní vodní plocha (Single Layer Water: vlny, lom, pěna u skály) se stoupající hladinou podle logiky,
@@ -784,3 +805,31 @@ změny. Pravidla navíc:
   dekorace pod hladinou (ohně zhasínají podle `SetWater`), dekorace jsou za deskou 25-500 jednotek hluboko, závěsy lián
   na zadní stěně; ohně jsou 2-3 bodová světla se stíny (25 cd, dosah 900) - při změně nálady levelu (noc) je využít;
   nepoužité assety `island_tree_02`, `pachira_aquatica_01`, `dead_tree_trunk`. Další: **krok 19**.
+- 2026-10-04: krok 18b hotový - fotorealistický svět z Epicova vzorku Electric Dreams (`docs/visual-concept.md`).
+  Vzorek (`..\Unreal Projects\ElectricDreamsEnv`, UE 5.8) se jen čte; inventura z miniatur v hlavičkách `.uasset`
+  (tabulka s velikostmi ve `visual-concept.md`). `electric-dreams.ps1` (commandlet `UghCopyElectricDreams`: obsah vzorku
+  připojený jako `/UghSample/`, tvrdé závislosti z asset registry, kopie souborů balíčků beze změny, nepotřebné smaže,
+  načte vše) zkopíruje 78 assetů z `UghElectricDreams.h` s 257 balíčky (3,1 GB) do `Content/External/ElectricDreams`
+  (gitignore); `[CoreRedirects]` v `DefaultEngine.ini` posílají odkazy vzorku `/Game/Megascans|MSPresets|Custom|
+  SmartAssets|PhysicalMaterials/` do kopie (commandlet chybějící přesměrování ohlásí). Materiály vzorku jsou Substrate
+  a textury virtuální (bez toho černé): projekt má `r.Substrate=True` a `r.VirtualTextures=False`. Zadní stěnu jeskyně
+  pokrývají velké naskenované pískovcové útesy (`HugeSandstoneCliff`, `MassiveSandstoneCliff`; `UghRockDressing`,
+  `AUghCliffDressing`: 40-65 px, čelem ke kameře, překrývají se, nikdy blíž než 250 jednotek ani než prostředek dekorace
+  před nimi), ze stropů visí kořeny (`SM_Roots_01..05`). Dekorace kroku 18 mají modely vzorku (palmy `AlexandraPalm`,
+  `FanPalm` ..., rostliny s velkými listy `Taro`, `BirdOfParadise`, kapradiny, keře, tráva `KikuyuGrass`, květiny,
+  kameny, pařezy, liány a závěsy břečťanu `Ivy`); kosti, totemy, chýše a ohně zůstaly. Čelo skály (`M_UghCliff`):
+  dlaždicové povrchy vzorku (`T_Rock_03`, `T_Rock_01`, `MossyGrass`, `NordicMoss`, `JungleGround`), reliéf podle
+  `HeightMask`, velké skvrny proti opakování, kresba změkčená na 8 px a tónující jen trochu (cihly zmizely), teplá skála
+  do pískovce. Zamítnuto (vyzkoušeno): naskenované textury útesů (zjevné opakování), balvany a kořeny vsazené do čela
+  v rovině hry (vypadaly jako nalepené oblázky - pevné oblasti masky jsou na ně tenké). Světlo a post: EV100 1,5, bloom,
+  teplé vyvážení bílé, sytost a kontrast, vinětace. Test `Ugh.Dressing` (150 levelů: deterministicky, za dosahem postav
+  a za dekoracemi, aspoň 10 útesů, nejméně 23); `Ugh.Rock` a `Ugh.Scenery` beze změny zelené. Bez kopie vzorku hra ukáže
+  CC0 assety (ověřeno shotem s odsunutou kopií). `levels.ps1` (26,8 min) a archy bez vad, prohlédnuté i snímky (1p-01,
+  1p-03, 1p-43 bouřka se stoupající vodou, team-21, detaily). Výkon (Radeon 890M): jednotlivé snímky 42-46 fps,
+  `levels.ps1` medián 43 (krok 18: 40), nejpomalejší 27 - škálování kvality netřeba. CTest logiky, `6_verification`
+  (163) a 173 testů v UE zelené. Opraven i rozbitý první řádek `5_remake/game/README.md`. Čeká na Jana: posoudit vzhled
+  v okně (`play.ps1`), hlavně čelo skály (vápenec místo cihel kresby). Pro krok s MetaHumany: projekt už běží se
+  Substrate (materiály MetaHumanů 5.8 s ním počítají) a bez virtuálních textur (textury MetaHumanů se postaví jako běžné); postavy z
+  `..\Unreal Projects\MetaHumans` přenést stejnou cestou (commandlet + `[CoreRedirects]`), ale pozor na pluginy
+  MetaHuman (závislosti mimo `/Game` commandlet jen ohlásí). Se Substrate je nahraná PSO cache stará (`pso.ps1` znovu
+  před vydáním); balení s `Content/External` nevyzkoušené. Další: **krok 19**.

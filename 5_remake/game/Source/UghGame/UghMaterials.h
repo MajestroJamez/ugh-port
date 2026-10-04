@@ -21,6 +21,8 @@ namespace UghMaterials
 	inline const TCHAR* HeightParameter = TEXT("Height");
 	inline const TCHAR* TilingParameter = TEXT("Tiling");
 	inline const TCHAR* SkyParameter = TEXT("Sky");
+	inline const TCHAR* SizeParameter = TEXT("Size");
+	inline const TCHAR* HeightMaskParameter = TEXT("HeightMask");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -34,7 +36,9 @@ namespace UghMaterials
 	 * stretches), blended by the way the surface faces, by its vertex colours (how open, how deep) and by the
 	 * original's drawing (texture parameter Art, mesh UVs, softened), their heights deciding where one layer gives way
 	 * to another. Each layer of CliffLayers has the texture parameters <layer><map> for the maps of CliffMaps, taken
-	 * from the instance MI_<id> of its texture set (UghAssets::CliffSets). The shader code is
+	 * from the scanned surfaces of UghElectricDreams::CliffLayers where they were copied, else from the instance MI_<id>
+	 * of its texture set (UghAssets::CliffSets); the scalar <layer>Size (metres one texture covers) and the vector
+	 * <layer>HeightMask (which channels of its Height map are its relief: red by default). The shader code is
 	 * Source/UghEditor/Shaders/UghCliff.hlsl.
 	 */
 	inline const TCHAR* Cliff = TEXT("/Game/Generated/M_UghCliff");

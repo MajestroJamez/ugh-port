@@ -1,6 +1,9 @@
 using UnrealBuildTool;
 
-/** The editor's part of the game: the commandlets that make the materials (UghMakeAssets) and import the 3D assets (UghImportAssets). */
+/**
+ * The editor's part of the game: the commandlets that make the materials (UghMakeAssets), import the 3D assets
+ * (UghImportAssets) and copy the assets of the Electric Dreams sample (UghCopyElectricDreams).
+ */
 public class UghEditor : ModuleRules
 {
 	public UghEditor(ReadOnlyTargetRules Target) : base(Target)

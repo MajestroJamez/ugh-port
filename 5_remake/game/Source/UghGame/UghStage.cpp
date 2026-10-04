@@ -45,7 +45,26 @@ namespace
 	constexpr double ScreenMargin = 1.08;
 
 	/** The exposure, EV100: fixed, so that every level and weather is as bright as its light. */
-	constexpr float Exposure = 2.f;
+	constexpr float Exposure = 1.5f;
+
+	/**
+	 * The film look: a gentle bloom around the bright, a warm white balance, colours a little richer and more contrasted
+	 * than the tone mapper's, the corners a little darker (as a lens has them).
+	 */
+	void SetLook(FPostProcessSettings& Settings)
+	{
+		Settings.bOverride_AutoExposureMinBrightness = Settings.bOverride_AutoExposureMaxBrightness = true;
+		Settings.AutoExposureMinBrightness = Settings.AutoExposureMaxBrightness = Exposure;
+		Settings.bOverride_BloomIntensity = true;
+		Settings.BloomIntensity = 0.35f;
+		Settings.bOverride_WhiteTemp = true;
+		Settings.WhiteTemp = 6100.f;
+		Settings.bOverride_ColorSaturation = Settings.bOverride_ColorContrast = true;
+		Settings.ColorSaturation = FVector4(1.08f, 1.08f, 1.08f, 1.f);
+		Settings.ColorContrast = FVector4(1.06f, 1.06f, 1.06f, 1.f);
+		Settings.bOverride_VignetteIntensity = true;
+		Settings.VignetteIntensity = 0.3f;
+	}
 }
 
 AUghStage::AUghStage()
@@ -73,9 +92,7 @@ AUghStage::AUghStage()
 	UPostProcessComponent* Look = CreateDefaultSubobject<UPostProcessComponent>(TEXT("Look"));
 	Look->SetupAttachment(RootComponent);
 	Look->bUnbound = true;
-	Look->Settings.bOverride_AutoExposureMinBrightness = true;
-	Look->Settings.bOverride_AutoExposureMaxBrightness = true;
-	Look->Settings.AutoExposureMinBrightness = Look->Settings.AutoExposureMaxBrightness = Exposure;
+	SetLook(Look->Settings);
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(RootComponent);

@@ -110,6 +110,8 @@ Pevná, úzký objektiv (30°), celý řez v záběru, mírně shora (-4°), aby
   (`UGH shot: ... fps`), `levels.ps1` vypíše na konci medián. Krok 18 (asi 2000 dekorací na level, z toho 1000-2000
   trsů trávy a květin): jednotlivé snímky 49-53 fps, `levels.ps1` medián 40 (nejpomalejší 13 při zahřátí uprostřed
   běhu, pak zase 40+); tráva a květiny bez stínů, maskované listy bez ray tracingu, instancované (Nanite).
+  Krok 18b (Electric Dreams, Substrate, 40-60 naskenovaných útesů a kořenů na level): jednotlivé snímky 42-46 fps,
+  `levels.ps1` medián 43, nejpomalejší 27; první spuštění po kopii staví textury vzorku (~1 min) a shadery Substrate.
 - Balení: `package.ps1` (UAT, `NO_PROXY += ::1`, data z `assets/` vedle hry), PSO cache nahraná autopilotem
   `-UghShot` v zabalené hře (`pso.ps1`), aby se při startu netrhalo.
 - Kontrola všech levelů: `levels.ps1` - autopilot spustí každý level obou režimů z menu (heslem), nafotí ho bez okna
@@ -177,3 +179,52 @@ jen prostředky), tráva roste i u kmene palmy, do ohně nezasahuje nic.
 Kreslení (`AUghScenery`): jedna instancovaná komponenta na síť (Nanite), model vložený do své krabice; tráva
 a květiny nevrhají stíny, listy (maskované) nevidí ray tracing; bez modelů plastelínové tvary. Průsvitné materiály
 glTF (tráva, květiny: alphaMode BLEND) import přepne na vyříznuté (Nanite průsvitnost nekreslí).
+
+## Fotorealistický svět z Electric Dreams (krok 18b)
+
+Jan: vzhled připomínal hru z GameMakeru (plastelína, CC0 assety, cihly kresby). Zdroj fotorealismu je Epicův vzorek
+**Electric Dreams Environment** (UE 5.8, `C:\Users\Ja079591\IdeaProjects\Unreal Projects\ElectricDreamsEnv`, ~56 GB;
+Megascans a vlastní assety Epicu, licence jen pro projekty Unreal Engine - nikdy v gitu). Vzorek se jen čte:
+`electric-dreams.ps1` (commandlet `UghCopyElectricDreams`) zkopíruje vybrané assety se závislostmi do
+`Content/External/ElectricDreams` (gitignore, 257 balíčků, 3,1 GB), `[CoreRedirects]` v `DefaultEngine.ini` přesměrují
+jejich odkazy `/Game/<cesta>` do kopie. Materiály vzorku jsou Substrate (bez něj černé) a textury virtuální (bez
+virtuálních textur projektu černé): projekt má `r.Substrate=True` a `r.VirtualTextures=False`.
+
+### Inventura vzorku (velikosti zdrojových složek)
+
+| Druh | Ve vzorku (`Content/...`) | Velikost | Vybráno |
+|---|---|---|---|
+| útesy, skalní stěny (Nanite) | `Megascans/3D_Assets`: `HugeSandstoneCliff` (8 sítí), `MassiveSandstoneCliff` (6), `MossyRockFace` (3), `QuarryCliff`, `HugeMossyForestCliff`, `ForestRockFormation`, `CanyonSandstoneRidge`, `HugeNordicCoastalCliff`; `SmartAssets/AssetMeshes` `SM_Cliff_01..19`; `Meshes/_GENERATED/RockFormation` | 1,7 GB, 1,0, 0,9, 1,0, 0,09, 0,7, 0,6, 0,3; 4,1; 3,2 | `HugeSandstoneCliff_01`, `_03`, `MassiveSandstoneCliff_02` (zadní stěna) |
+| balvany, kameny | `SandstoneBoulder`, `MossyForestBoulder`, `MossyForestRock`, `LichenedForestBoulder`, `MossyRocks`, `NordicBoulder`, `SmallStonesPack`, `TundraMossyBoulder` | 0,6, 1,0, 0,4, 0,06, 0,7, 0,2, 0,3, 0,2 GB | `SmallStonesPack_01/03/05`, `MossyForestRock_01`, `LichenedForestBoulder_01` (kameny na římsách) |
+| kořeny | `Custom/RootsTest` (`SM_Roots_01..14`, `SM_ErosionRoots_01..04`), `Megascans/3D_Assets/ForestRoots`, `MossyForestRoots` | 3,3 GB (z toho 2,2 erozní kořeny), 0,6, 0,5 | `SM_Roots_01..05` (visí ze stropů jeskyně) |
+| pařezy, kmeny | `TreeStump`, `RottenTreeStump`, `BrokenStump`, `BirchTreeStump`, `FallenTreeAssembly`, `OldFallenTree`, `DeadTree` | 0,2, 0,3, 0,4, 0,3, 0,3, 0,3, 0,3 GB | `TreeStump_01`, `RottenTreeStump_02` |
+| palmy | `Megascans/3D_Plants`: `AlexandraPalm`, `ArecaPalm`, `CatPalm`, `CanePalm`, `FanPalm`, `BroadleafLadyPalm`, `ZamiaPalm` | 23-48 MB každá | `AlexandraPalm_01..03`, `FanPalm_01`, `ArecaPalm_03`, `CatPalm_01` |
+| rostliny s velkými listy | `Taro`, `BirdOfParadise`, `CastorOilPlant`, `ArrowheadPlant`, `PinkCordyline`, `VariegatedCroton`, `JungleGinger`, `MoneyPlant`, `DragonTree`, `JanetCraigDracaena` | 22-59 MB | `Taro_02/05/06/10`, `ArrowheadPlant_04`, `PinkCordyline_02`, `VariegatedCroton_01`, `BirdOfParadise_01` (rostliny), `ArrowheadPlant_01/02/05`, `VariegatedCroton_02`, `CastorOilPlant_01` (keře) |
+| kapradiny | `Fern`, `BeechFern`, `SilverLadyFern`, `BostonFern` | 29, 195, 57, 12 MB | `Fern_01/02/05`, `BeechFern_04`, `SilverLadyFern_01`, `BostonFern_02` |
+| tráva, květiny, pokryv | `KikuyuGrass`, `GroundCover`, `CloverVarieties`, `WhiteWindflower`, `RedLachenalia`, `Amaryllis`, `Periwinkle`, `LilyOfTheValley`, `CustomMoss`, `DeadLeaves` | 3-52 MB | `KikuyuGrass_01/03/05/06`; `WhiteWindflower_01/03`, `RedLachenalia_06`, `Amaryllis_03`, `GroundCover_07` |
+| liány | `Megascans/3D_Plants/Ivy` (25 sítí), `EnglishIvy`, `Custom/IvyTest` (`SM_HangingVine_01..11`, `SM_CliffVine_01..09`) | 109, 16, 1 870 MB | `Ivy_11/13/15/17/21/23`, `HangingVine_09/10` (ze stropů), `Ivy_09/12/16/18/19/22` (závěsy po zadní stěně) |
+| povrchy (dlaždicové) | `Megascans/Surfaces`: `BeachCliff`, `JungleGround`, `MossyGrass`, `NordicMoss`, `MossyRockyGround`, `ButtressRoot`, `IcelandicQuarryRock`; `SmartAssets/TileableTextures` `T_Rock_01..03`, `T_Moss_02`, `T_Lichen_01` | 0,9 GB; 0,2 GB | vrstvy skály: `T_Rock_03` (teplá skála), `T_Rock_01` (šedá), `MossyGrass`, `NordicMoss`, `JungleGround` |
+
+Náhledy pro výběr byly miniatury uložené v hlavičkách `.uasset` (bez spuštění editoru vzorku). Odmítnuto: textury
+naskenovaných skal (`BeachCliff`) se na velké skále zjevně opakují; skenované útesy jsou zezadu otevřené (jen čelem ke
+kameře); balvany a kořeny vsazené do čela skály v rovině hry vypadaly jako nalepené oblázky (pevné oblasti masky jsou
+na ně tenké) - čelo skály zůstává sítí z pole s naskenovaným materiálem.
+
+### Jak se to používá
+
+- **Zadní stěna jeskyně** (`UghRockDressing`, `AUghCliffDressing`): velké naskenované pískovcové útesy (poloměr
+  40-65 px, mřížka 24 px i za okraji obrazovky, natočené ke kameře ±15°, překrývají se) vsazené do zadní stěny, ven
+  45-70 % hloubky modelu; nikdy blíž než 250 jednotek (dosah rotoru a křídel 180) ani blíž než prostředek dekorace
+  před nimi (kromě pokryvu a lián). Kořeny visí ze stropů (každý druhý sloupec po 5 px pod stropem s 14 px místa) před
+  útesem, který tam je. Test `Ugh.Dressing` (150 levelů: aspoň 10 útesů, nejméně 23, deterministicky, za dosahem
+  postav a za dekoracemi).
+- **Čelo skály** (`M_UghCliff`): stejný triplanár, vrstvy z dlaždicových povrchů vzorku (`T_Rock_03` teplá, `T_Rock_01`
+  šedá, `MossyGrass`, `NordicMoss`, `JungleGround`), reliéf podle kanálů `HeightMask` vrstvy, velké skvrny světlejší
+  a tmavší (reliéf 8x větší) proti opakování, kresba změkčená na 8 px a tónuje jen trochu, teplá skála do pískovce.
+  Hrana v rovině hry je dál maska (test `Ugh.Rock`).
+- **Dekorace**: druhy kroku 18 dostanou modely vzorku (`UghElectricDreams.h`: palmy s velkými listy, rostliny džungle,
+  kapradiny, keře, tráva, květiny, kameny, pařezy, liány břečťanu); kosti, totemy, chýše a ohně zůstávají z Blenderu
+  a Kenneyho. Pravidla chráněných objemů beze změny (`Ugh.Scenery`).
+- **Světlo a post**: expozice EV100 1,5 (o půl clony světlejší), jemný bloom 0,35, teplé vyvážení bílé 6100 K,
+  sytost a kontrast +8 % / +6 %, vinětace 0,3; Lumen a mlha jako dřív.
+- Bez kopie vzorku hra ukáže CC0 assety kroku 14-18 (a jednou to zaloguje).

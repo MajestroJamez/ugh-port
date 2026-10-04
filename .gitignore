@@ -33,6 +33,8 @@ build/
 5_remake/game/Content/Generated/
 # the 3D assets of assets/3d imported by the commandlet UghImportAssets (build.ps1)
 5_remake/game/Content/Imported/
+# the copy of Epic's Electric Dreams sample (electric-dreams.ps1): licensed for Unreal Engine projects, not ours to share
+5_remake/game/Content/External/
 # Python caches of the Blender scripts (5_remake/game/Blender)
 __pycache__/
 # packaged game and the PSO cache recorded for it (package.ps1, pso.ps1)

@@ -1,20 +1,24 @@
-`-CloseUp` framing the copters, `-Frame <left>,<top>,<width>,<height>` that part of the screen (pixels: a look at the figures; the name then ends in `-cargo<look>` or `-hanging<look>`, `-closeup`, `-frame<left>_<top>`) |and the copters `Ugh.Copter.*` (the rotor turns as fast as its sprites change; the imported model fills the copter's body and stays in it, the stone passenger is as big as its sprite) and the figures `Ugh.Figures.*` (every sprite an entity of the data shows is an action of a model, `FUghFigureActions`; the actions that follow the sprites' frames go on smoothly; the enemies' models are as big as their sprites, the bonus items are there); `-Filter` other tests |# UGH! in Unreal Engine 5.8 - the prehistoric diorama
+# UGH! in Unreal Engine 5.8 - the prehistoric diorama
 
 The game logic of `../logic` inside Unreal Engine, shown as a diorama (`docs/visual-concept.md`): the level is a
 cliff cut exactly in the plane of the play (its edge there is the collision mask), a smooth rock with rounded edges,
-its cave reaching back to a far back wall, stalactites and fallen rocks, in PBR rock, soil, grass and moss steered by
-the original's drawing, the cliff and the water going on beyond the screen under an HDR sky, a stone age jungle on its
-ledges (meadows of grass and flowers, palms, bushes, ferns, jungle plants, rocks, stumps, bones, totems, a hut,
-campfires with flickering flames) and lianas from its ceilings and down its back wall, all behind the figures, the boards with the pads' numbers as the original draws them; the copters are stone age pedal
+its cave reaching back to a far back wall dressed with scanned sandstone cliffs and hanging roots, stalactites and
+fallen rocks, in scanned rock, soil, grass and moss steered by the original's drawing, the cliff and the water going
+on beyond the screen under an HDR sky, a stone age jungle on its ledges (meadows of grass and flowers, palms with big
+leaves, bushes, ferns, jungle plants, rocks, stumps, bones, totems, a hut, campfires with flickering flames) and ivy
+from its ceilings and down its back wall, all behind the figures, the boards with the pads' numbers as the original
+draws them; the scanned assets come from Epic's Electric Dreams sample where it was copied (`electric-dreams.ps1`),
+else free ones; the copters are stone age pedal
 copters of bamboo, wicker, leather, bone and stone (made by Blender scripts) with a caveman pedalling them and their
 passengers sitting behind him or hanging below; the passengers are cavemen walking, waving, waiting, swimming and
 falling as their sprites say (the standing passenger a stone with eyes), the enemies a pterodactyl, a triceratops, a
 puffing beast and a tree with a face, the bonus items fruits and a stone tablet (all made by Blender scripts, clay
-shapes the size of their sprites without them), a passenger's speech bubble a card with its sprite. The logic runs at the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn
+shapes the size of their sprites without them), a passenger's speech bubble a card with its sprite. The logic runs at
+the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn
 between its last two steps. The original's sounds and music play on the logic's events (`assets/sound`). No map:
 the game mode builds the scene from code (`/Engine/Maps/Entry`); the materials are made by a commandlet and the 3D
-assets (free models, textures and skies of `Assets.json`) are downloaded and imported by scripts, so there are no
-binary assets in git.
+assets (free models, textures and skies of `Assets.json`) are downloaded and imported by scripts, the Electric Dreams
+sample's copied by a script, so there are no binary assets in git.
 
 ## Build, test, play, package
 
@@ -26,9 +30,10 @@ silent and logs it):
 |---|---|
 | `setup.ps1` | copies the vendor plugins (DLSS + Streamline, FSR with its offscreen patch, about 5 GB, not in git) from the toolchain trial into `Plugins\`; `-From <folder>` elsewhere. Once |
 | `fetch-assets.ps1` | downloads the 3D assets of `Assets.json` to `assets\3d` (see 3D assets below): only what is missing, each file checked by its size and hash, the whole under the budget of 100 GB, archives extracted, Blender scripts run (a generated asset is made by its script, again when a script of `Blender/` is newer than it); a table of the assets at the end. `-Only <ids>` some, `-Verify` hashes the files already there too |
+| `electric-dreams.ps1` | copies the scanned assets of Epic's Electric Dreams sample the game uses (`UghElectricDreams.h`: cliffs, roots, palms, jungle plants, ferns, ivy, grass, stones, rock surfaces; about 3 GB) with everything they need into `Content\External\ElectricDreams` (commandlet `UghCopyElectricDreams`, see 3D assets below); `-Source <folder>` the sample's project (default `..\Unreal Projects\ElectricDreamsEnv` next to the repository). After `build.ps1`; again after a change of `UghElectricDreams.h` |
 | `build.ps1` | builds the editor (modules UghLogic, UghGame, UghEditor), makes the materials (commandlet `UghMakeAssets` -> `Content\Generated`) and imports the downloaded 3D assets (commandlet `UghImportAssets` -> `Content\Imported`); `-NoAssets` only builds, `-ForceImport` imports every asset again |
-| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu`, the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays) the decorations `Ugh.Scenery` (every level rich - at least 150 of 6 kinds, 100 tufts of grass and flowers, a palm -, the same every time, each on the rock at its own depth with its box in the air, none on the screen nearer than the slab of the play, where the figures reach, where a rotor or a flyer's wing sweeps, where a copter lands on a pad or in front of a pad's board; nothing in a campfire), the rock `Ugh.Rock` (in every level the rock's mesh cut in the slab of the play is the collision mask: every pixel's centre on its side, every other point at most half a pixel off - the cut leaves the corners of the pixel steps) and the copters `Ugh.Copter.*` (the rotor turns as fast as its sprites change; the imported model fills the copter's body and stays in it, the stone passenger is as big as its sprite); `-Filter` other tests |
-| `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover (the log says the frame rate meanwhile) and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting, `-Cargo <look>` the copters shown with a passenger of that look in the cabin (1 .. 3; `-Hanging` below instead: 4, the stone; only the picture, the autopilot never picks one up), `-CloseUp` framing the copters (the name then ends in `-cargo<look>` or `-hanging<look>`, `-closeup`) |
+| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu`, the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays) the decorations `Ugh.Scenery` (every level rich - at least 150 of 6 kinds, 100 tufts of grass and flowers, a palm -, the same every time, each on the rock at its own depth with its box in the air, none on the screen nearer than the slab of the play, where the figures reach, where a rotor or a flyer's wing sweeps, where a copter lands on a pad or in front of a pad's board; nothing in a campfire), the rock `Ugh.Rock` (in every level the rock's mesh cut in the slab of the play is the collision mask: every pixel's centre on its side, every other point at most half a pixel off - the cut leaves the corners of the pixel steps), the rock's dressing `Ugh.Dressing` (every level has scanned cliffs, the same every time, each coming out of the cave's back wall, behind every figure's sweep and behind the middles of the decorations in front of it), the copters `Ugh.Copter.*` (the rotor turns as fast as its sprites change; the imported model fills the copter's body and stays in it, the stone passenger is as big as its sprite) and the figures `Ugh.Figures.*` (every sprite an entity of the data shows is an action of a model, `FUghFigureActions`; the actions that follow the sprites' frames go on smoothly; the enemies' models are as big as their sprites, the bonus items are there); `-Filter` other tests |
+| `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover (the log says the frame rate meanwhile) and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting, `-Cargo <look>` the copters shown with a passenger of that look in the cabin (1 .. 3; `-Hanging` below instead: 4, the stone; only the picture, the autopilot never picks one up), `-CloseUp` framing the copters, `-Frame <left>,<top>,<width>,<height>` that part of the screen (pixels: a look at the figures; the name then ends in `-cargo<look>` or `-hanging<look>`, `-closeup`, `-frame<left>_<top>`) |
 | `levels.ps1` | the same for every level of both modes in one run, then the contact sheets `Saved\Shots\Levels\levels-1p.png` and `levels-team.png` (and the menu's `menu.png`): does every level look right? At the end the frame rates of the shots (median, slowest, fastest). `-Levels team:1-81` fewer |
 | `play.ps1` | the game in a window |
 | `package.ps1` | the game for Windows in `Packaged\Windows` with the data of `assets\` next to it, and a zip without `.pdb` (for your own use: the data is not ours to share). UAT needs `::1` in `NO_PROXY` (the script adds it) |
@@ -54,7 +59,7 @@ menu too).
 |---|---|
 | `Source/UghLogic/` | the logic as a module: `UghLogic.Build.cs` compiles the sources of `../logic/src` where they are (one generated file per source in `Intermediate/UghLogicSources/`, because the logic has files of the same name in different folders and UBT wants unique names). Its C API `ugh_logic.h` is exported (`UGH_LOGIC_API`). In the editor also the replay tests (`Private/Tests/ReplayTests.cpp` with the test pilot and `6_verification`'s replay check) |
 | `Source/UghGame/` | the frontend; it uses only the C API |
-| `Source/UghEditor/` | the editor's part: the commandlet `UghMakeAssets` that writes the materials of `UghMaterials.h` (clay, the drawing's rock, the cliff, water, fire, sprite card, the PBR master of the texture sets, the sky; `UghMaterialNodes` makes their nodes, the HLSL of the custom nodes is in `Shaders/`) and the commandlet `UghImportAssets` that imports the 3D assets (`UghAssetManifest` reads `Assets.json`; `UghNaniteMaterials` lets the models' materials draw Nanite meshes) |
+| `Source/UghEditor/` | the editor's part: the commandlet `UghMakeAssets` that writes the materials of `UghMaterials.h` (clay, the drawing's rock, the cliff, water, fire, sprite card, the PBR master of the texture sets, the sky; `UghMaterialNodes` makes their nodes, the HLSL of the custom nodes is in `Shaders/`) the commandlet `UghImportAssets` that imports the 3D assets (`UghAssetManifest` reads `Assets.json`; `UghNaniteMaterials` lets the models' materials draw Nanite meshes) and the commandlet `UghCopyElectricDreams` that copies the assets of the Electric Dreams sample the game uses with their dependencies (`electric-dreams.ps1`) |
 
 The frontend:
 
@@ -70,7 +75,7 @@ The frontend:
 | `AUghSpeaker` | the mixer's stream through the engine (a procedural sound wave fed a little ahead every frame); silent for the autopilot, with `-nosound` and without the files |
 | `FUghKeyboard` | a key event of the engine to the logic (Adapter): pilots' keys, Esc, P, any other key |
 | `AUghPlayerController` | passes every key press and release to the game mode (the logic wants raw key events, not input actions) |
-| `AUghStage` | the sun, the sky (an HDR picture on a dome, captured by the sky light; without it the engine's atmosphere), the fog, a fixed exposure and the camera (fixed, a narrow lens, a little from above; a shot's close-up frames a part of the screen); a windy level is a storm (a dim cool sun, a dark cloudy sky, a dense grey fog) |
+| `AUghStage` | the sun, the sky (an HDR picture on a dome, captured by the sky light; without it the engine's atmosphere), the fog, a fixed exposure with a film look (gentle bloom, warm white balance, a little more saturation and contrast, a vignette) and the camera (fixed, a narrow lens, a little from above; a shot's close-up frames a part of the screen); a windy level is a storm (a dim cool sun, a dark cloudy sky, a dense grey fog) |
 | `FUghRockMesh` | the rock of a level as a mesh: the surface of `FUghRockField` (`UghSurfaceNets`) in the world, its normals from the field, its UVs the screen (the drawing), its vertex colours how open and how deep the surface is. Test `Ugh.Rock` (`UghRockTests.cpp`) |
 | `FUghRockField` | the rock of a level as a field on a grid (pixels, beyond the screen too; layers in depth): in the slab of the play the collision mask exactly, in front of it the rock's face with rounded edges, behind it the cave's walls and ceilings reaching further in the deeper they are, rough, the back wall far behind (deeper behind the drawing's dark holes), beyond the screen the cliff closing in |
 | `FUghRockOutline` | the collision mask as signed distances on the grid of the pixels' centres (the edge exactly on the pixels' borders), and blurred, with the way they grow |
@@ -81,10 +86,13 @@ The frontend:
 | `UghPlans` | the parts of the plan, the bigger first: campfires on the longest ledges without a pad, palms (the tallest that fit), totems and a hut (`UghDecorations.cpp`), bushes, ferns, jungle plants, rocks, stumps and bones along every ledge, meadows of grass with patches of flowers in rows from as near as they may be (`UghPlants.cpp`), lianas from the ceilings and curtains of them down the cave's back wall (`UghVines.cpp`) |
 | `FUghPlacer` | whether a decoration fits: on the screen above the water, settled on the rock at its own depth (`FUghGround`), as deep as the rules want it there, not in another one's box (ground cover among ground cover may be; leafy plants mingle, keeping only their middles apart; grass grows at a palm's trunk), nowhere near a campfire |
 | `FUghGround` | the rock of a level as ground at any depth (its field `FUghRockField`): the surface of a floor or a ceiling near a row of the mask, how deep the wall behind a point is, whether the front half of a box is air (its back may lean on the cave's back wall) |
-| `AUghScenery` | shows the decorations: the imported models (`UghAssets`) scaled into their boxes (a liana hanging from its top), one instanced component a mesh (thousands of tufts of grass: Nanite); the grass and the flowers cast no shadows, the cut-out leaves are not ray traced; clay shapes where a kind's models are not imported (a trunk with a crown, a stone, a bush, a pole, a cone) |
+| `AUghScenery` | shows the decorations: the scanned models of the Electric Dreams sample (`UghElectricDreams`) where it was copied, else the imported models (`UghAssets`), scaled into their boxes (a liana hanging from its top), one instanced component a mesh (thousands of tufts of grass: Nanite); the grass and the flowers cast no shadows, the cut-out leaves are not ray traced; clay shapes where a kind's models are not imported (a trunk with a crown, a stone, a bush, a pole, a cone) |
+| `UghElectricDreams` | the scanned assets of the Electric Dreams sample the frontend uses, by their paths in the sample (`/Game/External/ElectricDreams/<path>` here): the decorations of each kind, the cliffs and roots of the dressing, the tiling rock, grass, moss and soil textures of the cliff's layers; none (and a log line) without the copy |
+| `UghRockDressing` | where the cave of a level is dressed (`Plan`): scanned cliffs (big, facing the camera, overlapping) on its back wall and roots hanging from its ceilings, each pushed into the wall with a part of it out, never nearer than `BackFront` (250 units: behind every figure's sweep) nor than the middles of the decorations in front of it (but the ground cover and the lianas); the same for the same level. Test `Ugh.Dressing` (`UghDressingTests.cpp`) |
+| `AUghCliffDressing` | shows the dressing: the scanned cliffs and roots scaled into their balls, turned, pushed into the wall, one instanced component a mesh (Nanite); nothing without the copy |
 | `UghAssets` | the imported 3D assets the frontend asks for, by the id of `Assets.json` (`/Game/Imported/<id>`): their static meshes (or one by name), a skeletal mesh and its animations, a texture set's material instance, a sky's texture; none (and a log line) when missing |
 | `FUghLevelArt` | the original's drawing of a level: its tiles (`assets/levels.json`) composed from the sprites; the boards with the pads' numbers among them |
-| `AUghBackground` | the rock mesh in the cliff's material (the layers of the imported texture sets, `UghMaterials::Cliff`; without them the drawing's colours), the boards with the pads' numbers as sprite cards, the water |
+| `AUghBackground` | the rock mesh in the cliff's material (the layers of the scanned surfaces of `UghElectricDreams`, else of the imported texture sets, `UghMaterials::Cliff`; without them the drawing's colours), the boards with the pads' numbers as sprite cards, the water |
 | `AUghCampfire` | the campfires of the plan: Kenney's stones and logs in darker clay (two clay logs without them), a flame of three crossed cards in the material `UghMaterials::Fire` (tongues licking upwards through rising noise, sparks; `Shaders/UghFlame.hlsl`), a flickering point light each (Lumen), each fire its own way; in the wind the flames lean and flicker more; a fire goes out when the water rises over its ledge |
 | `AUghCopters` | the copters between two steps: the pedal copters of `Blender/copter.py` in the players' colours (orange, teal), the rotor and the pilot's crank turning (`FUghRotorSpin`), the pilot pedalling (the action held at the crank's angle), the passenger sitting behind him as a caveman of his look, or the stone passenger hanging in the sling, swaying against the copter's way; without the models clay boxes |
 | `UghCopterModel` | where the model's parts are (the numbers of `Blender/copter_layout.py` in the world's units): the seats, the crank's axle, the rotor's hub, the hanging stone |
@@ -139,18 +147,43 @@ powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_re
 
 A new asset: an entry in `Assets.json` (and its id in `UghAssets.h` when the game asks for it), then both scripts.
 
+### Epic's Electric Dreams sample
+
+The photoreal look (step 18b) comes from Epic's free "Electric Dreams Environment" sample (Fab / Epic Games Launcher,
+UE 5.8; Megascans and custom assets licensed for use in Unreal Engine projects - not ours to share, never in git). Its
+project (about 56 GB) is only read: `electric-dreams.ps1` runs the commandlet `UghCopyElectricDreams`, which mounts the
+sample's content read-only at `/UghSample/`, follows the hard dependencies of the assets of `UghElectricDreams.h`
+through the asset registry and copies their package files (`.uasset`, `.uexp`, `.ubulk` ...) unchanged to
+`Content\External\ElectricDreams\<path>` (about 260 packages, 3.1 GB; files no longer needed are deleted), then loads
+each asset (the meshes' Nanite data is built once there; the textures are built by the first game that shows them). The sample's packages name each other by its `/Game/<path>`:
+the `[CoreRedirects]` of `Config/DefaultEngine.ini` send `/Game/Megascans/`, `/Game/MSPresets/`, `/Game/Custom/`,
+`/Game/SmartAssets/` and `/Game/PhysicalMaterials/` to the copy (the commandlet fails, naming the line, when a top
+folder lacks its redirect). The sample's materials are Substrate materials, and its textures virtual ones: the project
+renders with Substrate (`r.Substrate=True`; its own materials are converted) and without virtual textures
+(`r.VirtualTextures=False`: the textures are built as plain ones, the materials sample them so, the cliff's custom
+code can too). On a machine with the sample (re-creation of the copy):
+
+```
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\build.ps1
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\electric-dreams.ps1
+```
+
+Without the copy the game shows the free assets above (and logs it once); everything builds and the tests pass.
+
 ## Rules
 
 - The plane of the play is the collision mask, exactly: in the slab of the play the rock's edge is on the borders of
   its solid pixels (test `Ugh.Rock`); nothing the frontend shows decides anything. The decorations (campfires too)
   stand behind the slab of the play and out of the figures' reach, so that they never hide a figure, a pad or its
-  board (`UghDecorations`, test `Ugh.Scenery`). A copter's body stays within 45 units of the plane of the
+  board (`UghDecorations`, test `Ugh.Scenery`); the scanned cliffs and roots dressing the cave stand on its back wall
+  behind every figure's sweep and the decorations in front of them (`UghRockDressing`, test `Ugh.Dressing`). A copter's body stays within 45 units of the plane of the
   play, behind the rock's face (60 units in front of it) and the speech bubbles; its rotor sweeps a circle of 130
   units at the top of the body, in front of the face only above the air of the body (the face stands on solid pixels).
 - The frontend reads the logic only through `ugh_logic.h`; values it needs (the screen, the copter's body, a full
   tank, the frame rate) come from there, checked against the logic by `static_assert` in `LogicApi.cpp`.
 - The original's data stays out of git: the drawing, the sprites and the sounds are read from `assets\` at run
-  time. The 3D assets stay out too (`assets\3d`, imported to `Content\Imported`): the repository without them builds,
-  passes its tests and shows clay shapes, the drawing's colours on the rock and the engine's sky instead.
+  time. The 3D assets stay out too (`assets\3d`, imported to `Content\Imported`; the Electric Dreams sample's copy in
+  `Content\External`): the repository without them builds, passes its tests and shows the free assets, or clay
+  shapes, the drawing's colours on the rock and the engine's sky instead.
 - FSR is an upscaler only (`r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0` in `Config/DefaultEngine.ini`),
   so it does not clash with DLSS frame generation.

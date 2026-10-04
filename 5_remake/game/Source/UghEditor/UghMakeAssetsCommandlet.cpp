@@ -154,7 +154,10 @@ bool UUghMakeAssetsCommandlet::MakeCliff(UMaterial* Material)
 				bNormal ? SAMPLERTYPE_Normal : bColor ? SAMPLERTYPE_Color : SAMPLERTYPE_Masks,
 				bNormal ? DefaultNormal : bColor ? DefaultColor : DefaultMasks) });
 		}
-		Inputs.Add({ *(Name + TEXT("Size")), Scalar(Material, *(Name + TEXT("Size")), CliffSizes[Layer]) });
+		Inputs.Add({ *(Name + UghMaterials::SizeParameter),
+			Scalar(Material, *(Name + UghMaterials::SizeParameter), CliffSizes[Layer]) });
+		Inputs.Add({ *(Name + UghMaterials::HeightMaskParameter),
+			Vector(Material, *(Name + UghMaterials::HeightMaskParameter), FLinearColor(1, 0, 0, 0)) });
 	}
 	UMaterialExpressionCustom* Cliff = Custom(Material, ShaderCode(TEXT("UghCliff.hlsl")), CMOT_Float3, Inputs,
 		{ { TEXT("CliffNormal"), CMOT_Float3 }, { TEXT("CliffRough"), CMOT_Float1 },

@@ -41,8 +41,14 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	/** The cliff's material with the layers of the imported texture sets; none when one of them is missing. */
+	/**
+	 * The cliff's material with the layers of the scanned surfaces (UghElectricDreams), else of the imported texture
+	 * sets; none when one of them is missing.
+	 */
 	UMaterialInstanceDynamic* MakeCliffMaterial();
+	/** Gives `Cliff` the layers of the scanned surfaces, of the imported texture sets; false when one is missing. */
+	static bool SetScannedLayers(UMaterialInstanceDynamic* Cliff);
+	static bool SetImportedLayers(UMaterialInstanceDynamic* Cliff);
 	void ShowSigns(const TArray<FUghArtTile>& Signs, const FUghSprites& Sprites);
 	/** The unseen cliff around the rock's grid that only shades it (ShroudThickness). */
 	void AddShroud();
