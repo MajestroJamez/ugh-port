@@ -104,7 +104,7 @@ bool FUghCopterModelTest::RunTest(const FString& Parameters)
 	// every look of a passenger in a cabin is a caveman but the stone passenger's (4)
 	for (int32 Look = 1; Look <= 4; ++Look)
 	{
-		TestEqual(FString::Printf(TEXT("look %d is a caveman"), Look), FUghCaveman::Passenger(Look) != nullptr, Look < 4);
+		TestEqual(FString::Printf(TEXT("look %d is a person"), Look), FUghCaveman::IsPassenger(Look), Look < 4);
 	}
 	return true;
 }

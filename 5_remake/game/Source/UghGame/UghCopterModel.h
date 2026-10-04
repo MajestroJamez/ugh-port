@@ -24,8 +24,11 @@ namespace UghCopterModel
 	/** Where the pilot sits (the origin of his actions sit and pedal) and his passenger. */
 	inline const FVector PilotSeat(-28, 8, 52);
 	inline const FVector PassengerSeat(42, -20, 60);
-	/** The middle of the crank's axle (from the pilot's seat: 0, 20, -17). */
+	/** The middle of the crank's axle (from the pilot's seat: 0, 20, -17), its pedals' radius and spread from the middle. */
 	inline const FVector CrankAxle = PilotSeat + FVector(0, 20, -17);
+	constexpr double PedalRadius = 8, PedalSpread = 11;
+	/** The handle the pilot holds with his left hand, from his seat (the right one mirrored). */
+	inline const FVector Grip(22, 20, 30);
 	inline const FVector RotorHub(0, 0, 187);
 	/** The stone passenger's origin when it hangs in the sling (its middle at -63, half its height 53). */
 	inline const FVector Hanging(0, 0, -116);

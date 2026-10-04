@@ -9,7 +9,6 @@
 #include "UghCopters.generated.h"
 
 class UInstancedStaticMeshComponent;
-class USkeletalMeshComponent;
 class UStaticMeshComponent;
 
 /** A copter's model: its parts, its pilot, its passenger in the cabin or the stone passenger in its sling. */
@@ -23,17 +22,17 @@ struct FUghCopterParts
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Crank;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Sling;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Stone;
-	UPROPERTY() TObjectPtr<USkeletalMeshComponent> Pilot;
-	UPROPERTY() TObjectPtr<USkeletalMeshComponent> Rider;
+	UPROPERTY() TObjectPtr<USceneComponent> Pilot;
+	UPROPERTY() TObjectPtr<USceneComponent> Rider;   // of the cargo look RiderLook; made when first needed
 	FUghRotorSpin Spin;
-	int32 RiderLook = 0;   // how the rider is dressed (the cargo look)
+	int32 RiderLook = 0;
 	double Sway = 0;       // of the sling, radians
 };
 
 /**
  * The copters of the play in the slab of the play, between the views of two steps (UghBetween): the pedal copters of
  * Blender/copter.py in each player's colours, the rotor turning and the pilot pedalling as fast as the rotor's
- * sprites change (FUghRotorSpin), a passenger sitting behind the pilot (a caveman of his look, FUghCaveman) or the
+ * sprites change (FUghRotorSpin), a passenger sitting behind the pilot (a person of his look, FUghCaveman) or the
  * stone passenger hanging in the sling below, swaying as the copter moves. Without the imported models: clay, a box
  * with a rotor that gets shorter and longer as its sprites change; its riders are clay passengers of AUghFigures.
  */

@@ -2,24 +2,36 @@
 
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "GameFramework/Actor.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "UghAssets.h"
+#include "UghFigurePlace.h"
 
 namespace
 {
-	/** The actions as caveman.glb names them, by EUghCaveAction. */
+	/** The actions as the models name them, by EUghCaveAction. */
 	const TCHAR* const Actions[] = { TEXT("idle"), TEXT("sit"), TEXT("pedal"), TEXT("hang"), TEXT("walk"),
 		TEXT("wave"), TEXT("tread"), TEXT("swim"), TEXT("fall") };
 	static_assert(UE_ARRAY_COUNT(Actions) == static_cast<int32>(EUghCaveAction::Fall) + 1);
 	/** The colour of a glTF material Interchange imported. */
 	const FName ColorFactor(TEXT("BaseColorFactor"));
 
-	/** The passengers by the logic's cargo look: 1 a young caveman, 2 a woman with long hair, 3 an old man. */
-	const FUghCaveLook Passengers[] = {
+	/** How the caveman of Blender/caveman.py looks: his hair (short or long), a beard or not, colours. */
+	struct FCaveLook
+	{
+		bool bLongHair = false;
+		bool bBeard = false;
+		FLinearColor Hair, Fur, Skin;
+	};
+
+	/** By look: the pilot, a young caveman, a woman with long hair, an old man. */
+	const FCaveLook CaveLooks[] = {
+		{ false, true, FLinearColor(0.13f, 0.08f, 0.05f), FLinearColor::White, FLinearColor::White },
 		{ false, false, FLinearColor(0.32f, 0.17f, 0.08f), FLinearColor(1.f, 0.85f, 0.7f), FLinearColor(1.f, 0.95f, 0.9f) },
 		{ true, false, FLinearColor(0.55f, 0.2f, 0.06f), FLinearColor(1.f, 0.95f, 0.85f), FLinearColor(1.f, 1.f, 1.f) },
 		{ false, true, FLinearColor(0.8f, 0.8f, 0.78f), FLinearColor(0.7f, 0.66f, 0.6f), FLinearColor(0.95f, 0.86f, 0.8f) } };
+	static_assert(UE_ARRAY_COUNT(CaveLooks) == UE_ARRAY_COUNT(UghMetaHumans::Names));
 
 	int32 SlotOf(const USkeletalMesh* Mesh, const TCHAR* Name)
 	{
@@ -49,14 +61,18 @@ namespace
 			Material->SetVectorParameterValue(ColorFactor, Color);
 		}
 	}
-}
 
-const FUghCaveLook FUghCaveman::Pilot{ false, true, FLinearColor(0.13f, 0.08f, 0.05f), FLinearColor::White,
-	FLinearColor::White };
-
-const FUghCaveLook* FUghCaveman::Passenger(int32 Look)
-{
-	return Look >= 1 && Look <= UE_ARRAY_COUNT(Passengers) ? &Passengers[Look - 1] : nullptr;
+	/** Dresses the caveman as `Look`: the hair and beard it has (material slots), the colours. */
+	void Dress(USkeletalMeshComponent* Caveman, const FCaveLook& Look)
+	{
+		Show(Caveman, TEXT("hair_short"), !Look.bLongHair);
+		Show(Caveman, TEXT("hair_long"), Look.bLongHair);
+		Show(Caveman, TEXT("beard"), Look.bBeard);
+		Tint(Caveman, Look.bLongHair ? TEXT("hair_long") : TEXT("hair_short"), Look.Hair);
+		Tint(Caveman, TEXT("beard"), Look.Hair);
+		Tint(Caveman, TEXT("fur"), Look.Fur);
+		Tint(Caveman, TEXT("skin"), Look.Skin);
+	}
 }
 
 TConstArrayView<const TCHAR*> FUghCaveman::ActionNames()
@@ -66,31 +82,91 @@ TConstArrayView<const TCHAR*> FUghCaveman::ActionNames()
 
 bool FUghCaveman::Load()
 {
-	return Rig.Load(UghAssets::Caveman, Actions);
+	MetaHumans.Reset();
+	for (const TCHAR* Name : UghMetaHumans::Names)
+	{
+		if (!MetaHumans.AddDefaulted_GetRef().Load(Name, Actions))
+		{
+			MetaHumans.Reset();
+			break;
+		}
+	}
+	if (!MetaHumans.IsEmpty())
+	{
+		const USkeletalMesh* Hide = UghAssets::SkeletalMesh(UghAssets::Caveman);
+		const int32 Fur = Hide ? SlotOf(Hide, TEXT("fur")) : INDEX_NONE;
+		Garment = Fur != INDEX_NONE ? Hide->GetMaterials()[Fur].MaterialInterface.Get() : nullptr;
+		return true;
+	}
+	UE_LOG(LogTemp, Display, TEXT("UGH no MetaHumans (metahumans.ps1): the caveman instead"));
+	return Caveman.Load(UghAssets::Caveman, Actions);
 }
 
-USkeletalMeshComponent* FUghCaveman::Add(AActor* Owner) const
+USceneComponent* FUghCaveman::Add(AActor* Owner, int32 Look) const
 {
-	return Rig.Add(Owner);
+	const int32 Index = FMath::Clamp(Look, 0, UE_ARRAY_COUNT(CaveLooks) - 1);
+	USceneComponent* Person = NewObject<USceneComponent>(Owner);
+	Person->SetMobility(EComponentMobility::Movable);
+	Person->SetupAttachment(Owner->GetRootComponent());
+	Person->RegisterComponent();
+	Owner->AddInstanceComponent(Person);
+	if (!MetaHumans.IsEmpty())
+	{
+		MetaHumans[Index].Add(Owner, Person, UghFigurePlace::CavemanHeight, Garment);
+	}
+	else
+	{
+		USkeletalMeshComponent* Model = Caveman.Add(Owner);
+		Model->AttachToComponent(Person, FAttachmentTransformRules::KeepRelativeTransform);
+		Dress(Model, CaveLooks[Index]);
+	}
+	Person->SetVisibility(false, true);
+	return Person;
 }
 
-void FUghCaveman::Dress(USkeletalMeshComponent* Caveman, const FUghCaveLook& Look)
+void FUghCaveman::Remove(USceneComponent* Person)
 {
-	Show(Caveman, TEXT("hair_short"), !Look.bLongHair);
-	Show(Caveman, TEXT("hair_long"), Look.bLongHair);
-	Show(Caveman, TEXT("beard"), Look.bBeard);
-	Tint(Caveman, Look.bLongHair ? TEXT("hair_long") : TEXT("hair_short"), Look.Hair);
-	Tint(Caveman, TEXT("beard"), Look.Hair);
-	Tint(Caveman, TEXT("fur"), Look.Fur);
-	Tint(Caveman, TEXT("skin"), Look.Skin);
+	TArray<USceneComponent*> Parts;
+	Person->GetChildrenComponents(true, Parts);
+	for (USceneComponent* Part : Parts)
+	{
+		Part->DestroyComponent();
+	}
+	Person->DestroyComponent();
 }
 
-void FUghCaveman::Play(USkeletalMeshComponent* Caveman, EUghCaveAction Action) const
+TPair<USkeletalMeshComponent*, const FUghRig*> FUghCaveman::ModelOf(USceneComponent* Person) const
 {
-	Rig.Play(Caveman, static_cast<int32>(Action));
+	TArray<const FUghRig*> Rigs = { &Caveman };
+	for (const FUghMetaHuman& Each : MetaHumans)
+	{
+		Rigs.Add(&Each.GetBody());
+	}
+	TArray<USceneComponent*> Parts;
+	Person->GetChildrenComponents(false, Parts);
+	for (USceneComponent* Part : Parts)
+	{
+		USkeletalMeshComponent* Model = Cast<USkeletalMeshComponent>(Part);
+		for (const FUghRig* Rig : Rigs)
+		{
+			if (Model && Rig->IsLoaded() && Model->GetSkeletalMeshAsset() == Rig->GetMesh())
+			{
+				return { Model, Rig };
+			}
+		}
+	}
+	checkNoEntry();
+	return {};
 }
 
-void FUghCaveman::Hold(USkeletalMeshComponent* Caveman, EUghCaveAction Action, double Fraction) const
+void FUghCaveman::Play(USceneComponent* Person, EUghCaveAction Action) const
 {
-	Rig.Hold(Caveman, static_cast<int32>(Action), Fraction);
+	const auto [Model, Rig] = ModelOf(Person);
+	Rig->Play(Model, static_cast<int32>(Action));
+}
+
+void FUghCaveman::Hold(USceneComponent* Person, EUghCaveAction Action, double Fraction) const
+{
+	const auto [Model, Rig] = ModelOf(Person);
+	Rig->Hold(Model, static_cast<int32>(Action), Fraction);
 }

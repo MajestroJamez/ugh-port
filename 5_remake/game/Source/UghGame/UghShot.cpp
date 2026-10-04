@@ -204,13 +204,14 @@ void FUghShot::Dress(ugh_logic_view& View) const
 
 TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View) const
 {
-	if (Frame && View.phase == UGH_LOGIC_PHASE_PLAY)
-	{
-		return Frame;
-	}
-	if (!bCloseUp || View.phase != UGH_LOGIC_PHASE_PLAY || View.copter_count == 0)
+	const bool bCopters = bCloseUp && View.copter_count > 0;
+	if (View.phase != UGH_LOGIC_PHASE_PLAY || (!Frame && !bCopters))
 	{
 		return {};
+	}
+	if (Frame)
+	{
+		return bCopters ? Frame->ShiftBy(FVector2D(View.copters[0].x, View.copters[0].y) / UghShapes::Subpixels) : Frame;
 	}
 	FBox2D Copters(ForceInit);
 	for (int32 Player = 0; Player < View.copter_count; ++Player)

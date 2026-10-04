@@ -9,16 +9,22 @@
 
 bool FUghRig::Load(const TCHAR* Id, TConstArrayView<const TCHAR*> ActionNames)
 {
-	Mesh = UghAssets::SkeletalMesh(Id);
-	Actions.Reset();
+	TArray<UAnimSequence*> Found;
 	for (const TCHAR* Name : ActionNames)
 	{
-		Actions.Add(UghAssets::Animation(Id, Name));
+		Found.Add(UghAssets::Animation(Id, Name));
 	}
-	if (Actions.Contains(nullptr))
+	return Load(UghAssets::SkeletalMesh(Id), Found);
+}
+
+bool FUghRig::Load(USkeletalMesh* InMesh, TConstArrayView<UAnimSequence*> InActions)
+{
+	Actions.Reset();
+	for (UAnimSequence* Action : InActions)
 	{
-		Mesh = nullptr;
+		Actions.Add(Action);
 	}
+	Mesh = InActions.Contains(nullptr) ? nullptr : InMesh;
 	return IsLoaded();
 }
 

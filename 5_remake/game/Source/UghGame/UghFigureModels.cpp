@@ -83,29 +83,32 @@ void FUghFigureModels::Begin()
 bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const FUghFigureAction& Action,
 	const FVector2D& At, const FIntPoint& Size, double Velocity, double Seconds)
 {
-	const bool bRigged = Action.Model != EUghModel::Stone && Action.Model != EUghModel::BonusItem;
-	UStaticMesh* Mesh = bRigged ? nullptr : MeshOf(Action);
-	if (!Has(Action.Model) || (!bRigged && !Mesh))
+	const bool bPerson = Action.Model == EUghModel::Caveman;
+	const bool bRigged = !bPerson && Action.Model != EUghModel::Stone && Action.Model != EUghModel::BonusItem;
+	UStaticMesh* Mesh = bPerson || bRigged ? nullptr : MeshOf(Action);
+	if (!Has(Action.Model) || (!bPerson && !bRigged && !Mesh))
 	{
 		return false;
 	}
 	FUghFigureSlot& Slot = Slots.FindOrAdd(Key(Entity));
 	Slot.bShown = true;
 	USceneComponent* Shown = nullptr;
-	if (bRigged)
+	if (bPerson)
 	{
-		// a slot is an entity of one kind: a passenger's rigged model is always the caveman, an enemy's may change
-		USkeletalMesh* Wanted = Action.Model == EUghModel::Caveman ? nullptr : RigOf(Action.Model)->GetMesh();
+		Shown = PersonOf(Owner, Slot, Entity.look);
+	}
+	else if (bRigged)
+	{
+		// a slot is an entity of one kind, but an enemy's model may change
+		USkeletalMesh* Wanted = RigOf(Action.Model)->GetMesh();
 		if (!Slot.Rigged)
 		{
-			Slot.Rigged = Action.Model == EUghModel::Caveman ? Caveman.Add(Owner) : RigOf(Action.Model)->Add(Owner);
+			Slot.Rigged = RigOf(Action.Model)->Add(Owner);
 		}
-		if (Wanted && Slot.Rigged->GetSkeletalMeshAsset() != Wanted)
+		if (Slot.Rigged->GetSkeletalMeshAsset() != Wanted)
 		{
 			Slot.Rigged->SetSkeletalMesh(Wanted);
-			Slot.Look = -1;
 		}
-		Animate(Slot, Entity, Action, Seconds);
 		Shown = Slot.Rigged;
 	}
 	else
@@ -117,20 +120,41 @@ bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const
 		Slot.Mesh->SetStaticMesh(Mesh);
 		Shown = Slot.Mesh;
 	}
+	if (bPerson || bRigged)
+	{
+		Animate(Slot, Action, Seconds);
+	}
 	Turn(Slot, Action, Velocity, Seconds);
 	Shown->SetWorldTransform(UghFigurePlace::Of(Action, At, Size, Slot.Clock.Phase(), Slot.Spin));
-	Shown->SetVisibility(true);
-	USceneComponent* Other = bRigged ? static_cast<USceneComponent*>(Slot.Mesh.Get()) : Slot.Rigged.Get();
-	if (Other)
+	USceneComponent* const Parts[] = { Slot.Person.Get(), Slot.Rigged.Get(), Slot.Mesh.Get() };
+	for (USceneComponent* Part : Parts)
 	{
-		Other->SetVisibility(false);
+		if (Part)
+		{
+			Part->SetVisibility(Part == Shown, true);
+		}
 	}
 	return true;
 }
 
-/** The action of a rigged model: following the frames of its sprite, or playing by itself; a caveman dressed. */
-void FUghFigureModels::Animate(FUghFigureSlot& Slot, const ugh_logic_entity& Entity, const FUghFigureAction& Action,
-	double Seconds)
+/** The person of the passenger's look `Look` in `Slot`, made anew when the look changes. */
+USceneComponent* FUghFigureModels::PersonOf(AActor* Owner, FUghFigureSlot& Slot, int32 Look) const
+{
+	if (Slot.Person && Slot.Look != Look)
+	{
+		FUghCaveman::Remove(Slot.Person);
+		Slot.Person = nullptr;
+	}
+	if (!Slot.Person)
+	{
+		Slot.Person = Caveman.Add(Owner, FUghCaveman::IsPassenger(Look) ? Look : FUghCaveman::PilotLook);
+		Slot.Look = Look;
+	}
+	return Slot.Person;
+}
+
+/** The action of a person or a rigged model: following the frames of its sprite, or playing by itself. */
+void FUghFigureModels::Animate(FUghFigureSlot& Slot, const FUghFigureAction& Action, double Seconds)
 {
 	const int32 Index = FUghFigureActions::ActionsOf(Action.Model).Find(Action.Action);
 	check(Index != INDEX_NONE);
@@ -140,20 +164,14 @@ void FUghFigureModels::Animate(FUghFigureSlot& Slot, const ugh_logic_entity& Ent
 	}
 	if (Action.Model == EUghModel::Caveman)
 	{
-		if (Slot.Look != Entity.look)
-		{
-			const FUghCaveLook* Look = FUghCaveman::Passenger(Entity.look);
-			FUghCaveman::Dress(Slot.Rigged, Look ? *Look : FUghCaveman::Pilot);
-			Slot.Look = Entity.look;
-		}
 		const EUghCaveAction CaveAction = static_cast<EUghCaveAction>(Index);
 		if (Action.bFollowsFrames)
 		{
-			Caveman.Hold(Slot.Rigged, CaveAction, Slot.Clock.Phase());
+			Caveman.Hold(Slot.Person, CaveAction, Slot.Clock.Phase());
 		}
 		else
 		{
-			Caveman.Play(Slot.Rigged, CaveAction);
+			Caveman.Play(Slot.Person, CaveAction);
 		}
 		return;
 	}
@@ -175,12 +193,12 @@ void FUghFigureModels::End()
 		if (!Slot.Value.bShown)
 		{
 			const FUghFigureSlot& Hidden = Slot.Value;
-			USceneComponent* const Parts[] = { Hidden.Rigged.Get(), Hidden.Mesh.Get() };
+			USceneComponent* const Parts[] = { Hidden.Person.Get(), Hidden.Rigged.Get(), Hidden.Mesh.Get() };
 			for (USceneComponent* Part : Parts)
 			{
 				if (Part)
 				{
-					Part->SetVisibility(false);
+					Part->SetVisibility(false, true);
 				}
 			}
 		}

@@ -20,17 +20,18 @@ struct FUghFigureSlot
 {
 	GENERATED_BODY()
 
+	UPROPERTY() TObjectPtr<USceneComponent> Person;   // a passenger of the look Look (FUghCaveman)
 	UPROPERTY() TObjectPtr<USkeletalMeshComponent> Rigged;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Mesh;
-	int32 Look = -1;        // how the caveman is dressed
+	int32 Look = -1;
 	FUghFrameClock Clock;   // the action that follows its sprite's frames
 	double Spin = 0;        // a tumbling stone, a turning bonus item: radians
 	bool bShown = false;    // in this frame
 };
 
 /**
- * The figures besides the copters as the models of the Blender scripts: the passengers as cavemen of their look
- * (FUghCaveman) or the stone with eyes, the flyer as a pterodactyl, the walker as a triceratops, the blower as a
+ * The figures besides the copters: the passengers as people of their look (FUghCaveman: MetaHumans or the caveman)
+ * or the stone with eyes, the flyer as a pterodactyl, the walker as a triceratops, the blower as a
  * puffing beast, the tree as a tree with a face, the bonus items as fruits and a stone tablet. Each entity keeps its
  * own component; Show places it as its sprite (UghFigurePlace) and lets it do its action (FUghFigureActions). A model
  * that is not imported shows nothing: the caller shows clay instead.
@@ -61,7 +62,8 @@ struct FUghFigureModels
 private:
 	const FUghRig* RigOf(EUghModel Model) const;
 	UStaticMesh* MeshOf(const FUghFigureAction& Action) const;
-	void Animate(FUghFigureSlot& Slot, const ugh_logic_entity& Entity, const FUghFigureAction& Action, double Seconds);
+	USceneComponent* PersonOf(AActor* Owner, FUghFigureSlot& Slot, int32 Look) const;
+	void Animate(FUghFigureSlot& Slot, const FUghFigureAction& Action, double Seconds);
 	static void Turn(FUghFigureSlot& Slot, const FUghFigureAction& Action, double Velocity, double Seconds);
 
 	UPROPERTY() FUghCaveman Caveman;

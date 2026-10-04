@@ -9,9 +9,11 @@ under an HDR sky, a stone age jungle on its ledges (meadows of grass and flowers
 from its ceilings and down its back wall, all behind the figures, the boards with the pads' numbers as the original
 draws them; the scanned assets come from Epic's Electric Dreams sample where it was copied (`electric-dreams.ps1`),
 else free ones; the copters are stone age pedal
-copters of bamboo, wicker, leather, bone and stone (made by Blender scripts) with a caveman pedalling them and their
-passengers sitting behind him or hanging below; the passengers are cavemen walking, waving, waiting, swimming and
-falling as their sprites say (the standing passenger a stone with eyes), the enemies a pterodactyl, a triceratops, a
+copters of bamboo, wicker, leather, bone and stone (made by Blender scripts) with a stone age man pedalling them and
+their passengers sitting behind him or hanging below; the passengers are stone age people (a man, a woman, an old man)
+walking, waving, waiting, swimming and falling as their sprites say (the standing passenger a stone with eyes) -
+photoreal MetaHumans made with MetaHuman Creator where they were made (`metahumans.ps1`), else a cartoon caveman; the
+enemies a pterodactyl, a triceratops, a
 puffing beast and a tree with a face, the bonus items fruits and a stone tablet (all made by Blender scripts, clay
 shapes the size of their sprites without them), a passenger's speech bubble a card with its sprite. The logic runs at
 the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn
@@ -31,8 +33,9 @@ silent and logs it):
 | `setup.ps1` | copies the vendor plugins (DLSS + Streamline, FSR with its offscreen patch, about 5 GB, not in git) from the toolchain trial into `Plugins\`; `-From <folder>` elsewhere. Once |
 | `fetch-assets.ps1` | downloads the 3D assets of `Assets.json` to `assets\3d` (see 3D assets below): only what is missing, each file checked by its size and hash, the whole under the budget of 100 GB, archives extracted, Blender scripts run (a generated asset is made by its script, again when a script of `Blender/` is newer than it); a table of the assets at the end. `-Only <ids>` some, `-Verify` hashes the files already there too |
 | `electric-dreams.ps1` | copies the scanned assets of Epic's Electric Dreams sample the game uses (`UghElectricDreams.h`: cliffs, roots, palms, jungle plants, ferns, ivy, grass, stones, rock surfaces; about 3 GB) with everything they need into `Content\External\ElectricDreams` (commandlet `UghCopyElectricDreams`, see 3D assets below); `-Source <folder>` the sample's project (default `..\Unreal Projects\ElectricDreamsEnv` next to the repository). After `build.ps1`; again after a change of `UghElectricDreams.h` |
+| `metahumans.ps1` | makes the pilot and the passengers with MetaHuman Creator in the editor (without a window) into `Content\External\MetaHumans`: `Python\metahumans.py` (presets of Creator's optional content dressed as stone age people, their face rig and skin textures from Epic's cloud - the editor logged in to an Epic account -, assembled; only the missing ones, `-All` all again) and `Python\metahuman_actions.py` (an animation per action for each); see The MetaHumans below. After `build.ps1` |
 | `build.ps1` | builds the editor (modules UghLogic, UghGame, UghEditor), makes the materials (commandlet `UghMakeAssets` -> `Content\Generated`) and imports the downloaded 3D assets (commandlet `UghImportAssets` -> `Content\Imported`); `-NoAssets` only builds, `-ForceImport` imports every asset again |
-| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu`, the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays) the decorations `Ugh.Scenery` (every level rich - at least 150 of 6 kinds, 100 tufts of grass and flowers, a palm -, the same every time, each on the rock at its own depth with its box in the air, none on the screen nearer than the slab of the play, where the figures reach, where a rotor or a flyer's wing sweeps, where a copter lands on a pad or in front of a pad's board; nothing in a campfire), the rock `Ugh.Rock` (in every level the rock's mesh cut in the slab of the play is the collision mask: every pixel's centre on its side, every other point at most half a pixel off - the cut leaves the corners of the pixel steps), the rock's dressing `Ugh.Dressing` (every level has scanned cliffs, the same every time, each coming out of the cave's back wall, behind every figure's sweep and behind the middles of the decorations in front of it), the copters `Ugh.Copter.*` (the rotor turns as fast as its sprites change; the imported model fills the copter's body and stays in it, the stone passenger is as big as its sprite) and the figures `Ugh.Figures.*` (every sprite an entity of the data shows is an action of a model, `FUghFigureActions`; the actions that follow the sprites' frames go on smoothly; the enemies' models are as big as their sprites, the bonus items are there); `-Filter` other tests |
+| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu`, the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays) the decorations `Ugh.Scenery` (every level rich - at least 150 of 6 kinds, 100 tufts of grass and flowers, a palm -, the same every time, each on the rock at its own depth with its box in the air, none on the screen nearer than the slab of the play, where the figures reach, where a rotor or a flyer's wing sweeps, where a copter lands on a pad or in front of a pad's board; nothing in a campfire), the rock `Ugh.Rock` (in every level the rock's mesh cut in the slab of the play is the collision mask: every pixel's centre on its side, every other point at most half a pixel off - the cut leaves the corners of the pixel steps), the rock's dressing `Ugh.Dressing` (every level has scanned cliffs, the same every time, each coming out of the cave's back wall, behind every figure's sweep and behind the middles of the decorations in front of it), the copters `Ugh.Copter.*` (the rotor turns as fast as its sprites change; the imported model fills the copter's body and stays in it, the stone passenger is as big as its sprite) and the figures `Ugh.Figures.*` (every sprite an entity of the data shows is an action of a model, `FUghFigureActions`; the actions that follow the sprites' frames go on smoothly; the enemies' models are as big as their sprites, the bonus items are there), the people `Ugh.Figures.People` (the MetaHumans' actions put them where the game wants them: on the ground and in the slab of the play, on the seat, the feet on the copter's pedals and the hands on its handles, the hands on the rope, the head at the water's surface); `-Filter` other tests |
 | `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover (the log says the frame rate meanwhile) and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting, `-Cargo <look>` the copters shown with a passenger of that look in the cabin (1 .. 3; `-Hanging` below instead: 4, the stone; only the picture, the autopilot never picks one up), `-CloseUp` framing the copters, `-Frame <left>,<top>,<width>,<height>` that part of the screen (pixels: a look at the figures; the name then ends in `-cargo<look>` or `-hanging<look>`, `-closeup`, `-frame<left>_<top>`) |
 | `levels.ps1` | the same for every level of both modes in one run, then the contact sheets `Saved\Shots\Levels\levels-1p.png` and `levels-team.png` (and the menu's `menu.png`): does every level look right? At the end the frame rates of the shots (median, slowest, fastest). `-Levels team:1-81` fewer |
 | `play.ps1` | the game in a window |
@@ -94,11 +97,12 @@ The frontend:
 | `FUghLevelArt` | the original's drawing of a level: its tiles (`assets/levels.json`) composed from the sprites; the boards with the pads' numbers among them |
 | `AUghBackground` | the rock mesh in the cliff's material (the layers of the scanned surfaces of `UghElectricDreams`, else of the imported texture sets, `UghMaterials::Cliff`, wet at the water's level; without them the drawing's colours), the boards with the pads' numbers as sprite cards, the water |
 | `AUghCampfire` | the campfires of the plan: Kenney's stones and logs in darker clay (two clay logs without them), a flame of three crossed cards in the material `UghMaterials::Fire` (tongues licking upwards through rising noise, sparks; `Shaders/UghFlame.hlsl`), a flickering point light each (Lumen), each fire its own way; in the wind the flames lean and flicker more; a fire goes out when the water rises over its ledge |
-| `AUghCopters` | the copters between two steps: the pedal copters of `Blender/copter.py` in the players' colours (orange, teal), the rotor and the pilot's crank turning (`FUghRotorSpin`), the pilot pedalling (the action held at the crank's angle), the passenger sitting behind him as a caveman of his look, or the stone passenger hanging in the sling, swaying against the copter's way; without the models clay boxes |
+| `AUghCopters` | the copters between two steps: the pedal copters of `Blender/copter.py` in the players' colours (orange, teal), the rotor and the pilot's crank turning (`FUghRotorSpin`), the pilot pedalling (the action held at the crank's angle), the passenger sitting behind him as a person of his look, or the stone passenger hanging in the sling, swaying against the copter's way; without the models clay boxes |
 | `UghCopterModel` | where the model's parts are (the numbers of `Blender/copter_layout.py` in the world's units): the seats, the crank's axle, the rotor's hub, the hanging stone |
 | `FUghRotorSpin` | how far a rotor and its crank have turned: as fast as the rotor's sprites change lately (the logic only says which sprite), slowing to a stop without them |
-| `FUghCaveman` | the caveman of `Blender/caveman.py` (a `FUghRig`, actions idle, sit, pedal, hang, walk, wave, tread, swim, fall): a new one on an actor, dressed as a look (hair, beard, colours of hair, fur and skin by the material slots), playing or holding an action; the pilots' look and the passengers' by the logic's cargo look |
-| `FUghRig` | a rigged model of the Blender scripts: its skeletal mesh and an animation per action (`UghAssets`); a component of it on an actor, playing an action or holding it at a part of its loop |
+| `FUghCaveman` | the people by their look (0 the pilots, 1 .. 3 the passengers by the logic's cargo look): the MetaHumans (`FUghMetaHuman`) where all of them are there, else the caveman of `Blender/caveman.py` (a `FUghRig`) dressed as the look (hair, beard, colours of hair, fur and skin by the material slots); actions idle, sit, pedal, hang, walk, wave, tread, swim, fall; a new person on an actor (a holder as high as the caveman whatever the model), playing or holding an action |
+| `FUghMetaHuman` | a MetaHuman of `metahumans.ps1` (`UghMetaHumans`: their names and folder): the components of its blueprint without the actor - the body playing its actions (a `FUghRig`), the face and the outfit following its pose, the grooms on the face as helmets (level of detail 5) without physics; the outfit in the caveman's leopard fur. Test `Ugh.Figures.People` (`UghPeopleTests.cpp`) |
+| `FUghRig` | an animated model: a skeletal mesh and an animation per action (a model of the Blender scripts, `UghAssets`, or a MetaHuman's body); a component of it on an actor, playing an action or holding it at a part of its loop |
 | `UghBetween` | render interpolation: a position between two steps (a jump is not interpolated), the view to interpolate from |
 | `AUghFigures` | passengers, enemies, bonus items between two steps as the models of `FUghFigureModels` doing what `FUghFigureActions` say, plasticine shapes where a model is missing; raindrops (strokes of clay along their way with the wind); speech bubbles as sprite cards; the clay riders of the clay copters |
 | `FUghFigureActions` | which sprite means what (Table of rules over the names `ugh_logic_get_sprite` gives: "kind1.walkLeft" a caveman walking to the left, "kind1-water.walkRight" swimming, "flyer.left", "walker.chargeRight", "blower.blowing", "tree.swaying", "standingPassenger", "energy3" ...): the model, its action, which way it looks, whether the action follows the frames of the sprite's animation; from the entity an enemy knocked out (`stunned`) and a passenger going down in the water (falling). Test `Ugh.Figures.Actions` (`UghFigureTests.cpp`) |
@@ -170,6 +174,29 @@ powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_re
 
 Without the copy the game shows the free assets above (and logs it once); everything builds and the tests pass.
 
+### The MetaHumans
+
+The pilot and the passengers (step 18d) are MetaHumans made with MetaHuman Creator (the engine's plugin
+`MetaHumanCharacter`, enabled in `UghGame.uproject` with `PythonScriptPlugin`; its optional content "MetaHuman Creator
+Core Data" from Fab / the Epic Games Launcher; licensed for Unreal Engine projects - not ours to share, never in git).
+`metahumans.ps1` runs `Python/metahumans.py` in the editor without a window (a commandlet cannot bake the textures):
+for each of `UghMetaHumans.h` (Pilot, Man, Woman, Grandpa) a copy of a preset (`Characters/<name>`), its hair and
+beard, the face rig and the skin textures from Epic's cloud (the editor logged in to an Epic account), the assembly
+(pipeline Optimized, quality Low) to `Content\External\MetaHumans\<name>` with the shared assets in `...\Common`
+(about 1.5 GB), the colours of the hair (its materials' parameters). Then `Python/metahuman_actions.py` (a commandlet)
+makes each one's actions in its own proportions (`Actions/AS_<action>`): `idle` and `walk` from Creator's clips (the
+walk in place), the others posed by `metahuman_poses.py` with `ugh_math.py` (two-bone IK, turns of the spine and the
+head, fingers; the copter's crank and handles of `Blender/copter_layout.py`); where each action has its origin is as
+the caveman's. On a machine with Creator's content:
+
+```
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\build.ps1
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\metahumans.ps1
+```
+
+Without them the game shows the caveman of `Blender/caveman.py` (and logs it once); everything builds and the tests
+pass.
+
 ## Rules
 
 - The plane of the play is the collision mask, exactly: in the slab of the play the rock's edge is on the borders of
@@ -182,8 +209,8 @@ Without the copy the game shows the free assets above (and logs it once); everyt
 - The frontend reads the logic only through `ugh_logic.h`; values it needs (the screen, the copter's body, a full
   tank, the frame rate) come from there, checked against the logic by `static_assert` in `LogicApi.cpp`.
 - The original's data stays out of git: the drawing, the sprites and the sounds are read from `assets\` at run
-  time. The 3D assets stay out too (`assets\3d`, imported to `Content\Imported`; the Electric Dreams sample's copy in
-  `Content\External`): the repository without them builds, passes its tests and shows the free assets, or clay
-  shapes, the drawing's colours on the rock and the engine's sky instead.
+  time. The 3D assets stay out too (`assets\3d`, imported to `Content\Imported`; the Electric Dreams sample's copy and
+  the MetaHumans in `Content\External`): the repository without them builds, passes its tests and shows the free
+  assets and the caveman, or clay shapes, the drawing's colours on the rock and the engine's sky instead.
 - FSR is an upscaler only (`r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0` in `Config/DefaultEngine.ini`),
   so it does not clash with DLSS frame generation.

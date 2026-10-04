@@ -373,6 +373,24 @@ tráva a mech na horních plochách se ztratily. Je to největší plocha na obr
 - Hotovo když: snímky před a po (1p-01, 1p-03, 1p-43, team-21) ukazují čelo jasně jako fotorealistickou skálu s trávou
   a mechem nahoře, archy `levels.ps1` zkontrolované, testy zelené, dokumentace a zápis do Stavu.
 
+## Krok 18d - Fotorealistické postavy (MetaHumans)
+
+Jan: postavy z Blenderu jsou špatné, chce fotorealistické lidi. Stáhl Epicův vzorek MetaHumans
+(`..\Unreal Projects\MetaHumans`, UE 5.7, jen ke čtení) a do UE 5.8 nainstaloval „MetaHuman Creator Core Data“.
+
+- Pilot mladý pravěký muž, cestující podle vzhledu originálu (`cargo_look` 1-3): obyčejný muž, žena, stařec; vzhled 4
+  zůstává kámen s očima. Pravěký vzhled: rozcuchané vlasy, vousy u mužů, kožešina nebo kůže; předlohy a úpravy
+  (věk, vlasy, vousy) skriptem v MetaHuman Creatoru, kde to bez okna jde, jinak hotové postavy vzorku.
+- Přenos jako v 18b: jen vybrané postavy do `Content/External/MetaHumans` (gitignore), pluginy MetaHumanů zapnuté
+  v projektu (závislosti mimo `/Game` jen z pluginů); Substrate a bez virtuálních textur (18b).
+- Akce `FUghFigureActions` / `EUghCaveAction` (stání, chůze, mávání, sezení v kabině, šlapání, visení, šlapání vody,
+  plavání, pád): klipy, kde jsou (vzorek, Creator, Manny šablony), jinak pózy; velikost podle spritů, hloubka v desce
+  hry (-20 .. 20, vrtulník ±45), nízké LOD a bez vláken vlasů (`levels.ps1` medián aspoň 25 fps na Radeonu 890M).
+  Bez externího obsahu jeskynní muž z kroků 16-17 (repo se přeloží, testy projdou).
+- Hotovo když: detaily (`shot.ps1 -Cargo 1/2/3 -CloseUp`, `-Frame`) ukazují fotorealistického pilota a cestující
+  při chůzi, čekání a v kabině, archy `levels.ps1` zkontrolované, `Ugh.Figures.*` a všechny testy zelené, dokumentace
+  a zápis do Stavu.
+
 ## Krok 19 - Voda, déšť, obloha, světlo
 
 - Voda jako moderní vodní plocha (Single Layer Water: vlny, lom, pěna u skály) se stoupající hladinou podle logiky,
@@ -867,3 +885,27 @@ tráva a mech na horních plochách se ztratily. Je to největší plocha na obr
   testů v UE zelené (`Ugh.Rock` beze změny). Volitelné vsazení naskenovaných balvanů za hrany čela nezkoušeno (v 18b
   vypadaly jako nalepené). Čeká na Jana: posoudit čelo v okně (`play.ps1`), hlavně odstín (okrová / šedohnědá).
   Další: **krok 19**.
+- 2026-10-04: krok 18d hotový - fotorealistické postavy z MetaHumanů (`docs/visual-concept.md`). Vzorek MetaHumans
+  (UE 5.7) má jen dvě hotové postavy (Ada, Taro) bez stařce, proto zdrojem je MetaHuman Creator v editoru (plugin
+  `MetaHumanCharacter` + `PythonScriptPlugin` v `UghGame.uproject`, volitelný obsah „Core Data“: 29 předloh): skript
+  `Python/metahumans.py` (`metahumans.ps1`, editor bez okna - commandlet neumí zapéct textury grafem) zkopíruje
+  předlohu, nasadí vlasy a vousy, vyžádá z Epicova cloudu obličejový rig a textury kůže (přihlášení Jana fungovalo bez
+  dialogu) a sestaví `Optimized`/`Low` do `Content/External/MetaHumans/<jméno>` (gitignore, ~1,5 GB), barvy vlasů
+  parametry materiálů. Pilot `Mateo` (dlouhé rozcuchané vlasy, strniště), vzhled 1 muž `Bruce` (plnovous), 2 žena
+  `Celeste` (dlouhé zrzavé vlasy), 3 stařec `Walter` (bílé vlasy a vousy); vzhled 4 dál kámen. Oděv Creatoru (tričko,
+  šortky) v leopardí kožešině jeskynního muže (slot `fur` z `caveman.glb`); holá hruď nejde (tělo je pod oděvem
+  vyříznuté). Akce (`Python/metahuman_actions.py`, `metahuman_poses.py`, `ugh_math.py`) v proporcích každé postavy:
+  `idle` a jeden krok chůze z klipů Creatoru (na místě), ostatní pózy dvoukostrovým IK (mávání, sezení, šlapání na
+  pedály kliky a ruce na řídítkách podle `copter_layout.py`, visení, šlapání vody, plavání, pád), počátky jako
+  u jeskynního muže. UE: `FUghMetaHuman` (komponenty blueprintu bez actora: tělo hraje akci, obličej a oděv leader
+  pose, groomy na obličeji v detailu 5 = helma, bez fyziky - karty kvalita Low nevyrábí, vlákna drahá), `FUghCaveman`
+  je teď „lidé podle vzhledu“ (holder vysoký jako jeskynní muž 115 cm, MetaHumani, jinak Blender jeskynní muž -
+  ověřeno s odsunutou složkou), osoba se při změně vzhledu vyrobí znovu. `shot.ps1 -CloseUp -Frame` = výřez od rohu
+  vrtulníku. Nový test `Ugh.Figures.People` (na zemi a v desce hry, na sedadle, nohy na pedálech, ruce na řídítkách
+  a laně, hlava u hladiny). Snímky: kabina se všemi třemi cestujícími (`1p-01-cargoN-closeup`, staré v
+  `Saved/Shots/Before18d`), chůze, stání a vycházení ze dveří (1p-03), pózy vody a mávání ověřené dočasným přepnutím
+  akce cestujícího v kabině. `levels.ps1` (27,7 min) a archy bez vad, medián 40 fps (18c: 41), nejpomalejší 24. CTest
+  logiky, `6_verification` (163) a 174 testů v UE zelené. Čeká na Jana: posoudit postavy v okně (`play.ps1`) -
+  leopardí tunika vs. obyčejná kůže (barvy `HIDE`/`FUR` v `metahumans.py`), postavy jsou v kabině menší než kreslený
+  jeskynní muž (výška 115 cm), vousy jen jako helma (karty by chtěly sestavení `Medium`); vzorek
+  `..\Unreal Projects\MetaHumans` se nepoužil. Další: **krok 19**.

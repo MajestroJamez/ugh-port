@@ -88,13 +88,9 @@ bool AUghCopters::LoadModels()
 		Parts.Crank = AddPart(this, CrankMesh, Parts.Body, CrankAxle);
 		Parts.Sling = AddPart(this, SlingMesh, Parts.Body, FVector::ZeroVector);
 		Parts.Stone = AddPart(this, StoneMesh, Parts.Sling, Hanging);
-		Parts.Pilot = Caveman.Add(this);
+		Parts.Pilot = Caveman.Add(this, FUghCaveman::PilotLook);
 		Parts.Pilot->AttachToComponent(Parts.Body, FAttachmentTransformRules::KeepRelativeTransform);
 		Parts.Pilot->SetRelativeLocation(PilotSeat);
-		FUghCaveman::Dress(Parts.Pilot, FUghCaveman::Pilot);
-		Parts.Rider = Caveman.Add(this);
-		Parts.Rider->AttachToComponent(Parts.Body, FAttachmentTransformRules::KeepRelativeTransform);
-		Parts.Rider->SetRelativeLocation(PassengerSeat);
 	}
 	return true;
 }
@@ -133,30 +129,39 @@ void AUghCopters::ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From
 	Caveman.Hold(Parts.Pilot, EUghCaveAction::Pedal, Parts.Spin.PedalTurn());
 	for (USceneComponent* Part : TArray<USceneComponent*>{ Parts.Body, Parts.Rotor, Parts.Crank, Parts.Pilot })
 	{
-		Part->SetVisibility(true);
+		Part->SetVisibility(true, Part == Parts.Pilot);
 	}
 	const double Velocity = UghBetween::Moved(From.x, From.y, To.x, To.y)
 		? double(To.x - From.x) / UghShapes::Subpixels : 0;
 	ShowCargo(Parts, To, Seconds, Velocity);
 }
 
-/** The passenger: sitting behind the pilot as a caveman of his look, or the stone passenger hanging in the sling. */
+/** The passenger: sitting behind the pilot as a person of his look, or the stone passenger hanging in the sling. */
 void AUghCopters::ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copter, double Seconds, double Velocity)
 {
 	const bool bHangs = Copter.cargo_look != 0 && Copter.destination < 0;
-	const FUghCaveLook* Look = bHangs ? nullptr : FUghCaveman::Passenger(Copter.cargo_look);
+	const bool bSits = !bHangs && FUghCaveman::IsPassenger(Copter.cargo_look);
 	Parts.Sling->SetVisibility(bHangs);
 	Parts.Stone->SetVisibility(bHangs);
-	Parts.Rider->SetVisibility(Look != nullptr);
 	const double Wanted = bHangs ? FMath::Clamp(Velocity * SwayPerPixel, -MaxSway, MaxSway) : 0;
 	Parts.Sway = FMath::Lerp(Wanted, Parts.Sway, FMath::Exp(-Seconds / SwaySeconds));
 	Parts.Sling->SetRelativeRotation(FQuat(FVector::YAxisVector, Parts.Sway));
-	if (Look && Parts.RiderLook != Copter.cargo_look)
+	if (bSits && Parts.RiderLook != Copter.cargo_look)
 	{
-		FUghCaveman::Dress(Parts.Rider, *Look);
+		if (Parts.Rider)
+		{
+			FUghCaveman::Remove(Parts.Rider);
+		}
+		Parts.Rider = Caveman.Add(this, Copter.cargo_look);
+		Parts.Rider->AttachToComponent(Parts.Body, FAttachmentTransformRules::KeepRelativeTransform);
+		Parts.Rider->SetRelativeLocation(UghCopterModel::PassengerSeat);
 		Parts.RiderLook = Copter.cargo_look;
 	}
-	if (Look)
+	if (Parts.Rider)
+	{
+		Parts.Rider->SetVisibility(bSits, true);
+	}
+	if (bSits)
 	{
 		Caveman.Play(Parts.Rider, EUghCaveAction::Sit);
 	}
@@ -168,7 +173,10 @@ void AUghCopters::HideModel(FUghCopterParts& Parts)
 		Parts.Rider };
 	for (USceneComponent* Part : All)
 	{
-		Part->SetVisibility(false);
+		if (Part)
+		{
+			Part->SetVisibility(false, true);
+		}
 	}
 }
 

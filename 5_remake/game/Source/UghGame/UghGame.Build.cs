@@ -14,6 +14,7 @@ public class UghGame : ModuleRules
 			"Core", "CoreUObject", "Engine", "InputCore", "Json", "ImageWrapper", "UghLogic",
 			"MeshDescription", "StaticMeshDescription",   // the rock as a static mesh built at run time (FUghRockMesh)
 			"AssetRegistry",   // the imported assets (UghAssets)
+			"HairStrandsCore",   // the MetaHumans' grooms (UghMetaHumans)
 			"DLSSBlueprint", "StreamlineDLSSGBlueprint"   // the upscalers (plugins DLSS, Streamline; FSR needs no code)
 		});
 	}

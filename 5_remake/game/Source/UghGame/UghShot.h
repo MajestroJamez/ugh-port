@@ -22,7 +22,8 @@ class FUghPasswords;
  * For a look at the copters (the autopilot never picks a passenger up): -UghShotCargo=<look> shows them with a
  * passenger of the logic's cargo look sitting in the cabin, with -UghShotHanging hanging below instead (only the
  * picture: the logic is not changed); -UghShotCloseUp frames the copters instead of the screen, -UghShotFrame=<left>,
- * <top>,<width>,<height> that part of the screen (pixels: a look at the figures). Such a shot's name ends in
+ * <top>,<width>,<height> that part of the screen (pixels: a look at the figures; with -UghShotCloseUp from the first
+ * copter's corner, wherever it hovers: a look into its cabin). Such a shot's name ends in
  * -cargo<look>, -hanging<look>, -closeup, -frame<left>_<top> (in this order).
  */
 class FUghShot
@@ -41,7 +42,10 @@ public:
 
 	/** The view as the shot shows it: the copters with the passenger of -UghShotCargo. */
 	void Dress(ugh_logic_view& View) const;
-	/** The pixels to frame (in the play): -UghShotFrame its part of the screen, -UghShotCloseUp the copters. */
+	/**
+	 * The pixels to frame (in the play): -UghShotFrame its part of the screen, -UghShotCloseUp the copters, both that
+	 * part of the first copter.
+	 */
 	TOptional<FBox2D> CloseUp(const ugh_logic_view& View) const;
 
 private:

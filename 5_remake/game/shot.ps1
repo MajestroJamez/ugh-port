@@ -6,7 +6,8 @@
 # play, separated by commas (e.g. "r.Shadow.Virtual.Enable 0"); -Cargo <look>: the copters shown with a passenger of
 # the logic's cargo look in the cabin (1 .. 3), -Hanging below instead (4, the stone), -CloseUp: framing the copters
 # (the name of the shot ends in -cargo<look> / -hanging<look>, -closeup), -Frame <left>,<top>,<width>,<height>: framing
-# that part of the screen in pixels (a look at the figures; the name ends in -frame<left>_<top>). All levels at once:
+# that part of the screen in pixels (a look at the figures; with -CloseUp from the first copter's corner: a look into
+# its cabin; the name ends in -frame<left>_<top>). All levels at once:
 # levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$CloseUp, [string]$Frame = '', [int]$TimeoutSeconds = 300)

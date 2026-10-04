@@ -236,3 +236,34 @@ na ně tenké) - čelo skály zůstává sítí z pole s naskenovaným materiál
 - **Světlo a post**: expozice EV100 1,5 (o půl clony světlejší), jemný bloom 0,35, teplé vyvážení bílé 6100 K,
   sytost a kontrast +8 % / +6 %, vinětace 0,3; Lumen a mlha jako dřív.
 - Bez kopie vzorku hra ukáže CC0 assety kroku 14-18 (a jednou to zaloguje).
+
+## Fotorealistické postavy z MetaHumanů (krok 18d)
+
+Jan: postavy z Blenderu jsou špatné, chce fotorealistické lidi. Zdroj: **MetaHuman Creator** v editoru (plugin
+`MetaHumanCharacter` UE 5.8 s volitelným obsahem „MetaHuman Creator Core Data“: 29 předloh postav, vlasy, vousy,
+oblečení). Vzorek `..\Unreal Projects\MetaHumans` (UE 5.7) má jen dva hotové MetaHumany (Ada, Taro) bez stařce, proto
+se nepoužil; předlohy Creatoru jdou upravit skriptem (Python API `MetaHumanCharacterEditorSubsystem`).
+
+- **Kdo** (`Python/metahumans.py`, `UghMetaHumans.h`): pilot = mladý muž `Mateo` s dlouhými rozcuchanými vlasy
+  (`Hair_L_MessyClumps`) a strništěm; cestující podle `cargo_look`: 1 muž `Bruce` (vlasy `Hair_M_Layered`, dlouhý
+  rozcuchaný plnovous a knír), 2 žena `Celeste` (dlouhé rozcuchané zrzavé vlasy), 3 stařec `Walter` (dlouhé bílé
+  vlasy, plný bílý plnovous); vzhled 4 zůstává kámen s očima. Barva vlasů jsou parametry materiálů vlasů
+  (`hairMelanin`, `hairRedness`, `WhiteAmount`).
+- **Oblečení**: jediný oděv Creatoru (tričko a šortky) dostane materiál leopardí kožešiny jeskynního muže z Blenderu
+  (slot `fur` z `caveman.glb`; bez něj oděv v barvách kůže a kožešiny). Holé tělo pod tričkem MetaHuman nemá (tělo je
+  pod oděvem vyříznuté), proto všichni nosí tuniku.
+- **Sestavení**: obličejový rig a textury kůže stáhne Creator z Epicova cloudu (editor přihlášený k Epic účtu), pak
+  sestavení `Optimized` v kvalitě `Low` (zapečené textury, vlasy jako vlákna pro detail 0-1 a „helmy“ - síťové čepice
+  s texturou vlasů - pro 5-7; karty kvalita Low nevyrábí) do `Content/External/MetaHumans/<jméno>`, sdílené assety
+  v `.../Common` (gitignore, asi 1,5 GB). Bez spuštěného editoru (commandlet) sestavení selže na grafu textur, proto
+  `metahumans.ps1` pouští editor bez okna (`-RenderOffscreen`).
+- **Ve hře** (`FUghMetaHuman`): komponenty blueprintu `BP_<jméno>` bez actora - tělo hraje akci, obličej a oděv jdou
+  za jeho pózou (leader pose), vlasy, vousy, obočí jsou groomy na obličeji v detailu 5 (helma; vlákna jsou na malé
+  postavy drahá) bez fyziky. Postava je zmenšená na výšku jeskynního muže (115 cm), takže místa a měřítka kroků 16-17
+  (`UghFigurePlace`, `UghCopterModel`) platí beze změny.
+- **Akce** (`Python/metahuman_actions.py`, `metahuman_poses.py`, `ugh_math.py`): pro každou postavu v jejích
+  proporcích; `idle` a `walk` jsou klipy Creatoru (stání, chůze vpřed - na místě), ostatní pózy počítané skriptem
+  (dvoukostrové IK, natočení páteře a hlavy, prsty v pěst): `wave` volání oběma rukama nad hlavou, `sit` ruce na
+  kolenou, `pedal` nohy na pedálech kliky a ruce na řídítkách (čísla `Blender/copter_layout.py`), `hang`, `tread`,
+  `swim`, `fall`. Počátky akcí jako u jeskynního muže. Test `Ugh.Figures.People`.
+- Bez MetaHumanů (repo bez externího obsahu) zůstává jeskynní muž z Blenderu, bez něj plastelína.
