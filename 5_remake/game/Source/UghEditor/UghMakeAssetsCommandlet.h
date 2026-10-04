@@ -8,8 +8,9 @@
 class UMaterial;
 
 /**
- * Writes the materials of UghMaterials.h to Content/Generated (assets as code: nothing binary in git). build.ps1 runs
- * it after every build: UnrealEditor-Cmd UghGame.uproject -run=UghMakeAssets. Each material's nodes are made anew.
+ * Writes the materials of UghMaterials.h to Content/Generated (assets as code: nothing binary in git; the HLSL of the
+ * custom nodes is in Shaders/). build.ps1 runs it after every build: UnrealEditor-Cmd UghGame.uproject
+ * -run=UghMakeAssets. Each material's nodes are made anew.
  */
 UCLASS()
 class UUghMakeAssetsCommandlet : public UCommandlet
@@ -21,10 +22,13 @@ public:
 	virtual int32 Main(const FString& Params) override;
 
 private:
-	static void MakeClay(UMaterial* Material);
-	static void MakeRock(UMaterial* Material);
-	static void MakeWater(UMaterial* Material);
-	static void MakeFire(UMaterial* Material);
-	static void MakeSprite(UMaterial* Material);
-	static void MakePbr(UMaterial* Material);
+	/** Each makes its material's nodes; false when something it needs is missing (its shader code). */
+	static bool MakeClay(UMaterial* Material);
+	static bool MakeRock(UMaterial* Material);
+	static bool MakeCliff(UMaterial* Material);
+	static bool MakeWater(UMaterial* Material);
+	static bool MakeFire(UMaterial* Material);
+	static bool MakeSprite(UMaterial* Material);
+	static bool MakePbr(UMaterial* Material);
+	static bool MakeSky(UMaterial* Material);
 };

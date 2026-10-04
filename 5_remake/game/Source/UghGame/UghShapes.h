@@ -8,6 +8,8 @@ class AActor;
 class UInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
+class UStaticMeshComponent;
+class UTexture2D;
 
 /**
  * Where the screen of the original lies in the world, and the shapes drawn on it. The plane of the play is X (right)
@@ -49,4 +51,10 @@ namespace UghShapes
 
 	/** Shows exactly `Boxes` (moves the instances there, adds or removes when the count differs). */
 	void SetShapes(UInstancedStaticMeshComponent* Component, const TArray<FTransform>& Boxes);
+
+	/** A new card on `Owner` that shows a sprite of the original (material Sprite), no collision, no shadow. */
+	UStaticMeshComponent* AddCard(AActor* Owner);
+	/** Shows `Card` with `Sprite`: a thin box from pixel Left, Top, Width x Height px, at `Depth`. */
+	void ShowCard(UStaticMeshComponent* Card, UTexture2D* Sprite, double Left, double Top, double Width, double Height,
+		double Depth);
 }

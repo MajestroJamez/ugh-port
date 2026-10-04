@@ -31,7 +31,10 @@ private:
 	static bool ImportTextureSet(const FUghManifestAsset& Asset);
 	/** The objects imported from `File` to the content folder `Folder` (none when it failed). */
 	static TArray<UObject*> ImportFile(const FString& File, const FString& Folder);
-	/** Saves the changed packages of the content folder `Folder`; false when one could not be saved. */
+	/**
+	 * Saves the changed packages of the content folder `Folder` (its materials allowed on Nanite meshes first); false when
+	 * one could not be saved.
+	 */
 	static bool SaveFolder(const FString& Folder);
 	/** What the import of the asset depends on: its files (names, sizes, times) and the version of this import. */
 	static FString Fingerprint(const FUghManifestAsset& Asset);

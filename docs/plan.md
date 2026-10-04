@@ -681,3 +681,31 @@ změny. Pravidla navíc:
   instance `MI_<id>` s mapou výšky (`height`, TC_Grayscale) pro displacement, oblohy HDRI jako 2D HDR textury
   (long-lat), `Tiling` je opakování na UV jednotku (rozměry textur Poly Haven 1,8-3 m). Balení s `Content/Imported`
   zatím nevyzkoušené (`DirectoriesToAlwaysCook` přidáno). Další: **krok 15**.
+- 2026-10-04: krok 15 hotový - útes a jeskyně ve 3D (`docs/visual-concept.md`). Skála je pole hustoty ve 3D
+  (`FUghRockField`: mřížka středů pixelů 48 px do stran a 24 px nahoru a dolů za obrazovku, 43 vrstev od čela -8 px po
+  zadní stěnu 82 px), jeho povrch surface nets (`UghSurfaceNets`) s normálami z pole, 300-400 tisíc trojúhelníků za
+  0,2 s, za běhu postavený jako statická síť (`FUghRockMesh::ToStaticMesh`: stíny VSM a ray tracing se cachují; s
+  `ProceduralMeshComponent` se síť kreslila do stínů každý snímek, polovina času snímku). V desce hry je pole vzdálenost
+  od hranice masky (`FUghRockOutline`, EDT Felzenszwalb), hrana leží přesně na hranicích pixelů, síť uřízne jen rohy
+  schodů. Test `Ugh.Rock`: síť každého z 81 různých levelů řezaná v rovině hry a pixel před ní a za ní - střed každého
+  pixelu na své straně, žádný bod (4 x 4 na pixel) dál než 0,5 px od pixelu svého druhu (naměřeno nejvýš 0,12 px);
+  posun hrany o 0,7 px test shodí. Před deskou čelo se zaoblenými hranami, za ní převisy (stěny a stropy lezou do
+  jeskyně), drsnost rostoucí s hloubkou, podlahy ve výšce masky, zadní stěna 30-78 px (hlubší za tmavými dírami
+  kresby), krápníky a spadané kameny (`UghRockFeatures`), za okraji obrazovky se útes zavírá (s šumem, na okraji
+  mřížky jistě) a neviditelný „plášť“ kolem mřížky vrhá stín útesu, který pokračuje (bez něj svítilo slunce přes okraj
+  mřížky pruhy na zadní stěnu). Dřevěná krabice zmizela, voda pokračuje přes celou šířku. Materiál `M_UghCliff` (HLSL
+  custom node v `Source/UghEditor/Shaders/UghCliff.hlsl`, čte ho `UghMakeAssets`): triplanár pěti sad textur z kroku
+  14 (`cliff_side`, `rock_face_03`, `grass004`, `moss002`, `red_laterite_soil_stones`) podle směru plochy a
+  změkčené kresby, výškové mapy rozhodují přechody, barvy vrcholů nesou AO a hloubku; `M_UghPbr` má výšku zapojenou
+  jako parallax (import ji dává do `MI_<id>`). Cedule s čísly plošin (dlaždice 85-90) jsou kartičky se spritem za
+  deskou, bubliny cestujících kartičky před čelem skály. Světlo: slunce 45° zepředu shora 8 lux, obloha HDRI na kopuli
+  (`M_UghSky`, sky light ji snímá), pevná expozice EV100 2, bouřka tmavší zamračená obloha. Palmy nebyly šedé světlem:
+  materiály modelů (instance glTF materiálů enginu) nepovolují Nanite a hra kreslila výchozí materiál - import je
+  přepojí na kopie v `Content/Imported/_Masters` (`UghNaniteMaterials`). Snímky logují fps (Radeon 890M, 1280 x 720,
+  FSR 67 %): jednotlivě 50-57 (krok 14 asi 75), v `levels.ps1` se notebook zahřeje, medián 33 (krok 14: 45). Bez
+  assetů (přejmenované `Content/Imported`) skála v barvách kresby a obloha enginu, shot prošel. `levels.ps1` (28,5 min)
+  a archy bez vad, prohlédnuté i snímky (bouřka, stoupající voda 1p-43 po 25 s, tým). CTest logiky, `6_verification`
+  (163) a 167 testů v UE zelené. Pro krok 16: skála před deskou hry sahá do -60 jednotek (`FUghRockMesh::FrontDepth`),
+  bubliny a karty stojí před ní (-63), vrtulník v desce (-20 .. 20) skálu neprotne jen tam, kde je vzduch masky - část
+  modelu před deskou (kokpit, pilot) by nad skálou mohla zajet do čela; voda začíná těsně před čelem (-61). Další:
+  **krok 16**.

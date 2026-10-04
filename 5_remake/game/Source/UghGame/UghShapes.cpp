@@ -1,7 +1,9 @@
 #include "UghShapes.h"
 
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
 #include "GameFramework/Actor.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -67,4 +69,28 @@ void UghShapes::SetShapes(UInstancedStaticMeshComponent* Component, const TArray
 	}
 	Component->ClearInstances();
 	Component->AddInstances(Boxes, false, true, false);
+}
+
+UStaticMeshComponent* UghShapes::AddCard(AActor* Owner)
+{
+	UStaticMeshComponent* Card = NewObject<UStaticMeshComponent>(Owner);
+	Card->SetMobility(EComponentMobility::Movable);
+	Card->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
+	Card->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Card->SetCastShadow(false);
+	Card->SetMaterial(0, Material(Card, UghMaterials::Sprite));
+	Card->SetupAttachment(Owner->GetRootComponent());
+	Card->RegisterComponent();
+	Owner->AddInstanceComponent(Card);
+	return Card;
+}
+
+void UghShapes::ShowCard(UStaticMeshComponent* Card, UTexture2D* Sprite, double Left, double Top, double Width,
+	double Height, double Depth)
+{
+	Cast<UMaterialInstanceDynamic>(Card->GetMaterial(0))->SetTextureParameterValue(UghMaterials::ArtParameter, Sprite);
+	// a thin box as big as the sprite: its front face shows the sprite
+	constexpr double Thickness = 1;
+	Card->SetWorldTransform(Box(Left, Top, Width, Height, Depth, Thickness));
+	Card->SetVisibility(true);
 }

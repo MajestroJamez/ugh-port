@@ -17,13 +17,14 @@
 #include "UghAssetManifest.h"
 #include "UghAssets.h"
 #include "UghMaterials.h"
+#include "UghNaniteMaterials.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUghImportAssets, Log, All);
 
 namespace
 {
 	/** Raise it when the import changes: every asset is imported again. */
-	constexpr int32 ImportVersion = 1;
+	constexpr int32 ImportVersion = 4;
 
 	/** A map of a texture set: its texture's settings and the parameters of UghMaterials::Pbr it fills. */
 	struct FMapRole
@@ -40,7 +41,7 @@ namespace
 		{ TEXT("arm"), TC_Masks, false, { UghMaterials::OcclusionParameter, UghMaterials::RoughnessParameter } },
 		{ TEXT("roughness"), TC_Masks, false, { UghMaterials::RoughnessParameter } },
 		{ TEXT("ao"), TC_Masks, false, { UghMaterials::OcclusionParameter } },
-		{ TEXT("height"), TC_Grayscale, false, {} } };   // for displacement later (uncompressed grey)
+		{ TEXT("height"), TC_Grayscale, false, { UghMaterials::HeightParameter } } };   // uncompressed grey
 
 	/** A new material instance `Name` in the content folder `Folder` (the import deleted the one before). */
 	UMaterialInstanceConstant* MaterialInstance(const FString& Folder, const FString& Name)
@@ -192,6 +193,7 @@ TArray<UObject*> UUghImportAssetsCommandlet::ImportFile(const FString& File, con
 
 bool UUghImportAssetsCommandlet::SaveFolder(const FString& Folder)
 {
+	UghNaniteMaterials::Allow(Folder);
 	FAssetCompilingManager::Get().FinishAllCompilation();   // the Nanite meshes and textures are built before saving
 	bool bAllSaved = true;
 	for (TObjectIterator<UPackage> It; It; ++It)

@@ -15,8 +15,9 @@ class FUghPasswords;
  * commas, the mode 1p or team, the levels from 1 in the order of the mode (default 1p:1). For every level it starts a
  * game from the menu with the keys a player would press (the mode, the level's password, Enter), goes on from the
  * caption, keeps the copters hovering where they are when the level is fully shown, saves <folder>/<mode>-<NN>.png
- * `At` seconds later and gives the game up (Esc), back to the menu. -UghShotMenu first saves menu.png. It quits after
- * the last level; a level that takes longer than LevelTimeLimit is left out (and logged).
+ * `At` seconds later (and logs the frame rate meanwhile) and gives the game up (Esc), back to the menu. -UghShotMenu
+ * first saves menu.png. It quits after the last level; a level that takes longer than LevelTimeLimit is left out (and
+ * logged).
  */
 class FUghShot
 {
@@ -62,6 +63,7 @@ private:
 	bool bShotTaken = false;   // of the target: give the game up
 	int32 Phase = -1;          // of the last frame
 	double PhaseTime = 0;      // how long it has been in it (in the play: since fully shown)
+	int32 Frames = 0;          // drawn in that time: the frame rate of the level
 	int32 HoverY[2] = { -1, -1 };   // 1/32 px
 	bool bPedalling[2] = { false, false };
 };

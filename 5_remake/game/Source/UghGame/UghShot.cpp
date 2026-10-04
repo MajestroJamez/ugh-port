@@ -131,6 +131,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 			DeltaSeconds > 0 ? 1 / DeltaSeconds : 0.f);
 		Phase = View.phase;
 		PhaseTime = 0;
+		Frames = 0;
 		ReleasePedals(Mode);
 		HoverY[0] = HoverY[1] = -1;
 	}
@@ -150,12 +151,13 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	}
 	Hover(Mode, View);
 	PhaseTime += DeltaSeconds;
+	++Frames;
 	if (PhaseTime <= At)
 	{
 		return EAction::None;
 	}
-	UE_LOG(LogTemp, Display, TEXT("UGH shot: level_id %d, copter %d,%d"), View.level_id, View.copters[0].x,
-		View.copters[0].y);
+	UE_LOG(LogTemp, Display, TEXT("UGH shot: level_id %d, copter %d,%d, %.0f fps"), View.level_id, View.copters[0].x,
+		View.copters[0].y, Frames / PhaseTime);
 	bShotTaken = true;
 	return TakeShot(TargetName(Target.Players, Target.Level));
 }

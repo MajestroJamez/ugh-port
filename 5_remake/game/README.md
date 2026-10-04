@@ -1,8 +1,10 @@
 # UGH! in Unreal Engine 5.8 - the prehistoric diorama
 
-The game logic of `../logic` inside Unreal Engine, shown as a diorama (`docs/visual-concept.md`): the level is a rock
-cut exactly in the plane of the play (its collision mask), coloured by the original's drawing of the level, with the
-cave behind it, water, fog, a campfire, a palm and rocks on its ledges and a wooden box around; the copters,
+The game logic of `../logic` inside Unreal Engine, shown as a diorama (`docs/visual-concept.md`): the level is a
+cliff cut exactly in the plane of the play (its edge there is the collision mask), a smooth rock with rounded edges,
+its cave reaching back to a far back wall, stalactites and fallen rocks, in PBR rock, soil, grass and moss steered by
+the original's drawing, the cliff and the water going on beyond the screen under an HDR sky, a campfire, a palm and
+rocks on its ledges, the boards with the pads' numbers as the original draws them; the copters,
 passengers, enemies and bonus items are plasticine shapes the size of their sprites, a passenger's speech bubble a card
 with its sprite. The logic runs at the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn
 between its last two steps. The original's sounds and music play on the logic's events (`assets/sound`). No map:
@@ -21,8 +23,8 @@ silent and logs it):
 | `setup.ps1` | copies the vendor plugins (DLSS + Streamline, FSR with its offscreen patch, about 5 GB, not in git) from the toolchain trial into `Plugins\`; `-From <folder>` elsewhere. Once |
 | `fetch-assets.ps1` | downloads the 3D assets of `Assets.json` to `assets\3d` (see 3D assets below): only what is missing, each file checked by its size and hash, the whole under the budget of 100 GB, archives extracted, Blender scripts run; a table of the assets at the end. `-Only <ids>` some, `-Verify` hashes the files already there too |
 | `build.ps1` | builds the editor (modules UghLogic, UghGame, UghEditor), makes the materials (commandlet `UghMakeAssets` -> `Content\Generated`) and imports the downloaded 3D assets (commandlet `UghImportAssets` -> `Content\Imported`); `-NoAssets` only builds, `-ForceImport` imports every asset again |
-| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu`, the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays) and the decorations `Ugh.Scenery` (every level has a palm, all on dry ledges with room, off the pads but such a palm, behind the slab of the play); `-Filter` other tests |
-| `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting |
+| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu`, the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays) and the decorations `Ugh.Scenery` (every level has a palm, all on dry ledges with room, off the pads but such a palm, behind the slab of the play) and the rock `Ugh.Rock` (in every level the rock's mesh cut in the slab of the play is the collision mask: every pixel's centre on its side, every other point at most half a pixel off - the cut leaves the corners of the pixel steps); `-Filter` other tests |
+| `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover (the log says the frame rate meanwhile) and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting |
 | `levels.ps1` | the same for every level of both modes in one run, then the contact sheets `Saved\Shots\Levels\levels-1p.png` and `levels-team.png` (and the menu's `menu.png`): does every level look right? `-Levels team:1-81` fewer |
 | `play.ps1` | the game in a window |
 | `package.ps1` | the game for Windows in `Packaged\Windows` with the data of `assets\` next to it, and a zip without `.pdb` (for your own use: the data is not ours to share). UAT needs `::1` in `NO_PROXY` (the script adds it) |
@@ -48,7 +50,7 @@ menu too).
 |---|---|
 | `Source/UghLogic/` | the logic as a module: `UghLogic.Build.cs` compiles the sources of `../logic/src` where they are (one generated file per source in `Intermediate/UghLogicSources/`, because the logic has files of the same name in different folders and UBT wants unique names). Its C API `ugh_logic.h` is exported (`UGH_LOGIC_API`). In the editor also the replay tests (`Private/Tests/ReplayTests.cpp` with the test pilot and `6_verification`'s replay check) |
 | `Source/UghGame/` | the frontend; it uses only the C API |
-| `Source/UghEditor/` | the editor's part: the commandlet `UghMakeAssets` that writes the materials of `UghMaterials.h` (clay, rock, water, fire, sprite card, the PBR master of the texture sets) and the commandlet `UghImportAssets` that imports the 3D assets (`UghAssetManifest` reads `Assets.json`) |
+| `Source/UghEditor/` | the editor's part: the commandlet `UghMakeAssets` that writes the materials of `UghMaterials.h` (clay, the drawing's rock, the cliff, water, fire, sprite card, the PBR master of the texture sets, the sky; `UghMaterialNodes` makes their nodes, the HLSL of the custom nodes is in `Shaders/`) and the commandlet `UghImportAssets` that imports the 3D assets (`UghAssetManifest` reads `Assets.json`; `UghNaniteMaterials` lets the models' materials draw Nanite meshes) |
 
 The frontend:
 
@@ -64,21 +66,25 @@ The frontend:
 | `AUghSpeaker` | the mixer's stream through the engine (a procedural sound wave fed a little ahead every frame); silent for the autopilot, with `-nosound` and without the files |
 | `FUghKeyboard` | a key event of the engine to the logic (Adapter): pilots' keys, Esc, P, any other key |
 | `AUghPlayerController` | passes every key press and release to the game mode (the logic wants raw key events, not input actions) |
-| `AUghStage` | the sun, the sky, the fog, the exposure and the camera (fixed, a narrow lens, a little from above); a windy level is a storm (a dim cool sun, a dense grey fog) |
-| `FUghRockMesh` | the rock of a level from its collision mask: the cut face, the floors, ceilings and walls one pixel a step, the bumpy back wall |
+| `AUghStage` | the sun, the sky (an HDR picture on a dome, captured by the sky light; without it the engine's atmosphere), the fog, a fixed exposure and the camera (fixed, a narrow lens, a little from above); a windy level is a storm (a dim cool sun, a dark cloudy sky, a dense grey fog) |
+| `FUghRockMesh` | the rock of a level as a mesh: the surface of `FUghRockField` (`UghSurfaceNets`) in the world, its normals from the field, its UVs the screen (the drawing), its vertex colours how open and how deep the surface is. Test `Ugh.Rock` (`UghRockTests.cpp`) |
+| `FUghRockField` | the rock of a level as a field on a grid (pixels, beyond the screen too; layers in depth): in the slab of the play the collision mask exactly, in front of it the rock's face with rounded edges, behind it the cave's walls and ceilings reaching further in the deeper they are, rough, the back wall far behind (deeper behind the drawing's dark holes), beyond the screen the cliff closing in |
+| `FUghRockOutline` | the collision mask as signed distances on the grid of the pixels' centres (the edge exactly on the pixels' borders), and blurred, with the way they grow |
+| `UghRockFeatures` | where a level's cave has stalactites (under flat ceilings with room below) and fallen rocks (at the feet of walls, not on pads), behind the slab of the play |
+| `UghSurfaceNets` | the surface of the field as quads (surface nets): a point in every cell it passes, a quad across every edge of the grid it crosses; every point of the grid keeps its side |
 | `UghLedges` | where things fit on the rock: dry ledges with room above, off the pads (or not), the campfire's place (the middle of the longest one) |
 | `UghDecorations` | where a level's decorations stand: a palm (the tallest that fit, room for its whole crown) and a couple of rocks on ledges, away from the pads (where no palm fits elsewhere, a tall one on a pad's ledge: its crown above the pad's sign) and the campfire, behind the slab of the play; the same for the same level (its id seeds the choice). Test `Ugh.Scenery` (`UghSceneryTests.cpp`) |
 | `AUghScenery` | shows the decorations: the imported models (`UghAssets`) scaled into their boxes, or clay shapes when they are not imported (a trunk with a crown, a stone) |
-| `UghAssets` | the imported 3D assets the frontend asks for, by the id of `Assets.json` (`/Game/Imported/<id>`): their static meshes, none (and a log line) when missing |
-| `FUghLevelArt` | the original's drawing of a level: its tiles (`assets/levels.json`) composed from the sprites into a texture |
-| `AUghBackground` | the rock mesh with the level's drawing, the water, the wooden box |
+| `UghAssets` | the imported 3D assets the frontend asks for, by the id of `Assets.json` (`/Game/Imported/<id>`): their static meshes, a texture set's material instance, a sky's texture; none (and a log line) when missing |
+| `FUghLevelArt` | the original's drawing of a level: its tiles (`assets/levels.json`) composed from the sprites; the boards with the pads' numbers among them |
+| `AUghBackground` | the rock mesh in the cliff's material (the layers of the imported texture sets, `UghMaterials::Cliff`; without them the drawing's colours), the boards with the pads' numbers as sprite cards, the water |
 | `AUghCampfire` | logs, a flame and a flickering light (decoration only); in the wind the flame leans and flickers more |
 | `AUghFigures` | copters, passengers, enemies, bonus items, raindrops (strokes of clay along their way with the wind): plasticine shapes between two steps (a jump is not interpolated); speech bubbles as sprite cards |
 | `FUghSprites` | the sprites of the original: their sizes (`assets/sprites.json`) and pixels (`assets/sprites/NNN.png`) |
-| `UghShapes` | where the screen of the original lies in the world (1 px = 10 units, X right, Z up, depth toward the camera negative), the slab of the play, shapes and materials |
+| `UghShapes` | where the screen of the original lies in the world (1 px = 10 units, X right, Z up, depth toward the camera negative), the slab of the play, shapes, cards with a sprite and materials |
 | `UghTexture` | pixels as a texture |
 | `UghMaterials` | the materials' paths and parameters, shared by the game and the commandlet |
-| `FUghShot` | `-UghShot`: the game starts levels from the menu by itself (a player's keys), lets them hover and takes a screenshot of each (`shot.ps1`, `levels.ps1`, `pso.ps1`) |
+| `FUghShot` | `-UghShot`: the game starts levels from the menu by itself (a player's keys), lets them hover, logs the frame rate and takes a screenshot of each (`shot.ps1`, `levels.ps1`, `pso.ps1`) |
 | `FUghUpscaler` | DLSS / FSR / TSR at 67 % and the frame generation, as tried in the toolchain trial |
 | `AUghHud` | the menu with how the last game ended; in a game the status line, the caption, the keys; the upscaler and the volume |
 | `UghJson` | reads a JSON file of the extracted data |
@@ -91,8 +97,8 @@ they are for.
 
 | Kind | Source | What the import makes of it (`Content\Imported\<id>`) |
 |---|---|---|
-| `model` | Poly Haven glTF (its API: the files of a resolution, checked by MD5) or an archive (size and SHA-256 in the manifest) | the files of `import` through Interchange: Nanite static meshes, their materials (instances of the engine's glTF materials) and textures |
-| `texture` | Poly Haven maps or an ambientCG zip | the `maps` by role (color, normal, arm = occlusion/roughness/metal, roughness, ao, height) as textures with the right compression, and `MI_<id>`, an instance of `M_UghPbr` (`UghMaterials::Pbr`) |
+| `model` | Poly Haven glTF (its API: the files of a resolution, checked by MD5) or an archive (size and SHA-256 in the manifest) | the files of `import` through Interchange: Nanite static meshes, their materials and textures; the materials are instances of copies of the engine's glTF materials in `Content\Imported\_Masters` that allow Nanite meshes (the engine's do not: the game would draw them grey) |
+| `texture` | Poly Haven maps or an ambientCG zip | the `maps` by role (color, normal, arm = occlusion/roughness/metal, roughness, ao, height) as textures with the right compression, and `MI_<id>`, an instance of `M_UghPbr` (`UghMaterials::Pbr`; the cliff takes its layers' textures from these) |
 | `hdri` | Poly Haven `.hdr` | an HDR texture of the sky (long-lat) |
 
 Folders: `assets\3d\<source>\<asset>\` (the downloads; archives are kept in `assets\3d\_archives\` and extracted to
@@ -110,13 +116,13 @@ A new asset: an entry in `Assets.json` (and its id in `UghAssets.h` when the gam
 
 ## Rules
 
-- The plane of the play is the collision mask, exactly: the rock's cut face is its solid pixels; nothing the
-  frontend shows decides anything. The campfire stands on a dry ledge with no pad on it, the decorations behind the
+- The plane of the play is the collision mask, exactly: in the slab of the play the rock's edge is on the borders of
+  its solid pixels (test `Ugh.Rock`); nothing the frontend shows decides anything. The campfire stands on a dry ledge with no pad on it, the decorations behind the
   slab of the play, so that they never hide a figure.
 - The frontend reads the logic only through `ugh_logic.h`; values it needs (the screen, the copter's body, a full
   tank, the frame rate) come from there, checked against the logic by `static_assert` in `LogicApi.cpp`.
 - The original's data stays out of git: the drawing, the sprites and the sounds are read from `assets\` at run
   time. The 3D assets stay out too (`assets\3d`, imported to `Content\Imported`): the repository without them builds,
-  passes its tests and shows clay shapes instead.
+  passes its tests and shows clay shapes, the drawing's colours on the rock and the engine's sky instead.
 - FSR is an upscaler only (`r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0` in `Config/DefaultEngine.ini`),
   so it does not clash with DLSS frame generation.

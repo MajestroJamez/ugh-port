@@ -3,32 +3,67 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetRegistry/IAssetRegistry.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture.h"
+#include "Materials/MaterialInterface.h"
 
-TArray<UStaticMesh*> UghAssets::Meshes(TConstArrayView<const TCHAR*> Ids)
+namespace
 {
-	IAssetRegistry& Registry = FAssetRegistryModule::GetRegistry();
-	TArray<UStaticMesh*> Meshes;
-	for (const TCHAR* Id : Ids)
+	/** The assets of `Class` imported for `Id`, in the order of their names; none is logged. */
+	TArray<UObject*> Find(const TCHAR* Id, const UClass* Class)
 	{
-		const FString Path = Folder(Id);
+		IAssetRegistry& Registry = FAssetRegistryModule::GetRegistry();
+		const FString Path = UghAssets::Folder(Id);
 #if WITH_EDITOR
 		Registry.ScanPathsSynchronous({ Path });   // the editor's registry is still scanning at the start
 #endif
 		TArray<FAssetData> Found;
 		Registry.GetAssetsByPath(FName(*Path), Found, true);
-		Found.RemoveAll([](const FAssetData& Asset) { return !Asset.IsInstanceOf(UStaticMesh::StaticClass()); });
+		Found.RemoveAll([&](const FAssetData& Asset) { return !Asset.IsInstanceOf(Class); });
 		Found.Sort([](const FAssetData& A, const FAssetData& B) { return A.AssetName.LexicalLess(B.AssetName); });
+		TArray<UObject*> Objects;
 		for (const FAssetData& Asset : Found)
 		{
-			if (UStaticMesh* Mesh = Cast<UStaticMesh>(Asset.GetAsset()))
+			if (UObject* Object = Asset.GetAsset())
 			{
-				Meshes.Add(Mesh);
+				Objects.Add(Object);
 			}
 		}
-		if (Found.IsEmpty())
+		if (Objects.IsEmpty())
 		{
-			UE_LOG(LogTemp, Display, TEXT("UGH no asset %s (fetch-assets.ps1, build.ps1): clay shapes instead"), Id);
+			UE_LOG(LogTemp, Display, TEXT("UGH no asset %s (fetch-assets.ps1, build.ps1): a simpler look instead"), Id);
+		}
+		return Objects;
+	}
+}
+
+TArray<UStaticMesh*> UghAssets::Meshes(TConstArrayView<const TCHAR*> Ids)
+{
+	TArray<UStaticMesh*> Meshes;
+	for (const TCHAR* Id : Ids)
+	{
+		for (UObject* Object : Find(Id, UStaticMesh::StaticClass()))
+		{
+			Meshes.Add(CastChecked<UStaticMesh>(Object));
 		}
 	}
 	return Meshes;
+}
+
+UMaterialInterface* UghAssets::Material(const TCHAR* Id)
+{
+	const FString Name = FString(MaterialPrefix) + Id;
+	for (UObject* Object : Find(Id, UMaterialInterface::StaticClass()))
+	{
+		if (Object->GetName() == Name)
+		{
+			return CastChecked<UMaterialInterface>(Object);
+		}
+	}
+	return nullptr;
+}
+
+UTexture* UghAssets::Texture(const TCHAR* Id)
+{
+	const TArray<UObject*> Textures = Find(Id, UTexture::StaticClass());
+	return Textures.IsEmpty() ? nullptr : CastChecked<UTexture>(Textures[0]);
 }

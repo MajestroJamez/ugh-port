@@ -11,7 +11,8 @@ public class UghGame : ModuleRules
 		bUseUnity = false;   // each file has its own file-local constants (Width, Depth ...)
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
-			"Core", "CoreUObject", "Engine", "InputCore", "Json", "ImageWrapper", "ProceduralMeshComponent", "UghLogic",
+			"Core", "CoreUObject", "Engine", "InputCore", "Json", "ImageWrapper", "UghLogic",
+			"MeshDescription", "StaticMeshDescription",   // the rock as a static mesh built at run time (FUghRockMesh)
 			"AssetRegistry",   // the imported assets (UghAssets)
 			"DLSSBlueprint", "StreamlineDLSSGBlueprint"   // the upscalers (plugins DLSS, Streamline; FSR needs no code)
 		});

@@ -1,181 +1,143 @@
 #include "UghRockMesh.h"
 
-#include "UghShapes.h"
+#include "Async/ParallelFor.h"
+#include "Engine/StaticMesh.h"
+#include "MeshDescription.h"
+#include "StaticMeshAttributes.h"
+#include "UghRockFeatures.h"
+#include "UghSurfaceNets.h"
 #include "ugh_logic.h"
 
 namespace
 {
-	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
-
-	/** A run of pixels in a row or column: First .. Last - 1. */
-	struct FRun
+	/** A depth of the field (pixels) as a point of the world. */
+	FVector World(const FVector& Point)
 	{
-		int32 First, Last;
-		bool operator==(const FRun& Other) const { return First == Other.First && Last == Other.Last; }
-	};
-
-	bool Solid(const ugh_logic* Logic, int32 X, int32 Y) { return ugh_logic_solid(Logic, X, Y) != 0; }
-
-	/** The runs of 0 .. Count - 1 where `Wanted` holds. */
-	template <typename TWanted>
-	TArray<FRun> Runs(int32 Count, TWanted Wanted)
-	{
-		TArray<FRun> Result;
-		for (int32 I = 0; I < Count;)
-		{
-			if (!Wanted(I))
-			{
-				++I;
-				continue;
-			}
-			const int32 First = I;
-			while (I < Count && Wanted(I))
-			{
-				++I;
-			}
-			Result.Add({ First, I });
-		}
-		return Result;
+		return UghShapes::ToWorld(Point.X, Point.Y, Point.Z * UghShapes::UnitsPerPixel);
 	}
+
+	/** A direction of the field (pixels) as one of the world. */
+	FVector WorldDirection(const FVector& Direction)
+	{
+		return (World(Direction) - World(FVector::ZeroVector)).GetSafeNormal();
+	}
+
+	/** How far from the surface (pixels) the openness looks: near (a crevice) and far (a hollow). */
+	constexpr double NearLook = 2, FarLook = 6;
+	/** The depth behind the slab where the surface counts as at the back (vertex colour green 1), pixels. */
+	constexpr double DeepAt = 60;
+	/** The static mesh's only material slot. */
+	const FName SlotName(TEXT("Rock"));
 }
 
-void FUghRockMesh::Build(const ugh_logic* Logic)
+void FUghRockMesh::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art)
 {
 	Vertices.Reset();
 	Normals.Reset();
 	UVs.Reset();
+	Colors.Reset();
 	Triangles.Reset();
 	if (ugh_logic_pad_count(Logic) == 0)
 	{
 		return;   // no level yet
 	}
-	AddCut(Logic);
-	AddFloorsAndCeilings(Logic);
-	AddWalls(Logic);
-	AddBackWall();
-}
+	const double Started = FPlatformTime::Seconds();
+	FUghRockField Field;
+	Field.Build(Logic, Art, UghRockFeatures::Plan(Logic));
+	TArray<FVector> Points;
+	TArray<FUghNetQuad> Quads;
+	UghSurfaceNets::Build(Field, Points, Quads);
 
-void FUghRockMesh::AddQuad(const FVector (&Corners)[4], const FVector2D (&Pixels)[4], const FVector& Normal)
-{
-	const int32 First = Vertices.Num();
-	for (int32 I = 0; I < 4; ++I)
+	Vertices.SetNumUninitialized(Points.Num());
+	Normals.SetNumUninitialized(Points.Num());
+	UVs.SetNumUninitialized(Points.Num());
+	Colors.SetNumUninitialized(Points.Num());
+	ParallelFor(Points.Num(), [&](int32 Index)
 	{
-		Vertices.Add(Corners[I]);
-		Normals.Add(Normal);
-		UVs.Add(FVector2D(Pixels[I].X / Width, Pixels[I].Y / Height));
-	}
-	// the engine draws a triangle whose corners turn clockwise seen from its front
-	const bool bClockwise = (FVector::CrossProduct(Corners[1] - Corners[0], Corners[2] - Corners[0]) | Normal) < 0;
-	const int32 B = bClockwise ? 1 : 3, D = bClockwise ? 3 : 1;
-	Triangles.Append({ First, First + B, First + 2, First, First + 2, First + D });
-}
+		const FVector& Point = Points[Index];
+		const FVector Outward = -Field.Gradient(Point).GetSafeNormal();
+		Vertices[Index] = World(Point);
+		Normals[Index] = WorldDirection(Outward);
+		UVs[Index] = FVector2D(Point.X / UghShapes::ScreenWidth, Point.Y / UghShapes::ScreenHeight);
+		Colors[Index] = Shade(Field, Point, Outward);
+	});
 
-/** The solid pixels at the front of the slab: runs of a row, merged with the same runs of the rows below. */
-void FUghRockMesh::AddCut(const ugh_logic* Logic)
-{
-	const FVector Front = UghShapes::ToWorld(0, 0, CutDepth - 1) - UghShapes::ToWorld(0, 0, CutDepth);
-	auto Rectangle = [&](const FRun& Run, int32 Top, int32 Bottom)
+	Triangles.Reserve(Quads.Num() * 6);
+	for (const FUghNetQuad& Quad : Quads)
 	{
-		const FVector2D Pixels[4] = { { double(Run.First), double(Top) }, { double(Run.Last), double(Top) },
-			{ double(Run.Last), double(Bottom) }, { double(Run.First), double(Bottom) } };
-		FVector Corners[4];
-		for (int32 I = 0; I < 4; ++I)
+		const int32* C = Quad.Corners;
+		// split along the shorter diagonal; the engine draws a triangle whose corners turn clockwise seen from its front
+		const int32 Skip = FVector::DistSquared(Points[C[0]], Points[C[2]]) > FVector::DistSquared(Points[C[1]], Points[C[3]]);
+		const int32 A = C[Skip], B = C[(Skip + 1) % 4], M = C[(Skip + 2) % 4], D = C[(Skip + 3) % 4];
+		const FVector Normal = FVector::CrossProduct(Vertices[B] - Vertices[A], Vertices[M] - Vertices[A]);
+		if ((Normal | WorldDirection(Quad.Outward)) < 0)
 		{
-			Corners[I] = UghShapes::ToWorld(Pixels[I].X, Pixels[I].Y, CutDepth);
+			Triangles.Append({ A, B, M, A, M, D });
 		}
-		AddQuad(Corners, Pixels, Front.GetSafeNormal());
-	};
-	TArray<FRun> Open;
-	TArray<int32> OpenTop;
-	for (int32 Y = 0; Y <= Height; ++Y)
-	{
-		const TArray<FRun> Row = Y < Height ? Runs(Width, [&](int32 X) { return Solid(Logic, X, Y); }) : TArray<FRun>();
-		TArray<int32> Top;
-		for (const FRun& Run : Row)
+		else
 		{
-			const int32 Continued = Open.Find(Run);
-			Top.Add(Continued == INDEX_NONE ? Y : OpenTop[Continued]);
-		}
-		for (int32 I = 0; I < Open.Num(); ++I)
-		{
-			if (!Row.Contains(Open[I]))
-			{
-				Rectangle(Open[I], OpenTop[I], Y);
-			}
-		}
-		Open = Row;
-		OpenTop = Top;
-	}
-}
-
-/** Between two rows: a floor where rock is below and air above, a ceiling where it is the other way round. */
-void FUghRockMesh::AddFloorsAndCeilings(const ugh_logic* Logic)
-{
-	const FVector Up = (UghShapes::ToWorld(0, -1, 0) - UghShapes::ToWorld(0, 0, 0)).GetSafeNormal();
-	for (int32 Y = 0; Y <= Height; ++Y)
-	{
-		for (const bool bFloor : { true, false })
-		{
-			// a floor faces up, at the top of the rock pixel; its colour is that pixel's
-			const int32 RockRow = bFloor ? Y : Y - 1, AirRow = bFloor ? Y - 1 : Y;
-			const double ColourRow = RockRow + 0.5;
-			for (const FRun& Run : Runs(Width, [&](int32 X) { return Solid(Logic, X, RockRow) && !Solid(Logic, X, AirRow); }))
-			{
-				const FVector Corners[4] = { UghShapes::ToWorld(Run.First, Y, CutDepth),
-					UghShapes::ToWorld(Run.Last, Y, CutDepth), UghShapes::ToWorld(Run.Last, Y, BackDepth),
-					UghShapes::ToWorld(Run.First, Y, BackDepth) };
-				const FVector2D Pixels[4] = { { double(Run.First), ColourRow }, { double(Run.Last), ColourRow },
-					{ double(Run.Last), ColourRow }, { double(Run.First), ColourRow } };
-				AddQuad(Corners, Pixels, bFloor ? Up : -Up);
-			}
+			Triangles.Append({ A, M, B, A, D, M });
 		}
 	}
+	UE_LOG(LogTemp, Display, TEXT("UGH rock: %d vertices, %d triangles in %.0f ms"), Vertices.Num(),
+		Triangles.Num() / 3, (FPlatformTime::Seconds() - Started) * 1000);
 }
 
-/** Between two columns: a wall facing the air on its side. */
-void FUghRockMesh::AddWalls(const ugh_logic* Logic)
+UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer) const
 {
-	const FVector Right = (UghShapes::ToWorld(1, 0, 0) - UghShapes::ToWorld(0, 0, 0)).GetSafeNormal();
-	for (int32 X = 0; X <= Width; ++X)
+	if (Vertices.IsEmpty())
 	{
-		for (const bool bFacingRight : { true, false })
-		{
-			const int32 RockColumn = bFacingRight ? X - 1 : X, AirColumn = bFacingRight ? X : X - 1;
-			const double ColourColumn = RockColumn + 0.5;
-			for (const FRun& Run : Runs(Height, [&](int32 Y) { return Solid(Logic, RockColumn, Y) && !Solid(Logic, AirColumn, Y); }))
-			{
-				const FVector Corners[4] = { UghShapes::ToWorld(X, Run.First, CutDepth),
-					UghShapes::ToWorld(X, Run.Last, CutDepth), UghShapes::ToWorld(X, Run.Last, BackDepth),
-					UghShapes::ToWorld(X, Run.First, BackDepth) };
-				const FVector2D Pixels[4] = { { ColourColumn, double(Run.First) }, { ColourColumn, double(Run.Last) },
-					{ ColourColumn, double(Run.Last) }, { ColourColumn, double(Run.First) } };
-				AddQuad(Corners, Pixels, bFacingRight ? Right : -Right);
-			}
-		}
+		return nullptr;
 	}
-}
-
-double FUghRockMesh::BackWallDepth(double X, double Y)
-{
-	const double Bumps = 0.5 + 0.35 * FMath::PerlinNoise2D(FVector2D(X, Y) * 0.06) +
-		0.15 * FMath::PerlinNoise2D(FVector2D(X, Y) * 0.2);
-	return BackDepth - BumpDepth * FMath::Clamp(Bumps, 0.0, 1.0);   // only forward: it meets every wall of the rock
-}
-
-/** Behind the whole screen: a grid with the bumps of BackWallDepth, each cell a quad facing the camera's way. */
-void FUghRockMesh::AddBackWall()
-{
-	auto At = [](double X, double Y) { return UghShapes::ToWorld(X, Y, BackWallDepth(X, Y)); };
-	for (int32 Y = 0; Y < Height; Y += WallStep)
+	FMeshDescription Description;
+	FStaticMeshAttributes Attributes(Description);
+	Attributes.Register();
+	Description.ReserveNewVertices(Vertices.Num());
+	Description.ReserveNewVertexInstances(Vertices.Num());
+	Description.ReserveNewTriangles(Triangles.Num() / 3);
+	const FPolygonGroupID Group = Description.CreatePolygonGroup();
+	Attributes.GetPolygonGroupMaterialSlotNames()[Group] = SlotName;
+	const TVertexAttributesRef<FVector3f> Positions = Attributes.GetVertexPositions();
+	const TVertexInstanceAttributesRef<FVector3f> InstanceNormals = Attributes.GetVertexInstanceNormals();
+	const TVertexInstanceAttributesRef<FVector3f> InstanceTangents = Attributes.GetVertexInstanceTangents();
+	const TVertexInstanceAttributesRef<FVector2f> InstanceUVs = Attributes.GetVertexInstanceUVs();
+	const TVertexInstanceAttributesRef<FVector4f> InstanceColors = Attributes.GetVertexInstanceColors();
+	TArray<FVertexInstanceID> Instances;
+	Instances.Reserve(Vertices.Num());
+	for (int32 Index = 0; Index < Vertices.Num(); ++Index)
 	{
-		for (int32 X = 0; X < Width; X += WallStep)
-		{
-			const double X1 = X + WallStep, Y1 = Y + WallStep;
-			const FVector Corners[4] = { At(X, Y), At(X1, Y), At(X1, Y1), At(X, Y1) };
-			const FVector2D Pixels[4] = { { double(X), double(Y) }, { X1, double(Y) }, { X1, Y1 }, { double(X), Y1 } };
-			const FVector Normal = FVector::CrossProduct(Corners[2] - Corners[0], Corners[3] - Corners[1]).GetSafeNormal();
-			const FVector Front = UghShapes::ToWorld(0, 0, -1) - UghShapes::ToWorld(0, 0, 0);
-			AddQuad(Corners, Pixels, (Normal | Front) >= 0 ? Normal : -Normal);
-		}
+		const FVertexID Vertex = Description.CreateVertex();
+		Positions[Vertex] = FVector3f(Vertices[Index]);
+		const FVertexInstanceID Instance = Instances.Add_GetRef(Description.CreateVertexInstance(Vertex));
+		const FVector3f Normal(Normals[Index]);
+		InstanceNormals[Instance] = Normal;
+		// any tangent across the normal (the cliff's material works in the world)
+		InstanceTangents[Instance] = FVector3f::CrossProduct(Normal, FMath::Abs(Normal.Z) < 0.9f ? FVector3f::UnitZ()
+			: FVector3f::UnitX()).GetSafeNormal();
+		InstanceUVs.Set(Instance, 0, FVector2f(UVs[Index]));
+		// the build stores the colour as sRGB bytes: these become the bytes of Colors again
+		InstanceColors[Instance] = FVector4f(FLinearColor(Colors[Index]));
 	}
+	for (int32 Index = 0; Index < Triangles.Num(); Index += 3)
+	{
+		Description.CreateTriangle(Group, { Instances[Triangles[Index]], Instances[Triangles[Index + 1]],
+			Instances[Triangles[Index + 2]] });
+	}
+	UStaticMesh* Mesh = NewObject<UStaticMesh>(Outer);
+	Mesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, SlotName));
+	UStaticMesh::FBuildMeshDescriptionsParams Params;
+	Params.bFastBuild = true;   // at run time
+	Params.bCommitMeshDescription = false;
+	Params.bMarkPackageDirty = false;
+	Mesh->BuildFromMeshDescriptions({ &Description }, Params);
+	return Mesh;
+}
+
+FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, const FVector& Outward)
+{
+	// open where the field outside keeps falling as on a flat surface, closed in a crevice or a hollow
+	const double Near = FMath::Clamp(-Field.Sample(Point + Outward * NearLook) / NearLook, 0.0, 1.0);
+	const double Far = FMath::Clamp(-Field.Sample(Point + Outward * FarLook) / FarLook, 0.0, 1.0);
+	const double Deep = FMath::Clamp((Point.Z - FUghRockField::SlabHalf) / DeepAt, 0.0, 1.0);
+	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far)), uint8(255 * Deep), 0, 255);
 }

@@ -3,7 +3,6 @@
 #include "Dom/JsonObject.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
-#include "UghTexture.h"
 
 bool FUghLevelArt::Load(const FJsonObject& LevelsFile, const FString& Path, FString& OutError)
 {
@@ -37,7 +36,7 @@ bool FUghLevelArt::Load(const FJsonObject& LevelsFile, const FString& Path, FStr
 	return true;
 }
 
-UTexture2D* FUghLevelArt::Draw(UObject* Outer, int32 LevelId, const FUghSprites& Sprites) const
+TArray<FColor> FUghLevelArt::Draw(int32 LevelId, const FUghSprites& Sprites) const
 {
 	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
 	TArray<FColor> Screen;
@@ -63,5 +62,22 @@ UTexture2D* FUghLevelArt::Draw(UObject* Outer, int32 LevelId, const FUghSprites&
 			}
 		}
 	}
-	return UghTexture::Create(Outer, Width, Height, Screen, false);
+	return Screen;
+}
+
+TArray<FUghArtTile> FUghLevelArt::Signs(int32 LevelId) const
+{
+	TArray<FUghArtTile> Signs;
+	if (Tiles.IsValidIndex(LevelId) && Columns > 0)
+	{
+		const TArray<int32>& LevelTiles = Tiles[LevelId];
+		for (int32 Index = 0; Index < LevelTiles.Num(); ++Index)
+		{
+			if (LevelTiles[Index] >= FirstSign && LevelTiles[Index] <= LastSign)
+			{
+				Signs.Add({ LevelTiles[Index], FIntPoint(Index % Columns * TileWidth, Index / Columns * TileHeight) });
+			}
+		}
+	}
+	return Signs;
 }

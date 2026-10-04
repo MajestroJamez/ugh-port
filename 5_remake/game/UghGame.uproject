@@ -32,10 +32,6 @@
 		{
 			"Name": "FSR",
 			"Enabled": true
-		},
-		{
-			"Name": "ProceduralMeshComponent",
-			"Enabled": true
 		}
 	]
 }

@@ -2,10 +2,8 @@
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
-#include "Materials/MaterialInstanceDynamic.h"
-#include "UghMaterials.h"
+#include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
 #include "UghTexture.h"
@@ -21,9 +19,9 @@ namespace
 	const FLinearColor BonusColor(0.9f, 0.75f, 0.1f);
 	const FLinearColor RainColor(0.55f, 0.65f, 0.85f);
 
-	/** The figures fill the slab of the play; a bubble is a card in front of it. */
+	/** The figures fill the slab of the play; a bubble is a card in front of it and of the rock's face. */
 	constexpr double FigureDepth = 0, FigureThickness = UghShapes::PlaneThickness;
-	constexpr double CardDepth = -FigureThickness / 2 - 2, CardThickness = 1;
+	constexpr double CardDepth = FUghRockMesh::FrontDepth - 3;
 
 	/** A figure that moves further in one step jumped (a new attempt, a passenger getting in): not interpolated. */
 	constexpr double MaxStepPixels = 8;
@@ -193,15 +191,7 @@ void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites&
 		}
 		if (I >= BubbleCards.Num())
 		{
-			UStaticMeshComponent* Card = NewObject<UStaticMeshComponent>(this);
-			Card->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
-			Card->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Card->SetCastShadow(false);
-			Card->SetMaterial(0, UghShapes::Material(Card, UghMaterials::Sprite));
-			Card->SetupAttachment(RootComponent);
-			Card->RegisterComponent();
-			AddInstanceComponent(Card);
-			BubbleCards.Add(Card);
+			BubbleCards.Add(UghShapes::AddCard(this));
 		}
 		const FBubble& Bubble = Bubbles[I];
 		TObjectPtr<UTexture2D>& Texture = SpriteTextures.FindOrAdd(Bubble.Sprite);
@@ -210,11 +200,7 @@ void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites&
 		{
 			Texture = UghTexture::Create(this, Size.X, Size.Y, Sprites.Pixels(Bubble.Sprite), true);
 		}
-		UStaticMeshComponent* Card = BubbleCards[I];
-		Cast<UMaterialInstanceDynamic>(Card->GetMaterial(0))->SetTextureParameterValue(UghMaterials::ArtParameter, Texture);
-		// a thin box as big as the sprite: its front face shows the sprite
-		Card->SetWorldTransform(UghShapes::Box(Bubble.At.X, Bubble.At.Y, Size.X, Size.Y, CardDepth, CardThickness));
-		Card->SetVisibility(true);
+		UghShapes::ShowCard(BubbleCards[I], Texture, Bubble.At.X, Bubble.At.Y, Size.X, Size.Y, CardDepth);
 	}
 }
 

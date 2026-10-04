@@ -2,59 +2,40 @@
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/Texture2D.h"
-#include "MaterialEditingLibrary.h"
 #include "Materials/Material.h"
-#include "Materials/MaterialExpressionConstant.h"
-#include "Materials/MaterialExpressionMultiply.h"
+#include "Materials/MaterialExpressionBumpOffset.h"
+#include "Materials/MaterialExpressionCameraVectorWS.h"
 #include "Materials/MaterialExpressionNoise.h"
-#include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
+#include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
-#include "Materials/MaterialExpressionVectorParameter.h"
+#include "Materials/MaterialExpressionVertexColor.h"
+#include "Materials/MaterialExpressionVertexNormalWS.h"
+#include "Materials/MaterialExpressionWorldPosition.h"
 #include "Misc/PackageName.h"
 #include "UObject/Package.h"
 #include "UObject/SavePackage.h"
+#include "UghMaterialNodes.h"
 #include "UghMaterials.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUghMakeAssets, Log, All);
 
+using namespace UghMaterialNodes;
+
 namespace
 {
-	template <typename TExpression>
-	TExpression* Add(UMaterial* Material)
-	{
-		return Cast<TExpression>(UMaterialEditingLibrary::CreateMaterialExpression(Material, TExpression::StaticClass()));
-	}
-
-	UMaterialExpressionConstant* Constant(UMaterial* Material, float Value)
-	{
-		UMaterialExpressionConstant* Expression = Add<UMaterialExpressionConstant>(Material);
-		Expression->R = Value;
-		return Expression;
-	}
-
-	UMaterialExpressionVectorParameter* Vector(UMaterial* Material, const TCHAR* Name, const FLinearColor& Default)
-	{
-		UMaterialExpressionVectorParameter* Expression = Add<UMaterialExpressionVectorParameter>(Material);
-		Expression->ParameterName = Name;
-		Expression->DefaultValue = Default;
-		return Expression;
-	}
-
-	UMaterialExpressionScalarParameter* Scalar(UMaterial* Material, const TCHAR* Name, float Default)
-	{
-		UMaterialExpressionScalarParameter* Expression = Add<UMaterialExpressionScalarParameter>(Material);
-		Expression->ParameterName = Name;
-		Expression->DefaultValue = Default;
-		return Expression;
-	}
+	/** How many metres one texture of each layer of the cliff covers (UghMaterials::CliffLayers). */
+	constexpr float CliffSizes[] = { 4.f, 3.f, 1.5f, 1.5f, 2.5f };
+	static_assert(UE_ARRAY_COUNT(CliffSizes) == UE_ARRAY_COUNT(UghMaterials::CliffLayers));
+	/** How far the relief of a texture set shifts its textures with the view (parallax), of its size. */
+	constexpr float ParallaxRatio = 0.02f;
 
 	/** The texture parameter Art (the engine's default texture until the game sets one). */
 	UMaterialExpressionTextureSampleParameter2D* ArtTexture(UMaterial* Material)
 	{
 		UMaterialExpressionTextureSampleParameter2D* Art = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
 		Art->ParameterName = UghMaterials::ArtParameter;
-		Art->Texture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
+		Art->Texture = LoadObject<UTexture2D>(nullptr, DefaultColor);
 		return Art;
 	}
 
@@ -67,14 +48,6 @@ namespace
 		Noise->OutputMin = 0.8f;
 		Noise->OutputMax = 1.1f;
 		return Noise;
-	}
-
-	UMaterialExpression* Times(UMaterial* Material, UMaterialExpression* A, UMaterialExpression* B)
-	{
-		UMaterialExpressionMultiply* Multiply = Add<UMaterialExpressionMultiply>(Material);
-		UMaterialEditingLibrary::ConnectMaterialExpressions(A, TEXT(""), Multiply, TEXT("A"));
-		UMaterialEditingLibrary::ConnectMaterialExpressions(B, TEXT(""), Multiply, TEXT("B"));
-		return Multiply;
 	}
 
 	/** The material at `Path` without any expressions: the one saved before, or a new one in a package of its own. */
@@ -126,57 +99,97 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	struct FRecipe
 	{
 		const TCHAR* Path;
-		void (*Make)(UMaterial*);
+		bool (*Make)(UMaterial*);
 	};
 	const FRecipe Recipes[] = {
-		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock },
+		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
 		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Fire, &MakeFire }, { UghMaterials::Sprite, &MakeSprite },
-		{ UghMaterials::Pbr, &MakePbr } };
-	bool bAllSaved = true;
+		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Sky, &MakeSky } };
+	bool bAllMade = true;
 	for (const FRecipe& Recipe : Recipes)
 	{
 		UMaterial* Material = EmptyMaterial(Recipe.Path);
-		Recipe.Make(Material);
-		bAllSaved = Save(Material) && bAllSaved;
+		bAllMade = Recipe.Make(Material) && Save(Material) && bAllMade;
 	}
-	return bAllSaved ? 0 : 1;
+	return bAllMade ? 0 : 1;
 }
 
-void UUghMakeAssetsCommandlet::MakeClay(UMaterial* Material)
+bool UUghMakeAssetsCommandlet::MakeClay(UMaterial* Material)
 {
 	UMaterialExpression* Color = Vector(Material, UghMaterials::ColorParameter, FLinearColor(0.5f, 0.5f, 0.5f));
 	UMaterialEditingLibrary::ConnectMaterialProperty(Times(Material, Color, Unevenness(Material)), TEXT(""), MP_BaseColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.7f), TEXT(""), MP_Roughness);
+	return true;
 }
 
-void UUghMakeAssetsCommandlet::MakeRock(UMaterial* Material)
+bool UUghMakeAssetsCommandlet::MakeRock(UMaterial* Material)
 {
 	UMaterialExpression* Art = ArtTexture(Material);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Times(Material, Art, Unevenness(Material)), TEXT(""), MP_BaseColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.85f), TEXT(""), MP_Roughness);
+	return true;
 }
 
-void UUghMakeAssetsCommandlet::MakeWater(UMaterial* Material)
+bool UUghMakeAssetsCommandlet::MakeCliff(UMaterial* Material)
+{
+	Material->bTangentSpaceNormal = false;   // the code's normal is the world's
+	TArray<TPair<FName, UMaterialExpression*>> Inputs = {
+		{ TEXT("Position"), Add<UMaterialExpressionWorldPosition>(Material) },
+		{ TEXT("VertexNormal"), Add<UMaterialExpressionVertexNormalWS>(Material) },
+		{ TEXT("ScreenUV"), Add<UMaterialExpressionTextureCoordinate>(Material) },
+		{ TEXT("Shade"), Add<UMaterialExpressionVertexColor>(Material) },
+		{ UghMaterials::ArtParameter,
+			TextureObject(Material, UghMaterials::ArtParameter, SAMPLERTYPE_Color, DefaultColor) } };
+	for (int32 Layer = 0; Layer < UE_ARRAY_COUNT(UghMaterials::CliffLayers); ++Layer)
+	{
+		const FString Name = UghMaterials::CliffLayers[Layer];
+		for (const TCHAR* Map : UghMaterials::CliffMaps)
+		{
+			const bool bNormal = FCString::Strcmp(Map, UghMaterials::NormalParameter) == 0;
+			const bool bColor = FCString::Strcmp(Map, UghMaterials::BaseColorParameter) == 0;
+			Inputs.Add({ *(Name + Map), TextureObject(Material, Name + Map,
+				bNormal ? SAMPLERTYPE_Normal : bColor ? SAMPLERTYPE_Color : SAMPLERTYPE_Masks,
+				bNormal ? DefaultNormal : bColor ? DefaultColor : DefaultMasks) });
+		}
+		Inputs.Add({ *(Name + TEXT("Size")), Scalar(Material, *(Name + TEXT("Size")), CliffSizes[Layer]) });
+	}
+	UMaterialExpressionCustom* Cliff = Custom(Material, ShaderCode(TEXT("UghCliff.hlsl")), CMOT_Float3, Inputs,
+		{ { TEXT("CliffNormal"), CMOT_Float3 }, { TEXT("CliffRough"), CMOT_Float1 },
+			{ TEXT("CliffOcclusion"), CMOT_Float1 } });
+	if (!Cliff)
+	{
+		return false;
+	}
+	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("return"), MP_BaseColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffNormal"), MP_Normal);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffRough"), MP_Roughness);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffOcclusion"), MP_AmbientOcclusion);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeWater(UMaterial* Material)
 {
 	Material->BlendMode = BLEND_Translucent;
 	Material->TranslucencyLightingMode = TLM_SurfacePerPixelLighting;
 	UMaterialEditingLibrary::ConnectMaterialProperty(
-		Vector(Material, UghMaterials::ColorParameter, FLinearColor(0.02f, 0.15f, 0.2f)), TEXT(""), MP_BaseColor);
+		Vector(Material, UghMaterials::ColorParameter, FLinearColor(0.01f, 0.07f, 0.09f)), TEXT(""), MP_BaseColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(
-		Scalar(Material, UghMaterials::OpacityParameter, 0.6f), TEXT(""), MP_Opacity);
-	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.05f), TEXT(""), MP_Roughness);
+		Scalar(Material, UghMaterials::OpacityParameter, 0.7f), TEXT(""), MP_Opacity);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.2f), TEXT(""), MP_Roughness);
+	return true;
 }
 
-void UUghMakeAssetsCommandlet::MakeFire(UMaterial* Material)
+bool UUghMakeAssetsCommandlet::MakeFire(UMaterial* Material)
 {
 	Material->BlendMode = BLEND_Additive;
 	Material->SetShadingModel(MSM_Unlit);
 	UMaterialExpression* Color = Vector(Material, UghMaterials::ColorParameter, FLinearColor(1.f, 0.4f, 0.1f));
 	UMaterialExpression* Intensity = Scalar(Material, UghMaterials::IntensityParameter, 20.f);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Times(Material, Color, Intensity), TEXT(""), MP_EmissiveColor);
+	return true;
 }
 
-void UUghMakeAssetsCommandlet::MakeSprite(UMaterial* Material)
+bool UUghMakeAssetsCommandlet::MakeSprite(UMaterial* Material)
 {
 	Material->BlendMode = BLEND_Masked;
 	Material->SetShadingModel(MSM_Unlit);
@@ -184,13 +197,21 @@ void UUghMakeAssetsCommandlet::MakeSprite(UMaterial* Material)
 	UMaterialExpression* Art = ArtTexture(Material);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("RGB"), MP_EmissiveColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("A"), MP_OpacityMask);
+	return true;
 }
 
-void UUghMakeAssetsCommandlet::MakePbr(UMaterial* Material)
+bool UUghMakeAssetsCommandlet::MakePbr(UMaterial* Material)
 {
 	// the instances (UghImportAssets) give the textures; the engine's defaults are of the same sampler types
-	UMaterialExpression* Coordinates = Times(Material, Add<UMaterialExpressionTextureCoordinate>(Material),
+	UMaterialExpression* Tiled = Times(Material, Add<UMaterialExpressionTextureCoordinate>(Material),
 		Scalar(Material, UghMaterials::TilingParameter, 1.f));
+	UMaterialExpression* Relief = Custom(Material, TEXT("return Texture2DSample(Height, HeightSampler, UV).r;"),
+		CMOT_Float1, { { TEXT("Height"), TextureObject(Material, UghMaterials::HeightParameter, SAMPLERTYPE_Masks,
+			DefaultMasks) }, { TEXT("UV"), Tiled } });
+	UMaterialExpressionBumpOffset* Coordinates = Add<UMaterialExpressionBumpOffset>(Material);
+	Coordinates->HeightRatio = ParallaxRatio;
+	UMaterialEditingLibrary::ConnectMaterialExpressions(Tiled, TEXT(""), Coordinates, TEXT("Coordinate"));
+	UMaterialEditingLibrary::ConnectMaterialExpressions(Relief, TEXT(""), Coordinates, TEXT("Height"));
 	auto Texture = [&](const TCHAR* Name, EMaterialSamplerType Sampler, const TCHAR* Default)
 	{
 		UMaterialExpressionTextureSampleParameter2D* Sample = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
@@ -200,13 +221,32 @@ void UUghMakeAssetsCommandlet::MakePbr(UMaterial* Material)
 		UMaterialEditingLibrary::ConnectMaterialExpressions(Coordinates, TEXT(""), Sample, TEXT("UVs"));
 		return Sample;
 	};
-	const TCHAR* Masks = TEXT("/Engine/EngineMaterials/DefaultDiffuse_TC_Masks.DefaultDiffuse_TC_Masks");
-	UMaterialEditingLibrary::ConnectMaterialProperty(Texture(UghMaterials::BaseColorParameter, SAMPLERTYPE_Color,
-		TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture")), TEXT("RGB"), MP_BaseColor);
-	UMaterialEditingLibrary::ConnectMaterialProperty(Texture(UghMaterials::NormalParameter, SAMPLERTYPE_Normal,
-		TEXT("/Engine/EngineMaterials/DefaultNormal.DefaultNormal")), TEXT("RGB"), MP_Normal);
 	UMaterialEditingLibrary::ConnectMaterialProperty(
-		Texture(UghMaterials::RoughnessParameter, SAMPLERTYPE_Masks, Masks), TEXT("G"), MP_Roughness);
+		Texture(UghMaterials::BaseColorParameter, SAMPLERTYPE_Color, DefaultColor), TEXT("RGB"), MP_BaseColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(
-		Texture(UghMaterials::OcclusionParameter, SAMPLERTYPE_Masks, Masks), TEXT("R"), MP_AmbientOcclusion);
+		Texture(UghMaterials::NormalParameter, SAMPLERTYPE_Normal, DefaultNormal), TEXT("RGB"), MP_Normal);
+	UMaterialEditingLibrary::ConnectMaterialProperty(
+		Texture(UghMaterials::RoughnessParameter, SAMPLERTYPE_Masks, DefaultMasks), TEXT("G"), MP_Roughness);
+	UMaterialEditingLibrary::ConnectMaterialProperty(
+		Texture(UghMaterials::OcclusionParameter, SAMPLERTYPE_Masks, DefaultMasks), TEXT("R"), MP_AmbientOcclusion);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeSky(UMaterial* Material)
+{
+	Material->SetShadingModel(MSM_Unlit);
+	Material->TwoSided = true;   // seen from inside its dome
+	Material->bIsSky = true;
+	UMaterialExpression* Sky = Custom(Material, ShaderCode(TEXT("UghSky.hlsl")), CMOT_Float3, {
+		{ TEXT("ToCamera"), Add<UMaterialExpressionCameraVectorWS>(Material) },
+		{ UghMaterials::SkyParameter,
+			TextureObject(Material, UghMaterials::SkyParameter, SAMPLERTYPE_Color, DefaultColor) } });
+	if (!Sky)
+	{
+		return false;
+	}
+	UMaterialExpression* Tinted = Times(Material, Sky, Vector(Material, UghMaterials::ColorParameter, FLinearColor::White));
+	UMaterialEditingLibrary::ConnectMaterialProperty(
+		Times(Material, Tinted, Scalar(Material, UghMaterials::IntensityParameter, 1.f)), TEXT(""), MP_EmissiveColor);
+	return true;
 }

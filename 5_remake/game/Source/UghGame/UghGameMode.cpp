@@ -155,9 +155,10 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
 	BackgroundLevel = View.level_id;
 	const ugh_logic* Logic = Simulation.GetLogic();
+	const TArray<FColor> Art = LevelArt.Draw(View.level_id, Sprites);
 	FUghRockMesh Rock;
-	Rock.Build(Logic);
-	Background->Build(Rock, LevelArt.Draw(Background, View.level_id, Sprites));
+	Rock.Build(Logic, Art);
+	Background->Build(Rock, Art, LevelArt.Signs(View.level_id), Sprites);
 	const int32 WaterRow = View.water_level / UghShapes::Subpixels;
 	const TOptional<FIntPoint> Hearth =
 		View.level_id < 0 ? TOptional<FIntPoint>() : UghLedges::FindHearth(Logic, WaterRow);
