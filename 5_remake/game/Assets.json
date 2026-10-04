@@ -162,6 +162,55 @@
       "import": ["grass_medium_01_2k.gltf"]
     },
     {
+      "id": "grass_medium_02", "kind": "model", "use": "tufts of meadow grass",
+      "page": "https://polyhaven.com/a/grass_medium_02", "license": "CC0-1.0", "author": "Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/grass_medium_02",
+      "polyhaven": { "id": "grass_medium_02", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["grass_medium_02_2k.gltf"]
+    },
+    {
+      "id": "flower_gazania", "kind": "model", "use": "orange flowers of the meadows",
+      "page": "https://polyhaven.com/a/flower_gazania", "license": "CC0-1.0", "author": "James Ray Cock, Jenelle van Heerden (Poly Haven)",
+      "path": "polyhaven/flower_gazania",
+      "polyhaven": { "id": "flower_gazania", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["flower_gazania_2k.gltf"]
+    },
+    {
+      "id": "flower_empodium", "kind": "model", "use": "yellow flowers of the meadows",
+      "page": "https://polyhaven.com/a/flower_empodium", "license": "CC0-1.0", "author": "Jenelle van Heerden, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/flower_empodium",
+      "polyhaven": { "id": "flower_empodium", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["flower_empodium_2k.gltf"]
+    },
+    {
+      "id": "periwinkle_plant", "kind": "model", "use": "pink flowers of the meadows",
+      "page": "https://polyhaven.com/a/periwinkle_plant", "license": "CC0-1.0", "author": "Amal Kumar (Poly Haven)",
+      "path": "polyhaven/periwinkle_plant",
+      "polyhaven": { "id": "periwinkle_plant", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["periwinkle_plant_2k.gltf"]
+    },
+    {
+      "id": "anthurium_botany_01", "kind": "model", "use": "a jungle plant with red flowers",
+      "page": "https://polyhaven.com/a/anthurium_botany_01", "license": "CC0-1.0", "author": "Rob Tuytel, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/anthurium_botany_01",
+      "polyhaven": { "id": "anthurium_botany_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["anthurium_botany_01_2k.gltf"]
+    },
+    {
+      "id": "shrub_04", "kind": "model", "use": "a low bush",
+      "page": "https://polyhaven.com/a/shrub_04", "license": "CC0-1.0", "author": "Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/shrub_04",
+      "polyhaven": { "id": "shrub_04", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["shrub_04_2k.gltf"]
+    },
+    {
+      "id": "tree_stump_01", "kind": "model", "use": "tree stumps",
+      "page": "https://polyhaven.com/a/tree_stump_01", "license": "CC0-1.0", "author": "Rob Tuytel (Poly Haven)",
+      "path": "polyhaven/tree_stump_01",
+      "polyhaven": { "id": "tree_stump_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["tree_stump_01_2k.gltf"]
+    },
+    {
       "id": "dead_tree_trunk", "kind": "model", "use": "a log",
       "page": "https://polyhaven.com/a/dead_tree_trunk", "license": "CC0-1.0", "author": "Rob Tuytel (Poly Haven)",
       "path": "polyhaven/dead_tree_trunk",
@@ -230,6 +279,34 @@
       "path": "generated/bonus_items",
       "blender": { "script": "Blender/bonus_items.py", "inputs": ["rock_face_03"], "outputs": ["bonus_items.glb"] },
       "import": ["bonus_items.glb"]
+    },
+    {
+      "id": "bones", "kind": "generated", "use": "bones on the ledges: a long bone, a pile of bones, a cave bear's and a triceratops' skull, the ribcage of a big beast",
+      "page": "Blender/bones.py", "license": "CC0-1.0", "author": "UGH remake (Blender/bones.py)",
+      "path": "generated/bones",
+      "blender": { "script": "Blender/bones.py", "outputs": ["bones.glb"] },
+      "import": ["bones.glb"]
+    },
+    {
+      "id": "totem", "kind": "generated", "use": "totems of the tribe: carved painted faces with wings, a pole with a skull and hangings",
+      "page": "Blender/totem.py", "license": "CC0-1.0", "author": "UGH remake (Blender/totem.py), texture palm_bark (Poly Haven)",
+      "path": "generated/totem",
+      "blender": { "script": "Blender/totem.py", "inputs": ["palm_bark"], "outputs": ["totem.glb"] },
+      "import": ["totem.glb"]
+    },
+    {
+      "id": "hut", "kind": "generated", "use": "huts of the tribe: a tent of hides on poles, a dome of straw with mammoth tusks",
+      "page": "Blender/hut.py", "license": "CC0-1.0", "author": "UGH remake (Blender/hut.py), texture palm_bark (Poly Haven)",
+      "path": "generated/hut",
+      "blender": { "script": "Blender/hut.py", "inputs": ["palm_bark"], "outputs": ["hut.glb"] },
+      "import": ["hut.glb"]
+    },
+    {
+      "id": "vines", "kind": "generated", "use": "lianas hanging from ceilings and overhangs (four lengths)",
+      "page": "Blender/vines.py", "license": "CC0-1.0", "author": "UGH remake (Blender/vines.py)",
+      "path": "generated/vines",
+      "blender": { "script": "Blender/vines.py", "outputs": ["vines.glb"] },
+      "import": ["vines.glb"]
     }
   ]
 }

@@ -83,11 +83,13 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   s hardwarovým ray tracingem, pevná expozice (EV100 2) - všechny levely stejně světlé. Bez HDRI atmosféra enginu.
 - Palmy byly šedé, protože materiály modelů (instance glTF materiálů enginu) nepovolují Nanite a hra kreslí místo
   nich výchozí materiál: import je teď přepojí na kopie v `Content/Imported/_Masters`, které Nanite povolují.
-- Ohniště na nejdelší suché římse bez plošiny (jen dekorace, do hry nezasahuje): dvě polena, plamen a blikající
-  oranžové bodové světlo, které osvětlí jeskyni.
+- Ohně (krok 18): až tři na nejdelších suchých římsách (napřed bez plošiny), za deskou hry: kamenný kruh a polena
+  (Kenney, v tmavší plastelíně), plamen ze tří zkřížených kartiček (materiál `M_UghFire`, `UghFlame.hlsl`: jazyky ohně
+  olizují vzhůru stoupajícím šumem, jiskry, každá kartička jinak) a blikající oranžové bodové světlo každého (Lumen),
+  každý oheň jinak; zhasne, když voda vystoupí nad jeho římsu.
 - Mlha: nízká přízemní (exponential height fog) s objemovou mlhou, ať je hloubka čitelná.
 - Vítr (krok 12): level s větrem je bouřka - slabší chladné slunce, tmavá zamračená obloha (`sky_kloofendal_cloudy`
-  ztmavená), hustá šedá mlha; plamen ohniště se kloní po větru a víc bliká. Kapky deště jsou plastelínové čárky
+  ztmavená), hustá šedá mlha; plameny ohňů se kloní po větru a víc blikají. Kapky deště jsou plastelínové čárky
   (4 x 1 px) šikmo po větru, na pozicích z logiky.
 - Menu: za ním ztlumené dioráma levelu, který by menu spustilo (po heslu ten level).
 
@@ -105,7 +107,9 @@ Pevná, úzký objektiv (30°), celý řez v záběru, mírně shora (-4°), aby
   a Nanite se staví jen v editoru.
 - Výkon (Radeon 890M, 1280 x 720 bez okna, FSR 67 %): jednotlivé snímky 50-57 fps (krok 14: asi 75), v dlouhém
   `levels.ps1` se notebook zahřeje a klesne to na medián 33 (krok 14: 45). Snímky logují fps
-  (`UGH shot: ... fps`).
+  (`UGH shot: ... fps`), `levels.ps1` vypíše na konci medián. Krok 18 (asi 2000 dekorací na level, z toho 1000-2000
+  trsů trávy a květin): jednotlivé snímky 49-53 fps, `levels.ps1` medián 40 (nejpomalejší 13 při zahřátí uprostřed
+  běhu, pak zase 40+); tráva a květiny bez stínů, maskované listy bez ray tracingu, instancované (Nanite).
 - Balení: `package.ps1` (UAT, `NO_PROXY += ::1`, data z `assets/` vedle hry), PSO cache nahraná autopilotem
   `-UghShot` v zabalené hře (`pso.ps1`), aby se při startu netrhalo.
 - Kontrola všech levelů: `levels.ps1` - autopilot spustí každý level obou režimů z menu (heslem), nafotí ho bez okna
@@ -136,7 +140,40 @@ První várka (útes v džungli doby kamenné):
 - **modely** (Nanite): balvany `boulder_01`, `namaqualand_boulder_02`, kameny `rock_moss_set_01`, `stone_01`, palmy
   `palm`, strom džungle `island_tree_02`, kapradina `fern_02`, keř `shrub_02`, rostliny džungle `pachira_aquatica_01`,
   `calathea_orbifolia_01`, tráva `grass_medium_01`, kmen `dead_tree_trunk`, ohniště `campfire`.
+- **krok 18** (Poly Haven, Nanite): tráva `grass_medium_02`, květiny `flower_gazania` (oranžové), `flower_empodium`
+  (žluté), `periwinkle_plant` (růžové), rostlina džungle s červenými květy `anthurium_botany_01`, nízký keř
+  `shrub_04`, pařezy `tree_stump_01`; z Blenderu (`generated`): kosti a lebky `bones`, totemy `totem`, chýše `hut`,
+  liány `vines`. Nepoužité zatím: `island_tree_02` (koruna se do jeskyně nevejde), `pachira_aquatica_01` (kmen a listy
+  jsou zvláštní sítě), `dead_tree_trunk` (3 m dlouhý), textury `rock_wall_02`, `mossy_rock`, `lichen_rock`.
 
-Ve hře zatím jen důkaz cesty: v každém levelu palma (a kde se vejdou, jeden až dva kameny) na suché římse s místem
-nad sebou, mimo plošiny (kde jinde místo není, vysoká palma na římse plošiny - koruna nad cedulí s číslem), za deskou
-hry, takže nikdy nezakryje postavu; stejný level = stejné dekorace (`UghDecorations`, test `Ugh.Scenery`).
+## Příroda a dekorace (krok 18)
+
+Pravěká džungle na římsách: na horních plochách skály louky, palmy, keře, kapradiny, rostliny džungle, kameny,
+pařezy, kosti, totemy a chýše kmene, ohně, ze stropů a převisů visí liány a po zadní stěně jejich závěsy. Rozmístění (`UghDecorations::Plan`) je
+z masky a pole skály (`FUghRockField`: každá dekorace stojí na podlaze ve své hloubce, liána visí ze stropu, přední
+polovina krabice je ve vzduchu, zadní se smí opřít o zadní stěnu jeskyně), deterministicky (level_id), napřed velké:
+
+- **ohně**: až 3 na nejdelších suchých římsách (napřed bez plošiny), 40 px od sebe,
+- **palmy**: až 4 nejvyšší, které se vejdou (16-48 px), 30 px od sebe; kde se žádná nevejde, menší (10-16 px),
+- **totemy** (dva, vyřezávané malované tváře s křídly / tyč s lebkou triceratopse, kostmi a pery) a **chýše** (stan
+  z kůží na tyčích / kupole ze slámy s kly mamuta) tam, kde je místo,
+- **podél každé římsy** každé 2-4 px keř, kapradina, rostlina džungle, kámen (i mechový), pařez nebo kosti (dlouhá
+  kost, hromádka kostí, lebka medvěda, lebka triceratopse, hrudní koš velké šelmy),
+- **louky**: trs trávy každých 0,8 px v řadách po 15 jednotkách do hloubky (od nejbližší povolené hloubky 150 dál),
+  v ostrůvcích květiny (šum podél říms),
+- **liány** ze stropů masky (asi každý třetí pixel stropu s místem pod sebou, 6-44 px dlouhé, natočené ke kameře)
+  a **závěsy lián po zadní stěně jeskyně**: z vršku každého třetího sloupce vzduchu (strop nebo horní okraj
+  obrazovky - útes pokračuje) v ostrůvcích (šum), kusy 10-30 px pod sebou (každý s pravděpodobností 0,7 pokračuje),
+  opřené o nejbližší místo stěny za sebou, dolů nejvýš do 85 % místa pod stropem.
+
+Nic nezakrývá postavy, plošiny, cedule ani bubliny (`UghDecorations`, test `Ugh.Scenery` pro všech 150 levelů):
+nic není na obrazovce blíž než `SlabFront` (25 jednotek za rovinou hry: deska hry, cedule 23), nic vyššího než
+pokryv země (5 px: tráva, květiny, kosti, malé kameny) blíž než `FigureReach` (80: tělo vrtulníku 45, triceratops,
+foukač a strom s tváří 70), nic vyššího než 16 px ani liána blíž než `SweepReach` (180: rotor 130, křídla letce 170);
+kde přistává vrtulník na plošině, tam kde je jeho tělo (11 px do stran, 20 nahoru) nic blíž než 80, kde se točí
+rotor (13 px do stran, 16-24 px nad plošinou) nic blíž než 180. Listnaté rostliny se smí prolínat (od sebe mají
+jen prostředky), tráva roste i u kmene palmy, do ohně nezasahuje nic.
+
+Kreslení (`AUghScenery`): jedna instancovaná komponenta na síť (Nanite), model vložený do své krabice; tráva
+a květiny nevrhají stíny, listy (maskované) nevidí ray tracing; bez modelů plastelínové tvary. Průsvitné materiály
+glTF (tráva, květiny: alphaMode BLEND) import přepne na vyříznuté (Nanite průsvitnost nekreslí).

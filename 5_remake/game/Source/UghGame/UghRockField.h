@@ -34,8 +34,13 @@ public:
 	/** The depths of the grid's layers, front to back, pixels. */
 	static TConstArrayView<double> Depths();
 
-	/** The rock of the level being played; `Art` the drawing of the level (screen-sized, else no holes in the back). */
-	void Build(const ugh_logic* Logic, TConstArrayView<FColor> Art, TConstArrayView<FUghRockStamp> Stamps);
+	/**
+	 * The rock of the level being played with its stalactites and fallen rocks (UghRockFeatures); `Art` the drawing of
+	 * the level (screen-sized, else no holes in the back). None before a level.
+	 */
+	void Build(const ugh_logic* Logic, TConstArrayView<FColor> Art);
+	/** No level was built. */
+	bool IsEmpty() const { return Values.IsEmpty(); }
 
 	static constexpr int32 Columns = FUghRockOutline::Width, Rows = FUghRockOutline::Height;
 	static int32 Layers() { return Depths().Num(); }

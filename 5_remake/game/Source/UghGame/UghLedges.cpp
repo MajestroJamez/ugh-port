@@ -7,9 +7,6 @@ namespace
 {
 	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
 
-	/** A campfire needs this long a ledge and this much room above it, pixels. */
-	constexpr int32 HearthLength = 12, HearthRoom = 16;
-
 	bool Solid(const ugh_logic* Logic, int32 X, int32 Y) { return ugh_logic_solid(Logic, X, Y) != 0; }
 }
 
@@ -63,19 +60,4 @@ TArray<FUghLedge> UghLedges::Find(const ugh_logic* Logic, int32 WaterRow, int32 
 		}
 	}
 	return Ledges;
-}
-
-TOptional<FIntPoint> UghLedges::FindHearth(const ugh_logic* Logic, int32 WaterRow)
-{
-	TOptional<FIntPoint> Best;
-	int32 BestLength = HearthLength - 1;
-	for (const FUghLedge& Ledge : Find(Logic, WaterRow, HearthRoom, 0))
-	{
-		if (Ledge.Length() > BestLength)
-		{
-			BestLength = Ledge.Length();
-			Best = FIntPoint((Ledge.First + Ledge.Last) / 2, Ledge.Y);
-		}
-	}
-	return Best;
 }

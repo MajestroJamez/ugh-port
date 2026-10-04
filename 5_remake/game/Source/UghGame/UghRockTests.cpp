@@ -224,8 +224,10 @@ bool FUghRockTest::RunTest(const FString& Parameters)
 				continue;
 			}
 			Done.Add(LevelId);
+			FUghRockField Field;
+			Field.Build(Logic, {});
 			FUghRockMesh Mesh;
-			Mesh.Build(Logic, {});
+			Mesh.Build(Field);
 			for (const double Depth : CutDepths)
 			{
 				const FCut Section(Cut(Mesh, Depth));

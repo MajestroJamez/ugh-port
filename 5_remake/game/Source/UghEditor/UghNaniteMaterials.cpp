@@ -14,8 +14,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogUghNaniteMaterials, Log, All);
 
 namespace
 {
-	/** What the imported models' materials are used with. */
-	const EMaterialUsage Usages[] = { MATUSAGE_Nanite, MATUSAGE_SkeletalMesh };
+	/** What the imported models' materials are used with (the decorations are instanced). */
+	const EMaterialUsage Usages[] = { MATUSAGE_Nanite, MATUSAGE_SkeletalMesh, MATUSAGE_InstancedStaticMeshes };
 
 	bool IsOurs(const UObject* Object)
 	{
@@ -42,6 +42,22 @@ namespace
 		return bChanged;
 	}
 
+	/**
+	 * Nanite draws no translucency: an instance that blends (a glTF material with alphaMode BLEND: grass, leaves) is
+	 * cut out by its alpha instead. True when it blended.
+	 */
+	bool CutOut(UMaterialInstanceConstant* Instance)
+	{
+		FMaterialInstanceBasePropertyOverrides& Overrides = Instance->BasePropertyOverrides;
+		if (!Overrides.bOverride_BlendMode || Overrides.BlendMode != BLEND_Translucent)
+		{
+			return false;
+		}
+		Overrides.BlendMode = BLEND_Masked;
+		Instance->UpdateOverridableBaseProperties();
+		return true;
+	}
+
 	void Save(UMaterialInterface* Copy)
 	{
 		FSavePackageArgs Args;
@@ -66,6 +82,12 @@ namespace
 				Root->PostEditChange();
 				Save(Root);
 			}
+			UMaterialInstanceConstant* Instance = Cast<UMaterialInstanceConstant>(Done);
+			if (Instance && CutOut(Instance))   // a copy from before the cut-out
+			{
+				Instance->PostEditChange();
+				Save(Instance);
+			}
 			return Done;
 		}
 		UPackage* Package = CreatePackage(*Path);
@@ -73,6 +95,7 @@ namespace
 		Copy->SetFlags(RF_Public | RF_Standalone);
 		if (UMaterialInstanceConstant* Instance = Cast<UMaterialInstanceConstant>(Copy))
 		{
+			CutOut(Instance);
 			UMaterialInterface* Parent = Instance->Parent;
 			Instance->SetParentEditorOnly(Parent && !IsOurs(Parent) ? AllowingCopy(Parent) : Parent);
 		}
@@ -106,9 +129,13 @@ void UghNaniteMaterials::Allow(const FString& Folder)
 		else if (UMaterialInstanceConstant* Instance = Cast<UMaterialInstanceConstant>(Each))
 		{
 			UMaterialInterface* Parent = Instance->Parent;
-			if (Parent && !IsOurs(Parent) && !AllowsAll(Parent->GetMaterial()))
+			const bool bReparent = Parent && !IsOurs(Parent) && !AllowsAll(Parent->GetMaterial());
+			if (bReparent)
 			{
 				Instance->SetParentEditorOnly(AllowingCopy(Parent));
+			}
+			if (CutOut(Instance) || bReparent)
+			{
 				Instance->PostEditChange();
 			}
 		}

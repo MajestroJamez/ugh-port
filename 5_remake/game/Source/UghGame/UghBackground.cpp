@@ -17,8 +17,6 @@ namespace
 
 	/** The water reaches from just in front of the rock's face to its back wall, units. */
 	constexpr double WaterFront = FUghRockMesh::FrontDepth - 1;
-	/** The boards stand on the cave's floor just behind the slab of the play, units. */
-	constexpr double SignDepth = UghShapes::PlaneThickness / 2 + 3;
 	/** The cliff takes the colours of the drawing blurred this much (pixels): its areas, not its pixels. */
 	constexpr int32 ArtBlur = 2;
 	/**

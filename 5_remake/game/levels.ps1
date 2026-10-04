@@ -1,7 +1,8 @@
 # Takes a screenshot of every level of both modes without a window and puts them on contact sheets. One game process:
 # the autopilot of FUghShot starts each level from the menu as a player would (the mode, the level's password, Enter),
 # lets the copters hover, takes the screenshot and gives the game up (Esc), back to the menu. The screenshots go to
-# Saved\Shots\Levels\<mode>-<NN>.png (and the menu's menu.png), the sheets to Saved\Shots\Levels\levels-<mode>.png.
+# Saved\Shots\Levels\<mode>-<NN>.png (and the menu's menu.png), the sheets to Saved\Shots\Levels\levels-<mode>.png;
+# at the end the frame rates the shots were taken at (the median, the slowest, the fastest).
 # Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\levels.ps1
 # -Levels: other levels, items <1p|team>:<first>[-<last>]; -At: seconds of the fully shown level before each shot.
@@ -77,6 +78,11 @@ foreach ($mode in $expected.Keys) {
     $graphics.Dispose()
     $sheet.Dispose()
     Write-Host $sheetFile
+}
+# the frame rate each level was shot at (FUghShot logs it): the median, the slowest, the fastest
+$rates = @(Select-String -Path $log -Pattern 'UGH shot: level_id .* (\d+) fps' | ForEach-Object { [int]$_.Matches[0].Groups[1].Value } | Sort-Object)
+if ($rates.Count -gt 0) {
+    Write-Host ('fps: median {0}, slowest {1}, fastest {2} ({3} levels)' -f $rates[[int][math]::Floor($rates.Count / 2)], $rates[0], $rates[-1], $rates.Count)
 }
 if (-not (Test-Path (Join-Path $folder 'menu.png'))) { $null = $missing.Add('menu') }
 if ($missing.Count -gt 0) {

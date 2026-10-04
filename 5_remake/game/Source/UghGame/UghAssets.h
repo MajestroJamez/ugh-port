@@ -23,10 +23,25 @@ namespace UghAssets
 	/** The material instance of a texture set is <MaterialPrefix><id>. */
 	inline const TCHAR* MaterialPrefix = TEXT("MI_");
 
-	/** Palms (straight, bent). */
+	/**
+	 * The decorations (UghDecorations, AUghScenery): tufts of grass, flowers, boulders and stones, a fern, bushes,
+	 * jungle plants, a stump, palms (straight, bent), the campfire's stones and logs.
+	 */
+	inline const TCHAR* const Grasses[] = { TEXT("grass_medium_01"), TEXT("grass_medium_02") };
+	inline const TCHAR* const Flowers[] = { TEXT("flower_gazania"), TEXT("flower_empodium"), TEXT("periwinkle_plant") };
+	inline const TCHAR* const Rocks[] = { TEXT("boulder_01"), TEXT("namaqualand_boulder_02"), TEXT("rock_moss_set_01"),
+		TEXT("stone_01") };
+	inline const TCHAR* Fern = TEXT("fern_02");
+	inline const TCHAR* const Bushes[] = { TEXT("shrub_02"), TEXT("shrub_04") };
+	inline const TCHAR* const Plants[] = { TEXT("calathea_orbifolia_01"), TEXT("anthurium_botany_01") };
+	inline const TCHAR* Stump = TEXT("tree_stump_01");
 	inline const TCHAR* Palm = TEXT("palm");
-	/** Boulders and stones. */
-	inline const TCHAR* const Rocks[] = { TEXT("boulder_01"), TEXT("namaqualand_boulder_02"), TEXT("stone_01") };
+	inline const TCHAR* Campfire = TEXT("campfire");
+	/** Made by the scripts of Blender/ too: bones and skulls, totems, huts, lianas. */
+	inline const TCHAR* Bones = TEXT("bones");
+	inline const TCHAR* Totem = TEXT("totem");
+	inline const TCHAR* Hut = TEXT("hut");
+	inline const TCHAR* Vines = TEXT("vines");
 	/**
 	 * The texture sets of the cliff's layers (UghMaterials::CliffLayers in the same order): a warm layered rock, a
 	 * grey rock face, grass, moss, red soil with stones.

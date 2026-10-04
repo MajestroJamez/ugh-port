@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "UghLevelArt.h"
+#include "UghShapes.h"
 #include "UghBackground.generated.h"
 
 class FUghRockMesh;
@@ -25,6 +26,9 @@ class AUghBackground : public AActor
 	GENERATED_BODY()
 
 public:
+	/** The boards with the pads' numbers stand on the cave's floor just behind the slab of the play, units. */
+	static constexpr double SignDepth = UghShapes::PlaneThickness / 2 + 3;
+
 	AUghBackground();
 
 	/** Shows the rock of a level (empty: none), `Art` its drawing (FUghLevelArt), its `Signs` (sprites of `Sprites`). */

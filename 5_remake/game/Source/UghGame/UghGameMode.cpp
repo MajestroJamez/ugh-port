@@ -15,8 +15,8 @@
 #include "UghHud.h"
 #include "UghJson.h"
 #include "UghKeyboard.h"
-#include "UghLedges.h"
 #include "UghPlayerController.h"
+#include "UghRockField.h"
 #include "UghRockMesh.h"
 #include "UghScenery.h"
 #include "UghShapes.h"
@@ -163,21 +163,24 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Stage->FitCamera(CloseUp.Get(UghShapes::Screen()));
 }
 
-/** The diorama of the level the view shows: the rock coloured by its drawing, the campfire and the decorations. */
+/** The diorama of the level the view shows: the rock coloured by its drawing, the campfires and the decorations. */
 void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
 	BackgroundLevel = View.level_id;
 	const ugh_logic* Logic = Simulation.GetLogic();
 	const TArray<FColor> Art = LevelArt.Draw(View.level_id, Sprites);
+	FUghRockField Field;
+	Field.Build(Logic, Art);
 	FUghRockMesh Rock;
-	Rock.Build(Logic, Art);
+	Rock.Build(Field);
 	Background->Build(Rock, Art, LevelArt.Signs(View.level_id), Sprites);
-	const int32 WaterRow = View.water_level / UghShapes::Subpixels;
-	const TOptional<FIntPoint> Hearth =
-		View.level_id < 0 ? TOptional<FIntPoint>() : UghLedges::FindHearth(Logic, WaterRow);
-	Campfire->Place(Hearth, View.wind);
-	Scenery->Show(View.level_id < 0 ? TArray<FUghDecoration>()
-		: UghDecorations::Plan(Logic, View.level_id, WaterRow, Hearth));
+	const double Started = FPlatformTime::Seconds();
+	const TArray<FUghDecoration> Decorations = View.level_id < 0 ? TArray<FUghDecoration>()
+		: UghDecorations::Plan(Logic, Field, View.level_id, View.water_level / UghShapes::Subpixels);
+	UE_LOG(LogTemp, Display, TEXT("UGH decorations: %d in %.0f ms (%s)"), Decorations.Num(),
+		(FPlatformTime::Seconds() - Started) * 1000, *UghDecorations::Summary(Decorations));
+	Campfire->Place(Decorations, View.wind);
+	Scenery->Show(Decorations);
 	Stage->SetWind(View.wind);
 }
 

@@ -1,77 +1,61 @@
 #include "UghDecorations.h"
 
-#include "Math/RandomStream.h"
+#include "UghGround.h"
 #include "UghLedges.h"
-#include "UghShapes.h"
+#include "UghPlacer.h"
+#include "UghPlans.h"
+#include "UghRockField.h"
 #include "ugh_logic.h"
 
 namespace
 {
 	using FDecoration = FUghDecoration;
+	using EKind = FUghDecoration::EKind;
 
 	constexpr int32 ScreenWidth = UghShapes::ScreenWidth;
 
+	/** Campfires: how many, their box (pixels: the stones and the flame), the ledge they need, how far apart. */
+	constexpr int32 CampfireCount = 3;
+	constexpr double CampfireWidth = 12, CampfireHeight = 12;
+	constexpr int32 CampfireLedge = 14, CampfireRoom = 16, CampfireApart = 40;
 	/**
-	 * A palm, pixels: at least (off the pads) and at most this tall, half as wide as tall but at most PalmCanopy (so
-	 * it fits between the slab of the play and the cave's back wall), with this much room left above its top; its
-	 * trunk needs this much of the ledge. Only the tallest that fit are chosen from: at least PalmPreferred of the
-	 * tallest.
+	 * Palms, pixels: how many, at least and at most this tall, PalmAspect as wide as tall but at most PalmCanopy (so
+	 * that the crown fits in the cave), with this much room above; only the tallest that fit are chosen from (at least
+	 * PalmPreferred of the tallest), at least PalmApart apart; PalmSmall .. Middle tall where none of those fits.
 	 */
-	constexpr int32 PalmMin = 16, PalmMax = 48, PalmCanopy = 24, PalmHeadroom = 2, PalmFoot = 4;
-	constexpr double PalmPreferred = 0.75;
-	/** Rocks: how many, how tall (pixels; twice as wide), how many places are tried for them. */
-	constexpr int32 RockCount = 2, RockMin = 4, RockMax = 8, RockTries = 40;
-	/** Decoration keeps this far from the pads, from the campfire and from each other, pixels. */
-	constexpr int32 OffPadMargin = 2, HearthClearance = 10, Spacing = 4;
+	constexpr int32 PalmCount = 4, PalmMin = 16, PalmMax = 48, PalmSmall = 10, PalmCanopy = 26, PalmHeadroom = 2;
+	constexpr int32 PalmApart = 30;
+	constexpr double PalmAspect = 0.7, PalmPreferred = 0.75;
+	/** Totems and huts: how many, how many tries for them, how tall (pixels) and how wide for their height. */
+	constexpr int32 TotemCount = 2, HutCount = 1, LandmarkTries = 40;
+	constexpr double TotemMin = 12, TotemMax = 20, TotemAspect = 0.6, HutMin = 10, HutMax = 15, HutAspect = 1.4;
+	/** They are turned at most this much from the camera, degrees. */
+	constexpr double LandmarkTurn = 35;
+	/** Each is put this many units further back than the nearest it may be, at most. */
+	constexpr double BackMax = 60;
 
-	/** Its middle is so deep that its front (half its width deep) is behind the slab of the play. */
-	double DepthFor(int32 Width)
+	FDecoration Make(EKind Kind, double X, double Y, double Width, double Height, FRandomStream& Random)
 	{
-		return UghShapes::PlaneThickness / 2 + UghDecorations::SlabGap + Width * UghShapes::UnitsPerPixel / 2;
-	}
-
-	int32 Left(const FDecoration& Decoration) { return Decoration.X - Decoration.Width / 2; }
-
-	/** The two boxes (widened by `Margin` pixels at the sides) overlap on the screen. */
-	bool Overlap(const FDecoration& A, const FDecoration& B, int32 Margin)
-	{
-		return Left(A) - Margin < Left(B) + B.Width && Left(B) - Margin < Left(A) + A.Width &&
-			A.Y - A.Height < B.Y && B.Y - B.Height < A.Y;
-	}
-
-	/**
-	 * `Decoration` is too near a pad on its ledge (within `PadMargin`; PadsToo: pads do not matter), the campfire or one
-	 * of `Placed`.
-	 */
-	bool Crowds(const ugh_logic* Logic, const FDecoration& Decoration, int32 PadMargin, const TArray<FDecoration>& Placed,
-		const TOptional<FIntPoint>& Hearth)
-	{
-		if (PadMargin != UghLedges::PadsToo &&
-			UghLedges::NearPad(Logic, Left(Decoration), Left(Decoration) + Decoration.Width, Decoration.Y, PadMargin))
-		{
-			return true;
-		}
-		if (Hearth.IsSet() && FMath::Abs(Hearth->Y - Decoration.Y) <= 1 &&
-			FMath::Abs(Hearth->X - Decoration.X) < HearthClearance + Decoration.Width / 2)
-		{
-			return true;
-		}
-		return Placed.ContainsByPredicate([&](const FDecoration& Other) { return Overlap(Decoration, Other, Spacing); });
+		FDecoration Decoration;
+		Decoration.Kind = Kind;
+		Decoration.X = X;
+		Decoration.Y = Y;
+		Decoration.Width = Width;
+		Decoration.Height = Height;
+		Decoration.Yaw = Random.FRandRange(0, 360);
+		Decoration.Variant = Random.RandHelper(MAX_int16);
+		return Decoration;
 	}
 
 	/**
-	 * The tallest palm (at least `MinHeight`) that fits with its trunk at X on row Y, where `Rooms` are the empty pixels
-	 * above each column of the row (its height 0 when none fits).
+	 * The tallest palm (pixels, 0: none) of MinHeight .. MaxHeight whose crown fits over column X of a row whose
+	 * columns have `Rooms`.
 	 */
-	FDecoration PalmAt(const TArray<int32>& Rooms, int32 X, int32 Y, int32 MinHeight)
+	int32 TallestPalm(const TArray<int32>& Rooms, int32 X, int32 MinHeight, int32 MaxHeight)
 	{
-		FDecoration Palm;
-		Palm.Kind = FDecoration::EKind::Palm;
-		Palm.X = X;
-		Palm.Y = Y;
-		for (int32 Height = PalmMax; Height >= MinHeight && Palm.Height == 0; --Height)
+		for (int32 Height = MaxHeight; Height >= MinHeight; --Height)
 		{
-			const int32 Width = FMath::Min(PalmCanopy, Height / 2), Left = X - Width / 2;
+			const int32 Width = FMath::Min(PalmCanopy, FMath::FloorToInt32(Height * PalmAspect)), Left = X - Width / 2;
 			bool bFits = Left >= 0 && Left + Width <= ScreenWidth;
 			for (int32 Column = Left; bFits && Column < Left + Width; ++Column)
 			{
@@ -79,94 +63,159 @@ namespace
 			}
 			if (bFits)
 			{
-				Palm.Height = Height;
-				Palm.Width = Width;
+				return Height;
 			}
 		}
-		return Palm;
+		return 0;
 	}
 
-	/**
-	 * The palms that fit on ledges `PadMargin` off pads (PadsToo: on pads too), at least `MinHeight` tall and at least
-	 * PalmPreferred of the tallest.
-	 */
-	TArray<FDecoration> Palms(const ugh_logic* Logic, int32 WaterRow, const TOptional<FIntPoint>& Hearth, int32 PadMargin,
-		int32 MinHeight)
+	/** Palms of MinHeight .. MaxHeight (the tallest that fit, apart from each other); how many were planted. */
+	int32 AddPalmsOf(FUghPlacer& Placer, FRandomStream& Random, int32 MinHeight, int32 MaxHeight)
 	{
+		const ugh_logic* Logic = Placer.GetGround().GetLogic();
 		TArray<FDecoration> Candidates;
 		int32 Tallest = 0;
-		for (const FUghLedge& Ledge : UghLedges::Find(Logic, WaterRow, MinHeight + PalmHeadroom, PadMargin))
+		for (const FUghLedge& Ledge :
+			UghLedges::Find(Logic, Placer.GetWaterRow(), MinHeight + PalmHeadroom, UghLedges::PadsToo))
 		{
 			TArray<int32> Rooms;
 			for (int32 Column = 0; Column < ScreenWidth; ++Column)
 			{
-				Rooms.Add(UghLedges::RoomAbove(Logic, Column, Ledge.Y, PalmMax + PalmHeadroom));
+				Rooms.Add(UghLedges::RoomAbove(Logic, Column, Ledge.Y, MaxHeight + PalmHeadroom));
 			}
-			for (int32 X = Ledge.First + PalmFoot / 2; X + PalmFoot / 2 <= Ledge.Last; ++X)
+			for (int32 X = Ledge.First + 1; X < Ledge.Last - 1; X += 2)
 			{
-				const FDecoration Palm = PalmAt(Rooms, X, Ledge.Y, MinHeight);
-				if (Palm.Height > 0 && !Crowds(Logic, Palm, PadMargin, {}, Hearth))
+				if (const int32 Height = TallestPalm(Rooms, X, MinHeight, MaxHeight))
 				{
-					Candidates.Add(Palm);
-					Tallest = FMath::Max(Tallest, Palm.Height);
+					const double Width = FMath::Min(double(PalmCanopy), Height * PalmAspect);
+					Candidates.Add(Make(EKind::Palm, X + 0.5, Ledge.Y, Width, Height, Random));
+					Tallest = FMath::Max(Tallest, Height);
 				}
 			}
 		}
 		Candidates.RemoveAll([&](const FDecoration& Palm) { return Palm.Height < Tallest * PalmPreferred; });
-		return Candidates;
-	}
-
-	/** A palm off the pads where one fits, else a taller one on a pad's ledge (its crown above the pad's sign). */
-	void AddPalm(const ugh_logic* Logic, int32 WaterRow, const TOptional<FIntPoint>& Hearth, FRandomStream& Random,
-		TArray<FDecoration>& Placed)
-	{
-		TArray<FDecoration> Candidates = Palms(Logic, WaterRow, Hearth, OffPadMargin, PalmMin);
-		if (Candidates.IsEmpty())
+		int32 Planted = 0;
+		while (Planted < PalmCount && !Candidates.IsEmpty())
 		{
-			Candidates = Palms(Logic, WaterRow, Hearth, UghLedges::PadsToo, UghDecorations::PalmOverPadMin);
-		}
-		if (!Candidates.IsEmpty())
-		{
-			FDecoration Palm = Candidates[Random.RandHelper(Candidates.Num())];
-			Palm.Depth = DepthFor(Palm.Width);
-			Palm.Yaw = Random.FRandRange(0, 360);
-			Palm.Variant = Random.RandHelper(MAX_int16);
-			Placed.Add(Palm);
-		}
-	}
-
-	void AddRocks(const ugh_logic* Logic, int32 WaterRow, const TOptional<FIntPoint>& Hearth, FRandomStream& Random,
-		TArray<FDecoration>& Placed)
-	{
-		// every pixel of these ledges has room for the tallest rock; a rock needs twice its height of a ledge
-		TArray<FUghLedge> Ledges = UghLedges::Find(Logic, WaterRow, RockMax, OffPadMargin);
-		Ledges.RemoveAll([](const FUghLedge& Ledge) { return Ledge.Length() < 2 * RockMin; });
-		for (int32 Try = 0, Placing = 0; Try < RockTries && Placing < RockCount && !Ledges.IsEmpty(); ++Try)
-		{
-			const FUghLedge& Ledge = Ledges[Random.RandHelper(Ledges.Num())];
-			FDecoration Rock;
-			Rock.Height = Random.RandRange(RockMin, FMath::Min(RockMax, Ledge.Length() / 2));
-			Rock.Width = 2 * Rock.Height;
-			Rock.X = Random.RandRange(Ledge.First, Ledge.Last - Rock.Width) + Rock.Width / 2;   // the foot on the ledge
-			Rock.Y = Ledge.Y;
-			Rock.Depth = DepthFor(Rock.Width);
-			Rock.Yaw = Random.FRandRange(0, 360);
-			Rock.Variant = Random.RandHelper(MAX_int16);
-			if (!Crowds(Logic, Rock, OffPadMargin, Placed, Hearth))
+			const FDecoration Palm = Candidates[Random.RandHelper(Candidates.Num())];
+			Candidates.RemoveAll([&](const FDecoration& Other)
 			{
-				Placed.Add(Rock);
-				++Placing;
-			}
+				return FMath::Abs(Other.X - Palm.X) < PalmApart && FMath::Abs(Other.Y - Palm.Y) < PalmApart;
+			});
+			Planted += Placer.TryAddBehind(Palm, Random.FRandRange(0, BackMax));
+		}
+		return Planted;
+	}
+}
+
+const TCHAR* UghDecorations::Name(FUghDecoration::EKind Kind)
+{
+	static const TCHAR* const Names[] = { TEXT("grass"), TEXT("flower"), TEXT("rock"), TEXT("bones"), TEXT("fern"),
+		TEXT("bush"), TEXT("plant"), TEXT("stump"), TEXT("palm"), TEXT("totem"), TEXT("hut"), TEXT("vine"),
+		TEXT("creeper"), TEXT("campfire") };
+	static_assert(UE_ARRAY_COUNT(Names) == int32(EKind::Campfire) + 1);
+	return Names[int32(Kind)];
+}
+
+FString UghDecorations::Summary(const TArray<FUghDecoration>& Decorations)
+{
+	TArray<int32> Counts;
+	Counts.Init(0, int32(EKind::Campfire) + 1);
+	for (const FDecoration& Decoration : Decorations)
+	{
+		++Counts[int32(Decoration.Kind)];
+	}
+	TArray<FString> Parts;
+	for (int32 Kind = 0; Kind < Counts.Num(); ++Kind)
+	{
+		Parts.Add(FString::Printf(TEXT("%s %d"), Name(EKind(Kind)), Counts[Kind]));
+	}
+	return FString::Join(Parts, TEXT(", "));
+}
+
+double UghDecorations::NearestFront(const FUghDecoration& Decoration)
+{
+	if (Decoration.Hangs() || Decoration.Height > Middle)
+	{
+		return SweepReach;
+	}
+	return Decoration.Height > GroundCover ? FigureReach : SlabFront;
+}
+
+void UghPlans::AddCampfires(FUghPlacer& Placer, FRandomStream& Random)
+{
+	const ugh_logic* Logic = Placer.GetGround().GetLogic();
+	TArray<FUghLedge> Ledges = UghLedges::Find(Logic, Placer.GetWaterRow(), CampfireRoom, 0);
+	Ledges.RemoveAll([](const FUghLedge& Ledge) { return Ledge.Length() < CampfireLedge; });
+	Ledges.StableSort([](const FUghLedge& A, const FUghLedge& B) { return A.Length() > B.Length(); });
+	TArray<FDecoration> Lit;
+	for (const FUghLedge& Ledge : Ledges)
+	{
+		const double X = (Ledge.First + Ledge.Last) / 2.0;
+		const bool bNear = Lit.ContainsByPredicate([&](const FDecoration& Fire)
+		{
+			return FMath::Abs(Fire.X - X) < CampfireApart && FMath::Abs(Fire.Y - Ledge.Y) < CampfireApart;
+		});
+		if (Lit.Num() < CampfireCount && !bNear &&
+			Placer.TryAddBehind(Make(EKind::Campfire, X, Ledge.Y, CampfireWidth, CampfireHeight, Random),
+				Random.FRandRange(0, BackMax / 2)))
+		{
+			Lit.Add(Placer.GetPlaced().Last());
 		}
 	}
 }
 
-TArray<FUghDecoration> UghDecorations::Plan(const ugh_logic* Logic, int32 LevelId, int32 WaterRow,
-	const TOptional<FIntPoint>& Hearth)
+void UghPlans::AddPalms(FUghPlacer& Placer, FRandomStream& Random)
 {
-	FRandomStream Random(LevelId);
-	TArray<FUghDecoration> Placed;
-	AddPalm(Logic, WaterRow, Hearth, Random, Placed);
-	AddRocks(Logic, WaterRow, Hearth, Random, Placed);
-	return Placed;
+	// where no tall one fits (as deep as it must be), small ones (nearer: no rotor reaches their crowns)
+	if (AddPalmsOf(Placer, Random, PalmMin, PalmMax) == 0)
+	{
+		AddPalmsOf(Placer, Random, PalmSmall, int32(UghDecorations::Middle));
+	}
+}
+
+void UghPlans::AddLandmarks(FUghPlacer& Placer, FRandomStream& Random)
+{
+	const ugh_logic* Logic = Placer.GetGround().GetLogic();
+	const TArray<FUghLedge> Ledges = UghLedges::Find(Logic, Placer.GetWaterRow(), HutMin + 1, UghLedges::PadsToo);
+	int32 Totems = 0, Huts = 0;
+	for (int32 Try = 0; Try < LandmarkTries && !Ledges.IsEmpty() && (Totems < TotemCount || Huts < HutCount); ++Try)
+	{
+		const FUghLedge& Ledge = Ledges[Random.RandHelper(Ledges.Num())];
+		const bool bHut = Huts < HutCount && (Totems >= TotemCount || Random.FRand() < 0.5);
+		const double Height = bHut ? Random.FRandRange(HutMin, HutMax) : Random.FRandRange(TotemMin, TotemMax);
+		const double Width = Height * (bHut ? HutAspect : TotemAspect);
+		const double X = Random.FRandRange(Ledge.First + Width / 2, Ledge.Last - Width / 2);
+		if (Ledge.Length() < Width || UghLedges::RoomAbove(Logic, FMath::FloorToInt32(X), Ledge.Y, 64) < Height + 1)
+		{
+			continue;
+		}
+		FDecoration Landmark = Make(bHut ? EKind::Hut : EKind::Totem, X, Ledge.Y, Width, Height, Random);
+		Landmark.Yaw = Random.FRandRange(-LandmarkTurn, LandmarkTurn);   // its door, its faces towards the camera
+		if (Placer.TryAddBehind(Landmark, Random.FRandRange(0, BackMax)))
+		{
+			(bHut ? Huts : Totems) += 1;
+		}
+	}
+}
+
+TArray<FUghDecoration> UghDecorations::Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId,
+	int32 WaterRow)
+{
+	if (Field.IsEmpty())
+	{
+		return {};
+	}
+	const FUghGround Ground(Logic, Field);
+	FUghPlacer Placer(Ground, WaterRow);
+	// each part its own sequence of the level's numbers: a change in one leaves the others as they were
+	void (*const Parts[])(FUghPlacer&, FRandomStream&) = { &UghPlans::AddCampfires, &UghPlans::AddPalms,
+		&UghPlans::AddLandmarks, &UghPlans::AddPlants, &UghPlans::AddMeadows, &UghPlans::AddVines,
+		&UghPlans::AddCreepers };
+	for (int32 Part = 0; Part < UE_ARRAY_COUNT(Parts); ++Part)
+	{
+		FRandomStream Random(LevelId * 101 + Part);
+		Parts[Part](Placer, Random);
+	}
+	return Placer.TakePlaced();
 }

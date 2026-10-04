@@ -8,12 +8,13 @@
 
 class UInstancedStaticMeshComponent;
 class UStaticMesh;
-class UStaticMeshComponent;
 
 /**
- * The decorations of the level being played (UghDecorations): the imported models of UghAssets (a palm, rocks), each
- * scaled into its box and standing on its ledge, or clay shapes when the models are not imported (a trunk with
- * a crown, a stone). Only decoration: the game does not know it.
+ * The decorations of the level being played (UghDecorations; the campfires are AUghCampfire's): the imported models of
+ * UghAssets, each scaled into its box and standing on its ground (a liana hanging from its ceiling), instanced (one
+ * component a mesh: thousands of tufts of grass are cheap for Nanite); the small and the cut-out ones neither cast
+ * shadows nor are ray traced where that costs more than it shows. Clay shapes where a kind's models are not
+ * imported (a trunk with a crown, a stone, a bush, a pole, a cone). Only decoration: the game does not know it.
  */
 UCLASS()
 class AUghScenery : public AActor
@@ -30,13 +31,13 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	/** A model of `Meshes` (its Variant) scaled into the box of `Decoration`, standing on its foot. */
-	void AddModel(const FUghDecoration& Decoration, const TArray<TObjectPtr<UStaticMesh>>& Meshes);
+	/** The instances of `Mesh` (made the first time, drawn as `Kind` wants). */
+	UInstancedStaticMeshComponent* InstancesOf(UStaticMesh* Mesh, FUghDecoration::EKind Kind);
 
-	UPROPERTY() TArray<TObjectPtr<UStaticMesh>> Palms;
-	UPROPERTY() TArray<TObjectPtr<UStaticMesh>> Rocks;
-	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Models;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Trunks;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Crowns;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Stones;
+	/** The models of each kind (UghScenery.cpp's Looks): Meshes[First[kind] .. First[kind + 1] - 1]. */
+	UPROPERTY() TArray<TObjectPtr<UStaticMesh>> Meshes;
+	TArray<int32> First;
+	UPROPERTY() TMap<TObjectPtr<UStaticMesh>, TObjectPtr<UInstancedStaticMeshComponent>> Instances;
+	/** The clay shapes: a component a part of a kind's clay look (UghScenery.cpp's ClayParts). */
+	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Clay;
 };

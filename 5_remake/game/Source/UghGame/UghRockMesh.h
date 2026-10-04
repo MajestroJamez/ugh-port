@@ -6,7 +6,6 @@
 #include "UghShapes.h"
 
 class UStaticMesh;
-struct ugh_logic;
 
 /**
  * The rock of the level being played, a smooth cliff with its cave: the surface of FUghRockField (UghSurfaceNets) in
@@ -31,8 +30,8 @@ public:
 	TArray<FColor> Colors;
 	TArray<int32> Triangles;
 
-	/** Builds the rock of the level being played (`Art`: its drawing, else no holes in the back wall); none before one. */
-	void Build(const ugh_logic* Logic, TConstArrayView<FColor> Art);
+	/** The surface of `Field` (none when it is empty). */
+	void Build(const FUghRockField& Field);
 	/**
 	 * The mesh as the engine's static mesh (one material slot): drawn, shadowed and ray traced like any static mesh,
 	 * so its shadows and ray tracing are built once, not every frame. None when empty.

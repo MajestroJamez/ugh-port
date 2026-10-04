@@ -759,3 +759,28 @@ změny. Pravidla navíc:
   asi ±60 a natáčejí se ke kameře, letec v letu až ~±170 (křídla); dekorace na římsách s nepřítelem nebo plošinou mají
   nechat volný prostor nad nimi (strom 2,6 m, triceratops 1,9 m) a za deskou; stromy s tváří jsou nepřátelé logiky,
   palmy dekorace. Čeká na Jana: prohlédnout postavy v pohybu v okně (`play.ps1`). Další: **krok 18**.
+- 2026-10-04: krok 18 hotový - příroda a dekorace (`docs/visual-concept.md`). Pravěká džungle na římsách: louky
+  (instancované trsy trávy `grass_medium_01/02` v řadách do hloubky, ostrůvky květin `flower_gazania`,
+  `flower_empodium`, `periwinkle_plant`), palmy (až 4 nejvyšší, které se vejdou), keře, kapradiny, rostliny džungle
+  (`anthurium_botany_01` s červenými květy, `calathea`), kameny, pařezy `tree_stump_01`, kosti a lebky, dva totemy,
+  chýše, až 3 ohně a liány ze stropů a závěsy lián po zadní stěně jeskyně; v průměru ~2000 dekorací na level (nejméně
+  286). Z Blenderu nové `bones.py`, `totem.py`, `hut.py` (+ `prop_shapes.py`) a `vines.py` (v `Assets.json`). Rozmístění
+  (`UghDecorations::Plan` a `UghPlans`: `UghDecorations.cpp`, `UghPlants.cpp`, `UghVines.cpp`) deterministicky z masky
+  a z pole skály (`FUghGround` nad `FUghRockField`: podlaha / strop / zadní stěna v hloubce dekorace, přední polovina
+  krabice ve vzduchu), pravidla v `FUghPlacer`: nic na obrazovce blíž než 25 jednotek za rovinou hry, nic vyššího než
+  5 px blíž než 80 (tělo vrtulníku 45, nepřátelé 70), nic vyššího než 16 px ani liána blíž než 180 (rotor 130, křídla
+  letce 170), u plošin místo pro tělo (80) a rotor (180) přistávajícího vrtulníku; listnaté se smí prolínat. Test
+  `Ugh.Scenery` pro 150 levelů obou režimů: bohatost (aspoň 150 dekorací, 6 druhů, 100 trsů, palma), determinismus,
+  na skále a ve vzduchu, žádný průnik s chráněnými objemy (deska hry, dosah postav, rotorů a křídel, přistání na
+  plošinách, cedule s čísly) a s ohněm. Oheň (`AUghCampfire`): Kenneyho kameny a polena v tmavé plastelíně, plamen ze tří
+  zkřížených kartiček s novým materiálem `M_UghFire` (`Shaders/UghFlame.hlsl`: jazyky z šumu, jiskry, vítr), blikající
+  Lumen světlo každého ohně, zhasne pod vodou. `FUghRockField::Build(Logic, Art)` plánuje krápníky sám, síť
+  `FUghRockMesh::Build(Field)`. Import: průsvitné glTF materiály (BLEND: tráva, květiny) vyříznuté (Nanite průsvitnost
+  nekreslí), kopie v `_Masters` povolují i instancované sítě (`ImportVersion` 5), generované materiály povolují Nanite.
+  `AUghScenery`: komponenta ISM na síť, tráva a květiny bez stínů, maskované listy bez ray tracingu, bez modelů
+  plastelína (ověřeno s přejmenovaným `Content/Imported`). `levels.ps1` vypíše medián fps: 40 (krok 17: 36; uprostřed
+  běhu po zahřátí propad na 13-25, pak zpět 40+), jednotlivé snímky 49-53. `levels.ps1` (27 min) a archy bez vad,
+  prohlédnuté i snímky. CTest logiky, `6_verification` (163) a 172 testů v UE zelené. Pro krok 19: voda zakrývá
+  dekorace pod hladinou (ohně zhasínají podle `SetWater`), dekorace jsou za deskou 25-500 jednotek hluboko, závěsy lián
+  na zadní stěně; ohně jsou 2-3 bodová světla se stíny (25 cd, dosah 900) - při změně nálady levelu (noc) je využít;
+  nepoužité assety `island_tree_02`, `pachira_aquatica_01`, `dead_tree_trunk`. Další: **krok 19**.

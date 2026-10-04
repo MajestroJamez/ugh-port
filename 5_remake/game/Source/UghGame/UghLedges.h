@@ -33,10 +33,4 @@ namespace UghLedges
 
 	/** How many empty pixels are above pixel x, y (up to the top of the screen), at most `Limit`. */
 	int32 RoomAbove(const ugh_logic* Logic, int32 X, int32 Y, int32 Limit);
-
-	/**
-	 * Where a campfire fits: the middle of the longest ledge above `WaterRow` (pixels: x, and y of its surface);
-	 * unset when there is none.
-	 */
-	TOptional<FIntPoint> FindHearth(const ugh_logic* Logic, int32 WaterRow);
 }

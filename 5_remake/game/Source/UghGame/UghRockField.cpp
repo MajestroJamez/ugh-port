@@ -3,6 +3,7 @@
 #include "Algo/BinarySearch.h"
 #include "Async/ParallelFor.h"
 #include "UghRockFeatures.h"
+#include "ugh_logic.h"
 
 namespace
 {
@@ -108,8 +109,13 @@ TConstArrayView<double> FUghRockField::Depths()
 	return Layers;
 }
 
-void FUghRockField::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art, TConstArrayView<FUghRockStamp> Stamps)
+void FUghRockField::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art)
 {
+	Values.Reset();
+	if (ugh_logic_pad_count(Logic) == 0)
+	{
+		return;   // no level yet
+	}
 	Outline.Build(Logic);
 	MakeBackWall(Art);
 	const TConstArrayView<double> Layers = Depths();
@@ -127,7 +133,7 @@ void FUghRockField::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art, T
 			}
 		}
 	});
-	for (const FUghRockStamp& Each : Stamps)
+	for (const FUghRockStamp& Each : UghRockFeatures::Plan(Logic))
 	{
 		Stamp(Each);
 	}

@@ -4,9 +4,7 @@
 #include "Engine/StaticMesh.h"
 #include "MeshDescription.h"
 #include "StaticMeshAttributes.h"
-#include "UghRockFeatures.h"
 #include "UghSurfaceNets.h"
-#include "ugh_logic.h"
 
 namespace
 {
@@ -30,20 +28,18 @@ namespace
 	const FName SlotName(TEXT("Rock"));
 }
 
-void FUghRockMesh::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art)
+void FUghRockMesh::Build(const FUghRockField& Field)
 {
 	Vertices.Reset();
 	Normals.Reset();
 	UVs.Reset();
 	Colors.Reset();
 	Triangles.Reset();
-	if (ugh_logic_pad_count(Logic) == 0)
+	if (Field.IsEmpty())
 	{
-		return;   // no level yet
+		return;
 	}
 	const double Started = FPlatformTime::Seconds();
-	FUghRockField Field;
-	Field.Build(Logic, Art, UghRockFeatures::Plan(Logic));
 	TArray<FVector> Points;
 	TArray<FUghNetQuad> Quads;
 	UghSurfaceNets::Build(Field, Points, Quads);

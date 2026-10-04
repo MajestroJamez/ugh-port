@@ -6,9 +6,11 @@
 #include "Materials/MaterialExpressionBumpOffset.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
 #include "Materials/MaterialExpressionNoise.h"
+#include "Materials/MaterialExpressionPerInstanceRandom.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
+#include "Materials/MaterialExpressionTime.h"
 #include "Materials/MaterialExpressionVertexColor.h"
 #include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
@@ -69,6 +71,7 @@ namespace
 			FAssetRegistryModule::AssetCreated(Material);
 		}
 		Material->SetMaterialUsage(MATUSAGE_InstancedStaticMeshes);   // the figures are instanced shapes
+		Material->SetMaterialUsage(MATUSAGE_Nanite);   // clay on the imported meshes (the campfires' stones)
 		return Material;
 	}
 
@@ -183,9 +186,18 @@ bool UUghMakeAssetsCommandlet::MakeFire(UMaterial* Material)
 {
 	Material->BlendMode = BLEND_Additive;
 	Material->SetShadingModel(MSM_Unlit);
-	UMaterialExpression* Color = Vector(Material, UghMaterials::ColorParameter, FLinearColor(1.f, 0.4f, 0.1f));
-	UMaterialExpression* Intensity = Scalar(Material, UghMaterials::IntensityParameter, 20.f);
-	UMaterialEditingLibrary::ConnectMaterialProperty(Times(Material, Color, Intensity), TEXT(""), MP_EmissiveColor);
+	Material->TwoSided = true;
+	UMaterialExpression* Flame = Custom(Material, ShaderCode(TEXT("UghFlame.hlsl")), CMOT_Float3, {
+		{ TEXT("UV"), Add<UMaterialExpressionTextureCoordinate>(Material) },
+		{ TEXT("Time"), Add<UMaterialExpressionTime>(Material) },
+		{ TEXT("Seed"), Add<UMaterialExpressionPerInstanceRandom>(Material) },
+		{ UghMaterials::WindParameter, Scalar(Material, UghMaterials::WindParameter, 0.f) },
+		{ UghMaterials::IntensityParameter, Scalar(Material, UghMaterials::IntensityParameter, 1.5f) } });
+	if (!Flame)
+	{
+		return false;
+	}
+	UMaterialEditingLibrary::ConnectMaterialProperty(Flame, TEXT(""), MP_EmissiveColor);
 	return true;
 }
 

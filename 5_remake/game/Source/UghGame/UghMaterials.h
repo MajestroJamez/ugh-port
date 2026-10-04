@@ -13,6 +13,7 @@ namespace UghMaterials
 	inline const TCHAR* ArtParameter = TEXT("Art");
 	inline const TCHAR* OpacityParameter = TEXT("Opacity");
 	inline const TCHAR* IntensityParameter = TEXT("Intensity");
+	inline const TCHAR* WindParameter = TEXT("Wind");
 	inline const TCHAR* BaseColorParameter = TEXT("BaseColor");
 	inline const TCHAR* NormalParameter = TEXT("Normal");
 	inline const TCHAR* RoughnessParameter = TEXT("Roughness");
@@ -41,7 +42,11 @@ namespace UghMaterials
 	inline const TCHAR* const CliffMaps[] = { BaseColorParameter, NormalParameter, RoughnessParameter, HeightParameter };
 	/** Translucent water. Parameters Color, Opacity. */
 	inline const TCHAR* Water = TEXT("/Game/Generated/M_UghWater");
-	/** A glowing flame (unlit, additive). Parameters Color, Intensity. */
+	/**
+	 * A campfire's flame on a card (unlit, additive, seen from both sides; card UVs: u across, v down): tongues of fire
+	 * licking upwards, sparks above them, each card of instanced ones flickering its own way. Parameters Intensity and
+	 * Wind (-1 .. 1, the flame leans that way). The shader code is Source/UghEditor/Shaders/UghFlame.hlsl.
+	 */
 	inline const TCHAR* Fire = TEXT("/Game/Generated/M_UghFire");
 	/** A sprite of the original on a card (unlit, colour 0 cut out). Texture parameter Art. */
 	inline const TCHAR* Sprite = TEXT("/Game/Generated/M_UghSprite");
