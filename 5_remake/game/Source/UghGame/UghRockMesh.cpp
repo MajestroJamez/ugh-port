@@ -7,9 +7,6 @@ namespace
 {
 	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
 
-	/** A campfire needs this long a ledge and this much room above it, pixels. */
-	constexpr int32 HearthLength = 12, HearthRoom = 16;
-
 	/** A run of pixels in a row or column: First .. Last - 1. */
 	struct FRun
 	{
@@ -181,41 +178,4 @@ void FUghRockMesh::AddBackWall()
 			AddQuad(Corners, Pixels, (Normal | Front) >= 0 ? Normal : -Normal);
 		}
 	}
-}
-
-TOptional<FIntPoint> FUghRockMesh::FindHearth(const ugh_logic* Logic, int32 WaterRow) const
-{
-	TOptional<FIntPoint> Best;
-	int32 BestLength = HearthLength - 1;
-	for (int32 Y = HearthRoom; Y < FMath::Min(WaterRow, Height); ++Y)
-	{
-		auto Free = [&](int32 X)
-		{
-			for (int32 Above = 1; Above <= HearthRoom; ++Above)
-			{
-				if (Solid(Logic, X, Y - Above))
-				{
-					return false;
-				}
-			}
-			for (int32 Index = 0; Index < ugh_logic_pad_count(Logic); ++Index)
-			{
-				ugh_logic_pad Pad;
-				if (ugh_logic_get_pad(Logic, Index, &Pad) && FMath::Abs(Pad.y - Y) <= 1 && X >= Pad.left && X <= Pad.right)
-				{
-					return false;
-				}
-			}
-			return Solid(Logic, X, Y);
-		};
-		for (const FRun& Run : Runs(Width, Free))
-		{
-			if (Run.Last - Run.First > BestLength)
-			{
-				BestLength = Run.Last - Run.First;
-				Best = FIntPoint((Run.First + Run.Last) / 2, Y);
-			}
-		}
-	}
-	return Best;
 }

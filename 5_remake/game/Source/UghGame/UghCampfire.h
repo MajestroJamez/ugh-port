@@ -11,7 +11,7 @@ class UPointLightComponent;
 
 /**
  * A campfire: two logs, a flame and a flickering orange light that lights the cave (Lumen). Only decoration: the
- * game does not know it. It stands where FUghRockMesh::FindHearth finds room, or is hidden.
+ * game does not know it. It stands where UghLedges::FindHearth finds room, or is hidden.
  */
 UCLASS()
 class AUghCampfire : public AActor

@@ -8,6 +8,7 @@
 #include "Materials/MaterialExpressionMultiply.h"
 #include "Materials/MaterialExpressionNoise.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
+#include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Misc/PackageName.h"
@@ -129,7 +130,8 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	};
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock },
-		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Fire, &MakeFire }, { UghMaterials::Sprite, &MakeSprite } };
+		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Fire, &MakeFire }, { UghMaterials::Sprite, &MakeSprite },
+		{ UghMaterials::Pbr, &MakePbr } };
 	bool bAllSaved = true;
 	for (const FRecipe& Recipe : Recipes)
 	{
@@ -182,4 +184,29 @@ void UUghMakeAssetsCommandlet::MakeSprite(UMaterial* Material)
 	UMaterialExpression* Art = ArtTexture(Material);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("RGB"), MP_EmissiveColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("A"), MP_OpacityMask);
+}
+
+void UUghMakeAssetsCommandlet::MakePbr(UMaterial* Material)
+{
+	// the instances (UghImportAssets) give the textures; the engine's defaults are of the same sampler types
+	UMaterialExpression* Coordinates = Times(Material, Add<UMaterialExpressionTextureCoordinate>(Material),
+		Scalar(Material, UghMaterials::TilingParameter, 1.f));
+	auto Texture = [&](const TCHAR* Name, EMaterialSamplerType Sampler, const TCHAR* Default)
+	{
+		UMaterialExpressionTextureSampleParameter2D* Sample = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
+		Sample->ParameterName = Name;
+		Sample->SamplerType = Sampler;
+		Sample->Texture = LoadObject<UTexture2D>(nullptr, Default);
+		UMaterialEditingLibrary::ConnectMaterialExpressions(Coordinates, TEXT(""), Sample, TEXT("UVs"));
+		return Sample;
+	};
+	const TCHAR* Masks = TEXT("/Engine/EngineMaterials/DefaultDiffuse_TC_Masks.DefaultDiffuse_TC_Masks");
+	UMaterialEditingLibrary::ConnectMaterialProperty(Texture(UghMaterials::BaseColorParameter, SAMPLERTYPE_Color,
+		TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture")), TEXT("RGB"), MP_BaseColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Texture(UghMaterials::NormalParameter, SAMPLERTYPE_Normal,
+		TEXT("/Engine/EngineMaterials/DefaultNormal.DefaultNormal")), TEXT("RGB"), MP_Normal);
+	UMaterialEditingLibrary::ConnectMaterialProperty(
+		Texture(UghMaterials::RoughnessParameter, SAMPLERTYPE_Masks, Masks), TEXT("G"), MP_Roughness);
+	UMaterialEditingLibrary::ConnectMaterialProperty(
+		Texture(UghMaterials::OcclusionParameter, SAMPLERTYPE_Masks, Masks), TEXT("R"), MP_AmbientOcclusion);
 }

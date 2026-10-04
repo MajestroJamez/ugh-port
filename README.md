@@ -72,7 +72,7 @@ uses only earlier ones. Each numbered folder has a short `README.md`.
 | `5_remake/` | the remake: `logic/` (C++ game logic, library and unit tests), `game/` (Unreal Engine project, step 10) |
 | `6_verification/` | the C++ logic against the golden replays, field by field (`build.ps1`) |
 | `docs/` | the plan of the project (`plan.md`), the design and the map of the C++ logic |
-| `assets/` | data extracted from `UGH.EXE` (never committed) |
+| `assets/` | data extracted from `UGH.EXE` and the free 3D assets of the remake (`assets/3d`, `5_remake/game/fetch-assets.ps1`); never committed |
 
 The Gradle wrapper and build scripts stay in the root: `.\gradlew.bat :extractor:run`, `:verify:replays` or
 `:desktop:run` work from there.

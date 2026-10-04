@@ -656,3 +656,28 @@ změny. Pravidla navíc:
   sebou 0,992 - liší se jen fází LFO), UE testy `Ugh.Sounds.Files/Mixer/Player`. CTest logiky, `6_verification`
   (163) a 165 testů v UE zelené. Čeká na Jana: poslech (`play.ps1`: menu, level s letcem a foukačem, prohra,
   hlasitost). Další: **krok 14**.
+- 2026-10-04: krok 14 hotový - knihovna 3D assetů a cesta do UE. `5_remake/game/Assets.json` (24 assetů: id, druh,
+  zdroj, stránka, autor, licence CC0, cesta) a `fetch-assets.ps1` (stáhne do `assets/3d` jen chybějící, Poly Haven
+  přes API s MD5, ostatní přímé odkazy se SHA-256 z manifestu, archivy rozbalí `tar.exe`, rozpočet 100 GB, tabulka na
+  konci; dnes 0,57 GB): textury skal `cliff_side`, `rock_face_03`, `rock_wall_02`, `mossy_rock`, `lichen_rock`, hlína
+  `red_laterite_soil_stones`, kůra `palm_bark` (Poly Haven 2k), tráva `grass004` a mech `moss002` (ambientCG), oblohy
+  HDRI `belfast_sunset_puresky` a `kloofendal_48d_partly_cloudy_puresky` (4k), modely balvanů, kamenů, stromu džungle
+  `island_tree_02`, kapradiny, keře, rostlin džungle, trávy, kmene (Poly Haven glTF), palmy Nobiax (OpenGameArt; OBJ
+  převede `Blender/palm.py` přes `blender -b` na glTF s vyříznutými listy) a ohniště (Kenney Nature Kit FBX).
+  Quaternius nemá přímé odkazy (Google Drive / itch), Poly Haven nemá palmu. Commandlet `UghImportAssets` (modul
+  `UghEditor`, Interchange) po materiálech v `build.ps1` naimportuje vše do `Content/Imported/<id>` (gitignore):
+  modely jako Nanite sítě s materiály glTF, sady textur s nastavenou kompresí a instancí `MI_<id>` nového master
+  materiálu `M_UghPbr` (`UghMakeAssets`: BaseColor, Normal, Roughness = G, Occlusion = R, Tiling); idempotentní
+  (`Import.stamp`: soubory, z kterých vznikl; nový import nejdřív smaže starý), chybějící asset přeskočí s řádkem
+  v logu; `-ForceImport`. Ve hře registr `UghAssets.h` (id -> statické sítě přes asset registry) a důkaz: `AUghScenery`
+  postaví v každém levelu palmu a kde se vejdou 1-2 kameny (`UghDecorations`, místo na římsách `UghLedges`, kam se
+  přesunulo i hledání ohniště) - na suché římse s místem pro celý box, mimo plošiny, za deskou hry, stejné pro stejný
+  level; bez assetů tytéž dekorace z plastelíny (ověřeno s přejmenovaným `assets/3d` i `Content/Imported`: build,
+  shot i 166 testů v UE). Plošiny pokrývají skoro celé římsy, takže kde jinde místo není, stojí palma na římse plošiny
+  (aspoň 28 px, koruna nad cedulí s číslem), kameny jen mimo plošiny (v 82 ze 150 levelů). Test `Ugh.Scenery`
+  (každý level má palmu, vše na zemi s místem, mimo plošiny, za deskou, deterministicky).
+  `levels.ps1` (21,6 min) a archy bez vad, palma je vidět (ve stínu jeskyně tmavá - světlo a materiály krok 15/18).
+  CTest logiky, `6_verification` (163) a 166 testů v UE zelené s assety i bez nich. Pro krok 15: textury skal jsou
+  instance `MI_<id>` s mapou výšky (`height`, TC_Grayscale) pro displacement, oblohy HDRI jako 2D HDR textury
+  (long-lat), `Tiling` je opakování na UV jednotku (rozměry textur Poly Haven 1,8-3 m). Balení s `Content/Imported`
+  zatím nevyzkoušené (`DirectoriesToAlwaysCook` přidáno). Další: **krok 15**.

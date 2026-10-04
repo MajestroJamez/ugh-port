@@ -1,8 +1,10 @@
-# Builds the editor of the UE project (modules UghLogic, UghGame, UghEditor), then makes the materials
-# (commandlet UghMakeAssets -> Content\Generated). Windows PowerShell 5.1:
+# Builds the editor of the UE project (modules UghLogic, UghGame, UghEditor), makes the materials (commandlet
+# UghMakeAssets -> Content\Generated) and imports the 3D assets fetch-assets.ps1 downloaded (commandlet UghImportAssets
+# -> Content\Imported; an asset not downloaded is skipped, the game shows clay shapes instead). Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\build.ps1
-# Needs the plugins (setup.ps1) and Unreal Engine 5.8 (ue.ps1). -NoAssets only compiles.
-param([switch]$NoAssets)
+# Needs the plugins (setup.ps1) and Unreal Engine 5.8 (ue.ps1). -NoAssets only compiles; -ForceImport imports every
+# downloaded asset again.
+param([switch]$NoAssets, [switch]$ForceImport)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -17,6 +19,14 @@ if (-not $NoAssets) {
     & $UeEditorCmd $Project -run=UghMakeAssets -unattended -nopause -nosplash -nosound "-abslog=$log" | Out-Null
     $code = $LASTEXITCODE
     if ($code -ne 0) { Write-Host "FAILED: materials (exit code $code), see $log" -ForegroundColor Red; exit $code }
+    $log = Join-Path $PSScriptRoot 'Saved\Logs\UghImportAssets.log'
+    $arguments = @($Project, '-run=UghImportAssets', '-unattended', '-nopause', '-nosplash', '-nosound', "-abslog=$log")
+    if ($ForceImport) { $arguments += '-Force' }
+    & $UeEditorCmd @arguments | Out-Null
+    $code = $LASTEXITCODE
+    if ($code -ne 0) { Write-Host "FAILED: 3D assets (exit code $code), see $log" -ForegroundColor Red; exit $code }
+    $summary = Select-String -Path $log -Pattern 'LogUghImportAssets: Display: \d+ imported' | Select-Object -Last 1
+    if ($summary) { Write-Host ($summary.Line -replace '^.*Display: ', '3D assets: ') }
 }
 Write-Host 'OK' -ForegroundColor Green
 exit 0

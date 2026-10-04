@@ -31,6 +31,8 @@ build/
 5_remake/game/Config/DefaultInput.ini
 # the materials: made by the commandlet UghMakeAssets on every build.ps1
 5_remake/game/Content/Generated/
+# the 3D assets of assets/3d imported by the commandlet UghImportAssets (build.ps1)
+5_remake/game/Content/Imported/
 # packaged game and the PSO cache recorded for it (package.ps1, pso.ps1)
 5_remake/game/Packaged/
 5_remake/game/Build/Windows/PipelineCaches/

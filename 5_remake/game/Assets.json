@@ -1,0 +1,179 @@
+{
+  "about": "The 3D assets of the remake: free (CC0) and downloadable without an account. fetch-assets.ps1 downloads them to <folder> (never committed), the commandlet UghImportAssets (build.ps1) imports them to Content/Imported/<id>. kind: texture (a PBR set: maps by role -> a material instance of M_UghPbr), model (the files of import, glTF or FBX), hdri (a sky). Source: polyhaven (the files of its API, https://api.polyhaven.com/files/<id>: <map>.<format> at a resolution, checked by its MD5) or download (a file or an archive, checked by size and SHA-256; an archive is extracted to path). blender: a script of Blender/ run on the asset's folder that makes outputs.",
+  "folder": "assets/3d",
+  "budgetGB": 100,
+  "licenses": {
+    "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "assets": [
+    {
+      "id": "cliff_side", "kind": "texture", "use": "rock: an eroded layered cliff (warm)",
+      "page": "https://polyhaven.com/a/cliff_side", "license": "CC0-1.0", "author": "James Ray Cock, Jenelle van Heerden, Dario Barresi (Poly Haven)",
+      "path": "polyhaven/cliff_side",
+      "polyhaven": { "id": "cliff_side", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "cliff_side_diff_2k.jpg", "normal": "cliff_side_nor_dx_2k.jpg", "arm": "cliff_side_arm_2k.jpg", "height": "cliff_side_disp_2k.png" }
+    },
+    {
+      "id": "rock_face_03", "kind": "texture", "use": "rock: a natural rock face (grey)",
+      "page": "https://polyhaven.com/a/rock_face_03", "license": "CC0-1.0", "author": "Dario Barresi, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/rock_face_03",
+      "polyhaven": { "id": "rock_face_03", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "rock_face_03_diff_2k.jpg", "normal": "rock_face_03_nor_dx_2k.jpg", "arm": "rock_face_03_arm_2k.jpg", "height": "rock_face_03_disp_2k.png" }
+    },
+    {
+      "id": "rock_wall_02", "kind": "texture", "use": "rock: a cracked rock wall",
+      "page": "https://polyhaven.com/a/rock_wall_02", "license": "CC0-1.0", "author": "Rob Tuytel (Poly Haven)",
+      "path": "polyhaven/rock_wall_02",
+      "polyhaven": { "id": "rock_wall_02", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "rock_wall_02_diff_2k.jpg", "normal": "rock_wall_02_nor_dx_2k.jpg", "arm": "rock_wall_02_arm_2k.jpg", "height": "rock_wall_02_disp_2k.png" }
+    },
+    {
+      "id": "mossy_rock", "kind": "texture", "use": "rock with moss (the tops of ledges)",
+      "page": "https://polyhaven.com/a/mossy_rock", "license": "CC0-1.0", "author": "Rob Tuytel (Poly Haven)",
+      "path": "polyhaven/mossy_rock",
+      "polyhaven": { "id": "mossy_rock", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "mossy_rock_diff_2k.jpg", "normal": "mossy_rock_nor_dx_2k.jpg", "arm": "mossy_rock_arm_2k.jpg", "height": "mossy_rock_disp_2k.png" }
+    },
+    {
+      "id": "lichen_rock", "kind": "texture", "use": "rock with lichen",
+      "page": "https://polyhaven.com/a/lichen_rock", "license": "CC0-1.0", "author": "Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/lichen_rock",
+      "polyhaven": { "id": "lichen_rock", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "lichen_rock_diff_2k.jpg", "normal": "lichen_rock_nor_dx_2k.jpg", "arm": "lichen_rock_arm_2k.jpg", "height": "lichen_rock_disp_2k.png" }
+    },
+    {
+      "id": "red_laterite_soil_stones", "kind": "texture", "use": "soil: tropical red earth with stones",
+      "page": "https://polyhaven.com/a/red_laterite_soil_stones", "license": "CC0-1.0", "author": "Amal Kumar (Poly Haven)",
+      "path": "polyhaven/red_laterite_soil_stones",
+      "polyhaven": { "id": "red_laterite_soil_stones", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "red_laterite_soil_stones_diff_2k.jpg", "normal": "red_laterite_soil_stones_nor_dx_2k.jpg", "arm": "red_laterite_soil_stones_arm_2k.jpg", "height": "red_laterite_soil_stones_disp_2k.png" }
+    },
+    {
+      "id": "palm_bark", "kind": "texture", "use": "wood: the bark of a palm",
+      "page": "https://polyhaven.com/a/palm_bark", "license": "CC0-1.0", "author": "Charlotte Baglioni (Poly Haven)",
+      "path": "polyhaven/palm_bark",
+      "polyhaven": { "id": "palm_bark", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "palm_bark_diff_2k.jpg", "normal": "palm_bark_nor_dx_2k.jpg", "arm": "palm_bark_arm_2k.jpg", "height": "palm_bark_disp_2k.png" }
+    },
+    {
+      "id": "grass004", "kind": "texture", "use": "grass: dense short grass",
+      "page": "https://ambientcg.com/a/Grass004", "license": "CC0-1.0", "author": "Lennart Demes (ambientCG)",
+      "path": "ambientcg/Grass004",
+      "download": { "url": "https://ambientcg.com/get?file=Grass004_2K-JPG.zip", "size": 39900302, "sha256": "d7d3f08e8bb1e59aed0c3dbb85ea0b46d5308481f89b6a3fd62c0ec9e862245b" },
+      "maps": { "color": "Grass004_2K-JPG_Color.jpg", "normal": "Grass004_2K-JPG_NormalDX.jpg", "roughness": "Grass004_2K-JPG_Roughness.jpg", "ao": "Grass004_2K-JPG_AmbientOcclusion.jpg", "height": "Grass004_2K-JPG_Displacement.jpg" }
+    },
+    {
+      "id": "moss002", "kind": "texture", "use": "moss",
+      "page": "https://ambientcg.com/a/Moss002", "license": "CC0-1.0", "author": "Lennart Demes (ambientCG)",
+      "path": "ambientcg/Moss002",
+      "download": { "url": "https://ambientcg.com/get?file=Moss002_2K-JPG.zip", "size": 39615085, "sha256": "03fe8868a5b5618b30037fcece05fff9ea736a61227d9566291a9d4b3a2bb047" },
+      "maps": { "color": "Moss002_2K-JPG_Color.jpg", "normal": "Moss002_2K-JPG_NormalDX.jpg", "roughness": "Moss002_2K-JPG_Roughness.jpg", "ao": "Moss002_2K-JPG_AmbientOcclusion.jpg", "height": "Moss002_2K-JPG_Displacement.jpg" }
+    },
+    {
+      "id": "sky_belfast_sunset", "kind": "hdri", "use": "sky: an evening with clouds (the diorama's evening)",
+      "page": "https://polyhaven.com/a/belfast_sunset_puresky", "license": "CC0-1.0", "author": "Greg Zaal, Dimitrios Savva, Jarod Guest (Poly Haven)",
+      "path": "polyhaven/belfast_sunset_puresky",
+      "polyhaven": { "id": "belfast_sunset_puresky", "resolution": "4k", "files": ["hdri.hdr"] },
+      "import": ["belfast_sunset_puresky_4k.hdr"]
+    },
+    {
+      "id": "sky_kloofendal_cloudy", "kind": "hdri", "use": "sky: a day with clouds",
+      "page": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky", "license": "CC0-1.0", "author": "Greg Zaal, Jarod Guest (Poly Haven)",
+      "path": "polyhaven/kloofendal_48d_partly_cloudy_puresky",
+      "polyhaven": { "id": "kloofendal_48d_partly_cloudy_puresky", "resolution": "4k", "files": ["hdri.hdr"] },
+      "import": ["kloofendal_48d_partly_cloudy_puresky_4k.hdr"]
+    },
+    {
+      "id": "boulder_01", "kind": "model", "use": "a big boulder",
+      "page": "https://polyhaven.com/a/boulder_01", "license": "CC0-1.0", "author": "Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/boulder_01",
+      "polyhaven": { "id": "boulder_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["boulder_01_2k.gltf"]
+    },
+    {
+      "id": "namaqualand_boulder_02", "kind": "model", "use": "a flat boulder",
+      "page": "https://polyhaven.com/a/namaqualand_boulder_02", "license": "CC0-1.0", "author": "Greg Zaal, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/namaqualand_boulder_02",
+      "polyhaven": { "id": "namaqualand_boulder_02", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["namaqualand_boulder_02_2k.gltf"]
+    },
+    {
+      "id": "rock_moss_set_01", "kind": "model", "use": "mossy rocks (a set)",
+      "page": "https://polyhaven.com/a/rock_moss_set_01", "license": "CC0-1.0", "author": "Kless Gyzen (Poly Haven)",
+      "path": "polyhaven/rock_moss_set_01",
+      "polyhaven": { "id": "rock_moss_set_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["rock_moss_set_01_2k.gltf"]
+    },
+    {
+      "id": "stone_01", "kind": "model", "use": "a small stone",
+      "page": "https://polyhaven.com/a/stone_01", "license": "CC0-1.0", "author": "Dario Barresi, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/stone_01",
+      "polyhaven": { "id": "stone_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["stone_01_2k.gltf"]
+    },
+    {
+      "id": "palm", "kind": "model", "use": "palms (straight, bent)",
+      "page": "https://opengameart.org/content/free-palm-treez-v3", "license": "CC0-1.0", "author": "Nobiax / Yughues (OpenGameArt)",
+      "path": "opengameart/palm_treez_v3",
+      "download": { "url": "https://opengameart.org/sites/default/files/PACK%20V3_0.7z", "size": 19714152, "sha256": "3d50fc508d289fbe56254235955cf5c38c35ddba7064a3c7931a9852b3f8e98f" },
+      "blender": { "script": "Blender/palm.py", "outputs": ["palm_straight.glb", "palm_bend.glb"] },
+      "import": ["palm_straight.glb", "palm_bend.glb"]
+    },
+    {
+      "id": "island_tree_02", "kind": "model", "use": "a jungle tree",
+      "page": "https://polyhaven.com/a/island_tree_02", "license": "CC0-1.0", "author": "Rob Tuytel, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/island_tree_02",
+      "polyhaven": { "id": "island_tree_02", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["island_tree_02_2k.gltf"]
+    },
+    {
+      "id": "fern_02", "kind": "model", "use": "a fern",
+      "page": "https://polyhaven.com/a/fern_02", "license": "CC0-1.0", "author": "Rob Tuytel, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/fern_02",
+      "polyhaven": { "id": "fern_02", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["fern_02_2k.gltf"]
+    },
+    {
+      "id": "shrub_02", "kind": "model", "use": "a bush",
+      "page": "https://polyhaven.com/a/shrub_02", "license": "CC0-1.0", "author": "Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/shrub_02",
+      "polyhaven": { "id": "shrub_02", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["shrub_02_2k.gltf"]
+    },
+    {
+      "id": "pachira_aquatica_01", "kind": "model", "use": "a jungle shrub with big leaves",
+      "page": "https://polyhaven.com/a/pachira_aquatica_01", "license": "CC0-1.0", "author": "Rob Tuytel, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/pachira_aquatica_01",
+      "polyhaven": { "id": "pachira_aquatica_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["pachira_aquatica_01_2k.gltf"]
+    },
+    {
+      "id": "calathea_orbifolia_01", "kind": "model", "use": "a jungle plant with round leaves",
+      "page": "https://polyhaven.com/a/calathea_orbifolia_01", "license": "CC0-1.0", "author": "Rob Tuytel, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/calathea_orbifolia_01",
+      "polyhaven": { "id": "calathea_orbifolia_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["calathea_orbifolia_01_2k.gltf"]
+    },
+    {
+      "id": "grass_medium_01", "kind": "model", "use": "tufts of grass",
+      "page": "https://polyhaven.com/a/grass_medium_01", "license": "CC0-1.0", "author": "Rob Tuytel, Rico Cilliers (Poly Haven)",
+      "path": "polyhaven/grass_medium_01",
+      "polyhaven": { "id": "grass_medium_01", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["grass_medium_01_2k.gltf"]
+    },
+    {
+      "id": "dead_tree_trunk", "kind": "model", "use": "a log",
+      "page": "https://polyhaven.com/a/dead_tree_trunk", "license": "CC0-1.0", "author": "Rob Tuytel (Poly Haven)",
+      "path": "polyhaven/dead_tree_trunk",
+      "polyhaven": { "id": "dead_tree_trunk", "resolution": "2k", "files": ["gltf.gltf"] },
+      "import": ["dead_tree_trunk_2k.gltf"]
+    },
+    {
+      "id": "campfire", "kind": "model", "use": "campfires (stones, logs; low poly)",
+      "page": "https://kenney.nl/assets/nature-kit", "license": "CC0-1.0", "author": "Kenney (www.kenney.nl)",
+      "path": "kenney/nature-kit",
+      "download": { "url": "https://kenney.nl/media/pages/assets/nature-kit/37ac38a37b-1677698939/kenney_nature-kit.zip", "size": 10537521, "sha256": "fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d" },
+      "import": ["Models/FBX format/campfire_stones.fbx", "Models/FBX format/campfire_logs.fbx"]
+    }
+  ]
+}

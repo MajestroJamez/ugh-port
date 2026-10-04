@@ -26,4 +26,5 @@ private:
 	static void MakeWater(UMaterial* Material);
 	static void MakeFire(UMaterial* Material);
 	static void MakeSprite(UMaterial* Material);
+	static void MakePbr(UMaterial* Material);
 };

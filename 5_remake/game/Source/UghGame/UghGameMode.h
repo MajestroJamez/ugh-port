@@ -15,15 +15,16 @@
 class AUghBackground;
 class AUghCampfire;
 class AUghFigures;
+class AUghScenery;
 class AUghSpeaker;
 class AUghStage;
 
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
  * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground,
- * AUghFigures, AUghCampfire, the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu. Behind the
- * menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of the
- * frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
+ * AUghFigures, AUghCampfire, AUghScenery, the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu.
+ * Behind the menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of
+ * the frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
  *
  * -UghAssets=<folder> reads the data from elsewhere than assets/ (of the package, else of the repository).
  * -UghShot=<folder>: the game plays by itself for screenshots (FUghShot).
@@ -90,6 +91,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghBackground> Background;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;
+	UPROPERTY() TObjectPtr<AUghScenery> Scenery;
 	UPROPERTY() TObjectPtr<AUghSpeaker> Speaker;
 	int32 BackgroundLevel = -1;   // the level_id the background shows
 };

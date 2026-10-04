@@ -2,12 +2,13 @@
 
 The game logic of `../logic` inside Unreal Engine, shown as a diorama (`docs/visual-concept.md`): the level is a rock
 cut exactly in the plane of the play (its collision mask), coloured by the original's drawing of the level, with the
-cave behind it, water, fog, a campfire and a wooden box around; the copters, passengers, enemies and bonus items are
-plasticine shapes the size of their sprites, a passenger's speech bubble a card with its sprite. The logic runs at
-the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn between its last two steps. The
-original's sounds and music play on the logic's events (`assets/sound`). No map:
-the game mode builds the scene from code (`/Engine/Maps/Entry`); the materials are made by a commandlet, so there
-are no binary assets in git.
+cave behind it, water, fog, a campfire, a palm and rocks on its ledges and a wooden box around; the copters,
+passengers, enemies and bonus items are plasticine shapes the size of their sprites, a passenger's speech bubble a card
+with its sprite. The logic runs at the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn
+between its last two steps. The original's sounds and music play on the logic's events (`assets/sound`). No map:
+the game mode builds the scene from code (`/Engine/Maps/Entry`); the materials are made by a commandlet and the 3D
+assets (free models, textures and skies of `Assets.json`) are downloaded and imported by scripts, so there are no
+binary assets in git.
 
 ## Build, test, play, package
 
@@ -18,8 +19,9 @@ silent and logs it):
 | Script | What it does |
 |---|---|
 | `setup.ps1` | copies the vendor plugins (DLSS + Streamline, FSR with its offscreen patch, about 5 GB, not in git) from the toolchain trial into `Plugins\`; `-From <folder>` elsewhere. Once |
-| `build.ps1` | builds the editor (modules UghLogic, UghGame, UghEditor) and makes the materials (commandlet `UghMakeAssets` -> `Content\Generated`); `-NoAssets` only builds |
-| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu` and the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays); `-Filter` other tests |
+| `fetch-assets.ps1` | downloads the 3D assets of `Assets.json` to `assets\3d` (see 3D assets below): only what is missing, each file checked by its size and hash, the whole under the budget of 100 GB, archives extracted, Blender scripts run; a table of the assets at the end. `-Only <ids>` some, `-Verify` hashes the files already there too |
+| `build.ps1` | builds the editor (modules UghLogic, UghGame, UghEditor), makes the materials (commandlet `UghMakeAssets` -> `Content\Generated`) and imports the downloaded 3D assets (commandlet `UghImportAssets` -> `Content\Imported`); `-NoAssets` only builds, `-ForceImport` imports every asset again |
+| `test.ps1` | the automation tests inside the engine without a window and without sound (`UnrealEditor-Cmd -nullrhi -nosound`): the golden replays `Ugh.Replays.*` (they need `.\gradlew.bat :verify:replays`), the menu `Ugh.Menu`, the sounds `Ugh.Sounds.*` (every event's file, the mixer, when what plays) and the decorations `Ugh.Scenery` (every level has a palm, all on dry ledges with room, off the pads but such a palm, behind the slab of the play); `-Filter` other tests |
 | `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting |
 | `levels.ps1` | the same for every level of both modes in one run, then the contact sheets `Saved\Shots\Levels\levels-1p.png` and `levels-team.png` (and the menu's `menu.png`): does every level look right? `-Levels team:1-81` fewer |
 | `play.ps1` | the game in a window |
@@ -46,13 +48,13 @@ menu too).
 |---|---|
 | `Source/UghLogic/` | the logic as a module: `UghLogic.Build.cs` compiles the sources of `../logic/src` where they are (one generated file per source in `Intermediate/UghLogicSources/`, because the logic has files of the same name in different folders and UBT wants unique names). Its C API `ugh_logic.h` is exported (`UGH_LOGIC_API`). In the editor also the replay tests (`Private/Tests/ReplayTests.cpp` with the test pilot and `6_verification`'s replay check) |
 | `Source/UghGame/` | the frontend; it uses only the C API |
-| `Source/UghEditor/` | the editor's part: the commandlet `UghMakeAssets` that writes the materials of `UghMaterials.h` (clay, rock, water, fire, sprite card) |
+| `Source/UghEditor/` | the editor's part: the commandlet `UghMakeAssets` that writes the materials of `UghMaterials.h` (clay, rock, water, fire, sprite card, the PBR master of the texture sets) and the commandlet `UghImportAssets` that imports the 3D assets (`UghAssetManifest` reads `Assets.json`) |
 
 The frontend:
 
 | Class | What it does |
 |---|---|
-| `AUghGameMode` | spawns the stage, the background, the figures, the campfire and the speaker; the menu, then the logic every frame, its view and its sounds; builds the diorama of each level (behind the menu the one the menu would start, dimmed); the keys of the frontend |
+| `AUghGameMode` | spawns the stage, the background, the figures, the campfire, the scenery and the speaker; the menu, then the logic every frame, its view and its sounds; builds the diorama of each level (behind the menu the one the menu would start, dimmed); the keys of the frontend |
 | `FUghMenu` | the menu before a game (the mode, the difficulty, a password): its keys and the game it would start (`FUghGameChoice`); the HUD draws it. Test `Ugh.Menu` (`UghMenuTests.cpp`) |
 | `FUghPasswords` | the passwords of the levels of both modes (`assets/levels.json`) |
 | `FUghSimulation` | the logic at its fixed tick: `Advance(seconds)` runs the steps that are due, keeps the views before and after the last step (`Alpha` between them) and the events of the steps |
@@ -63,7 +65,11 @@ The frontend:
 | `FUghKeyboard` | a key event of the engine to the logic (Adapter): pilots' keys, Esc, P, any other key |
 | `AUghPlayerController` | passes every key press and release to the game mode (the logic wants raw key events, not input actions) |
 | `AUghStage` | the sun, the sky, the fog, the exposure and the camera (fixed, a narrow lens, a little from above); a windy level is a storm (a dim cool sun, a dense grey fog) |
-| `FUghRockMesh` | the rock of a level from its collision mask: the cut face, the floors, ceilings and walls one pixel a step, the bumpy back wall; where a campfire fits |
+| `FUghRockMesh` | the rock of a level from its collision mask: the cut face, the floors, ceilings and walls one pixel a step, the bumpy back wall |
+| `UghLedges` | where things fit on the rock: dry ledges with room above, off the pads (or not), the campfire's place (the middle of the longest one) |
+| `UghDecorations` | where a level's decorations stand: a palm (the tallest that fit, room for its whole crown) and a couple of rocks on ledges, away from the pads (where no palm fits elsewhere, a tall one on a pad's ledge: its crown above the pad's sign) and the campfire, behind the slab of the play; the same for the same level (its id seeds the choice). Test `Ugh.Scenery` (`UghSceneryTests.cpp`) |
+| `AUghScenery` | shows the decorations: the imported models (`UghAssets`) scaled into their boxes, or clay shapes when they are not imported (a trunk with a crown, a stone) |
+| `UghAssets` | the imported 3D assets the frontend asks for, by the id of `Assets.json` (`/Game/Imported/<id>`): their static meshes, none (and a log line) when missing |
 | `FUghLevelArt` | the original's drawing of a level: its tiles (`assets/levels.json`) composed from the sprites into a texture |
 | `AUghBackground` | the rock mesh with the level's drawing, the water, the wooden box |
 | `AUghCampfire` | logs, a flame and a flickering light (decoration only); in the wind the flame leans and flickers more |
@@ -77,13 +83,40 @@ The frontend:
 | `AUghHud` | the menu with how the last game ended; in a game the status line, the caption, the keys; the upscaler and the volume |
 | `UghJson` | reads a JSON file of the extracted data |
 
+## 3D assets
+
+Free assets only (CC0, downloadable without an account: Poly Haven, ambientCG, Kenney, OpenGameArt), never in git.
+`Assets.json` lists each with its source, page, author, license, folder and kind; `docs/visual-concept.md` says what
+they are for.
+
+| Kind | Source | What the import makes of it (`Content\Imported\<id>`) |
+|---|---|---|
+| `model` | Poly Haven glTF (its API: the files of a resolution, checked by MD5) or an archive (size and SHA-256 in the manifest) | the files of `import` through Interchange: Nanite static meshes, their materials (instances of the engine's glTF materials) and textures |
+| `texture` | Poly Haven maps or an ambientCG zip | the `maps` by role (color, normal, arm = occlusion/roughness/metal, roughness, ao, height) as textures with the right compression, and `MI_<id>`, an instance of `M_UghPbr` (`UghMaterials::Pbr`) |
+| `hdri` | Poly Haven `.hdr` | an HDR texture of the sky (long-lat) |
+
+Folders: `assets\3d\<source>\<asset>\` (the downloads; archives are kept in `assets\3d\_archives\` and extracted to
+the asset's folder), `Blender\` (scripts in git that make what an asset lacks, run by `fetch-assets.ps1` with
+`blender -b`: `palm.py` turns the OBJ palms of Nobiax's pack into glTF with a cut-out leaf material),
+`Content\Imported\<id>\` (the import, with `Import.stamp`: the files it was made from; the commandlet leaves an asset
+alone while they stay the same, and deletes it before importing it again). On a clean machine:
+
+```
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\fetch-assets.ps1
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\build.ps1
+```
+
+A new asset: an entry in `Assets.json` (and its id in `UghAssets.h` when the game asks for it), then both scripts.
+
 ## Rules
 
 - The plane of the play is the collision mask, exactly: the rock's cut face is its solid pixels; nothing the
-  frontend shows decides anything. The campfire stands on a dry ledge with no pad on it.
+  frontend shows decides anything. The campfire stands on a dry ledge with no pad on it, the decorations behind the
+  slab of the play, so that they never hide a figure.
 - The frontend reads the logic only through `ugh_logic.h`; values it needs (the screen, the copter's body, a full
   tank, the frame rate) come from there, checked against the logic by `static_assert` in `LogicApi.cpp`.
 - The original's data stays out of git: the drawing, the sprites and the sounds are read from `assets\` at run
-  time.
+  time. The 3D assets stay out too (`assets\3d`, imported to `Content\Imported`): the repository without them builds,
+  passes its tests and shows clay shapes instead.
 - FSR is an upscaler only (`r.FidelityFX.FI.Enabled=0`, `OverrideSwapChainDX12=0` in `Config/DefaultEngine.ini`),
   so it does not clash with DLSS frame generation.

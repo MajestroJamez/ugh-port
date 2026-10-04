@@ -29,12 +29,6 @@ public:
 	/** Builds the rock of the level being played; nothing before the first one is loaded. */
 	void Build(const ugh_logic* Logic);
 
-	/**
-	 * Where a campfire fits: the middle of the longest dry ledge above `WaterRow` with no pad on it and room above
-	 * (pixels: x, and y of its surface); unset when there is none.
-	 */
-	TOptional<FIntPoint> FindHearth(const ugh_logic* Logic, int32 WaterRow) const;
-
 private:
 	/** The size of a cell of the back wall's grid, pixels. */
 	static constexpr int32 WallStep = 4;

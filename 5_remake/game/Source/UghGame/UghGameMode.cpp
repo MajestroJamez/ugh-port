@@ -9,12 +9,15 @@
 #include "Misc/Paths.h"
 #include "UghBackground.h"
 #include "UghCampfire.h"
+#include "UghDecorations.h"
 #include "UghFigures.h"
 #include "UghHud.h"
 #include "UghJson.h"
 #include "UghKeyboard.h"
+#include "UghLedges.h"
 #include "UghPlayerController.h"
 #include "UghRockMesh.h"
+#include "UghScenery.h"
 #include "UghShapes.h"
 #include "UghShot.h"
 #include "UghSpeaker.h"
@@ -76,7 +79,7 @@ void AUghGameMode::StartPlay()
 	Simulation.Preview(Previewed);
 }
 
-/** The stage (light, air, camera), the level's background, the figures, the campfire, the speaker. */
+/** The stage (light, air, camera), the level's background, the figures, the campfire, the decorations, the speaker. */
 void AUghGameMode::BuildStage()
 {
 	UWorld* World = GetWorld();
@@ -84,6 +87,7 @@ void AUghGameMode::BuildStage()
 	Background = World->SpawnActor<AUghBackground>();
 	Figures = World->SpawnActor<AUghFigures>();
 	Campfire = World->SpawnActor<AUghCampfire>();
+	Scenery = World->SpawnActor<AUghScenery>();
 	Speaker = World->SpawnActor<AUghSpeaker>();
 	if (APlayerController* Controller = World->GetFirstPlayerController())
 	{
@@ -146,15 +150,20 @@ void AUghGameMode::ShowFrame()
 	Stage->FitCamera();
 }
 
-/** The diorama of the level the view shows: the rock coloured by its drawing, the campfire where it fits. */
+/** The diorama of the level the view shows: the rock coloured by its drawing, the campfire and the decorations. */
 void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
 	BackgroundLevel = View.level_id;
+	const ugh_logic* Logic = Simulation.GetLogic();
 	FUghRockMesh Rock;
-	Rock.Build(Simulation.GetLogic());
+	Rock.Build(Logic);
 	Background->Build(Rock, LevelArt.Draw(Background, View.level_id, Sprites));
-	Campfire->Place(View.level_id < 0 ? TOptional<FIntPoint>()
-		: Rock.FindHearth(Simulation.GetLogic(), View.water_level / UghShapes::Subpixels), View.wind);
+	const int32 WaterRow = View.water_level / UghShapes::Subpixels;
+	const TOptional<FIntPoint> Hearth =
+		View.level_id < 0 ? TOptional<FIntPoint>() : UghLedges::FindHearth(Logic, WaterRow);
+	Campfire->Place(Hearth, View.wind);
+	Scenery->Show(View.level_id < 0 ? TArray<FUghDecoration>()
+		: UghDecorations::Plan(Logic, View.level_id, WaterRow, Hearth));
 	Stage->SetWind(View.wind);
 }
 

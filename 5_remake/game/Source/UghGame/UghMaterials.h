@@ -19,9 +19,20 @@ namespace UghMaterials
 	inline const TCHAR* Fire = TEXT("/Game/Generated/M_UghFire");
 	/** A sprite of the original on a card (unlit, colour 0 cut out). Texture parameter Art. */
 	inline const TCHAR* Sprite = TEXT("/Game/Generated/M_UghSprite");
+	/**
+	 * A PBR surface of an imported texture set (UghAssets: its instance MI_<id>): texture parameters BaseColor, Normal,
+	 * Roughness (its green channel) and Occlusion (its red channel: a packed AO/roughness/metal map serves both), the
+	 * scalar Tiling (repeats of the textures per UV unit).
+	 */
+	inline const TCHAR* Pbr = TEXT("/Game/Generated/M_UghPbr");
 
 	inline const TCHAR* ColorParameter = TEXT("Color");
 	inline const TCHAR* ArtParameter = TEXT("Art");
 	inline const TCHAR* OpacityParameter = TEXT("Opacity");
 	inline const TCHAR* IntensityParameter = TEXT("Intensity");
+	inline const TCHAR* BaseColorParameter = TEXT("BaseColor");
+	inline const TCHAR* NormalParameter = TEXT("Normal");
+	inline const TCHAR* RoughnessParameter = TEXT("Roughness");
+	inline const TCHAR* OcclusionParameter = TEXT("Occlusion");
+	inline const TCHAR* TilingParameter = TEXT("Tiling");
 }
