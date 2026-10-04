@@ -1,5 +1,5 @@
 {
-  "about": "The 3D assets of the remake: free (CC0) and downloadable without an account. fetch-assets.ps1 downloads them to <folder> (never committed), the commandlet UghImportAssets (build.ps1) imports them to Content/Imported/<id>. kind: texture (a PBR set: maps by role -> a material instance of M_UghPbr), model (the files of import, glTF or FBX), hdri (a sky). Source: polyhaven (the files of its API, https://api.polyhaven.com/files/<id>: <map>.<format> at a resolution, checked by its MD5) or download (a file or an archive, checked by size and SHA-256; an archive is extracted to path). blender: a script of Blender/ run on the asset's folder that makes outputs.",
+  "about": "The 3D assets of the remake: free (CC0) and downloadable without an account. fetch-assets.ps1 downloads them to <folder> (never committed), the commandlet UghImportAssets (build.ps1) imports them to Content/Imported/<id>. kind: texture (a PBR set: maps by role -> a material instance of M_UghPbr), model (the files of import, glTF or FBX), hdri (a sky), generated (made by a Blender script alone, imported like a model: static meshes, or a skeletal mesh with its animations). Source: polyhaven (the files of its API, https://api.polyhaven.com/files/<id>: <map>.<format> at a resolution, checked by its MD5) or download (a file or an archive, checked by size and SHA-256; an archive is extracted to path), none for a generated asset. blender: a script of Blender/ run on the asset's folder (and the folders of its inputs, ids of assets) that makes outputs.",
   "folder": "assets/3d",
   "budgetGB": 100,
   "licenses": {
@@ -174,6 +174,27 @@
       "path": "kenney/nature-kit",
       "download": { "url": "https://kenney.nl/media/pages/assets/nature-kit/37ac38a37b-1677698939/kenney_nature-kit.zip", "size": 10537521, "sha256": "fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d" },
       "import": ["Models/FBX format/campfire_stones.fbx", "Models/FBX format/campfire_logs.fbx"]
+    },
+    {
+      "id": "copter", "kind": "generated", "use": "the pedal copters (body, rotor, crank, sling; both players' colours)",
+      "page": "Blender/copter.py", "license": "CC0-1.0", "author": "UGH remake (Blender/copter.py), textures palm_bark and rock_face_03 (Poly Haven)",
+      "path": "generated/copter",
+      "blender": { "script": "Blender/copter.py", "inputs": ["palm_bark", "rock_face_03"], "outputs": ["copter.glb"] },
+      "import": ["copter.glb"]
+    },
+    {
+      "id": "caveman", "kind": "generated", "use": "the caveman: pilots and passengers (rigged; actions idle, sit, pedal, hang)",
+      "page": "Blender/caveman.py", "license": "CC0-1.0", "author": "UGH remake (Blender/caveman.py)",
+      "path": "generated/caveman",
+      "blender": { "script": "Blender/caveman.py", "outputs": ["caveman.glb"] },
+      "import": ["caveman.glb"]
+    },
+    {
+      "id": "stone_passenger", "kind": "generated", "use": "the stone passenger (a boulder with eyes) that hangs below a copter",
+      "page": "Blender/stone_passenger.py", "license": "CC0-1.0", "author": "UGH remake (Blender/stone_passenger.py), texture rock_face_03 (Poly Haven)",
+      "path": "generated/stone_passenger",
+      "blender": { "script": "Blender/stone_passenger.py", "inputs": ["rock_face_03"], "outputs": ["stone_passenger.glb"] },
+      "import": ["stone_passenger.glb"]
     }
   ]
 }

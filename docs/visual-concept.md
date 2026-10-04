@@ -24,9 +24,25 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   Dřevěná krabice zmizela.
 - **Cedule s čísly plošin** (dlaždice 85-90 kresby) jsou kartičky s původním spritem těsně za deskou: číslo cílové
   plošiny je herní informace (bez textur je ukáže kresba sama).
-- **Postavy**: zatím tvary z plastelíny (vrtulník kvádr + rotor, cestující válec, nepřítel koule, bonus kužel).
-  Skutečné modely přijdou později. Bublina cestujícího je kartička s původním spritem (číslo cílové plošiny je
-  herní informace).
+- **Vrtulník** (krok 16): pravěký šlapací vrtulník podle spritu originálu - klec z bambusu svázaného provazem na
+  podlaze z kmenů, vzadu a po stranách proplétané proutí, dva pařezy s koženými polštáři, řídítka z kosti na kůlu,
+  klika s kostěnými rameny a kamennými pedály, kožené prapory nahoře a dole vpředu a kly na předních rozích; nahoře
+  rotor z kostí s velkými listy přivázanými na kamenném náboji (druhý hráč keřovitější, jako v originálu). Tělo
+  vyplňuje tělo vrtulníku logiky (`COPTER_BODY_*`, 22 x 20 px) a do hloubky zůstává v ±45 jednotkách, tedy za čelem
+  skály (-60) i bublinami; rotor (poloměr 1,3 m) přesahuje tělo do stran jen o 2 px; do hloubky
+  opisuje kruh, před čelem skály ale jen nad vzduchem těla (čelo stojí jen na pevných pixelech). Barvy týmu jsou barvy
+  kůže: hráč 1 rezavě oranžová, hráč 2 tyrkysová. Rotor se točí plynule tak rychle, jak rychle se mění jeho sprity
+  v logice (6 spritů na otáčku), klika 3x pomaleji; pilot šlape přesně s klikou (akce `pedal` držená v úhlu kliky).
+- **Pilot a cestující** (krok 16): jeskynní muž - zavalitý, kreslený, asi 1,15 m (sprity originálu jsou 10 px vysoké
+  a 16 px široké), velká hlava s obočím, nosem a očima, kůže z leopardí kožešiny přes rameno, vlasy krátké nebo
+  dlouhé a vousy jako části, které hra ukáže podle vzhledu, barvy vlasů, kožešiny a kůže podle vzhledu. Riggovaný
+  (kostra s pánví, páteří, hrudí, krkem, hlavou a končetinami) s akcemi `idle`, `sit`, `pedal`, `hang`.
+  Cestující v kabině sedí za pilotem napravo a výš, takže je ve vrtulníku vidět; vzhled podle `cargo_look` logiky:
+  1 mladík s krátkými vlasy, 2 žena s dlouhými rudými vlasy, 3 stařec s šedými vlasy a vousy. Visící cestující
+  (vzhled 4) je kámen s očima (`standingPassenger` originálu) v provazové smyčce pod podlahou, houpe se proti
+  směru letu.
+- **Ostatní postavy**: zatím tvary z plastelíny (cestující válec, nepřítel koule, bonus kužel), modely přijdou v kroku
+  17. Bublina cestujícího je kartička s původním spritem (číslo cílové plošiny je herní informace).
 
 ## Barvy a materiály
 
@@ -38,7 +54,11 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   (výšková mapa). Kresba skálu trochu tónuje, ať má každý level své barvy; barvy vrcholů nesou otevřenost (AO
   ve škvírách) a hloubku. Bez textur (repo bez assetů) má skála barvy kresby jako dřív (`M_UghRock`).
 - `M_UghPbr` má zapojenou výškovou mapu (parallax, `BumpOffset`).
-- Plastelína: matná (drsnost 0,7), sytější barvy než originál; vrtulníky oranžový a tyrkysový.
+- Plastelína: matná (drsnost 0,7), sytější barvy než originál; vrtulníky bez modelů oranžový a tyrkysový.
+- Vrtulník a jeskynní muž (krok 16): textury z kroku 14 (kůra `palm_bark` na kmeny a pařezy, `rock_face_03` na
+  kámen) a procedurální textury spočítané skriptem (bambus s kolénky, proutí s průhlednými dírami, kůže, kost,
+  provaz, list s žilkami; kůže člověka, vlasy, leopardí kožešina). Barvy, které hra mění (kůže vrtulníku, listy,
+  vlasy, kožešina), jsou faktory základní barvy glTF nad světlou texturou.
 - Voda: průsvitná, tmavě modrozelená.
 
 ## Světlo a atmosféra

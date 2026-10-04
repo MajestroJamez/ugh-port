@@ -33,6 +33,17 @@ bool FUghShot::Configure()
 	Folder = FPaths::ConvertRelativePathToFull(Folder.IsEmpty() ? FPaths::ProjectSavedDir() / TEXT("Shots") : Folder);
 	FParse::Value(CommandLine, TEXT("-UghShotAt="), At);
 	bMenuShot = FParse::Param(CommandLine, TEXT("UghShotMenu"));
+	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
+	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
+	bCloseUp = FParse::Param(CommandLine, TEXT("UghShotCloseUp"));
+	if (CargoLook > 0)
+	{
+		Suffix += FString::Printf(TEXT("-%s%d"), bHanging ? TEXT("hanging") : TEXT("cargo"), CargoLook);
+	}
+	if (bCloseUp)
+	{
+		Suffix += TEXT("-closeup");
+	}
 	FString List = TEXT("1p:1");
 	FParse::Value(CommandLine, TEXT("-UghShotLevels="), List, false);
 	if (!AddTargets(List))
@@ -159,7 +170,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	UE_LOG(LogTemp, Display, TEXT("UGH shot: level_id %d, copter %d,%d, %.0f fps"), View.level_id, View.copters[0].x,
 		View.copters[0].y, Frames / PhaseTime);
 	bShotTaken = true;
-	return TakeShot(TargetName(Target.Players, Target.Level));
+	return TakeShot(TargetName(Target.Players, Target.Level) + Suffix);
 }
 
 FUghShot::EAction FUghShot::TakeShot(const FString& Name)
@@ -168,6 +179,33 @@ FUghShot::EAction FUghShot::TakeShot(const FString& Name)
 	UE_LOG(LogTemp, Display, TEXT("UGH shot %s"), *Path);
 	Wait = AfterShot;
 	return EAction::TakeShot;
+}
+
+void FUghShot::Dress(ugh_logic_view& View) const
+{
+	for (int32 Player = 0; CargoLook > 0 && Player < View.copter_count; ++Player)
+	{
+		View.copters[Player].cargo_look = CargoLook;
+		View.copters[Player].destination = bHanging ? -1 : 1;
+	}
+}
+
+TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View) const
+{
+	if (!bCloseUp || View.phase != UGH_LOGIC_PHASE_PLAY || View.copter_count == 0)
+	{
+		return {};
+	}
+	FBox2D Copters(ForceInit);
+	for (int32 Player = 0; Player < View.copter_count; ++Player)
+	{
+		const FVector2D Corner = FVector2D(View.copters[Player].x, View.copters[Player].y) / UghShapes::Subpixels;
+		Copters += Corner + FVector2D(UghShapes::CopterBodyLeft, 0);
+		// the body, and below it a hanging passenger
+		const double Bottom = UghShapes::CopterBodyHeight + (bHanging ? HangingBelow : 0);
+		Copters += Corner + FVector2D(UghShapes::CopterBodyRight + 1, Bottom);
+	}
+	return Copters.ExpandBy(CloseUpMargin);
 }
 
 FKey FUghShot::MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FTarget& Target) const

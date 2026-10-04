@@ -1,0 +1,71 @@
+// The copters.
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "ugh_logic.h"
+#include "UghCaveman.h"
+#include "UghRotorSpin.h"
+#include "UghCopters.generated.h"
+
+class UInstancedStaticMeshComponent;
+class USkeletalMeshComponent;
+class UStaticMeshComponent;
+
+/** A copter's model: its parts, its pilot, its passenger in the cabin or the stone passenger in its sling. */
+USTRUCT()
+struct FUghCopterParts
+{
+	GENERATED_BODY()
+
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Body;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Rotor;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Crank;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Sling;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Stone;
+	UPROPERTY() TObjectPtr<USkeletalMeshComponent> Pilot;
+	UPROPERTY() TObjectPtr<USkeletalMeshComponent> Rider;
+	FUghRotorSpin Spin;
+	int32 RiderLook = 0;   // how the rider is dressed (the cargo look)
+	double Sway = 0;       // of the sling, radians
+};
+
+/**
+ * The copters of the play in the slab of the play, between the views of two steps (UghBetween): the pedal copters of
+ * Blender/copter.py in each player's colours, the rotor turning and the pilot pedalling as fast as the rotor's
+ * sprites change (FUghRotorSpin), a passenger sitting behind the pilot (a caveman of his look, FUghCaveman) or the
+ * stone passenger hanging in the sling below, swaying as the copter moves. Without the imported models: clay, a box
+ * with a rotor that gets shorter and longer as its sprites change; its riders are clay passengers of AUghFigures.
+ */
+UCLASS()
+class AUghCopters : public AActor
+{
+	GENERATED_BODY()
+
+public:
+	AUghCopters();
+
+	/**
+	 * Shows the copters between `Previous` and `Current` (Alpha 0 .. 1), `Seconds` after the last frame; none outside
+	 * the play. Without the models, the riders go to `OutClayRiders` (boxes of the clay passengers).
+	 */
+	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
+		TArray<FTransform>& OutClayRiders);
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	bool LoadModels();
+	void ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From, const ugh_logic_copter& To, double Alpha,
+		double Seconds);
+	void ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copter, double Seconds, double Velocity);
+	void HideModel(FUghCopterParts& Parts);
+	void ShowClay(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
+		TArray<FTransform>& OutRiders);
+
+	UPROPERTY() FUghCaveman Caveman;
+	UPROPERTY() TArray<FUghCopterParts> Models;   // by player; none without the models
+	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> ClayBodies;   // by player
+	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> ClayRotors;
+};

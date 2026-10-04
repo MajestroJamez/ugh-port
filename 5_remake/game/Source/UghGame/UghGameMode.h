@@ -14,6 +14,7 @@
 
 class AUghBackground;
 class AUghCampfire;
+class AUghCopters;
 class AUghFigures;
 class AUghScenery;
 class AUghSpeaker;
@@ -22,7 +23,7 @@ class AUghStage;
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
  * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground,
- * AUghFigures, AUghCampfire, AUghScenery, the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu.
+ * AUghCopters, AUghFigures, AUghCampfire, AUghScenery, the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu.
  * Behind the menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of
  * the frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
  *
@@ -62,7 +63,8 @@ private:
 	static constexpr double MenuShown = 0.45;
 
 	void BuildStage();
-	void ShowFrame();
+	/** The frame of the view (`Seconds` after the last one). */
+	void ShowFrame(double Seconds);
 	void BuildLevel(const ugh_logic_view& View);
 	void HandleMenuKey(const FKey& Key);
 	/** Page Up and Page Down: the volume; true when it was one of them. */
@@ -89,6 +91,7 @@ private:
 
 	UPROPERTY() TObjectPtr<AUghStage> Stage;
 	UPROPERTY() TObjectPtr<AUghBackground> Background;
+	UPROPERTY() TObjectPtr<AUghCopters> Copters;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;
 	UPROPERTY() TObjectPtr<AUghScenery> Scenery;

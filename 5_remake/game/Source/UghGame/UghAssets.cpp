@@ -1,7 +1,9 @@
 #include "UghAssets.h"
 
+#include "Animation/AnimSequence.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetRegistry/IAssetRegistry.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture.h"
 #include "Materials/MaterialInterface.h"
@@ -34,6 +36,21 @@ namespace
 		}
 		return Objects;
 	}
+
+	/** The asset of type TAsset of `Id` whose name passes `Wanted`; none and a log line (no `What`) without one. */
+	template <typename TAsset>
+	TAsset* FindOne(const TCHAR* Id, TFunctionRef<bool(const FString&)> Wanted, const TCHAR* What)
+	{
+		for (UObject* Object : Find(Id, TAsset::StaticClass()))
+		{
+			if (Wanted(Object->GetName()))
+			{
+				return CastChecked<TAsset>(Object);
+			}
+		}
+		UE_LOG(LogTemp, Display, TEXT("UGH no %s in asset %s: a simpler look instead"), What, Id);
+		return nullptr;
+	}
 }
 
 TArray<UStaticMesh*> UghAssets::Meshes(TConstArrayView<const TCHAR*> Ids)
@@ -47,6 +64,21 @@ TArray<UStaticMesh*> UghAssets::Meshes(TConstArrayView<const TCHAR*> Ids)
 		}
 	}
 	return Meshes;
+}
+
+UStaticMesh* UghAssets::Mesh(const TCHAR* Id, const TCHAR* Name)
+{
+	return FindOne<UStaticMesh>(Id, [&](const FString& Found) { return Found == Name; }, Name);
+}
+
+USkeletalMesh* UghAssets::SkeletalMesh(const TCHAR* Id)
+{
+	return FindOne<USkeletalMesh>(Id, [](const FString&) { return true; }, TEXT("skeletal mesh"));
+}
+
+UAnimSequence* UghAssets::Animation(const TCHAR* Id, const TCHAR* Action)
+{
+	return FindOne<UAnimSequence>(Id, [&](const FString& Found) { return Found.EndsWith(Action); }, Action);
 }
 
 UMaterialInterface* UghAssets::Material(const TCHAR* Id)

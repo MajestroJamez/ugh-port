@@ -7,7 +7,7 @@
 struct FUghManifestAsset
 {
 	FString Id;
-	/** texture (a PBR set), model or hdri. */
+	/** texture (a PBR set), model, hdri or generated (made by a Blender script, imported like a model). */
 	FString Kind;
 	/** Where fetch-assets.ps1 put it: <folder of the manifest>/<path>, absolute. */
 	FString Folder;

@@ -3,7 +3,9 @@
 
 #include "CoreMinimal.h"
 
+class UAnimSequence;
 class UMaterialInterface;
+class USkeletalMesh;
 class UStaticMesh;
 class UTexture;
 
@@ -34,11 +36,24 @@ namespace UghAssets
 	/** The skies: a calm evening with clouds, a cloudy day (darkened for a storm). */
 	inline const TCHAR* SkyCalm = TEXT("sky_belfast_sunset");
 	inline const TCHAR* SkyStorm = TEXT("sky_kloofendal_cloudy");
+	/** Made by the scripts of Blender/: the copters' parts, the caveman (rigged, with actions), the stone passenger. */
+	inline const TCHAR* Copter = TEXT("copter");
+	inline const TCHAR* Caveman = TEXT("caveman");
+	inline const TCHAR* StonePassenger = TEXT("stone_passenger");
 
 	/** The content folder of asset `Id`. */
 	inline FString Folder(const FString& Id) { return FString(ImportedRoot) / Id; }
 	/** The static meshes imported for `Ids` (each one's in the order of their names); a missing one is logged. */
 	TArray<UStaticMesh*> Meshes(TConstArrayView<const TCHAR*> Ids);
+	/** The static mesh `Name` imported for `Id`; none (and a log line) when it is missing. */
+	UStaticMesh* Mesh(const TCHAR* Id, const TCHAR* Name);
+	/** The skeletal mesh imported for `Id`; none (and a log line) when it is missing. */
+	USkeletalMesh* SkeletalMesh(const TCHAR* Id);
+	/**
+	 * The animation `Action` imported for `Id` (Interchange names it <mesh><action>); none (and a log line)
+	 * when it is missing.
+	 */
+	UAnimSequence* Animation(const TCHAR* Id, const TCHAR* Action);
 	/** The material instance MI_<id> of texture set `Id`; none (and a log line) when it is missing. */
 	UMaterialInterface* Material(const TCHAR* Id);
 	/** The texture of sky `Id`; none (and a log line) when it is missing. */

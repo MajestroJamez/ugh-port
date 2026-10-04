@@ -709,3 +709,29 @@ změny. Pravidla navíc:
   bubliny a karty stojí před ní (-63), vrtulník v desce (-20 .. 20) skálu neprotne jen tam, kde je vzduch masky - část
   modelu před deskou (kokpit, pilot) by nad skálou mohla zajet do čela; voda začíná těsně před čelem (-61). Další:
   **krok 16**.
+- 2026-10-04: krok 16 hotový - vrtulník ve 3D (`docs/visual-concept.md`). Modely dělají Blender skripty v gitu
+  (`5_remake/game/Blender/`, `blender -b`), v `Assets.json` nový druh `generated` (skript, jeho vstupy = sady textur
+  manifestu, výstupy; nic se nestahuje): `fetch-assets.ps1` je vyrobí do `assets/3d/generated/` a znovu, kdykoli je
+  některý skript v `Blender/` novější než výstup, `build.ps1` je naimportuje. `copter.py` (+ `copter_materials.py`,
+  `copter_layout.py`, sdílené `ugh_kit.py`: procedurální textury v numpy, PBR materiály, trubky, balvany, export glTF):
+  pravěký šlapací vrtulník podle spritu - klec z bambusu svázaného provazem, podlaha z kmenů (kůra `palm_bark`), proutí
+  s průhlednými dírami vzadu a po stranách, pařezy s koženými polštáři, řídítka z kosti, klika s kamennými pedály
+  (`rock_face_03`), kožené prapory a kly; rotor z kostí s listy na kamenném náboji (hráč 2 keřovitější). Barvy týmu jsou
+  barvy kůže (oranžová, tyrkysová). Tělo vyplňuje `COPTER_BODY_*` a do hloubky zůstává v ±45 jednotkách (za čelem skály
+  -60 a bublinami). `caveman.py` (+ `caveman_rig.py`, `caveman_actions.py`): zavalitý kreslený jeskynní muž (1,15 m)
+  z metaballů, leopardí kožešina, vlasy krátké / dlouhé a vousy jako vlastní sloty materiálů, kostra 18 kostí s vahami
+  podle vzdálenosti ke kostem a akce `idle`, `sit`, `pedal`, `hang` z vlastního řešiče pózy (míření kostí, dvoukostrové
+  IK). Import přes Interchange dal rovnou SkeletalMesh + Skeleton + AnimSequence na akci (`caveman<akce>`); kopie
+  glTF materiálů v `_Masters` teď povolují i skeletal mesh. `stone_passenger.py`: visící cestující originálu je kámen
+  s očima (`standingPassenger`, vzhled 4) - visí v provazové smyčce pod podlahou. UE: `AUghCopters` (místo kvádrů
+  z `AUghFigures`; bez modelů dál plastelína, ověřeno), `FUghCaveman` (vzhled = viditelné sekce a barvy faktorů glTF,
+  akce hrát / držet), `FUghRotorSpin` (rotor se točí plynule tak rychle, jak se mění `rotor_sprite`, klika 3x pomaleji,
+  pilot šlape přesně s klikou), `UghBetween` (interpolace a skok bez interpolace pro všechny postavy),
+  `UghCopterModel.h`. Cestující v kabině sedí za pilotem vpravo výš (vzhledy 1 mladík, 2 žena s dlouhými vlasy,
+  3 stařec), kámen se houpe proti směru letu. Autopilot neveze nikoho, proto `shot.ps1 -Cargo <vzhled> [-Hanging]
+  [-CloseUp]` (jen obraz, logika beze změny; zavřený záběr na vrtulníky). Testy `Ugh.Copter.Spin`, `Ugh.Copter.Model`
+  (tělo v rozměrech těla logiky a v desce, kámen velký jako sprite). `levels.ps1` (27,5 min) a archy bez vad,
+  prohlédnuté i snímky (tým, bouřka, vrtulník na vodě, kabina s cestujícími, visící kámen). CTest logiky,
+  `6_verification` (163) a 169 testů v UE zelené. Pro krok 17: postavu cestujících brát z `FUghCaveman` (nové akce
+  do `caveman_actions.ACTIONS` a `EUghCaveAction`), počátky akcí: `idle` na zemi mezi chodidly, `sit`/`pedal` sedák,
+  `hang` úchop; čelem k +Y (ke kameře). Čeká na Jana: prohlédnout vrtulník v okně (`play.ps1`). Další: **krok 17**.

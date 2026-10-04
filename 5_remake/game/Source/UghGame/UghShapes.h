@@ -30,6 +30,9 @@ namespace UghShapes
 	/** The slab of the play (units deep, around depth 0): the figures fill it, the rock is cut at its front. */
 	constexpr double PlaneThickness = 40;
 
+	/** The screen of the original, pixels. */
+	inline FBox2D Screen() { return FBox2D(FVector2D::ZeroVector, FVector2D(ScreenWidth, ScreenHeight)); }
+
 	/** The point of the world at pixel x, y of the screen (fractions allowed) and `Depth` units. */
 	FVector ToWorld(double X, double Y, double Depth);
 

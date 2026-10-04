@@ -110,7 +110,7 @@ void AUghStage::BeginPlay()
 	SetWind(0);
 }
 
-void AUghStage::FitCamera()
+void AUghStage::FitCamera(const FBox2D& Pixels)
 {
 	FVector2D Viewport(16, 9);
 	if (GEngine && GEngine->GameViewport)
@@ -119,13 +119,13 @@ void AUghStage::FitCamera()
 	}
 	const double Aspect = Viewport.Y > 0 ? Viewport.X / Viewport.Y : 16.0 / 9.0;
 	const double HalfTan = FMath::Tan(FMath::DegreesToRadians(FieldOfView / 2));
-	const double Width = UghShapes::ScreenWidth * UghShapes::UnitsPerPixel * ScreenMargin;
-	const double Height = UghShapes::ScreenHeight * UghShapes::UnitsPerPixel * ScreenMargin;
+	const double Width = Pixels.GetSize().X * UghShapes::UnitsPerPixel * ScreenMargin;
+	const double Height = Pixels.GetSize().Y * UghShapes::UnitsPerPixel * ScreenMargin;
 	const double Distance = FMath::Max(Width / 2 / HalfTan, Height / 2 * Aspect / HalfTan);
-	// looking down at the middle of the screen from above it
+	// looking down at the middle from above it
 	const double Above = Distance * FMath::Tan(FMath::DegreesToRadians(LookDown)) / UghShapes::UnitsPerPixel;
-	Camera->SetWorldLocation(UghShapes::ToWorld(UghShapes::ScreenWidth / 2.0, UghShapes::ScreenHeight / 2.0 - Above,
-		-Distance));
+	const FVector2D Middle = Pixels.GetCenter();
+	Camera->SetWorldLocation(UghShapes::ToWorld(Middle.X, Middle.Y - Above, -Distance));
 }
 
 void AUghStage::SetWind(int32 Wind)

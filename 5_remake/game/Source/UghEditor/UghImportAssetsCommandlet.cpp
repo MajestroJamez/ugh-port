@@ -120,7 +120,8 @@ bool UUghImportAssetsCommandlet::Import(const FUghManifestAsset& Asset)
 	{
 		return ImportTextureSet(Asset);
 	}
-	if ((Asset.Kind != TEXT("model") && Asset.Kind != TEXT("hdri")) || Asset.Import.IsEmpty())
+	const bool bFiles = Asset.Kind == TEXT("model") || Asset.Kind == TEXT("hdri") || Asset.Kind == TEXT("generated");
+	if (!bFiles || Asset.Import.IsEmpty())
 	{
 		UE_LOG(LogUghImportAssets, Error, TEXT("%s: a %s with nothing to import"), *Asset.Id, *Asset.Kind);
 		return false;

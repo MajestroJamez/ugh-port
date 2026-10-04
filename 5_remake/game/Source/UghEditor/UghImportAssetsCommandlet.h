@@ -8,8 +8,9 @@
 struct FUghManifestAsset;
 
 /**
- * Imports the assets of Assets.json that fetch-assets.ps1 downloaded (assets/3d) to Content/Imported/<id> through
- * Interchange: a model's glTF or FBX files with their meshes (Nanite), materials and textures, a sky's HDR image, a
+ * Imports the assets of Assets.json that fetch-assets.ps1 downloaded or made (assets/3d) to Content/Imported/<id>
+ * through Interchange: a model's (or a generated asset's) glTF or FBX files with their meshes (static ones Nanite,
+ * a rigged one a skeletal mesh with its skeleton and animations), materials and textures, a sky's HDR image, a
  * texture set's maps with the material instance MI_<id> of UghMaterials::Pbr. build.ps1 runs it after the materials:
  * UnrealEditor-Cmd UghGame.uproject -run=UghImportAssets [-Force]. Idempotent: an asset whose files are as at its
  * last import (Content/Imported/<id>/Import.stamp) is left alone unless -Force (one imported again is deleted

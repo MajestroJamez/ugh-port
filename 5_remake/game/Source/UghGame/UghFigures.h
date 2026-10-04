@@ -12,10 +12,10 @@ class UStaticMeshComponent;
 class UTexture2D;
 
 /**
- * The figures of the level, plasticine shapes in the slab of the play: the copters (body, rotor, who rides in them),
- * the passengers, the enemies, the bonus items and the raindrops; a passenger's speech bubble is a card with the
- * original's sprite (it shows the pad it wants to go to). Drawn between the views of two steps of the logic (render
- * interpolation); a figure that jumps further than a step can move is not interpolated.
+ * The figures of the level besides the copters (AUghCopters), plasticine shapes in the slab of the play: the
+ * passengers, the enemies, the bonus items and the raindrops; a passenger's speech bubble is a card with the
+ * original's sprite (it shows the pad it wants to go to). Drawn between the views of two steps of the logic
+ * (UghBetween).
  */
 UCLASS()
 class AUghFigures : public AActor
@@ -25,8 +25,12 @@ class AUghFigures : public AActor
 public:
 	AUghFigures();
 
-	/** Shows the figures between `Previous` and `Current` (Alpha 0 .. 1); none outside the play. */
-	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, const FUghSprites& Sprites);
+	/**
+	 * Shows the figures between `Previous` and `Current` (Alpha 0 .. 1), and the clay passengers riding the clay
+	 * copters (`ClayRiders`, boxes); none outside the play.
+	 */
+	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, const FUghSprites& Sprites,
+		const TArray<FTransform>& ClayRiders);
 
 protected:
 	virtual void BeginPlay() override;
@@ -39,18 +43,13 @@ private:
 		FVector2D At;
 	};
 
-	/** The copters; who rides in them or hangs below goes to `OutRiders`. */
-	void ShowCopters(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-		TArray<FTransform>& OutRiders);
 	void ShowEntities(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
 		const FUghSprites& Sprites, const TArray<FTransform>& Riders);
 	void ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites& Sprites);
 	void ShowRain(const ugh_logic_view& Current);
 	void Clear();
 
-	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> CopterBodies;   // by player
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Rotors;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Passengers;   // also the ones in or below a copter
+	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Passengers;   // also the clay riders of the clay copters
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Enemies;
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> BonusItems;
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Raindrops;

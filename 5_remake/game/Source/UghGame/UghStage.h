@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "UghShapes.h"
 #include "UghStage.generated.h"
 
 class UCameraComponent;
@@ -29,8 +30,11 @@ class AUghStage : public AActor
 public:
 	AUghStage();
 
-	/** Moves the camera so the whole screen is in view at the viewport's current aspect. */
-	void FitCamera();
+	/**
+	 * Moves the camera so the whole screen is in view at the viewport's current aspect, or only `Pixels` of it (a
+	 * close-up of FUghShot).
+	 */
+	void FitCamera(const FBox2D& Pixels = UghShapes::Screen());
 	/** The weather of a level with this wind (ugh_logic_view.wind: -1, 1 a storm, 0 calm). */
 	void SetWind(int32 Wind);
 

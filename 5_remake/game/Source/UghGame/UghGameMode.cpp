@@ -9,6 +9,7 @@
 #include "Misc/Paths.h"
 #include "UghBackground.h"
 #include "UghCampfire.h"
+#include "UghCopters.h"
 #include "UghDecorations.h"
 #include "UghFigures.h"
 #include "UghHud.h"
@@ -79,12 +80,16 @@ void AUghGameMode::StartPlay()
 	Simulation.Preview(Previewed);
 }
 
-/** The stage (light, air, camera), the level's background, the figures, the campfire, the decorations, the speaker. */
+/**
+ * The stage (light, air, camera), the level's background, the copters, the figures, the campfire, the decorations,
+ * the speaker.
+ */
 void AUghGameMode::BuildStage()
 {
 	UWorld* World = GetWorld();
 	Stage = World->SpawnActor<AUghStage>();
 	Background = World->SpawnActor<AUghBackground>();
+	Copters = World->SpawnActor<AUghCopters>();
 	Figures = World->SpawnActor<AUghFigures>();
 	Campfire = World->SpawnActor<AUghCampfire>();
 	Scenery = World->SpawnActor<AUghScenery>();
@@ -108,7 +113,7 @@ void AUghGameMode::Tick(float DeltaSeconds)
 			OpenMenu();
 		}
 	}
-	ShowFrame();
+	ShowFrame(DeltaSeconds);
 	if (bShooting)
 	{
 		switch (Shot.Tick(*this, DeltaSeconds))
@@ -120,10 +125,14 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	}
 }
 
-void AUghGameMode::ShowFrame()
+void AUghGameMode::ShowFrame(double Seconds)
 {
-	const ugh_logic_view& Previous = Simulation.GetPrevious();
-	const ugh_logic_view& Current = Simulation.GetCurrent();
+	ugh_logic_view Previous = Simulation.GetPrevious(), Current = Simulation.GetCurrent();
+	if (bShooting)
+	{
+		Shot.Dress(Previous);
+		Shot.Dress(Current);
+	}
 	if (Current.level_id != BackgroundLevel)
 	{
 		BuildLevel(Current);
@@ -131,7 +140,9 @@ void AUghGameMode::ShowFrame()
 	const double Water = FMath::Lerp(double(Previous.water_level), double(Current.water_level), Simulation.Alpha());
 	Background->SetWater(Water / UghShapes::Subpixels);
 	Campfire->SetWater(Water / UghShapes::Subpixels);
-	Figures->Show(Previous, Current, Simulation.Alpha(), Sprites);
+	TArray<FTransform> ClayRiders;
+	Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
+	Figures->Show(Previous, Current, Simulation.Alpha(), Sprites, ClayRiders);
 
 	// the fade of the play; black around it (the HUD writes the captions); dimmed behind the menu
 	double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY
@@ -147,7 +158,8 @@ void AUghGameMode::ShowFrame()
 			Controller->PlayerCameraManager->SetManualCameraFade(1.f - float(Shown), FLinearColor::Black, false);
 		}
 	}
-	Stage->FitCamera();
+	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current) : TOptional<FBox2D>();
+	Stage->FitCamera(CloseUp.Get(UghShapes::Screen()));
 }
 
 /** The diorama of the level the view shows: the rock coloured by its drawing, the campfire and the decorations. */

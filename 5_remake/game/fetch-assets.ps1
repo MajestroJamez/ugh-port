@@ -1,6 +1,7 @@
 # Downloads the 3D assets of Assets.json to assets\3d (never committed): only what is missing, each file checked by
 # its size and hash (Poly Haven: the MD5 of its API; a download: the SHA-256 of the manifest), archives extracted,
-# Blender scripts run where an asset needs one; the whole folder stays under the manifest's budget. Ends with a table
+# Blender scripts run where an asset needs one (a generated asset is made by its script alone, and made again whenever
+# a script in the folder Blender is newer than it); the whole folder stays under the manifest's budget. Ends with a table
 # of the assets. build.ps1 then imports them into Content\Imported. Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\fetch-assets.ps1
 # -Only: some assets (ids, comma separated); -Verify: hash the files already there too. Blender: $env:BLENDER or the
@@ -43,7 +44,7 @@ function Save-File([string]$Url, [string]$Path, [long]$Size, [string]$Algorithm,
 }
 
 # The files of an asset: url, local path, size, hash algorithm and hash. Poly Haven: its API at the asset's resolution
-# (a glTF brings the files it includes); a download: the archive or file of the manifest.
+# (a glTF brings the files it includes); a download: the archive or file of the manifest; a generated asset: none.
 function Get-Files($Asset) {
     $folder = Join-Path $root $Asset.path
     $files = New-Object System.Collections.ArrayList
@@ -63,7 +64,7 @@ function Get-Files($Asset) {
                 }
             }
         }
-    } else {
+    } elseif ($Asset.download) {
         $name = [Uri]::UnescapeDataString((Split-Path -Leaf ([Uri]$Asset.download.url).AbsolutePath))
         if ($name -eq 'get') { $name = $Asset.download.url.Split('=')[-1] }   # ambientCG: get?file=<name>
         $null = $files.Add(@{ Url = $Asset.download.url; Path = Join-Path $archives $name; Size = [long]$Asset.download.size; Algorithm = 'SHA256'; Hash = $Asset.download.sha256; Archive = $true })
@@ -136,16 +137,29 @@ foreach ($item in $plan) {
                 if ($status -eq 'present') { $status = 'extracted' }
             }
             if ($asset.blender) {
-                $outputs = @($asset.blender.outputs | Where-Object { -not (Test-Path -LiteralPath (Join-Path $folder $_)) })
-                if ($outputs.Count -gt 0) {
+                # made again when an output is missing; a generated asset also when a script of Blender\ is newer
+                # than an output (the scripts share modules)
+                $made = @($asset.blender.outputs | ForEach-Object { Join-Path $folder $_ })
+                $stale = @($made | Where-Object { -not (Test-Path -LiteralPath $_) })
+                if ($asset.kind -eq 'generated' -and $stale.Count -eq 0) {
+                    $newest = (Get-ChildItem (Join-Path $PSScriptRoot 'Blender\*.py') | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).LastWriteTimeUtc
+                    $stale = @($made | Where-Object { (Get-Item -LiteralPath $_).LastWriteTimeUtc -lt $newest })
+                }
+                if ($stale.Count -gt 0) {
                     if (-not (Test-Path $blender)) { throw "needs Blender ($blender; set BLENDER) for $($asset.blender.script)" }
                     $script = Join-Path $PSScriptRoot $asset.blender.script
+                    $null = New-Item -ItemType Directory -Force $folder
                     $log = Join-Path $folder 'blender.log'
                     $arguments = "-b --factory-startup --python-exit-code 1 --python `"$script`" -- `"$folder`""
+                    foreach ($id in @($asset.blender.inputs | Where-Object { $_ })) {
+                        $source = @($manifest.assets | Where-Object { $_.id -eq $id })
+                        if ($source.Count -ne 1) { throw "$($asset.blender.script) needs asset $id, which Assets.json does not have" }
+                        $arguments += " `"$(Join-Path $root $source[0].path)`""
+                    }
                     $process = Start-Process -FilePath $blender -ArgumentList $arguments -NoNewWindow -Wait -PassThru `
                         -RedirectStandardOutput $log -RedirectStandardError "$log.err"
                     if ($process.ExitCode -ne 0) { throw "Blender failed on $($asset.blender.script) (exit code $($process.ExitCode)), see $log" }
-                    $status = 'converted'
+                    $status = if ($asset.kind -eq 'generated') { 'generated' } else { 'converted' }
                 }
             }
             $missing = Get-Missing $asset

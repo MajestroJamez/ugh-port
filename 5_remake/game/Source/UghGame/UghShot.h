@@ -18,6 +18,11 @@ class FUghPasswords;
  * `At` seconds later (and logs the frame rate meanwhile) and gives the game up (Esc), back to the menu. -UghShotMenu
  * first saves menu.png. It quits after the last level; a level that takes longer than LevelTimeLimit is left out (and
  * logged).
+ *
+ * For a look at the copters (the autopilot never picks a passenger up): -UghShotCargo=<look> shows them with a
+ * passenger of the logic's cargo look sitting in the cabin, with -UghShotHanging hanging below instead (only the
+ * picture: the logic is not changed); -UghShotCloseUp frames the copters instead of the screen. Such a shot's name
+ * ends in -cargo<look>, -hanging<look>, -closeup (in this order).
  */
 class FUghShot
 {
@@ -33,8 +38,17 @@ public:
 	/** One frame of the autopilot: its keys go to the game mode. */
 	EAction Tick(AUghGameMode& Mode, float DeltaSeconds);
 
+	/** The view as the shot shows it: the copters with the passenger of -UghShotCargo. */
+	void Dress(ugh_logic_view& View) const;
+	/** With -UghShotCloseUp the pixels to frame: the copters (in the play). */
+	TOptional<FBox2D> CloseUp(const ugh_logic_view& View) const;
+
 private:
 	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 1, AfterShot = 0.5, LevelTimeLimit = 60;
+	/** A close-up shows this many pixels around the copters. */
+	static constexpr double CloseUpMargin = 12;
+	/** A hanging passenger reaches this many pixels below the body (the stone passenger, 1 px below it, 11 px high). */
+	static constexpr double HangingBelow = 12;
 
 	struct FTarget
 	{
@@ -56,6 +70,10 @@ private:
 	FString Path;
 	double At = 2;
 	bool bMenuShot = false;
+	int32 CargoLook = 0;     // -UghShotCargo
+	bool bHanging = false;   // -UghShotHanging
+	bool bCloseUp = false;   // -UghShotCloseUp
+	FString Suffix;          // of the shots' names
 	TArray<FTarget> Targets;
 	int32 Next = 0;            // the target being shot
 	double TargetTime = 0;     // since it began
