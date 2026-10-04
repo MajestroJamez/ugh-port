@@ -41,8 +41,23 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   1 mladík s krátkými vlasy, 2 žena s dlouhými rudými vlasy, 3 stařec s šedými vlasy a vousy. Visící cestující
   (vzhled 4) je kámen s očima (`standingPassenger` originálu) v provazové smyčce pod podlahou, houpe se proti
   směru letu.
-- **Ostatní postavy**: zatím tvary z plastelíny (cestující válec, nepřítel koule, bonus kužel), modely přijdou v kroku
-  17. Bublina cestujícího je kartička s původním spritem (číslo cílové plošiny je herní informace).
+- **Cestující** (krok 17): jeskynní lidé podle vzhledu druhu (mladík, žena s dlouhými vlasy, stařec; výška podle
+  spritu, vysoká žena štíhlejší) dělají, co říká sprite logiky: chodí (krok se drží snímků animace spritu), mávají na
+  vrtulník oběma rukama, čekají, vycházejí ze dveří a jdou do nich (zezadu z hloubky 60 jednotek), ve vodě šlapou vodu
+  (hladina těsně pod bradou), plavou s hlavou nad vodou a padají nebo tonou s rukama nahoře. Postava jdoucí do strany
+  se natáčí o 20° ke kameře. Stojící cestující je kámen s očima, padající kámen se kutálí. Bublina cestujícího zůstává
+  kartička s původním spritem (číslo cílové plošiny je herní informace) před čelem skály.
+- **Nepřátelé** (krok 17): pterodaktyl (hnědá šupinatá kůže, oranžový zobák a hřebínek, kožená křídla; dva mávnutí
+  a plachtění na smyčku 12 spritů letu, zasažený padá a točí se), v letu naklopený zády 35° ke kameře a 1,3× větší
+  (křídla jsou v hloubce, z boku by byla vidět jen hranou); triceratops (olivově hnědý, oranžový límec se skvrnami,
+  tři rohy, zamračené oči; chůze, hrabání kopytem při čekání, výpad se skloněnou hlavou, třepání hlavou, omráčený leží
+  a nad hlavou krouží hvězdičky); foukač je kulatá bradavičnatá šelma s chobotem a tvářemi, které se při nádechu
+  nafouknou a pak vyfouknou (smyčka 10 spritů, první 3 nádech), omráčený se schoulí pod hvězdičkami; strom s tváří
+  (kůra `palm_bark`, koruna z listnatých bochníků a lístků, červené plody, mrká v posledním snímku houpání, setřesený
+  zavře oči a třese se). Všichni se dívají směrem pohybu (o 20-35° ke kameře), velcí jako svůj sprite.
+- **Bonusové předměty** (krok 17): devět plodů podle spritů originálu (jablko, meloun, jahoda, kiwi, kokos, hruška,
+  půlka kokosu, třešně, banán) a kamenná tabulka se zeleným X (násobitel), asi 1 m, pomalu se otáčejí.
+- Bez modelů (repo bez assetů) zůstávají tvary z plastelíny (cestující válec, nepřítel koule, bonus kužel).
 
 ## Barvy a materiály
 

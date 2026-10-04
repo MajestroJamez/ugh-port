@@ -1,10 +1,7 @@
 #include "UghCaveman.h"
 
-#include "Animation/AnimSequence.h"
-#include "Animation/AnimSingleNodeInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
-#include "GameFramework/Actor.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "UghAssets.h"
@@ -12,7 +9,9 @@
 namespace
 {
 	/** The actions as caveman.glb names them, by EUghCaveAction. */
-	const TCHAR* const ActionNames[] = { TEXT("idle"), TEXT("sit"), TEXT("pedal"), TEXT("hang") };
+	const TCHAR* const Actions[] = { TEXT("idle"), TEXT("sit"), TEXT("pedal"), TEXT("hang"), TEXT("walk"),
+		TEXT("wave"), TEXT("tread"), TEXT("swim"), TEXT("fall") };
+	static_assert(UE_ARRAY_COUNT(Actions) == static_cast<int32>(EUghCaveAction::Fall) + 1);
 	/** The colour of a glTF material Interchange imported. */
 	const FName ColorFactor(TEXT("BaseColorFactor"));
 
@@ -60,33 +59,19 @@ const FUghCaveLook* FUghCaveman::Passenger(int32 Look)
 	return Look >= 1 && Look <= UE_ARRAY_COUNT(Passengers) ? &Passengers[Look - 1] : nullptr;
 }
 
+TConstArrayView<const TCHAR*> FUghCaveman::ActionNames()
+{
+	return Actions;
+}
+
 bool FUghCaveman::Load()
 {
-	Mesh = UghAssets::SkeletalMesh(UghAssets::Caveman);
-	Actions.Reset();
-	for (const TCHAR* Name : ActionNames)
-	{
-		Actions.Add(UghAssets::Animation(UghAssets::Caveman, Name));
-	}
-	if (Actions.Contains(nullptr))
-	{
-		Mesh = nullptr;
-	}
-	return IsLoaded();
+	return Rig.Load(UghAssets::Caveman, Actions);
 }
 
 USkeletalMeshComponent* FUghCaveman::Add(AActor* Owner) const
 {
-	USkeletalMeshComponent* Caveman = NewObject<USkeletalMeshComponent>(Owner);
-	Caveman->SetSkeletalMesh(Mesh);
-	Caveman->SetMobility(EComponentMobility::Movable);
-	Caveman->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Caveman->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-	Caveman->SetVisibility(false);
-	Caveman->SetupAttachment(Owner->GetRootComponent());
-	Caveman->RegisterComponent();
-	Owner->AddInstanceComponent(Caveman);
-	return Caveman;
+	return Rig.Add(Owner);
 }
 
 void FUghCaveman::Dress(USkeletalMeshComponent* Caveman, const FUghCaveLook& Look)
@@ -102,18 +87,10 @@ void FUghCaveman::Dress(USkeletalMeshComponent* Caveman, const FUghCaveLook& Loo
 
 void FUghCaveman::Play(USkeletalMeshComponent* Caveman, EUghCaveAction Action) const
 {
-	UAnimSequence* Sequence = Actions[static_cast<int32>(Action)];
-	if (Caveman->GetSingleNodeInstance() == nullptr || Caveman->GetSingleNodeInstance()->GetAnimationAsset() != Sequence)
-	{
-		Caveman->PlayAnimation(Sequence, true);
-	}
-	Caveman->SetPlayRate(1.f);
+	Rig.Play(Caveman, static_cast<int32>(Action));
 }
 
 void FUghCaveman::Hold(USkeletalMeshComponent* Caveman, EUghCaveAction Action, double Fraction) const
 {
-	UAnimSequence* Sequence = Actions[static_cast<int32>(Action)];
-	Play(Caveman, Action);
-	Caveman->SetPlayRate(0.f);
-	Caveman->SetPosition(float(Fraction * Sequence->GetPlayLength()), false);
+	Rig.Hold(Caveman, static_cast<int32>(Action), Fraction);
 }

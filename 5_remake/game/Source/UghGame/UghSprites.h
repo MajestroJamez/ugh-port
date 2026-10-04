@@ -13,6 +13,9 @@ public:
 	/** Reads sprites.json in `AssetsDir`; false and the reason when it cannot. */
 	bool Load(const FString& AssetsDir, FString& OutError);
 
+	/** How many sprites there are (their numbers are 0 .. Count - 1). */
+	int32 Count() const { return Sprites.Num(); }
+
 	/** The size of `Sprite` in pixels; DefaultSize for none (-1) or an unknown one. */
 	FIntPoint Size(int32 Sprite) const;
 

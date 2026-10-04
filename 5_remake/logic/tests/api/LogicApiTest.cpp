@@ -101,3 +101,48 @@ TEST(the_c_api_shows_the_wind_and_its_rain) {
     CHECK(view.raindrop_count > 0);
     ugh_logic_destroy(logic);
 }
+
+TEST(the_c_api_shows_who_a_passenger_is_and_whether_an_enemy_is_knocked_out) {
+    char err[200] = "";
+    ugh_logic* logic = ugh_logic_create(ugh::test::dataPath().c_str(), err, sizeof err);
+    CHECK(logic != nullptr);
+    if (!logic) return;
+    ugh_logic_settings settings;
+    ugh_logic_default_settings(&settings);
+    CHECK_EQUAL(1, ugh_logic_new_game(logic, &settings));
+    for (int frame = 0; frame < 9; frame++) ugh_logic_step(logic);
+    ugh_logic_view view;
+    ugh_logic_get_view(logic, &view);
+    CHECK_EQUAL(4, view.entity_count);   // two passengers of kind1 (look 1), the standing one (look 4), the tree
+    CHECK_EQUAL(1, view.entities[0].look);
+    CHECK_EQUAL(1, view.entities[1].look);
+    CHECK_EQUAL(4, view.entities[2].look);
+    CHECK_EQUAL(0, view.entities[3].look);
+    for (int i = 0; i < view.entity_count; i++) CHECK_EQUAL(0, view.entities[i].stunned);
+    ugh_logic_destroy(logic);
+}
+
+TEST(the_c_api_names_the_sprites_of_the_entities) {
+    char err[200] = "";
+    ugh_logic* logic = ugh_logic_create(ugh::test::dataPath().c_str(), err, sizeof err);
+    CHECK(logic != nullptr);
+    if (!logic) return;
+    ugh_logic_sprite info;
+    CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 395, &info));   // works before a game too
+    CHECK_EQUAL(std::string("kind1.walkRight"), std::string(info.name));
+    CHECK_EQUAL(2, info.frame);
+    CHECK_EQUAL(9, info.frames);
+    CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 378, &info));   // kind1.standing: 377, 377, 378, 378
+    CHECK_EQUAL(std::string("kind1.standing"), std::string(info.name));
+    CHECK_EQUAL(2, info.frame);
+    CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 234, &info));   // the flyer's first flight frame, also its fall
+    CHECK_EQUAL(std::string("flyer.left"), std::string(info.name));
+    CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 544, &info));
+    CHECK_EQUAL(std::string("standingPassenger"), std::string(info.name));
+    CHECK_EQUAL(1, info.frames);
+    CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 297, &info));
+    CHECK_EQUAL(std::string("multiplier"), std::string(info.name));
+    CHECK_EQUAL(0, ugh_logic_get_sprite(logic, 268, &info));   // a speech bubble
+    CHECK_EQUAL(0, ugh_logic_get_sprite(logic, 218, &info));   // a rotor
+    ugh_logic_destroy(logic);
+}

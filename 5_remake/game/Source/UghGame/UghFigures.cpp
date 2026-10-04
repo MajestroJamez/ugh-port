@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Texture2D.h"
 #include "UghBetween.h"
+#include "UghFigureActions.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
@@ -52,29 +53,31 @@ void AUghFigures::BeginPlay()
 	{
 		return UghShapes::AddShapes(this, Shape, UghShapes::Clay(this, Color));
 	};
+	Models.Load();
 	Passengers = Clay(EShape::Cylinder, PassengerColor);
 	Enemies = Clay(EShape::Sphere, EnemyColor);
 	BonusItems = Clay(EShape::Cone, BonusColor);
 	Raindrops = Clay(EShape::Cylinder, RainColor);
 }
 
-void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-	const FUghSprites& Sprites, const TArray<FTransform>& ClayRiders)
+void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
+	const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& ClayRiders)
 {
 	if (Current.phase != UGH_LOGIC_PHASE_PLAY || Current.level_id < 0)
 	{
 		Clear();
 		return;
 	}
-	ShowEntities(UghBetween::From(Previous, Current), Current, Alpha, Sprites, ClayRiders);
+	ShowEntities(UghBetween::From(Previous, Current), Current, Alpha, Seconds, Sprites, Actions, ClayRiders);
 	ShowRain(Current);
 }
 
 void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-	const FUghSprites& Sprites, const TArray<FTransform>& Riders)
+	double Seconds, const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& Riders)
 {
 	TArray<FTransform> PassengerShapes = Riders, EnemyShapes, BonusShapes;
 	TArray<FBubble> Bubbles;
+	Models.Begin();
 	for (int32 I = 0; I < Current.entity_count; ++I)
 	{
 		const ugh_logic_entity& E = Current.entities[I];
@@ -86,27 +89,27 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 		const FVector2D At = P && P->sprite >= 0 ? UghBetween::Position(P->x, P->y, E.x, E.y, Alpha)
 			: UghBetween::Pixels(E.x, E.y);
 		const FIntPoint Size = Sprites.Size(E.sprite);
+		if (E.kind == UGH_LOGIC_ENTITY_PASSENGER && E.bubble >= 0)
+		{
+			const FIntPoint Bubble = Sprites.Size(E.bubble);
+			Bubbles.Add({ E.bubble, FVector2D(At.X + (Size.X - Bubble.X) / 2.0, At.Y - Bubble.Y - BubbleGap) });
+		}
+		const TOptional<FUghFigureAction> Action = Actions.Of(E, P);
+		const double Velocity = P && P->sprite >= 0 ? double(E.x - P->x) / UghShapes::Subpixels : 0;
+		if (Action && Models.Show(this, E, *Action, At, Size, Velocity, Seconds))
+		{
+			continue;
+		}
 		const FTransform Shape = UghShapes::Box(At.X, At.Y, Size.X, Size.Y, FigureDepth, FigureThickness);
 		switch (E.kind)
 		{
-		case UGH_LOGIC_ENTITY_PASSENGER:
-			PassengerShapes.Add(Shape);
-			if (E.bubble >= 0)
-			{
-				const FIntPoint Bubble = Sprites.Size(E.bubble);
-				Bubbles.Add({ E.bubble, FVector2D(At.X + (Size.X - Bubble.X) / 2.0, At.Y - Bubble.Y - BubbleGap) });
-			}
-			break;
-		case UGH_LOGIC_ENTITY_ENEMY:
-			EnemyShapes.Add(Shape);
-			break;
-		case UGH_LOGIC_ENTITY_BONUS_ITEM:
-			BonusShapes.Add(Shape);
-			break;
-		default:
-			break;
+		case UGH_LOGIC_ENTITY_PASSENGER: PassengerShapes.Add(Shape); break;
+		case UGH_LOGIC_ENTITY_ENEMY: EnemyShapes.Add(Shape); break;
+		case UGH_LOGIC_ENTITY_BONUS_ITEM: BonusShapes.Add(Shape); break;
+		default: break;
 		}
 	}
+	Models.End();
 	UghShapes::SetShapes(Passengers, PassengerShapes);
 	UghShapes::SetShapes(Enemies, EnemyShapes);
 	UghShapes::SetShapes(BonusItems, BonusShapes);
@@ -158,6 +161,8 @@ void AUghFigures::ShowRain(const ugh_logic_view& Current)
 
 void AUghFigures::Clear()
 {
+	Models.Begin();
+	Models.End();
 	for (UInstancedStaticMeshComponent* Shapes : { Passengers, Enemies, BonusItems, Raindrops })
 	{
 		UghShapes::SetShapes(Shapes, {});

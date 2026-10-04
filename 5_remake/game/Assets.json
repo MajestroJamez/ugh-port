@@ -183,7 +183,7 @@
       "import": ["copter.glb"]
     },
     {
-      "id": "caveman", "kind": "generated", "use": "the caveman: pilots and passengers (rigged; actions idle, sit, pedal, hang)",
+      "id": "caveman", "kind": "generated", "use": "the caveman: pilots and passengers (rigged; actions idle, sit, pedal, hang, walk, wave, tread, swim, fall)",
       "page": "Blender/caveman.py", "license": "CC0-1.0", "author": "UGH remake (Blender/caveman.py)",
       "path": "generated/caveman",
       "blender": { "script": "Blender/caveman.py", "outputs": ["caveman.glb"] },
@@ -195,6 +195,41 @@
       "path": "generated/stone_passenger",
       "blender": { "script": "Blender/stone_passenger.py", "inputs": ["rock_face_03"], "outputs": ["stone_passenger.glb"] },
       "import": ["stone_passenger.glb"]
+    },
+    {
+      "id": "pterodactyl", "kind": "generated", "use": "the flyer (rigged; actions fly, fall)",
+      "page": "Blender/pterodactyl.py", "license": "CC0-1.0", "author": "UGH remake (Blender/pterodactyl.py)",
+      "path": "generated/pterodactyl",
+      "blender": { "script": "Blender/pterodactyl.py", "outputs": ["pterodactyl.glb"] },
+      "import": ["pterodactyl.glb"]
+    },
+    {
+      "id": "triceratops", "kind": "generated", "use": "the walker (rigged; actions walk, watch, charge, recover, stunned)",
+      "page": "Blender/triceratops.py", "license": "CC0-1.0", "author": "UGH remake (Blender/triceratops.py)",
+      "path": "generated/triceratops",
+      "blender": { "script": "Blender/triceratops.py", "outputs": ["triceratops.glb"] },
+      "import": ["triceratops.glb"]
+    },
+    {
+      "id": "blower", "kind": "generated", "use": "the blower, a puffing beast (rigged; actions blow, stunned)",
+      "page": "Blender/blower.py", "license": "CC0-1.0", "author": "UGH remake (Blender/blower.py)",
+      "path": "generated/blower",
+      "blender": { "script": "Blender/blower.py", "outputs": ["blower.glb"] },
+      "import": ["blower.glb"]
+    },
+    {
+      "id": "fruit_tree", "kind": "generated", "use": "the tree with a face that drops fruit (rigged; actions sway, shaken)",
+      "page": "Blender/fruit_tree.py", "license": "CC0-1.0", "author": "UGH remake (Blender/fruit_tree.py), texture palm_bark (Poly Haven)",
+      "path": "generated/fruit_tree",
+      "blender": { "script": "Blender/fruit_tree.py", "inputs": ["palm_bark"], "outputs": ["fruit_tree.glb"] },
+      "import": ["fruit_tree.glb"]
+    },
+    {
+      "id": "bonus_items", "kind": "generated", "use": "the bonus items: nine fruits (energy), a stone tablet (multiplier), a mesh each named as its kind",
+      "page": "Blender/bonus_items.py", "license": "CC0-1.0", "author": "UGH remake (Blender/bonus_items.py), texture rock_face_03 (Poly Haven)",
+      "path": "generated/bonus_items",
+      "blender": { "script": "Blender/bonus_items.py", "inputs": ["rock_face_03"], "outputs": ["bonus_items.glb"] },
+      "import": ["bonus_items.glb"]
     }
   ]
 }

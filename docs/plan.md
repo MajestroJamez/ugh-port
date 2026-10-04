@@ -735,3 +735,27 @@ změny. Pravidla navíc:
   `6_verification` (163) a 169 testů v UE zelené. Pro krok 17: postavu cestujících brát z `FUghCaveman` (nové akce
   do `caveman_actions.ACTIONS` a `EUghCaveAction`), počátky akcí: `idle` na zemi mezi chodidly, `sit`/`pedal` sedák,
   `hang` úchop; čelem k +Y (ke kameře). Čeká na Jana: prohlédnout vrtulník v okně (`play.ps1`). Další: **krok 17**.
+- 2026-10-04: krok 17 hotový - cestující a nepřátelé ve 3D (`docs/visual-concept.md`). C API (logika beze změny, 161
+  replayů zelených): `ugh_logic_entity.look` (vzhled cestujícího jako `cargo_look`) a `.stunned` (nepřítel vyřízený
+  cestujícím: omráčený walker a foukač, padající letec - jejich sprite je snímek letu / foukání), `ugh_logic_get_sprite`
+  (jméno spritu v datech: animace druhu a snímek, nebo vlastní sprite pravidel či druh bonusu); `api/LevelView` (pohled
+  levelu přes Visitory), testy C API. Blender: sdílené `ugh_rig.py` (kostra z tabulky, váhy podle vzdálenosti, akce
+  z póz s dvoukostrovým IK, i měřítko kostí), `ugh_blobs.py` (metaballs), `creature_kit.py` (šupinatá kůže, oči, rohy,
+  hvězdičky omráčení); jeskynní muž má navíc `walk`, `wave`, `tread`, `swim`, `fall`; nové modely `pterodactyl.py`
+  (`fly`: dvě mávnutí a plachtění, `fall`), `triceratops.py` (`walk`, `watch`, `charge`, `recover`, `stunned`),
+  `blower.py` (bradavičnatá šelma s chobotem: `blow` nádech 3/10 a výdech, `stunned`), `fruit_tree.py` (strom s tváří,
+  `sway` s mrknutím v posledním snímku, `shaken`), `bonus_items.py` (9 plodů a kamenná tabulka X, síť pojmenovaná podle
+  druhu bonusu) - v `Assets.json`. UE: `FUghFigureActions` (tabulka pravidel jméno spritu -> model, akce, směr, zda
+  akce sleduje snímky animace spritu; z entity omráčení a pád ve vodě), `FUghFigureModels` (komponenta na entitu,
+  `FUghRig` = obecný riggovaný model, `FUghCaveman` nad ním), `UghFigurePlace` (počátky modelů podle spritu: nohy na
+  spodku, ve vodě hladina 4 px pod vrškem, letec uprostřed naklopený 35° zády ke kameře a 1,3× větší, ze dveří
+  zezadu), `FUghFrameClock` (akce plynule, ale v rámci snímku spritu). Bez modelů dál plastelína. `shot.ps1 -Frame
+  <x>,<y>,<w>,<h>` (záběr části obrazovky). Testy `Ugh.Figures.Actions` (každý z 269 spritů entit dat má pravidlo
+  a akci svého modelu), `.Clock`, `.Models`.
+  `levels.ps1` (27 min) a archy bez vad, prohlédnuté i snímky (`-Frame`: chodící a netrpělivě mávající cestující,
+  letec, triceratops, foukač; bouřka, tým). Screech letce originál nekreslí (letec je při něm skrytý), proto akce nemá;
+  bonusové předměty autopilot nevyvolá, ověřené testem a náhledem v Blenderu. CTest logiky, `6_verification` (163)
+  a 172 testů v UE zelené. Pro krok 18: postavy stojí v desce hry (-20 .. 20), triceratops a foukač sahají do hloubky
+  asi ±60 a natáčejí se ke kameře, letec v letu až ~±170 (křídla); dekorace na římsách s nepřítelem nebo plošinou mají
+  nechat volný prostor nad nimi (strom 2,6 m, triceratops 1,9 m) a za deskou; stromy s tváří jsou nepřátelé logiky,
+  palmy dekorace. Čeká na Jana: prohlédnout postavy v pohybu v okně (`play.ps1`). Další: **krok 18**.

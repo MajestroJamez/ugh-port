@@ -8,10 +8,10 @@
 #include <string>
 #include <type_traits>
 
+#include "api/LevelView.hpp"
 #include "data/ugd/DataFileReader.hpp"
 #include "events/EventQueue.hpp"
 #include "game/Game.hpp"
-#include "passengers/Passenger.hpp"
 #include "world/copter/CopterShape.hpp"
 
 struct ugh_logic {
@@ -68,59 +68,6 @@ int phase(ugh::game::GamePhase p) {
         case ugh::game::GamePhase::Play: return UGH_LOGIC_PHASE_PLAY;
     }
     return UGH_LOGIC_PHASE_START;
-}
-
-void addEntity(ugh_logic_view& view, int kind, int index, ugh::units::Fixed x, ugh::units::Fixed y,
-               std::optional<int> sprite, std::optional<int> bubble) {
-    if (view.entity_count >= UGH_LOGIC_MAX_ENTITIES) return;
-    view.entities[view.entity_count++] = {kind, index, x.raw(), y.raw(), sprite.value_or(-1), bubble.value_or(-1)};
-}
-
-/** The wind as ugh_logic.h gives it. */
-int windDirection(ugh::data::levels::Wind wind) {
-    switch (wind) {
-        case ugh::data::levels::Wind::None: return 0;
-        case ugh::data::levels::Wind::Left: return -1;
-        case ugh::data::levels::Wind::Right: return 1;
-    }
-    return 0;
-}
-
-/** The level and its sprites: copters, passengers, enemies, bonus items, rain. */
-void viewLevel(const ugh::game::Game& game, ugh_logic_view& view) {
-    const ugh::world::Level& level = game.level();
-    view.level_id = level.definition()->id;
-    view.energy = level.energy().value();
-    view.fade = level.fade().position();
-    view.water_level = level.water().level().raw();
-    view.water_frame = level.water().surfaceFrame();
-    view.wind = windDirection(level.wind());
-    view.copter_count = level.copters().count();
-    for (const ugh::world::copter::Copter& c : level.copters().all()) {
-        const auto& cargo = c.cabin().cargo();
-        int destination = !cargo ? 0 : cargo->destination ? *cargo->destination : -1;
-        view.copters[c.player()] = {c.motion().x().raw(), c.motion().y().raw(), c.rotor().sprite(), cargo ? cargo->look : 0,
-                           destination, c.cabin().fare()};
-    }
-    for (int i = 0; i < game.passengers().count(); i++) {
-        const ugh::passengers::Passenger& passenger = game.passengers()[i];
-        addEntity(view, UGH_LOGIC_ENTITY_PASSENGER, i, passenger.x(), passenger.y(), passenger.sprite(), passenger.bubble());
-    }
-    for (int i = 0; i < game.enemies().count(); i++) {
-        const ugh::enemies::Enemy& enemy = game.enemies()[i];
-        addEntity(view, UGH_LOGIC_ENTITY_ENEMY, i, enemy.x(), enemy.y(), enemy.sprite(), std::nullopt);
-    }
-    for (int slot = 0; slot < ugh::bonuses::BonusSlots::SLOTS; slot++) {
-        const auto& item = game.bonuses()[slot];
-        if (item) addEntity(view, UGH_LOGIC_ENTITY_BONUS_ITEM, slot, item->x(), item->y(), item->sprite(), std::nullopt);
-    }
-    if (!level.windy()) return;
-    for (const ugh::world::scenery::Raindrop& drop : level.rain().drops()) {
-        if (!drop.onScreen()) continue;
-        view.raindrops[view.raindrop_count][0] = drop.x;
-        view.raindrops[view.raindrop_count][1] = drop.y;
-        view.raindrop_count++;
-    }
 }
 
 /** The level being played, nullptr before the first one is loaded. */
@@ -216,7 +163,7 @@ void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view) {
     view->lives = session.lives().count();
     view->multiplier = session.score().multiplier();
     view->score = session.score().points();
-    if (game.levelLoaded()) viewLevel(game, *view);
+    if (game.levelLoaded()) ugh::api::viewLevel(game, *view);
 }
 
 int ugh_logic_pad_count(const ugh_logic* logic) {
@@ -234,6 +181,16 @@ int ugh_logic_get_pad(const ugh_logic* logic, int index, ugh_logic_pad* pad) {
 int ugh_logic_solid(const ugh_logic* logic, int x, int y) {
     const ugh::data::levels::LevelDefinition* level = levelPlayed(logic);
     return level && level->mask.solid(x, y) ? 1 : 0;
+}
+
+int ugh_logic_get_sprite(const ugh_logic* logic, int sprite, ugh_logic_sprite* info) {
+    ugh::api::SpriteName name;
+    if (!ugh::api::nameSprite(*logic->data, sprite, name)) return 0;
+    *info = ugh_logic_sprite{};
+    name.name.copy(info->name, sizeof info->name - 1);
+    info->frame = name.frame;
+    info->frames = name.frames;
+    return 1;
 }
 
 }

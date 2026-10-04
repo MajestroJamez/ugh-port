@@ -204,6 +204,7 @@ logic/
       PlayFrame.hpp/.cpp    jeden snímek hry: pořadí systémů
     api/
       LogicApi.cpp          C API nad Game
+      LevelView.hpp/.cpp    co C API ukazuje z hraného levelu (ugh_logic_view) a jména spritů entit
   6_verification/replay/    ugh::replay – knihovna ugh_logic_replay (pro kontrolu replayů; v UE jen v editoru, testy)
     StateWriter.hpp/.cpp    sémantický stav hry jako pole UGR 1 (jen čte)
     GameFields, CopterFields, PadFields, PassengerFields, EnemyFields, BonusFields (.hpp/.cpp)
@@ -488,8 +489,9 @@ v UE jako automatické testy `Ugh.Replays.*`):
 
 **C API `include/ugh_logic.h`** (pro UE, krok 10): `ugh_logic_create(data_path, err, size)`, `ugh_logic_destroy`,
 `ugh_logic_new_game(settings)`, `ugh_logic_key` a `ugh_logic_menu_key` (do N9b `ugh_logic_scancode`), `ugh_logic_step` (→ continue / game over / all done),
-`ugh_logic_take_events`, a pohled pro vykreslení `ugh_logic_view` (pole entit: druh, poloha, sprite, bublina; vrtulníky;
-voda; kapky), pozadí levelu (`ugh_logic_pad_count`, `ugh_logic_get_pad`, `ugh_logic_solid`, od kroku 10) a rozměry
+`ugh_logic_take_events`, a pohled pro vykreslení `ugh_logic_view` (pole entit: druh, poloha, sprite, bublina, od kroku 17 vzhled
+cestujícího a omráčený nepřítel; vrtulníky; voda; vítr; kapky), pozadí levelu (`ugh_logic_pad_count`, `ugh_logic_get_pad`,
+`ugh_logic_solid`, od kroku 10), jména spritů entit v datech (`ugh_logic_get_sprite`: animace a snímek, od kroku 17) a rozměry
 (obrazovka, tělo vrtulníku, plná energie; hlídané `static_assert`). Žádné nastavování polí zvenku. Návrh hlavičky v N4,
 pohled v N8. V UE je C API exportované z modulu `UghLogic` (`UGH_LOGIC_API`).
 

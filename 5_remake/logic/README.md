@@ -56,7 +56,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 | `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `PassengerForm` (its kind on land or in the water), `RouteProgress`, `PickupWait` (waiting for a copter and calling it), `Ride`, `Swim`; `OnPickupPad` the base of the states on the pickup pad), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`, `Stun` (a walker or a blower stunned); `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
 | `game/` | `Game` (the facade), `GameState` (what changes during a game), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game state: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play) |
-| `api/` | `LogicApi.cpp`: the C API over `Game` |
+| `api/` | `LogicApi.cpp`: the C API over `Game`; `LevelView` what it shows of the level being played (`ugh_logic_view`: the entities with a passenger's look and an enemy knocked out, through Visitors) and what each sprite of the entities is in the data (`ugh_logic_get_sprite`) |
 
 `testing/` is not part of the logic: `testing::TestPilot` (library `ugh_logic_testing`), the test pilot of the replays
 (it puts a copter anywhere, keeps the energy and the lives up) for the tests and `6_verification`; it is the one
@@ -168,7 +168,7 @@ text of the error).
 | change where a copter's door, skids, body or waterline are | `src/world/copter/CopterShape.hpp` |
 | change the size of the screen | `src/data/levels/ScreenSize.hpp`: the collision mask, `world::scenery::Screen` (where a thing is gone), the rain (its width and `Rain::DROPS`) follow it; the limits of a copter's flight are its own (`src/physics/CopterPhysics.cpp`) |
 | change what ends an attempt (a crash, Esc, the last passenger) | `src/world/Level.cpp` (`crash`, `fadeOut`, `passengerFinished`) |
-| change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`, the background: `ugh_logic_pad`, `ugh_logic_solid`) and `src/api/LogicApi.cpp` |
+| change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`, the background: `ugh_logic_pad`, `ugh_logic_solid`, the names of the sprites: `ugh_logic_get_sprite`), `src/api/LogicApi.cpp` and `src/api/LevelView.cpp` |
 | change how the score multiplier works | `src/world/session/Score.hpp` |
 | change what a passenger does on its pickup pad every frame (the water, a copter flying into it) | `src/passengers/route/OnPickupPad.cpp` |
 

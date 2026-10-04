@@ -71,6 +71,7 @@ void AUghGameMode::StartPlay()
 		}
 		return;
 	}
+	FigureActions.Load(Simulation.GetLogic(), Sprites.Count());
 	Speaker->GetPlayer().Load(Assets / TEXT("sound"));
 	if (!bShooting)
 	{
@@ -142,7 +143,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Campfire->SetWater(Water / UghShapes::Subpixels);
 	TArray<FTransform> ClayRiders;
 	Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
-	Figures->Show(Previous, Current, Simulation.Alpha(), Sprites, ClayRiders);
+	Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
 
 	// the fade of the play; black around it (the HUD writes the captions); dimmed behind the menu
 	double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY

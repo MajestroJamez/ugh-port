@@ -40,6 +40,12 @@ namespace UghAssets
 	inline const TCHAR* Copter = TEXT("copter");
 	inline const TCHAR* Caveman = TEXT("caveman");
 	inline const TCHAR* StonePassenger = TEXT("stone_passenger");
+	/** Made by the scripts of Blender/ too: the enemies (rigged, with actions) and the bonus items (a mesh each). */
+	inline const TCHAR* Pterodactyl = TEXT("pterodactyl");
+	inline const TCHAR* Triceratops = TEXT("triceratops");
+	inline const TCHAR* Blower = TEXT("blower");
+	inline const TCHAR* FruitTree = TEXT("fruit_tree");
+	inline const TCHAR* BonusItems = TEXT("bonus_items");
 
 	/** The content folder of asset `Id`. */
 	inline FString Folder(const FString& Id) { return FString(ImportedRoot) / Id; }

@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "UghFigureActions.h"
 #include "UghLevelArt.h"
 #include "UghMenu.h"
 #include "UghPasswords.h"
@@ -77,6 +78,7 @@ private:
 
 	FUghSimulation Simulation;
 	FUghSprites Sprites;
+	FUghFigureActions FigureActions;
 	FUghLevelArt LevelArt;
 	FUghPasswords Passwords;
 	FUghMenu Menu{ Passwords };

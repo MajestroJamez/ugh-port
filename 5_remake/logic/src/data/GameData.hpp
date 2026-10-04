@@ -59,6 +59,9 @@ public:
 
     const Rules& rules() const { return *contents_.rules; }
     const SpriteIds& sprites() const { return contents_.sprites; }
+    /** Every animation of the kinds, and the kinds of bonus items, in the order of the file. */
+    const std::vector<std::unique_ptr<kinds::Animation>>& animations() const { return contents_.animations; }
+    const std::vector<std::unique_ptr<kinds::BonusKind>>& bonusKinds() const { return contents_.bonusKinds; }
 
     const kinds::FlyerKind& flyerKind() const { return contents_.flyerKind; }
     const kinds::WalkerKind& walkerKind() const { return contents_.walkerKind; }

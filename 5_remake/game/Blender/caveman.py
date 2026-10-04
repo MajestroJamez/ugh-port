@@ -15,16 +15,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bmesh  # noqa: E402
-import bpy  # noqa: E402
 import numpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
 import caveman_actions  # noqa: E402
 import caveman_rig as rig  # noqa: E402
+import ugh_blobs as blobs  # noqa: E402
 import ugh_kit as kit  # noqa: E402
 
 FOLDER = kit.arguments()[0]
-SURFACE = 0.57   # a metaball's surface is this part of its radius (stiffness 2, threshold 0.6)
 RESOLUTION = 0.011
 # material slots: (name, default colour of the factor); the order is the game's (UghCopterModel.h)
 SLOTS = (("skin", None), ("eye", None), ("pupil", None), ("hair_short", (0.3, 0.17, 0.09)),
@@ -32,62 +31,33 @@ SLOTS = (("skin", None), ("eye", None), ("pupil", None), ("hair_short", (0.3, 0.
 
 
 def metaballs(name):
-    data = bpy.data.metaballs.new(name)
-    data.resolution = data.render_resolution = RESOLUTION
-    holder = kit.new_object(name, data)
-    return holder, data
-
-
-def ellipsoid(data, at, semi, negative=False):
-    element = data.elements.new(type="ELLIPSOID")
-    element.co = at
-    element.radius = 1 / SURFACE
-    element.size_x, element.size_y, element.size_z = semi
-    element.use_negative = negative
-
-
-def ball(data, at, radius, negative=False):
-    ellipsoid(data, at, (radius, radius, radius), negative)
-
-
-def capsule(data, a, b, radius):
-    a, b = Vector(a), Vector(b)
-    element = data.elements.new(type="CAPSULE")
-    element.co = (a + b) / 2
-    element.radius = radius / SURFACE
-    element.size_x = (b - a).length / 2
-    element.rotation = Vector((1, 0, 0)).rotation_difference(b - a)
-
-
-def both_sides(points):
-    """The left side's points (+X) and the right side's (mirrored)."""
-    return [points, [(-x, y, z) for x, y, z in points]]
+    return blobs.metaballs(name, RESOLUTION)
 
 
 def body():
     holder, data = metaballs("Body")
-    ellipsoid(data, (0, 0.01, 0.44), (0.17, 0.15, 0.11))   # hips
-    ellipsoid(data, (0, -0.035, 0.55), (0.17, 0.155, 0.13))   # belly
-    ellipsoid(data, (0, 0.0, 0.7), (0.21, 0.15, 0.11))   # chest
-    capsule(data, (0, 0.01, 0.78), (0, -0.01, 0.9), 0.075)   # neck
-    ellipsoid(data, (0, 0.0, 1.0), (0.13, 0.135, 0.14))   # skull
-    ellipsoid(data, (0, -0.055, 0.925), (0.12, 0.1, 0.065))   # jaw
-    capsule(data, (-0.075, -0.112, 1.035), (0.075, -0.112, 1.035), 0.033)   # brow ridge
-    ball(data, (0, -0.15, 0.965), 0.04)   # nose
-    for side in both_sides([(0.052, -0.13, 0.99), (0.135, 0.0, 0.99)]):
-        ball(data, side[0], 0.032, negative=True)   # eye socket
-        ball(data, side[1], 0.03)   # ear
-    for shoulder, elbow, wrist, fist, hip, knee, ankle, toes in both_sides([
+    blobs.ellipsoid(data, (0, 0.01, 0.44), (0.17, 0.15, 0.11))   # hips
+    blobs.ellipsoid(data, (0, -0.035, 0.55), (0.17, 0.155, 0.13))   # belly
+    blobs.ellipsoid(data, (0, 0.0, 0.7), (0.21, 0.15, 0.11))   # chest
+    blobs.capsule(data, (0, 0.01, 0.78), (0, -0.01, 0.9), 0.075)   # neck
+    blobs.ellipsoid(data, (0, 0.0, 1.0), (0.13, 0.135, 0.14))   # skull
+    blobs.ellipsoid(data, (0, -0.055, 0.925), (0.12, 0.1, 0.065))   # jaw
+    blobs.capsule(data, (-0.075, -0.112, 1.035), (0.075, -0.112, 1.035), 0.033)   # brow ridge
+    blobs.ball(data, (0, -0.15, 0.965), 0.04)   # nose
+    for side in blobs.both_sides([(0.052, -0.13, 0.99), (0.135, 0.0, 0.99)]):
+        blobs.ball(data, side[0], 0.032, negative=True)   # eye socket
+        blobs.ball(data, side[1], 0.03)   # ear
+    for shoulder, elbow, wrist, fist, hip, knee, ankle, toes in blobs.both_sides([
             (0.2, 0.01, 0.77), (0.35, 0.02, 0.61), (0.45, -0.02, 0.46), (0.48, -0.035, 0.405),
             (0.11, 0.0, 0.4), (0.12, -0.02, 0.23), (0.12, 0.0, 0.075), (0.12, -0.085, 0.035)]):
-        ball(data, shoulder, 0.085)
-        capsule(data, shoulder, elbow, 0.062)
-        capsule(data, elbow, wrist, 0.056)
-        ellipsoid(data, fist, (0.05, 0.055, 0.06))
-        ball(data, (fist[0] - math.copysign(0.035, fist[0]), fist[1] - 0.035, fist[2] + 0.025), 0.022)   # thumb
-        capsule(data, hip, knee, 0.075)
-        capsule(data, knee, ankle, 0.058)
-        ellipsoid(data, toes, (0.055, 0.085, 0.035))
+        blobs.ball(data, shoulder, 0.085)
+        blobs.capsule(data, shoulder, elbow, 0.062)
+        blobs.capsule(data, elbow, wrist, 0.056)
+        blobs.ellipsoid(data, fist, (0.05, 0.055, 0.06))
+        blobs.ball(data, (fist[0] - math.copysign(0.035, fist[0]), fist[1] - 0.035, fist[2] + 0.025), 0.022)   # thumb
+        blobs.capsule(data, hip, knee, 0.075)
+        blobs.capsule(data, knee, ankle, 0.058)
+        blobs.ellipsoid(data, toes, (0.055, 0.085, 0.035))
     return holder
 
 
@@ -99,10 +69,10 @@ def hair(name, long_hair):
         if math.cos(phi) < -0.6 and theta > 0.75:
             continue   # the face stays free
         direction = Vector((math.sin(theta) * math.sin(phi), math.sin(theta) * -math.cos(phi), math.cos(theta)))
-        ball(data, Vector((0, 0.01, 1.0)) + direction * 0.135, rng.uniform(0.04, 0.06))
+        blobs.ball(data, Vector((0, 0.01, 1.0)) + direction * 0.135, rng.uniform(0.04, 0.06))
     if long_hair:
         for x in numpy.linspace(-0.14, 0.14, 7):
-            capsule(data, (x, 0.08, 1.02), (x * 1.3, 0.12, 0.74), 0.045)
+            blobs.capsule(data, (x, 0.08, 1.02), (x * 1.3, 0.12, 0.74), 0.045)
     return holder
 
 
@@ -113,24 +83,22 @@ def beard():
         angle = rng.uniform(-1.4, 1.4)
         z = rng.uniform(0.82, 0.92)
         reach = 0.125 + 0.03 * (0.92 - z) / 0.1
-        ball(data, (math.sin(angle) * reach, -math.cos(angle) * reach - 0.03, z), rng.uniform(0.035, 0.05))
-    ball(data, (0, -0.155, 0.81), 0.055)   # the beard's point on the chest
+        blobs.ball(data, (math.sin(angle) * reach, -math.cos(angle) * reach - 0.03, z), rng.uniform(0.035, 0.05))
+    blobs.ball(data, (0, -0.155, 0.81), 0.055)   # the beard's point on the chest
     return holder
 
 
 def fur():
     """A hide around the hips and belly with a strap over the left shoulder: jagged hem, open top."""
     holder, data = metaballs("Fur")
-    ellipsoid(data, (0, 0.01, 0.43), (0.195, 0.175, 0.13))
-    ellipsoid(data, (0, -0.035, 0.56), (0.19, 0.175, 0.14))
-    capsule(data, (0.11, -0.12, 0.66), (0.19, 0.0, 0.84), 0.04)
-    capsule(data, (0.19, 0.0, 0.84), (0.11, 0.12, 0.66), 0.04)
+    blobs.ellipsoid(data, (0, 0.01, 0.43), (0.195, 0.175, 0.13))
+    blobs.ellipsoid(data, (0, -0.035, 0.56), (0.19, 0.175, 0.14))
+    blobs.capsule(data, (0.11, -0.12, 0.66), (0.19, 0.0, 0.84), 0.04)
+    blobs.capsule(data, (0.19, 0.0, 0.84), (0.11, 0.12, 0.66), 0.04)
     return holder
 
 
-def cut_fur(mesh):
-    bm = bmesh.new()
-    bm.from_mesh(mesh)
+def cut_fur(bm):
     doomed = []
     for face in bm.faces:
         c = face.calc_center_median()
@@ -141,8 +109,6 @@ def cut_fur(mesh):
         if c.z < hem or (c.z > top and not on_strap):
             doomed.append(face)
     bmesh.ops.delete(bm, geom=doomed, context="FACES")
-    bm.to_mesh(mesh)
-    bm.free()
 
 
 def eyes():
@@ -154,35 +120,9 @@ def eyes():
 
 
 def to_mesh(holder, slot, materials_of_slots, decimate=0.5):
-    """The metaballs as a mesh object with UVs and the materials of SLOTS, all its faces in slot `slot`."""
-    evaluated = holder.evaluated_get(bpy.context.evaluated_depsgraph_get())
-    mesh = bpy.data.meshes.new_from_object(evaluated)
-    bpy.data.objects.remove(holder)
-    made = kit.new_object(mesh.name, mesh)
-    for each in materials_of_slots:
-        mesh.materials.append(each)
-    if slot == "fur":
-        cut_fur(mesh)
-    if decimate < 1:
-        modifier = made.modifiers.new("decimate", "DECIMATE")
-        modifier.ratio = decimate
-        bpy.context.view_layer.objects.active = made
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
-    for polygon in mesh.polygons:
-        polygon.use_smooth = True
-        polygon.material_index = [name for name, _ in SLOTS].index(slot)
-    unwrap(made)
-    return made
-
-
-def unwrap(made):
-    bpy.ops.object.select_all(action="DESELECT")
-    bpy.context.view_layer.objects.active = made
-    made.select_set(True)
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.uv.smart_project(angle_limit=1.1, island_margin=0.01)
-    bpy.ops.object.mode_set(mode="OBJECT")
+    """The metaballs as a mesh object in the materials of SLOTS, all its faces in slot `slot`."""
+    return blobs.to_mesh(holder, [name for name, _ in SLOTS].index(slot), materials_of_slots, decimate,
+                         cut_fur if slot == "fur" else None)
 
 
 def textures():
@@ -232,14 +172,8 @@ def build():
     parts = [to_mesh(body(), "skin", slots, 0.6), to_mesh(hair("HairShort", False), "hair_short", slots),
              to_mesh(hair("HairLong", True), "hair_long", slots), to_mesh(beard(), "beard", slots),
              to_mesh(fur(), "fur", slots, 0.7), kit.mesh_object("Eyes", eyes(), slots)]
-    bpy.ops.object.select_all(action="DESELECT")
-    for part in parts:
-        part.select_set(True)
-    bpy.context.view_layer.objects.active = parts[0]
-    bpy.ops.object.join()
-    figure = bpy.context.view_layer.objects.active
-    figure.name = figure.data.name = "caveman"
-    armature = rig.build(figure, [name for name, _ in SLOTS])
+    figure = blobs.join(parts, "caveman")
+    armature = rig.build(figure)
     caveman_actions.make(armature)
     kit.export(os.path.join(FOLDER, "caveman.glb"), [armature, figure])
 

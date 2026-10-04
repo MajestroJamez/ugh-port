@@ -129,6 +129,8 @@ typedef struct {
     int x, y;
     int sprite;
     int bubble;    /* a passenger's speech bubble, -1 none */
+    int look;      /* a passenger: who it is, as ugh_logic_copter.cargo_look (it rides so); 0 for the others */
+    int stunned;   /* 1 while a passenger knocked an enemy out: a walker or a blower stunned, a flyer falling */
 } ugh_logic_entity;
 
 /** A copter. */
@@ -177,6 +179,22 @@ enum {
     UGH_LOGIC_SCREEN_WIDTH = 320, UGH_LOGIC_SCREEN_HEIGHT = 192, UGH_LOGIC_SUBPIXELS = 32,
     UGH_LOGIC_COPTER_BODY_LEFT = 5, UGH_LOGIC_COPTER_BODY_RIGHT = 26, UGH_LOGIC_COPTER_BODY_HEIGHT = 20
 };
+
+/**
+ * What a sprite of the entities is in the data (the names of assets/logic/ugh-data.ugd), so that a frontend knows what
+ * a figure does: a frame of an animation of a kind ("kind1.walkLeft": the kind, a dot, the animation; "kind1-water" is
+ * that passenger in the water), else a sprite of the rules ("standingPassenger", "droppedPassenger",
+ * "bouncedPassenger", "shakenTree") or a kind of bonus item ("energy3", "multiplier"). A sprite of two things is the
+ * animation's (a flyer falling shows a frame of its flight, a stunned blower one of its blowing: see `stunned`).
+ */
+typedef struct {
+    char name[32];
+    int frame;    /* the first frame of the animation that shows the sprite; 0 for a single sprite */
+    int frames;   /* the frames of the animation; 1 for a single sprite */
+} ugh_logic_sprite;
+
+/** Fills `info` with what `sprite` is; 0 when no entity of the data shows it (a bubble, a rotor, an unused one). */
+UGH_LOGIC_API int ugh_logic_get_sprite(const ugh_logic* logic, int sprite, ugh_logic_sprite* info);
 
 /* ------------------------------------------------------------------ the background of the level being played */
 

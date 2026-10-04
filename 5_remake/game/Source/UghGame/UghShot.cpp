@@ -36,6 +36,14 @@ bool FUghShot::Configure()
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
 	bCloseUp = FParse::Param(CommandLine, TEXT("UghShotCloseUp"));
+	FString FrameText;
+	TArray<FString> Numbers;
+	if (FParse::Value(CommandLine, TEXT("-UghShotFrame="), FrameText, false) &&
+		FrameText.ParseIntoArray(Numbers, TEXT(",")) == 4)
+	{
+		const FVector2D Corner(FCString::Atod(*Numbers[0]), FCString::Atod(*Numbers[1]));
+		Frame = FBox2D(Corner, Corner + FVector2D(FCString::Atod(*Numbers[2]), FCString::Atod(*Numbers[3])));
+	}
 	if (CargoLook > 0)
 	{
 		Suffix += FString::Printf(TEXT("-%s%d"), bHanging ? TEXT("hanging") : TEXT("cargo"), CargoLook);
@@ -43,6 +51,10 @@ bool FUghShot::Configure()
 	if (bCloseUp)
 	{
 		Suffix += TEXT("-closeup");
+	}
+	if (Frame)
+	{
+		Suffix += FString::Printf(TEXT("-frame%.0f_%.0f"), Frame->Min.X, Frame->Min.Y);
 	}
 	FString List = TEXT("1p:1");
 	FParse::Value(CommandLine, TEXT("-UghShotLevels="), List, false);
@@ -192,6 +204,10 @@ void FUghShot::Dress(ugh_logic_view& View) const
 
 TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View) const
 {
+	if (Frame && View.phase == UGH_LOGIC_PHASE_PLAY)
+	{
+		return Frame;
+	}
 	if (!bCloseUp || View.phase != UGH_LOGIC_PHASE_PLAY || View.copter_count == 0)
 	{
 		return {};

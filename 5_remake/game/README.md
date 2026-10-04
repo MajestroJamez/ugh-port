@@ -1,4 +1,4 @@
-# UGH! in Unreal Engine 5.8 - the prehistoric diorama
+`-CloseUp` framing the copters, `-Frame <left>,<top>,<width>,<height>` that part of the screen (pixels: a look at the figures; the name then ends in `-cargo<look>` or `-hanging<look>`, `-closeup`, `-frame<left>_<top>`) |and the copters `Ugh.Copter.*` (the rotor turns as fast as its sprites change; the imported model fills the copter's body and stays in it, the stone passenger is as big as its sprite) and the figures `Ugh.Figures.*` (every sprite an entity of the data shows is an action of a model, `FUghFigureActions`; the actions that follow the sprites' frames go on smoothly; the enemies' models are as big as their sprites, the bonus items are there); `-Filter` other tests |# UGH! in Unreal Engine 5.8 - the prehistoric diorama
 
 The game logic of `../logic` inside Unreal Engine, shown as a diorama (`docs/visual-concept.md`): the level is a
 cliff cut exactly in the plane of the play (its edge there is the collision mask), a smooth rock with rounded edges,
@@ -6,8 +6,10 @@ its cave reaching back to a far back wall, stalactites and fallen rocks, in PBR 
 the original's drawing, the cliff and the water going on beyond the screen under an HDR sky, a campfire, a palm and
 rocks on its ledges, the boards with the pads' numbers as the original draws them; the copters are stone age pedal
 copters of bamboo, wicker, leather, bone and stone (made by Blender scripts) with a caveman pedalling them and their
-passengers sitting behind him or hanging below; the other passengers, the enemies and the bonus items are plasticine
-shapes the size of their sprites, a passenger's speech bubble a card with its sprite. The logic runs at the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn
+passengers sitting behind him or hanging below; the passengers are cavemen walking, waving, waiting, swimming and
+falling as their sprites say (the standing passenger a stone with eyes), the enemies a pterodactyl, a triceratops, a
+puffing beast and a tree with a face, the bonus items fruits and a stone tablet (all made by Blender scripts, clay
+shapes the size of their sprites without them), a passenger's speech bubble a card with its sprite. The logic runs at the original's tick (70.086 Hz) whatever the frame rate; every frame is drawn
 between its last two steps. The original's sounds and music play on the logic's events (`assets/sound`). No map:
 the game mode builds the scene from code (`/Engine/Maps/Entry`); the materials are made by a commandlet and the 3D
 assets (free models, textures and skies of `Assets.json`) are downloaded and imported by scripts, so there are no
@@ -83,9 +85,13 @@ The frontend:
 | `AUghCopters` | the copters between two steps: the pedal copters of `Blender/copter.py` in the players' colours (orange, teal), the rotor and the pilot's crank turning (`FUghRotorSpin`), the pilot pedalling (the action held at the crank's angle), the passenger sitting behind him as a caveman of his look, or the stone passenger hanging in the sling, swaying against the copter's way; without the models clay boxes |
 | `UghCopterModel` | where the model's parts are (the numbers of `Blender/copter_layout.py` in the world's units): the seats, the crank's axle, the rotor's hub, the hanging stone |
 | `FUghRotorSpin` | how far a rotor and its crank have turned: as fast as the rotor's sprites change lately (the logic only says which sprite), slowing to a stop without them |
-| `FUghCaveman` | the caveman of `Blender/caveman.py` (a skeletal mesh, actions idle, sit, pedal, hang): a new one on an actor, dressed as a look (hair, beard, colours of hair, fur and skin by the material slots), playing or holding an action; the pilots' look and the passengers' by the logic's cargo look |
+| `FUghCaveman` | the caveman of `Blender/caveman.py` (a `FUghRig`, actions idle, sit, pedal, hang, walk, wave, tread, swim, fall): a new one on an actor, dressed as a look (hair, beard, colours of hair, fur and skin by the material slots), playing or holding an action; the pilots' look and the passengers' by the logic's cargo look |
+| `FUghRig` | a rigged model of the Blender scripts: its skeletal mesh and an animation per action (`UghAssets`); a component of it on an actor, playing an action or holding it at a part of its loop |
 | `UghBetween` | render interpolation: a position between two steps (a jump is not interpolated), the view to interpolate from |
-| `AUghFigures` | passengers, enemies, bonus items, raindrops (strokes of clay along their way with the wind): plasticine shapes between two steps; speech bubbles as sprite cards; the clay riders of the clay copters |
+| `AUghFigures` | passengers, enemies, bonus items between two steps as the models of `FUghFigureModels` doing what `FUghFigureActions` say, plasticine shapes where a model is missing; raindrops (strokes of clay along their way with the wind); speech bubbles as sprite cards; the clay riders of the clay copters |
+| `FUghFigureActions` | which sprite means what (Table of rules over the names `ugh_logic_get_sprite` gives: "kind1.walkLeft" a caveman walking to the left, "kind1-water.walkRight" swimming, "flyer.left", "walker.chargeRight", "blower.blowing", "tree.swaying", "standingPassenger", "energy3" ...): the model, its action, which way it looks, whether the action follows the frames of the sprite's animation; from the entity an enemy knocked out (`stunned`) and a passenger going down in the water (falling). Test `Ugh.Figures.Actions` (`UghFigureTests.cpp`) |
+| `FUghFigureModels` | the figures' models: the passengers as cavemen of their look or the stone with eyes, the pterodactyl, the triceratops, the blower, the tree (each a `FUghRig`), the bonus items (a mesh each, named as their kind); a component per entity, placed as its sprite (feet on its bottom, in the water at the surface, the flyer in its middle, banked and bigger; coming out of a door from behind), looking to its side and a little towards the camera, holding its action at the clock of its frames or playing it |
+| `FUghFrameClock` | where an action that follows a sprite's animation is: as fast as the frames change lately, never past the frame shown (like `FUghRotorSpin`) |
 | `FUghSprites` | the sprites of the original: their sizes (`assets/sprites.json`) and pixels (`assets/sprites/NNN.png`) |
 | `UghShapes` | where the screen of the original lies in the world (1 px = 10 units, X right, Z up, depth toward the camera negative), the slab of the play, shapes, cards with a sprite and materials |
 | `UghTexture` | pixels as a texture |
@@ -111,9 +117,12 @@ they are for.
 Folders: `assets\3d\<source>\<asset>\` (the downloads; archives are kept in `assets\3d\_archives\` and extracted to
 the asset's folder), `Blender\` (scripts in git that make what an asset lacks, run by `fetch-assets.ps1` with
 `blender -b`: `palm.py` turns the OBJ palms of Nobiax's pack into glTF with a cut-out leaf material; `copter.py`
-(with `copter_materials.py`, `copter_layout.py`), `caveman.py` (with `caveman_rig.py`, `caveman_actions.py`) and
-`stone_passenger.py` make the copters, the caveman and the stone passenger from nothing, sharing `ugh_kit.py`:
-procedural textures, materials, shapes, the glTF export),
+(with `copter_materials.py`, `copter_layout.py`), `caveman.py` (with `caveman_rig.py`, `caveman_actions.py`),
+`stone_passenger.py`, `pterodactyl.py`, `triceratops.py`, `blower.py`, `fruit_tree.py` and `bonus_items.py` make the
+copters, the caveman, the stone passenger, the enemies and the bonus items from nothing, sharing `ugh_kit.py`
+(procedural textures, materials, shapes, the glTF export), `ugh_blobs.py` (soft shapes of metaballs), `ugh_rig.py`
+(armatures, skin weights, actions keyed from poses with two-bone IK) and `creature_kit.py` (scaly hides, eyes, horns,
+stars over a dizzy head)),
 `Content\Imported\<id>\` (the import, with `Import.stamp`: the files it was made from; the commandlet leaves an asset
 alone while they stay the same, and deletes it before importing it again). On a clean machine:
 

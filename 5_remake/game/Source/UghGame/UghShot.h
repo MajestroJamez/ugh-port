@@ -21,8 +21,9 @@ class FUghPasswords;
  *
  * For a look at the copters (the autopilot never picks a passenger up): -UghShotCargo=<look> shows them with a
  * passenger of the logic's cargo look sitting in the cabin, with -UghShotHanging hanging below instead (only the
- * picture: the logic is not changed); -UghShotCloseUp frames the copters instead of the screen. Such a shot's name
- * ends in -cargo<look>, -hanging<look>, -closeup (in this order).
+ * picture: the logic is not changed); -UghShotCloseUp frames the copters instead of the screen, -UghShotFrame=<left>,
+ * <top>,<width>,<height> that part of the screen (pixels: a look at the figures). Such a shot's name ends in
+ * -cargo<look>, -hanging<look>, -closeup, -frame<left>_<top> (in this order).
  */
 class FUghShot
 {
@@ -40,7 +41,7 @@ public:
 
 	/** The view as the shot shows it: the copters with the passenger of -UghShotCargo. */
 	void Dress(ugh_logic_view& View) const;
-	/** With -UghShotCloseUp the pixels to frame: the copters (in the play). */
+	/** The pixels to frame (in the play): -UghShotFrame its part of the screen, -UghShotCloseUp the copters. */
 	TOptional<FBox2D> CloseUp(const ugh_logic_view& View) const;
 
 private:
@@ -70,10 +71,11 @@ private:
 	FString Path;
 	double At = 2;
 	bool bMenuShot = false;
-	int32 CargoLook = 0;     // -UghShotCargo
-	bool bHanging = false;   // -UghShotHanging
-	bool bCloseUp = false;   // -UghShotCloseUp
-	FString Suffix;          // of the shots' names
+	int32 CargoLook = 0;      // -UghShotCargo
+	bool bHanging = false;    // -UghShotHanging
+	bool bCloseUp = false;    // -UghShotCloseUp
+	TOptional<FBox2D> Frame;  // -UghShotFrame
+	FString Suffix;           // of the shots' names
 	TArray<FTarget> Targets;
 	int32 Next = 0;            // the target being shot
 	double TargetTime = 0;     // since it began
