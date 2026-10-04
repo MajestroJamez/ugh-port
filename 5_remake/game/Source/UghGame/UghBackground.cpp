@@ -210,6 +210,10 @@ void AUghBackground::ShowSigns(const TArray<FUghArtTile>& Signs, const FUghSprit
 
 void AUghBackground::SetWater(double Surface)
 {
+	if (bCliff)
+	{
+		RockMaterial->SetScalarParameterValue(UghMaterials::WaterLevelParameter, UghShapes::ToWorld(0, Surface, 0).Z);
+	}
 	TArray<FTransform> Boxes;
 	if (Surface < Height)
 	{

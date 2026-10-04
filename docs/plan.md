@@ -358,6 +358,21 @@ rostliny, stromy, kořeny, mech; licence pro použití v projektech Unreal Engin
 - Hotovo když: snímky jsou proti kroku 18 jasně fotorealističtější (1p-01, 1p-03, 1p-43, team-21), archy
   `levels.ps1` zkontrolované, testy zelené, fps v logu (Radeon 890M, medián aspoň 25), dokumentace a zápis do Stavu.
 
+## Krok 18c - Fotorealistická čelní skála
+
+Po kroku 18b vypadá zadní stěna jeskyně jako naskenované útesy, ale čelo skály (síť `FUghRockMesh`, materiál
+`M_UghCliff`) působí jako plochý světlý vápenec nebo omítka: bez velkých skvrn, reliéfu, vrstev a skoro bez barev,
+tráva a mech na horních plochách se ztratily. Je to největší plocha na obrazovce, rozhoduje o vzhledu hry.
+
+- Čelo jako naskenovaná skála ladící s pískovcovými útesy vzadu: naskenované povrchy vzorku ve světových souřadnicích
+  (triplanár) s velkými skvrnami proti opakování, vrstvy míchané podle výšky, tmavší spáry a dutiny, mokrá tmavá skála
+  u vody, mech a tráva na horních plochách a přes horní hrany, hlína na vodorovných plochách; teplá okrová a šedá
+  s tmavšími vrstvami.
+- Víc reliéfu sítě jen mimo desku hry (hloubka -20 .. 20 zůstává maska, test `Ugh.Rock`).
+- Fallback bez externího obsahu zůstává, výkon `levels.ps1` medián aspoň 25 fps.
+- Hotovo když: snímky před a po (1p-01, 1p-03, 1p-43, team-21) ukazují čelo jasně jako fotorealistickou skálu s trávou
+  a mechem nahoře, archy `levels.ps1` zkontrolované, testy zelené, dokumentace a zápis do Stavu.
+
 ## Krok 19 - Voda, déšť, obloha, světlo
 
 - Voda jako moderní vodní plocha (Single Layer Water: vlny, lom, pěna u skály) se stoupající hladinou podle logiky,
@@ -833,3 +848,22 @@ rostliny, stromy, kořeny, mech; licence pro použití v projektech Unreal Engin
   `..\Unreal Projects\MetaHumans` přenést stejnou cestou (commandlet + `[CoreRedirects]`), ale pozor na pluginy
   MetaHuman (závislosti mimo `/Game` commandlet jen ohlásí). Se Substrate je nahraná PSO cache stará (`pso.ps1` znovu
   před vydáním); balení s `Content/External` nevyzkoušené. Další: **krok 19**.
+- 2026-10-04: krok 18c hotový - fotorealistická čelní skála (`docs/visual-concept.md`). Čelo skály bylo plochý světlý
+  „vápenec“; teď je to vrstevnatý naskenovaný pískovec ladící s útesy vzadu. Geometrie (`FUghRockField::Front`, jen před
+  deskou hry): reliéf 0,8-4 px - zvlněné vrstvy pískovce asi 9 px vysoké, každá u paty víc venku se zářezem pod sebou
+  (stínové linky), jinde výrazné, jinde skoro žádné; skoro svislé pukliny, široké boule, zrno. Barvy vrcholů
+  (`FUghRockMesh`): modrá = blízkost pod horní hranou masky (2-8 px, kde je nad ní vzduch: tráva a mech přes hranu),
+  alfa = velké skvrny (Perlin po metrech). `M_UghCliff` (`UghCliff.hlsl`): vrstva skály je naskenovaný `BeachCliff`
+  vzorku (v 18b odmítnutý pro opakování) ve dvou měřítkách (5 a 7 m) s posunem, mezi nimi rozhodují velké skvrny
+  a reliéf - dlaždice se neopakují; `T_Rock_03` šedé skvrny v pískovci, zadní stěna a jemná normála na celé skále;
+  tráva nahoře a pruh přes horní hrany, pod ním mech, hlína na svazích a ve škvírách, škvíry a prohlubně tmavší (i AO),
+  skvrny světlejší / tmavší a teplejší / šedší, pískovec ztlumený do okrové, u vody a pod ní mokrá tmavší lesklá skála
+  (nový parametr `WaterLevel` z `AUghBackground::SetWater`; alfa barvy vrcholů do kódu přes `AppendVector`).
+  `electric-dreams.ps1` znovu (78 assetů, 257 balíčků, 3,18 GB; `T_Rock_01` pryč, `BeachCliff` přibyl). Vyzkoušeno
+  a zahozeno: skála víc do červena (BeachCliff bez ztlumení), pravidelné vrstvy s pevnou výškou (vypadaly jako
+  naskládané desky). Snímky před a po (1p-01, 1p-03, 1p-43, team-21: `Saved/Shots/Before18c/pair-*.png`) a archy
+  `levels.ps1` (27,2 min) bez vad; bez kopie vzorku (odsunutá `Content/External`) stejný materiál s CC0 sadami, shot
+  prošel. Výkon: `levels.ps1` medián 41 fps (18b: 43), nejpomalejší 25. CTest logiky, `6_verification` (163) a 173
+  testů v UE zelené (`Ugh.Rock` beze změny). Volitelné vsazení naskenovaných balvanů za hrany čela nezkoušeno (v 18b
+  vypadaly jako nalepené). Čeká na Jana: posoudit čelo v okně (`play.ps1`), hlavně odstín (okrová / šedohnědá).
+  Další: **krok 19**.

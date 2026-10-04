@@ -96,14 +96,16 @@ namespace UghElectricDreams
 		float Size;
 	};
 	/**
-	 * Two rocks (the warm one tinted towards sandstone by the cliff's material), mossy grass, moss, the jungle's soil;
-	 * the rocks of the sample's tileable sets: Megascans' scanned cliff surfaces repeat visibly over a large rock.
+	 * The scanned sandstone of a beach cliff (layered, cracked; the cliff's material hides its tiles), a grey rock of
+	 * the sample's tileable sets (patches in the sandstone, the cave's walls, the fine relief of all the rock), mossy
+	 * grass, moss, the jungle's soil.
 	 */
 	inline const FCliffLayer CliffLayers[] = {
+		{ TEXT("Megascans/Surfaces/BeachCliff/T_BeachCliff_01_BC"),
+		TEXT("Megascans/Surfaces/BeachCliff/T_BeachCliff_01_N"),
+			TEXT("Megascans/Surfaces/BeachCliff/T_BeachCliff_01_AoRDp"), FLinearColor(0, 0, 1, 0), 5.f },
 		{ TEXT("SmartAssets/TileableTextures/T_Rock_03_Albedo"), TEXT("SmartAssets/TileableTextures/T_Rock_03_Normal"),
-			TEXT("SmartAssets/TileableTextures/T_Rock_03_Material"), FLinearColor(1, 0, 0, 0), 4.f },
-		{ TEXT("SmartAssets/TileableTextures/T_Rock_01_Albedo"), TEXT("SmartAssets/TileableTextures/T_Rock_01_Normal"),
-			TEXT("SmartAssets/TileableTextures/T_Rock_01_Material"), FLinearColor(1, 0, 0, 0), 2.5f },
+			TEXT("SmartAssets/TileableTextures/T_Rock_03_Material"), FLinearColor(1, 0, 0, 0), 2.5f },
 		{ TEXT("Megascans/Surfaces/MossyGrass/T_MossyGrass_01_BC"),
 		TEXT("Megascans/Surfaces/MossyGrass/T_MossyGrass_01_N"),
 			TEXT("Megascans/Surfaces/MossyGrass/T_MossyGrass_01_AoRDp"), FLinearColor(0, 0, 1, 0), 1.5f },

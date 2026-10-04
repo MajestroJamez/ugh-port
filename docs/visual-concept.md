@@ -12,8 +12,10 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   pixelů (dva sousední pixely různého druhu jsou od ní oba půl pixelu). Síť uřízne jen rohy pixelových schodů (nejvýš
   půl pixelu), střed každého pixelu zůstane na své straně - test `Ugh.Rock` řeže síť v rovině hry (a pixel před ní
   a za ní) a porovná ji s maskou ve všech levelech (naměřeno nejvýš 0,12 px od hranic pixelů).
-- **Čelo skály** před deskou: zaoblené hrany (čtvrtkruh 2,5 px), mírně hrbolaté, uprostřed širokých skal vypouklé
-  (nejvýš 4 px před deskou; bubliny cestujících jsou kartičky ještě před ním).
+- **Čelo skály** před deskou: zaoblené hrany (čtvrtkruh 2,5 px), v reliéfu (krok 18c: vrstvy pískovce asi 9 px
+  vysoké, zvlněné, každá u paty víc venku se zářezem pod sebou, jinde výrazné, jinde skoro žádné; skoro svislé pukliny,
+  široké boule, zrno), uprostřed širokých skal vypouklé (0,8-4 px před deskou; bubliny cestujících jsou kartičky ještě
+  před ním).
 - **Jeskyně za deskou**: obrys se rozmaže, stěny a stropy čím hlouběji, tím víc lezou do jeskyně (převisy, až 3 px)
   a jsou drsné (šum roste s hloubkou), podlahy zůstávají ve výšce masky (stojí na nich dekorace). Zadní stěna daleko
   (30-78 px, v průměru 46), hlubší za tmavými dírami kresby. Krápníky pod rovnými stropy s místem pod sebou a
@@ -67,7 +69,7 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   zelená a na hlubokých podlahách, jinak skála - teplá vrstevnatá `cliff_side` kde je kresba teplá (její skála),
   šedá `rock_face_03` kde je šedá a na zadní stěně (tmavší). Kde se vrstvy potkávají, vyhraje ta s vyšším reliéfem
   (výšková mapa). Kresba skálu trochu tónuje, ať má každý level své barvy; barvy vrcholů nesou otevřenost (AO
-  ve škvírách) a hloubku. Bez textur (repo bez assetů) má skála barvy kresby jako dřív (`M_UghRock`).
+  ve škvírách), hloubku, blízkost pod horní hranou masky (tráva a mech přes hranu) a velké skvrny (krok 18c). Bez textur (repo bez assetů) má skála barvy kresby jako dřív (`M_UghRock`).
 - `M_UghPbr` má zapojenou výškovou mapu (parallax, `BumpOffset`).
 - Plastelína: matná (drsnost 0,7), sytější barvy než originál; vrtulníky bez modelů oranžový a tyrkysový.
 - Vrtulník a jeskynní muž (krok 16): textury z kroku 14 (kůra `palm_bark` na kmeny a pařezy, `rock_face_03` na
@@ -203,11 +205,11 @@ virtuálních textur projektu černé): projekt má `r.Substrate=True` a `r.Virt
 | kapradiny | `Fern`, `BeechFern`, `SilverLadyFern`, `BostonFern` | 29, 195, 57, 12 MB | `Fern_01/02/05`, `BeechFern_04`, `SilverLadyFern_01`, `BostonFern_02` |
 | tráva, květiny, pokryv | `KikuyuGrass`, `GroundCover`, `CloverVarieties`, `WhiteWindflower`, `RedLachenalia`, `Amaryllis`, `Periwinkle`, `LilyOfTheValley`, `CustomMoss`, `DeadLeaves` | 3-52 MB | `KikuyuGrass_01/03/05/06`; `WhiteWindflower_01/03`, `RedLachenalia_06`, `Amaryllis_03`, `GroundCover_07` |
 | liány | `Megascans/3D_Plants/Ivy` (25 sítí), `EnglishIvy`, `Custom/IvyTest` (`SM_HangingVine_01..11`, `SM_CliffVine_01..09`) | 109, 16, 1 870 MB | `Ivy_11/13/15/17/21/23`, `HangingVine_09/10` (ze stropů), `Ivy_09/12/16/18/19/22` (závěsy po zadní stěně) |
-| povrchy (dlaždicové) | `Megascans/Surfaces`: `BeachCliff`, `JungleGround`, `MossyGrass`, `NordicMoss`, `MossyRockyGround`, `ButtressRoot`, `IcelandicQuarryRock`; `SmartAssets/TileableTextures` `T_Rock_01..03`, `T_Moss_02`, `T_Lichen_01` | 0,9 GB; 0,2 GB | vrstvy skály: `T_Rock_03` (teplá skála), `T_Rock_01` (šedá), `MossyGrass`, `NordicMoss`, `JungleGround` |
+| povrchy (dlaždicové) | `Megascans/Surfaces`: `BeachCliff`, `JungleGround`, `MossyGrass`, `NordicMoss`, `MossyRockyGround`, `ButtressRoot`, `IcelandicQuarryRock`; `SmartAssets/TileableTextures` `T_Rock_01..03`, `T_Moss_02`, `T_Lichen_01` | 0,9 GB; 0,2 GB | vrstvy skály: `BeachCliff` (pískovec, krok 18c), `T_Rock_03` (šedá), `MossyGrass`, `NordicMoss`, `JungleGround` |
 
 Náhledy pro výběr byly miniatury uložené v hlavičkách `.uasset` (bez spuštění editoru vzorku). Odmítnuto: textury
-naskenovaných skal (`BeachCliff`) se na velké skále zjevně opakují; skenované útesy jsou zezadu otevřené (jen čelem ke
-kameře); balvany a kořeny vsazené do čela skály v rovině hry vypadaly jako nalepené oblázky (pevné oblasti masky jsou
+naskenovaných skal (`BeachCliff`) se na velké skále zjevně opakují (krok 18c je bere znovu, ve dvou měřítkách
+střídaných podle velkých skvrn); skenované útesy jsou zezadu otevřené (jen čelem ke kameře); balvany a kořeny vsazené do čela skály v rovině hry vypadaly jako nalepené oblázky (pevné oblasti masky jsou
 na ně tenké) - čelo skály zůstává sítí z pole s naskenovaným materiálem.
 
 ### Jak se to používá
@@ -218,10 +220,16 @@ na ně tenké) - čelo skály zůstává sítí z pole s naskenovaným materiál
   před nimi (kromě pokryvu a lián). Kořeny visí ze stropů (každý druhý sloupec po 5 px pod stropem s 14 px místa) před
   útesem, který tam je. Test `Ugh.Dressing` (150 levelů: aspoň 10 útesů, nejméně 23, deterministicky, za dosahem
   postav a za dekoracemi).
-- **Čelo skály** (`M_UghCliff`): stejný triplanár, vrstvy z dlaždicových povrchů vzorku (`T_Rock_03` teplá, `T_Rock_01`
-  šedá, `MossyGrass`, `NordicMoss`, `JungleGround`), reliéf podle kanálů `HeightMask` vrstvy, velké skvrny světlejší
-  a tmavší (reliéf 8x větší) proti opakování, kresba změkčená na 8 px a tónuje jen trochu, teplá skála do pískovce.
-  Hrana v rovině hry je dál maska (test `Ugh.Rock`).
+- **Čelo skály** (`M_UghCliff`, krok 18c): stejný triplanár, vrstvy z naskenovaných povrchů vzorku: pískovec
+  `BeachCliff` (vrstevnatý, popraskaný; 5 m a 7 m na dlaždici s posunem, která z nich, rozhodují velké skvrny a jejich
+  reliéf - dlaždice se neopakují), šedá `T_Rock_03` (skvrny v pískovci, zadní stěna, jemný reliéf normál na celé skále
+  3,3x hustěji), `MossyGrass`, `NordicMoss`, `JungleGround`; reliéf podle kanálů `HeightMask` rozhoduje přechody.
+  Tráva na plochách nahoru a pruh přes horní hrany masky (barva vrcholů modrá: 2-8 px pod hranou, kde je nad ní
+  vzduch), pod ní mech; hlína na svazích a ve škvírách ploch nahoru; velké skvrny (alfa vrcholů, Perlin po několika
+  metrech) světlejší / tmavší, teplejší / šedší; škvíry sítě a prohlubně reliéfu tmavší (i AO); u vody a pod ní mokrá
+  skála tmavší a lesklejší (parametr `WaterLevel`, `AUghBackground::SetWater`); pískovec ztlumený do okrové jako útesy
+  vzadu, kresba tónuje jen trochu. Geometrie: reliéf čela (vrstvy, pukliny, boule) jen před deskou hry, hrana v rovině
+  hry je dál maska (test `Ugh.Rock`). Bez kopie vzorku stejný materiál s CC0 sadami kroku 14.
 - **Dekorace**: druhy kroku 18 dostanou modely vzorku (`UghElectricDreams.h`: palmy s velkými listy, rostliny džungle,
   kapradiny, keře, tráva, květiny, kameny, pařezy, liány břečťanu); kosti, totemy, chýše a ohně zůstávají z Blenderu
   a Kenneyho. Pravidla chráněných objemů beze změny (`Ugh.Scenery`).

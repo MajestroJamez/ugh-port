@@ -24,6 +24,10 @@ namespace
 	constexpr double NearLook = 2, FarLook = 6;
 	/** The depth behind the slab where the surface counts as at the back (vertex colour green 1), pixels. */
 	constexpr double DeepAt = 60;
+	/** The grass hangs this many pixels (here more, there less) over the rock's top edges. */
+	constexpr double LipMin = 2, LipMax = 8;
+	/** The large patches of the surface: noise this many times per pixel (a few metres), and three times finer. */
+	constexpr double PatchScale = 0.025;
 	/** The static mesh's only material slot. */
 	const FName SlotName(TEXT("Rock"));
 }
@@ -135,5 +139,22 @@ FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, con
 	const double Near = FMath::Clamp(-Field.Sample(Point + Outward * NearLook) / NearLook, 0.0, 1.0);
 	const double Far = FMath::Clamp(-Field.Sample(Point + Outward * FarLook) / FarLook, 0.0, 1.0);
 	const double Deep = FMath::Clamp((Point.Z - FUghRockField::SlabHalf) / DeepAt, 0.0, 1.0);
-	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far)), uint8(255 * Deep), 0, 255);
+	// below a top edge of the mask (air above it in the plane of the play): the grass hangs over it, further here
+	double Lip = 0;
+	if (Point.Z <= FUghRockField::SlabHalf)
+	{
+		const double Reach = FMath::Lerp(LipMin, LipMax, 0.5 + 0.5 * FMath::PerlinNoise2D(FVector2D(Point) * 0.15));
+		for (int32 Up = 0; Up <= FMath::CeilToInt32(Reach); ++Up)
+		{
+			if (Field.Sample(FVector(Point.X, Point.Y - Up, 0)) < 0)
+			{
+				Lip = FMath::Max(1 - Up / Reach, 0.0);
+				break;
+			}
+		}
+	}
+	const double Patches = 0.5 + 0.5 * (0.65 * FMath::PerlinNoise3D(Point * PatchScale) +
+		0.35 * FMath::PerlinNoise3D(Point * PatchScale * 3.1));
+	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far)), uint8(255 * Deep), uint8(255 * Lip),
+		uint8(255 * FMath::Clamp(Patches, 0.0, 1.0)));
 }

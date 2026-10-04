@@ -3,6 +3,7 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/Texture2D.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialExpressionAppendVector.h"
 #include "Materials/MaterialExpressionBumpOffset.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
 #include "Materials/MaterialExpressionNoise.h"
@@ -136,13 +137,19 @@ bool UUghMakeAssetsCommandlet::MakeRock(UMaterial* Material)
 bool UUghMakeAssetsCommandlet::MakeCliff(UMaterial* Material)
 {
 	Material->bTangentSpaceNormal = false;   // the code's normal is the world's
+	// the vertex colour with its alpha (its first output is only red, green and blue)
+	UMaterialExpressionVertexColor* VertexColor = Add<UMaterialExpressionVertexColor>(Material);
+	UMaterialExpressionAppendVector* Shade = Add<UMaterialExpressionAppendVector>(Material);
+	Shade->A.Connect(0, VertexColor);
+	Shade->B.Connect(4, VertexColor);
 	TArray<TPair<FName, UMaterialExpression*>> Inputs = {
 		{ TEXT("Position"), Add<UMaterialExpressionWorldPosition>(Material) },
 		{ TEXT("VertexNormal"), Add<UMaterialExpressionVertexNormalWS>(Material) },
 		{ TEXT("ScreenUV"), Add<UMaterialExpressionTextureCoordinate>(Material) },
-		{ TEXT("Shade"), Add<UMaterialExpressionVertexColor>(Material) },
+		{ TEXT("Shade"), Shade },
 		{ UghMaterials::ArtParameter,
-			TextureObject(Material, UghMaterials::ArtParameter, SAMPLERTYPE_Color, DefaultColor) } };
+			TextureObject(Material, UghMaterials::ArtParameter, SAMPLERTYPE_Color, DefaultColor) },
+		{ UghMaterials::WaterLevelParameter, Scalar(Material, UghMaterials::WaterLevelParameter, -1e6f) } };
 	for (int32 Layer = 0; Layer < UE_ARRAY_COUNT(UghMaterials::CliffLayers); ++Layer)
 	{
 		const FString Name = UghMaterials::CliffLayers[Layer];

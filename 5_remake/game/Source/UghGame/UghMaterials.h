@@ -23,6 +23,7 @@ namespace UghMaterials
 	inline const TCHAR* SkyParameter = TEXT("Sky");
 	inline const TCHAR* SizeParameter = TEXT("Size");
 	inline const TCHAR* HeightMaskParameter = TEXT("HeightMask");
+	inline const TCHAR* WaterLevelParameter = TEXT("WaterLevel");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -33,13 +34,14 @@ namespace UghMaterials
 	inline const TCHAR* Rock = TEXT("/Game/Generated/M_UghRock");
 	/**
 	 * The cliff (FUghRockMesh): the layers of imported texture sets mapped onto it from three sides (nothing
-	 * stretches), blended by the way the surface faces, by its vertex colours (how open, how deep) and by the
-	 * original's drawing (texture parameter Art, mesh UVs, softened), their heights deciding where one layer gives way
-	 * to another. Each layer of CliffLayers has the texture parameters <layer><map> for the maps of CliffMaps, taken
-	 * from the scanned surfaces of UghElectricDreams::CliffLayers where they were copied, else from the instance MI_<id>
-	 * of its texture set (UghAssets::CliffSets); the scalar <layer>Size (metres one texture covers) and the vector
-	 * <layer>HeightMask (which channels of its Height map are its relief: red by default). The shader code is
-	 * Source/UghEditor/Shaders/UghCliff.hlsl.
+	 * stretches), blended by the way the surface faces, by its vertex colours (how open, how deep, how near below a top
+	 * edge, its large patches) and by the original's drawing (texture parameter Art, mesh UVs, softened), their heights
+	 * deciding where one layer gives way to another. Each layer of CliffLayers has the texture parameters <layer><map>
+	 * for the maps of CliffMaps, taken from the scanned surfaces of UghElectricDreams::CliffLayers where they were
+	 * copied, else from the instance MI_<id> of its texture set (UghAssets::CliffSets); the scalar <layer>Size (metres
+	 * one texture covers) and the vector <layer>HeightMask (which channels of its Height map are its relief: red by
+	 * default). The scalar WaterLevel is the world's z of the water's surface (the rock is wet at it and under it).
+	 * The shader code is Source/UghEditor/Shaders/UghCliff.hlsl.
 	 */
 	inline const TCHAR* Cliff = TEXT("/Game/Generated/M_UghCliff");
 	inline const TCHAR* const CliffLayers[] = { TEXT("Rock"), TEXT("Stone"), TEXT("Grass"), TEXT("Moss"), TEXT("Soil") };

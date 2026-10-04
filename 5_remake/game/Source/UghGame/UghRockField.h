@@ -15,7 +15,8 @@ struct ugh_logic;
  *
  * - In the slab of the play (|depth| <= SlabHalf) the field is the outline's distance: the rock is the collision mask
  *   exactly, its edge on the pixels' borders.
- * - In front of the slab the rock's face, rounded at its edges and bulging a little in its middle.
+ * - In front of the slab the rock's face, rounded at its edges, bulging a little in its middle, in relief (layers
+ *   of sandstone, joints, swellings).
  * - Behind it the rock follows the blurred outline, its walls and ceilings reaching further into the cave the deeper
  *   they are (overhangs) and rough, the cave's back wall far behind (deeper where the drawing has a dark hole), the
  *   stalactites and fallen rocks of UghRockFeatures.

@@ -10,11 +10,14 @@ namespace
 	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
 
 	/**
-	 * The face in front of the slab, pixels: its edges rounded this much, at least this thick, its bumps, and how much
-	 * more it bulges in the middle of a rock at least BulgeWidth from its edges.
+	 * The face in front of the slab, pixels: its edges rounded this much, at least this thick, at most FaceRelief more
+	 * where its relief (Relief) stands out, and how much more it bulges in the middle of a rock at least BulgeWidth
+	 * from its edges.
 	 */
-	constexpr double EdgeRadius = 2.5, FaceBase = 2, FaceBumps = 0.5, FaceBulge = 1.5, BulgeWidth = 8;
-	static_assert(FaceBase + FaceBumps + FaceBulge <= FUghRockField::FaceMax);
+	constexpr double EdgeRadius = 2.5, FaceBase = 0.8, FaceRelief = 2.4, FaceBulge = 0.8, BulgeWidth = 8;
+	static_assert(FaceBase + FaceRelief + FaceBulge <= FUghRockField::FaceMax);
+	/** The face's layers of sandstone are about this high, pixels. */
+	constexpr double StrataHeight = 9;
 	/**
 	 * Behind the slab: the exact outline turns into the blurred one within Blend pixels; walls and ceilings reach up to
 	 * GrowMax pixels further into the cave (half of it GrowDepth deep); their roughness grows with the depth.
@@ -53,6 +56,25 @@ namespace
 	double Noise(double X, double Y, double Depth, double Scale)
 	{
 		return FMath::PerlinNoise3D(FVector(X, Y, Depth) * Scale);
+	}
+
+	/**
+	 * How far the face stands out at x, y (pixels), 0 .. 1: layers of sandstone (wavy, each standing out more towards
+	 * its foot, a recess under it; more marked here, less there), joints across them (nearly upright cracks), broad
+	 * swellings and a grain.
+	 */
+	double Relief(double X, double Y)
+	{
+		const double Layer = Y / StrataHeight * (1 + 0.35 * Noise(X, Y, 0.008)) + 1.4 * Noise(X, Y, 0.012) +
+			0.3 * Noise(X, Y, 0.06);
+		const double Within = Layer - FMath::Floor(Layer);   // 0 at a layer's top, 1 at its foot
+		const double Strata = FMath::SmoothStep(0.0, 0.8, Within) * (1 - FMath::SmoothStep(0.8, 1.0, Within)) *
+			FMath::Clamp(0.5 + 1.3 * Noise(X, Y + 1000 * FMath::Floor(Layer), 0.03), 0.0, 1.0);
+		const double Crack = FMath::Abs(FMath::PerlinNoise2D(FVector2D(X * 0.05, Y * 0.012)));
+		const double Joint = FMath::SmoothStep(0.0, 0.07, Crack + 0.15 * FMath::Max(Noise(X, Y, 0.02), 0.0));
+		const double Swell = 0.5 + 0.5 * (0.7 * Noise(X, Y, 0.04) + 0.3 * Noise(X, Y, 0.11));
+		const double Grain = 0.5 + 0.5 * Noise(X, Y, 0.35);
+		return FMath::Clamp(0.5 * Strata + 0.35 * Swell + 0.15 * Grain, 0.0, 1.0) * (0.35 + 0.65 * Joint);
 	}
 
 	/** The luminance of the drawing at each pixel of the screen, blurred over Radius pixels (the holes, not the cracks). */
@@ -162,7 +184,7 @@ float FUghRockField::Front(int32 I, int32 J, double Depth) const
 	// the edge rounded: a quarter circle from the slab's wall to the face
 	const double Inset = Ahead < EdgeRadius ? EdgeRadius - FMath::Sqrt(EdgeRadius * EdgeRadius - Ahead * Ahead)
 		: EdgeRadius + 3 * (Ahead - EdgeRadius);
-	const double Face = FaceBase + FaceBumps * Noise(X, Y, 0.15) + FaceBulge * FMath::Clamp(Soft / BulgeWidth, 0.0, 1.0);
+	const double Face = FaceBase + FaceRelief * Relief(X, Y) + FaceBulge * FMath::Clamp(Soft / BulgeWidth, 0.0, 1.0);
 	return -SmoothMax(Inset - Base, Ahead - Face, 1);
 }
 
