@@ -6,13 +6,19 @@
 
 /**
  * Where a figure's model stands, which way it looks and how big it is for its sprite, by the origins of the Blender
- * scripts: a caveman's feet on the bottom of his sprite (in the water his origin at the surface: WaterLine below its
- * top), as high as his sprite; the flyer in the middle of its sprite; the others on its bottom. A figure looking to a
- * side turns a little towards the camera, so that more of it shows.
+ * scripts: a person's feet on the bottom of his sprite (in the water his origin at the surface: WaterLine below its
+ * top), as tall as a walking passenger's sprite whatever he does; the flyer in the middle of its sprite; the others on
+ * its bottom. A figure looking to a side turns a little towards the camera, so that more of it shows.
  */
 namespace UghFigurePlace
 {
-	/** The figure's height of the caveman's model (cm): a passenger is as high as its sprite. */
+	/**
+	 * The people's height standing (cm, the top of the head): walking (a little lower) with their hair they are as tall
+	 * as a walking passenger's sprite, 14 px. They are as big walking, waiting, swimming and sitting in a copter
+	 * (Blender/copter_layout.py's PERSON_HEIGHT).
+	 */
+	constexpr double PersonHeight = 145;
+	/** The height of the caveman's model of Blender/caveman.py (cm): the game scales him to PersonHeight. */
 	constexpr double CavemanHeight = 115;
 	/** In the water a caveman's origin (the surface) is this many pixels below the top of his sprite. */
 	constexpr double WaterLine = 4;

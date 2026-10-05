@@ -11,7 +11,10 @@
 class UInstancedStaticMeshComponent;
 class UStaticMeshComponent;
 
-/** A copter's model: its parts, its pilot, its passenger in the cabin or the stone passenger in its sling. */
+/**
+ * A copter's model: its parts, its pilot, its passenger in the cabin, the stone passenger in its sling or on the
+ * passenger's seat.
+ */
 USTRUCT()
 struct FUghCopterParts
 {
@@ -22,6 +25,7 @@ struct FUghCopterParts
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Crank;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Sling;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Stone;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> SeatedStone;
 	UPROPERTY() TObjectPtr<USceneComponent> Pilot;
 	UPROPERTY() TObjectPtr<USceneComponent> Rider;   // of the cargo look RiderLook; made when first needed
 	FUghRotorSpin Spin;
@@ -31,10 +35,11 @@ struct FUghCopterParts
 
 /**
  * The copters of the play in the slab of the play, between the views of two steps (UghBetween): the pedal copters of
- * Blender/copter.py in each player's colours, the rotor turning and the pilot pedalling as fast as the rotor's
- * sprites change (FUghRotorSpin), a passenger sitting behind the pilot (a person of his look, FUghCaveman) or the
- * stone passenger hanging in the sling below, swaying as the copter moves. Without the imported models: clay, a box
- * with a rotor that gets shorter and longer as its sprites change; its riders are clay passengers of AUghFigures.
+ * Blender/copter.py in each player's colours, the rotor turning and the pilot sitting and pedalling as fast as the
+ * rotor's sprites change (FUghRotorSpin), a passenger sitting behind him (a person of his look, FUghCaveman; the stone
+ * passenger smaller) or the stone passenger hanging in the sling below, swaying as the copter moves. Without the
+ * imported models: clay, a box with a rotor that gets shorter and longer as its sprites change; its riders are clay
+ * passengers of AUghFigures.
  */
 UCLASS()
 class AUghCopters : public AActor

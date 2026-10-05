@@ -10,7 +10,7 @@ on its body (/Game/External/MetaHumans/<name>/Actions/AS_<action>), each a loop,
 Where an action has its origin is as the caveman's (Blender/caveman_actions.py): on the ground between the feet
 (idle, walk, wave), the seat (sit, pedal), where the hands hold the rope (hang), the water's surface with the chin
 just above it (tread, swim, fall). The copter's crank and handles are copter_layout.py's in the copter's scale: the
-game shows a MetaHuman in the copter as high as the caveman (metahuman_poses.CAVEMAN). The figures face +Y, their
+game shows a MetaHuman as high as a walking passenger's sprite (metahuman_poses.PERSON). The figures face +Y, their
 left is +X.
 
     UnrealEditor-Cmd UghGame.uproject -run=pythonscript -script=Python/metahuman_actions.py
@@ -66,6 +66,8 @@ def new_sequence(folder, name, skeleton, mesh, frames):
     factory.set_editor_property("target_skeleton", skeleton)
     factory.set_editor_property("preview_skeletal_mesh", mesh)
     sequence = unreal.AssetToolsHelpers.get_asset_tools().create_asset(name, folder, unreal.AnimSequence, factory)
+    # made for this body: the engine retargets nothing (from the skeleton's proportions it would lift the pelvis)
+    sequence.set_editor_property("retarget_source_asset", mesh)
     controller = sequence.controller
     controller.open_bracket("UGH action", False)
     controller.set_frame_rate(unreal.FrameRate(FPS, 1), False)

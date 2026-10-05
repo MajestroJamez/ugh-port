@@ -1,9 +1,10 @@
 """The game's MetaHumans (UghMetaHumans.h): the copters' pilot and the passengers of the logic's cargo looks 1 .. 3,
 made with MetaHuman Creator in the editor from its presets (the plugin MetaHumanCharacter and its optional content,
-"MetaHuman Creator Core Data"), dressed as stone age people: wild hair, beards for the men, the garment in hide and
-fur colours. For each: a copy of the preset (/Game/External/MetaHumans/Characters/<name>), its hair and beard, the
-face rig and the skin textures from Epic's cloud (the editor's Epic login), the assembly (pipeline Optimized, quality
-Low: hair cards, baked textures) to /Game/External/MetaHumans/<name> with the common assets in .../Common. Not in git
+"MetaHuman Creator Core Data"), as stone age people: wild hair, beards for the men, no outfit (the body whole: an
+outfit cuts the body away under it; the game covers it with leaves, FUghMetaHuman). For each: a copy of the preset
+(/Game/External/MetaHumans/Characters/<name>), its hair and beard, the face rig and the skin textures from Epic's
+cloud (the editor's Epic login), the assembly (pipeline Optimized, quality Medium: hair cards, baked textures) to
+/Game/External/MetaHumans/<name> (made anew) with the common assets in .../Common. Not in git
 (Epic's content, licensed for Unreal Engine projects). Run by metahumans.ps1 in the editor (its texture graphs bake
 the textures, which a commandlet cannot):
 
@@ -21,9 +22,8 @@ GROOMS = "/MetaHumanCharacter/Optional/Grooms/Bindings"
 PRESETS = "/MetaHumanCharacter/Optional/Presets"
 REPORT = os.path.join(unreal.Paths.project_saved_dir(), "Logs", "UghMetaHumans.txt")
 
-# hide and fur: the garment's colours (shirt and shorts) as a leather tunic and a fur loincloth
-HIDE = unreal.LinearColor(0.23, 0.13, 0.065, 1)
-FUR = unreal.LinearColor(0.12, 0.075, 0.04, 1)
+# the slot of the outfit, left empty
+OUTFITS = "Outfits"
 
 # name: the preset, the grooms by slot (None: none), the hair's colour (parameters of its materials: melanin 0 blond
 # .. 1 black, redness, white amount: grey)
@@ -67,14 +67,10 @@ def character_of(name, preset):
     return character
 
 
-def parameters(collection, key):
-    return collection.default_instance.get_instance_parameters(item_path=unreal.MetaHumanPaletteItemPath(item_key=key))
-
-
 def dress(subsystem, character, grooms):
-    """The hair and beard of `grooms`; the garment in hide and fur."""
+    """The hair and beard of `grooms`, no outfit."""
     collection = subsystem.get_preview_collection(character)
-    for slot, item in grooms.items():
+    for slot, item in {**grooms, OUTFITS: None}.items():
         if item is None:
             collection.default_instance.set_single_slot_selection(slot_name=slot, item_key=unreal.MetaHumanPaletteItemKey())
             continue
@@ -83,15 +79,6 @@ def dress(subsystem, character, grooms):
             raise RuntimeError(f"no groom {item}")
         key = collection.try_add_item_from_wardrobe_item(slot_name=slot, wardrobe_item=wardrobe)
         collection.default_instance.set_single_slot_selection(slot_name=slot, item_key=key)
-    subsystem.on_edit_preview_collection(character)
-    subsystem.assemble_for_preview(character=character)
-    for selection in collection.default_instance.get_slot_selection_data():
-        if str(selection.selection.slot_name) == "Outfits":
-            params = parameters(collection, selection.selection.selected_item)
-            for param in params:
-                name = str(param.name)
-                if name.startswith("PrimaryColor") or name.startswith("SecondaryColor"):
-                    param.set_color(value=HIDE if "Shirt" in name else FUR)
     subsystem.on_edit_preview_collection(character)
 
 
@@ -113,10 +100,12 @@ def build(name, preset, grooms):
             raise RuntimeError("not ready for the assembly (no face rig or textures: the editor's Epic login?)")
         params = unreal.MetaHumanCharacterEditorBuildParameters()
         params.pipeline_type = unreal.MetaHumanDefaultPipelineType.OPTIMIZED
-        params.pipeline_quality = unreal.MetaHumanQualityLevel.LOW
+        params.pipeline_quality = unreal.MetaHumanQualityLevel.MEDIUM
         params.absolute_build_path = ROOT
         params.common_folder_path = f"{ROOT}/Common"
         params.enable_wardrobe_item_validation = False
+        if unreal.EditorAssetLibrary.does_directory_exist(f"{ROOT}/{name}"):
+            unreal.EditorAssetLibrary.delete_directory(f"{ROOT}/{name}")
         try:
             subsystem.build_meta_human(character, params)
         except Exception as error:   # the pipeline's control rigs log harmless errors, which Python raises
@@ -125,6 +114,8 @@ def build(name, preset, grooms):
         subsystem.remove_object_to_edit(character)
     if not built(name):
         raise RuntimeError("the assembly made no body")
+    if unreal.EditorAssetLibrary.does_directory_exist(f"{ROOT}/{name}/Clothing"):
+        raise RuntimeError("the assembly made an outfit")
 
 
 def retouch(name, hair):

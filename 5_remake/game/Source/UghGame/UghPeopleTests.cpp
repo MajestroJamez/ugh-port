@@ -1,8 +1,11 @@
 // The people as an automation test of the editor: the actions of the MetaHumans (Ugh.Figures.People).
-#if WITH_DEV_AUTOMATION_TESTS && WITH_EDITORONLY_DATA
+#if WITH_DEV_AUTOMATION_TESTS
 
-#include "Animation/AnimData/IAnimationDataModel.h"
+#include "Animation/AnimationPoseData.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/AttributesRuntime.h"
+#include "BoneContainer.h"
+#include "BonePose.h"
 #include "Engine/SkeletalMesh.h"
 #include "Misc/AutomationTest.h"
 #include "UghCaveman.h"
@@ -12,52 +15,86 @@
 
 namespace
 {
-	/** Where the joint `Bone` of `Mesh` is (its component space) in `Action` at `Fraction` of its loop. */
+	/**
+	 * Where the joint `Bone` of `Mesh` is (its component space) in `Action` at `Fraction` of its loop, as the game
+	 * shows it (the engine's pose of the animation on the mesh, retargeted as the game does).
+	 */
 	FVector JointAt(const USkeletalMesh* Mesh, const UAnimSequence* Action, FName Bone, double Fraction)
 	{
+		FMemMark Mark(FMemStack::Get());
 		const FReferenceSkeleton& Skeleton = Mesh->GetRefSkeleton();
-		const IAnimationDataModel* Model = Action->GetDataModel();
-		const FFrameTime Time = Model->GetFrameRate().AsFrameTime(Fraction * Action->GetPlayLength());
-		FTransform Joint = FTransform::Identity;
-		for (int32 Index = Skeleton.FindBoneIndex(Bone); Index != INDEX_NONE; Index = Skeleton.GetParentIndex(Index))
+		TArray<FBoneIndexType> Required;
+		for (int32 Index = 0; Index < Skeleton.GetNum(); ++Index)
 		{
-			const FName Name = Skeleton.GetBoneName(Index);
-			Joint = Joint * (Model->IsValidBoneTrackName(Name)
-				? Model->EvaluateBoneTrackTransform(Name, Time, EAnimInterpolationType::Linear)
-				: Skeleton.GetRefBonePose()[Index]);
+			Required.Add(FBoneIndexType(Index));
 		}
-		return Joint.GetLocation();
+		FBoneContainer Bones(Required, UE::Anim::FCurveFilterSettings(), *const_cast<USkeletalMesh*>(Mesh));
+		FCompactPose Pose;
+		Pose.SetBoneContainer(&Bones);
+		FBlendedCurve Curve;
+		Curve.InitFrom(Bones);
+		UE::Anim::FStackAttributeContainer Attributes;
+		FAnimationPoseData Data(Pose, Curve, Attributes);
+		Action->GetAnimationPose(Data, FAnimExtractContext(Fraction * Action->GetPlayLength()));
+		FCSPose<FCompactPose> Component;
+		Component.InitPose(Pose);
+		const FCompactPoseBoneIndex Joint = Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Skeleton.FindBoneIndex(Bone)));
+		return Component.GetComponentSpaceTransform(Joint).GetLocation();
 	}
 
 	/** The joints whose place the test checks, by side. */
 	const FName Feet[] = { TEXT("foot_l"), TEXT("foot_r") };
 	const FName Hands[] = { TEXT("hand_l"), TEXT("hand_r") };
 	const FName Head(TEXT("head")), Pelvis(TEXT("pelvis"));
+
+	/**
+	 * The leaves of `Person` (in his own size) cover his hips in the rest pose: from above the pelvis to below the
+	 * hip joints, across them, in front of and behind them; with `bTop` his chest too (round spine_05, below it).
+	 */
+	void CheckLeaves(FAutomationTestBase& Test, const FUghMetaHuman& Person, bool bTop)
+	{
+		const USkeletalMesh* Mesh = Person.GetBody().GetMesh();
+		const FReferenceSkeleton& Skeleton = Mesh->GetRefSkeleton();
+		const TArray<FTransform> Rest = FUghLeaves::RestPose(Skeleton);
+		auto Joint = [&](const TCHAR* Bone) { return Rest[Skeleton.FindBoneIndex(Bone)].GetLocation(); };
+		const FVector Hip = Joint(TEXT("thigh_l")), Middle = Joint(TEXT("pelvis")), Breast = Joint(TEXT("spine_05"));
+		const double Span = Person.GetHeight() * 0.1;
+		const FBox Hips = Person.GetLeaves().Bounds(Mesh, { TEXT("pelvis"), TEXT("thigh_l"), TEXT("thigh_r") });
+		Test.TestTrue(FString::Printf(TEXT("%s's leaves %s cover the hips"), *Mesh->GetName(), *Hips.ToString()),
+			Hips.Max.Z > Middle.Z && Hips.Min.Z < Hip.Z - Span && Hips.Min.X < -FMath::Abs(Hip.X) &&
+			Hips.Max.X > FMath::Abs(Hip.X) && Hips.Min.Y < Middle.Y - Span / 2 && Hips.Max.Y > Middle.Y + Span / 2);
+		const FBox Chest = Person.GetLeaves().Bounds(Mesh, { TEXT("spine_05") });
+		Test.TestEqual(FString::Printf(TEXT("%s's leaves %s on the chest"), *Mesh->GetName(), *Chest.ToString()),
+			Chest.IsValid && Chest.Max.Z > Breast.Z - Span && Chest.Min.Z < Breast.Z - Span &&
+			Chest.Max.Y > Breast.Y + Span / 2, bTop);
+	}
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghPeopleTest, "Ugh.Figures.People",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
 /**
- * Each MetaHuman's actions put him where the game wants him, in the caveman's height (the game's units): standing on
+ * Each MetaHuman's actions put him where the game wants him, in the people's height (the game's units): standing on
  * the ground and in the slab of the play, sitting on the seat, pedalling the copter's crank holding its handles,
- * hanging from where his hands hold, in the water with his head at the surface.
+ * hanging from where his hands hold, in the water with his head at the surface. His leaves cover his hips from the
+ * belt to the thighs (and the woman's chest).
  */
 bool FUghPeopleTest::RunTest(const FString& Parameters)
 {
 	using enum EUghCaveAction;
-	constexpr double Slab = 30, Near = 4;   // the slab of the play (20) and a swinging hand; near enough
+	constexpr double Slab = 35, Near = 4;   // the slab of the play (20) and a swinging hand; near enough
 	constexpr int32 Samples = 8;
-	for (const TCHAR* Name : UghMetaHumans::Names)
+	for (int32 Look = 0; Look < UE_ARRAY_COUNT(UghMetaHumans::Names); ++Look)
 	{
+		const TCHAR* Name = UghMetaHumans::Names[Look];
 		FUghMetaHuman Person;
-		if (!Person.Load(Name, FUghCaveman::ActionNames()))
+		if (!Person.Load(Name, FUghCaveman::ActionNames(), UghMetaHumans::Tops[Look]))
 		{
 			AddInfo(FString::Printf(TEXT("no MetaHuman %s (metahumans.ps1): not checked"), Name));
 			continue;
 		}
 		const USkeletalMesh* Mesh = Person.GetBody().GetMesh();
-		const double Scale = UghFigurePlace::CavemanHeight / Person.GetHeight();
+		const double Scale = UghFigurePlace::PersonHeight / Person.GetHeight();
 		auto At = [&](EUghCaveAction Action, FName Bone, double Fraction) {
 			return JointAt(Mesh, Person.GetBody().GetAction(int32(Action)), Bone, Fraction) * Scale;
 		};
@@ -88,8 +125,7 @@ bool FUghPeopleTest::RunTest(const FString& Parameters)
 				const FVector Grip(Sign * UghCopterModel::Grip.X, UghCopterModel::Grip.Y, UghCopterModel::Grip.Z);
 				const FVector Hand = At(Pedal, Hands[Side], Fraction);
 				Check(FVector::Dist(Hand, Grip) < Near, TEXT("holds the handle"), Pedal, Hand);
-				const FVector Axle = UghCopterModel::CrankAxle - UghCopterModel::PilotSeat;
-				const FVector Foot = At(Pedal, Feet[Side], Fraction) - Axle;
+				const FVector Foot = At(Pedal, Feet[Side], Fraction) - UghCopterModel::PedalAxle;
 				Check(FVector2D(Foot.Y, Foot.Z).Size() < UghCopterModel::PedalRadius + 2 * Near &&
 					FMath::IsNearlyEqual(Foot.X, Sign * UghCopterModel::PedalSpread, Near), TEXT("pedals"), Pedal, Foot);
 				const FVector Holding = At(Hang, Hands[Side], Fraction);
@@ -103,9 +139,10 @@ bool FUghPeopleTest::RunTest(const FString& Parameters)
 			}
 		}
 		// the left pedal is on top at the start of the loop, the right one half a turn later
-		const double Axle = (UghCopterModel::CrankAxle - UghCopterModel::PilotSeat).Z;
+		const double Axle = UghCopterModel::PedalAxle.Z;
 		Check(At(Pedal, Feet[0], 0).Z > Axle && At(Pedal, Feet[1], 0.5).Z > Axle, TEXT("turns the crank"), Pedal,
 			At(Pedal, Feet[0], 0));
+		CheckLeaves(*this, Person, UghMetaHumans::Tops[Look]);
 	}
 	return true;
 }

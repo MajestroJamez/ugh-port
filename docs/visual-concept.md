@@ -268,7 +268,8 @@ se nepoužil; předlohy Creatoru jdou upravit skriptem (Python API `MetaHumanCha
   rozcuchaný plnovous a knír), 2 žena `Celeste` (dlouhé rozcuchané zrzavé vlasy), 3 stařec `Walter` (dlouhé bílé
   vlasy, plný bílý plnovous); vzhled 4 zůstává kámen s očima. Barva vlasů jsou parametry materiálů vlasů
   (`hairMelanin`, `hairRedness`, `WhiteAmount`).
-- **Oblečení**: jediný oděv Creatoru (tričko a šortky) dostane materiál leopardí kožešiny jeskynního muže z Blenderu
+- **Oblečení** (do kroku 19b, teď listy - viz níže): jediný oděv Creatoru (tričko a šortky) dostane materiál leopardí
+  kožešiny jeskynního muže z Blenderu
   (slot `fur` z `caveman.glb`; bez něj oděv v barvách kůže a kožešiny). Holé tělo pod tričkem MetaHuman nemá (tělo je
   pod oděvem vyříznuté), proto všichni nosí tuniku.
 - **Sestavení**: obličejový rig a textury kůže stáhne Creator z Epicova cloudu (editor přihlášený k Epic účtu), pak
@@ -286,3 +287,40 @@ se nepoužil; předlohy Creatoru jdou upravit skriptem (Python API `MetaHumanCha
   kolenou, `pedal` nohy na pedálech kliky a ruce na řídítkách (čísla `Blender/copter_layout.py`), `hang`, `tread`,
   `swim`, `fall`. Počátky akcí jako u jeskynního muže. Test `Ugh.Figures.People`.
 - Bez MetaHumanů (repo bez externího obsahu) zůstává jeskynní muž z Blenderu, bez něj plastelína.
+
+## Lidé: listy, vlasy, sezení (krok 19b)
+
+Jan: místo leopardích triček zakrýt intimní partie velkými listy, skutečné vlasy a vousy, pilot i cestující v kabině
+oba sedí a jsou stejně velcí jako při chůzi, kámen vezený v kabině sedí zmenšený na sedadle.
+
+- **Bez oděvu, celé tělo** (`Python/metahumans.py`): slot `Outfits` zůstává prázdný, takže sestavení nic z těla
+  nevyřízne; tělo MetaHumana má pod tím spodní prádlo v texturách kůže (u ženy i horní díl), nic intimního.
+- **Listy** (`FUghLeaves`, `UghLeaves.cpp`): bederní rouška z velkých listů tara vzorku Electric Dreams
+  (`UghElectricDreams::LeafMaterial`, výřezy listů v jeho atlasu `LeafPictures`: od špičky po řez nad zářezem řapíku,
+  takže list visí z rovné hrany); každý list je síť 4 x 6 čtverců ovinutá kolem těla kousek od něj, dolů se rozevírá
+  a listy se po vrstvách překrývají. Vpředu a po stranách listy na stehnech (`thigh_l`/`thigh_r`: jdou s nohama, při
+  sezení leží na klíně), vzadu a krátký list před rozkrokem na pánvi; žena má navíc pás listů přes prsa (`spine_05`).
+  Kde tělo je, říká fyzikální asset postavy (kapsle pánve, páteře a stehen v klidové póze, řez po výškách), sítě se
+  postaví za běhu pro každé tělo v prostoru své kosti a připojí se ke kosti (komponenty statických sítí, bez kolize);
+  vítr materiálu vypnutý. Bez kopie vzorku zelená plastelína. Test `Ugh.Figures.People` (listy kryjí boky od pasu po
+  stehna, u ženy i hruď).
+- **Vlasy a vousy**: sestavení v kvalitě `Medium` - groomy mají karty vlasů jen v detailu 3 (vlákna 0-1 jsou na malé
+  postavy drahá, helmy 5-7), hra drží detail 3 (`GroomLOD`), bez fyziky; obočí jsou teď také vidět (dřív helmy
+  neviditelné).
+- **Velikost** (`UghFigurePlace::PersonHeight` 145 cm vestoje, `copter_layout.PERSON_HEIGHT`): chodící postava s vlasy
+  vyplní výšku spritu cestujícího (14 px; při chůzi je o ~5 % nižší), stejně velká stojí, čeká, plave i sedí ve
+  vrtulníku (dřív 115 cm v kabině a natažená podle výšky spritu na zemi). Jeskynní muž z Blenderu se škáluje na stejnou
+  výšku (jeho pedály a řídítka v `caveman_actions.py` přepočtené).
+- **Sezení v kabině** (`copter_layout.py`, `UghCopterModel.h`): pilot sedí natočený o 50° doleva, cestující o 50°
+  doprava, takže kamera zepředu vidí stehna a sezení z boku; klika s pedály a řídítka jsou v rámci pilota (natočené
+  s ním, `PedalAxle`, `Grip`), pedály dál a níž pro delší nohy, sedadlo pilota o 8 cm dozadu, aby řídítka zůstala
+  v ±45. Akce MetaHumanů jsou udělané pro jejich tělo (`retarget_source_asset`): engine dřív pánev „přetargetoval“ ze
+  skeletu do proporcí těla a sedící a mávající postavy se vznášely ~7 cm nad sedadlem a zemí; test teď počítá
+  pózy jako hra.
+- **Kámen v kabině**: veze-li vrtulník kámen s očima (vzhled 4) a nevisí-li pod ním, sedí na sedadle cestujícího
+  zmenšený na 0,32 a dívá se do kamery (`AUghCopters`, `SeatedStone`; `shot.ps1 -Cargo 4 -CloseUp`).
+- **Výkon**: karty vlasů stojí na Radeonu 890M asi 1 ms snímku (interpolace karet, BLAS paprsků, base pass), proto
+  lidé nejsou ve scéně ray tracingu (`SetVisibleInRayTracing(false)`: odrazy Lumenu by je stejně neukázaly) a jinde
+  se šetří, co není vidět (`DefaultEngine.ini`): odrazy Lumenu v polovičním rozlišení, stínové mapy slunce o 2,5
+  úrovně hrubší, objem osvětlení průsvitných věcí 32 buněk. Snímek GPU (team-21) 23,1 -> 19,9 ms; `levels.ps1`
+  medián 25 fps.

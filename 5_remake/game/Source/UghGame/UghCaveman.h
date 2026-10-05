@@ -9,7 +9,6 @@
 class AActor;
 class USceneComponent;
 class USkeletalMeshComponent;
-class UMaterialInterface;
 
 /**
  * What a caveman does (the actions of Blender/caveman_actions.py and Python/metahuman_actions.py, where each says
@@ -21,9 +20,9 @@ enum class EUghCaveAction : uint8 { Idle, Sit, Pedal, Hang, Walk, Wave, Tread, S
  * The people of the play by their look (0 the pilots, 1 .. 3 the passengers of the logic's cargo looks: a man, a
  * woman, an old man): the photoreal MetaHumans of metahumans.ps1 (UghMetaHumans) where all of them are there, else
  * the caveman of Blender/caveman.py (UghAssets::Caveman) dressed for the look (hair, beard, colours of hair, fur and
- * skin by its material slots). A person is a holder component, its origin the action's, as high as the caveman
- * (UghFigurePlace::CavemanHeight) whatever the model; Load finds the models, without any there are no people (the
- * game shows clay instead).
+ * skin by its material slots). A person is a holder component, its origin the action's, PersonHeight tall
+ * (UghFigurePlace) whatever the model; Load finds the models, without any there are no people (the game shows clay
+ * instead).
  */
 USTRUCT()
 struct FUghCaveman
@@ -56,5 +55,4 @@ private:
 
 	UPROPERTY() FUghRig Caveman;                    // its actions by EUghCaveAction; none with the MetaHumans
 	UPROPERTY() TArray<FUghMetaHuman> MetaHumans;   // by look; none without all of them
-	UPROPERTY() TObjectPtr<UMaterialInterface> Garment;   // theirs: the caveman's leopard fur (none: the outfit's own)
 };

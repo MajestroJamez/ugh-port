@@ -15,10 +15,10 @@ namespace
 	/** The blueprint's components of the body and the face (by their names). */
 	const FName BodyName(TEXT("Body")), FaceName(TEXT("Face"));
 	/**
-	 * The grooms' level of detail: their helmets (the quality Low assembles strands, too slow, and helmets; the game's
-	 * figures are small).
+	 * The grooms' level of detail: hair cards (the quality Medium assembles strands, too slow for the game, the cards
+	 * of this level and helmets beyond it).
 	 */
-	constexpr int32 GroomLOD = 5;
+	constexpr int32 GroomLOD = 3;
 
 	/** The asset of type TAsset at `Path` (a package path, its object named as the package or `Object`). */
 	template <typename TAsset>
@@ -37,7 +37,7 @@ namespace
 	}
 }
 
-bool FUghMetaHuman::Load(const TCHAR* Name, TConstArrayView<const TCHAR*> ActionNames)
+bool FUghMetaHuman::Load(const TCHAR* Name, TConstArrayView<const TCHAR*> ActionNames, bool bTop)
 {
 	const FString Folder = FString(UghMetaHumans::Root) / Name;
 	Blueprint = Find<UBlueprintGeneratedClass>(Folder / FString::Printf(TEXT("BP_%s"), Name),
@@ -55,12 +55,13 @@ bool FUghMetaHuman::Load(const TCHAR* Name, TConstArrayView<const TCHAR*> Action
 		return false;
 	}
 	OwnHeight = Face->GetImportedBounds().GetBox().Max.Z;
+	Leaves.Make(Body.GetMesh(), OwnHeight, bTop);
 	return true;
 }
 
-void FUghMetaHuman::Add(AActor* Owner, USceneComponent* Holder, double Height, UMaterialInterface* Garment) const
+void FUghMetaHuman::Add(AActor* Owner, USceneComponent* Holder, double Height) const
 {
-	FAdding Adding{ Owner, Height / OwnHeight, Garment, nullptr };
+	FAdding Adding{ Owner, Height / OwnHeight, nullptr };
 	for (const USCS_Node* Node : Blueprint->SimpleConstructionScript->GetRootNodes())
 	{
 		AddNode(Adding, Node, Holder);
@@ -75,12 +76,12 @@ void FUghMetaHuman::Add(AActor* Owner, USceneComponent* Holder, double Height, U
 			Follower->SetLeaderPoseComponent(Adding.Leader);
 		}
 	}
+	Leaves.Add(Owner, Adding.Leader);
 }
 
 /**
  * The blueprint's component of `Node` and its children under `Parent`: the skeletal meshes and the grooms (the others,
- * the root, LOD sync, MetaHuman component, are left out: their children go to `Parent`). The body is the leader; a
- * mesh but the body and the face is the outfit.
+ * the root, LOD sync, MetaHuman component, are left out: their children go to `Parent`). The body is the leader.
  */
 void FUghMetaHuman::AddNode(FAdding& Adding, const USCS_Node* Node, USceneComponent* Parent) const
 {
@@ -101,13 +102,6 @@ void FUghMetaHuman::AddNode(FAdding& Adding, const USCS_Node* Node, USceneCompon
 				Adding.Leader = Mesh;
 				Mesh->SetRelativeTransform(FTransform(FQuat::Identity, FVector::ZeroVector, FVector(Adding.Scale)));
 			}
-			else if (Node->GetVariableName() != FaceName && Adding.Garment)
-			{
-				for (int32 Slot = 0; Slot < Mesh->GetNumMaterials(); ++Slot)
-				{
-					Mesh->SetMaterial(Slot, Adding.Garment);
-				}
-			}
 		}
 		if (UGroomComponent* Groom = Cast<UGroomComponent>(Part))
 		{
@@ -115,6 +109,9 @@ void FUghMetaHuman::AddNode(FAdding& Adding, const USCS_Node* Node, USceneCompon
 			Groom->SimulationSettings.SolverSettings.bEnableSimulation = false;
 			Groom->SetForcedLOD(GroomLOD);
 		}
+		// not in the ray traced scene (Lumen's reflections): a moving body's and its hair's geometry would be rebuilt
+		// there every frame, for reflections too small to see
+		Cast<UPrimitiveComponent>(Part)->SetVisibleInRayTracing(false);
 		Part->SetupAttachment(Parent, Node->AttachToName);
 		Part->RegisterComponent();
 		Owner->AddInstanceComponent(Part);

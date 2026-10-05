@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 
+class UMaterialInterface;
 class UMaterialParameterCollection;
 class UStaticMesh;
 class UTexture;
@@ -117,6 +118,15 @@ namespace UghElectricDreams
 		TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_N"),
 			TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_AoRDp"), FLinearColor(0, 0, 1, 0), 2.f } };
 
+	/**
+	 * The leaves the people wear (FUghLeaves): the material of the sample's taro and where its big leaves are in its
+	 * picture (UV: Min.Y the tip at the top, Max.Y cut across the leaf above the notch of its stalk, so that the leaf
+	 * hangs from a straight edge).
+	 */
+	inline const TCHAR* LeafMaterial = TEXT("Megascans/3D_Plants/Taro/MI_Taro_02");
+	inline const FBox2f LeafPictures[] = { FBox2f({ 0.020f, 0.045f }, { 0.225f, 0.290f }),
+		FBox2f({ 0.260f, 0.020f }, { 0.515f, 0.340f }), FBox2f({ 0.545f, 0.030f }, { 0.785f, 0.330f }) };
+
 	/** The parameters of the wind in the sample's plants (its scalars and vectors: 'Wind Strength Plants' ...). */
 	inline const TCHAR* FoliageWind =
 		TEXT("MSPresets/MS_Foliage_Material_LATEST/MaterialParameterCollection/MPC_GlobalFoliageActor");
@@ -131,6 +141,8 @@ namespace UghElectricDreams
 	TArray<UStaticMesh*> Meshes(TConstArrayView<const TCHAR*> Paths);
 	/** The texture at `Path`; none (and a log line) when it was not copied. */
 	UTexture* Texture(const TCHAR* Path);
+	/** The material at `Path`; none (and a log line) when it was not copied. */
+	UMaterialInterface* Material(const TCHAR* Path);
 	/** The material parameter collection at `Path`; none (and a log line) when it was not copied. */
 	UMaterialParameterCollection* Collection(const TCHAR* Path);
 }

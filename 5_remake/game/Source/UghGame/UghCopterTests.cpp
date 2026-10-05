@@ -101,6 +101,10 @@ bool FUghCopterModelTest::RunTest(const FString& Parameters)
 	const FBox Cradle = UghAssets::Mesh(UghAssets::Copter, Sling)->GetBoundingBox();
 	TestTrue(TEXT("the sling holds it"),
 		Cradle.Min.Z < Hanging.Z + Stone.GetSize().Z / 2 && Cradle.Max.Z <= Wanted.Min.Z + 20);
+	// riding in the cabin it sits on the passenger's seat, in the body
+	const FBox Seated = Stone.TransformBy(FTransform(FQuat::Identity, PassengerSeat, FVector(SeatedStone)));
+	TestTrue(FString::Printf(TEXT("the stone on the seat %s"), *Seated.ToString()),
+		Wanted.IsInside(Seated) && FMath::IsNearlyEqual(Seated.Min.Z, PassengerSeat.Z, 3.0));
 	// every look of a passenger in a cabin is a caveman but the stone passenger's (4)
 	for (int32 Look = 1; Look <= 4; ++Look)
 	{

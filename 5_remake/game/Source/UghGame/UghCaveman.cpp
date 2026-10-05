@@ -83,9 +83,9 @@ TConstArrayView<const TCHAR*> FUghCaveman::ActionNames()
 bool FUghCaveman::Load()
 {
 	MetaHumans.Reset();
-	for (const TCHAR* Name : UghMetaHumans::Names)
+	for (int32 Look = 0; Look < UE_ARRAY_COUNT(UghMetaHumans::Names); ++Look)
 	{
-		if (!MetaHumans.AddDefaulted_GetRef().Load(Name, Actions))
+		if (!MetaHumans.AddDefaulted_GetRef().Load(UghMetaHumans::Names[Look], Actions, UghMetaHumans::Tops[Look]))
 		{
 			MetaHumans.Reset();
 			break;
@@ -93,9 +93,6 @@ bool FUghCaveman::Load()
 	}
 	if (!MetaHumans.IsEmpty())
 	{
-		const USkeletalMesh* Hide = UghAssets::SkeletalMesh(UghAssets::Caveman);
-		const int32 Fur = Hide ? SlotOf(Hide, TEXT("fur")) : INDEX_NONE;
-		Garment = Fur != INDEX_NONE ? Hide->GetMaterials()[Fur].MaterialInterface.Get() : nullptr;
 		return true;
 	}
 	UE_LOG(LogTemp, Display, TEXT("UGH no MetaHumans (metahumans.ps1): the caveman instead"));
@@ -112,12 +109,13 @@ USceneComponent* FUghCaveman::Add(AActor* Owner, int32 Look) const
 	Owner->AddInstanceComponent(Person);
 	if (!MetaHumans.IsEmpty())
 	{
-		MetaHumans[Index].Add(Owner, Person, UghFigurePlace::CavemanHeight, Garment);
+		MetaHumans[Index].Add(Owner, Person, UghFigurePlace::PersonHeight);
 	}
 	else
 	{
 		USkeletalMeshComponent* Model = Caveman.Add(Owner);
 		Model->AttachToComponent(Person, FAttachmentTransformRules::KeepRelativeTransform);
+		Model->SetRelativeScale3D(FVector(UghFigurePlace::PersonHeight / UghFigurePlace::CavemanHeight));
 		Dress(Model, CaveLooks[Index]);
 	}
 	Person->SetVisibility(false, true);

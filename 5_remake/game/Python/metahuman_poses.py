@@ -18,8 +18,8 @@ def copter_cm(at):
     return (at[0] * 100, -at[1] * 100, at[2] * 100)
 
 
-# the caveman's height (cm, UghFigurePlace::CavemanHeight): the game shows a MetaHuman in the copter as high
-CAVEMAN = 115
+# the people's height (cm, UghFigurePlace::PersonHeight): the game shows a MetaHuman in the copter as high
+PERSON = layout.PERSON_HEIGHT * 100
 # from the seat the crank's axle, its pedals' radius and how far each is from the middle of the axle, the left handle
 PEDAL_AXLE = copter_cm(layout.PEDAL_AXLE)
 PEDAL_RADIUS, PEDAL_SPREAD = layout.PEDAL_RADIUS * 100, layout.PEDAL_SPREAD * 100
@@ -53,7 +53,7 @@ class Body:
     def __init__(self, rest, height):
         self.rest, self.at = rest, rest.world_pos
         self.height = height
-        self.copter = height / CAVEMAN   # copter centimetres to the body's
+        self.copter = height / PERSON   # copter centimetres to the body's
         self.leg = rest.bone_length("thigh_l", "calf_l") + rest.bone_length("calf_l", "foot_l")
         self.arm = rest.bone_length("upperarm_l", "lowerarm_l") + rest.bone_length("lowerarm_l", "hand_l")
         self.hip_drop = self.at["pelvis"][2] - self.at["thigh_l"][2]   # the hip joints below the pelvis

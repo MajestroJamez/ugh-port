@@ -2,6 +2,7 @@
 
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture.h"
+#include "Materials/MaterialInterface.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Misc/PackageName.h"
 
@@ -49,6 +50,7 @@ TArray<const TCHAR*> UghElectricDreams::All()
 	{
 		Paths.Append({ Layer.BaseColor, Layer.Normal, Layer.Packed });
 	}
+	Paths.Add(LeafMaterial);
 	return Paths;
 }
 
@@ -73,6 +75,11 @@ TArray<UStaticMesh*> UghElectricDreams::Meshes(TConstArrayView<const TCHAR*> Pat
 UTexture* UghElectricDreams::Texture(const TCHAR* Path)
 {
 	return Find<UTexture>(Path);
+}
+
+UMaterialInterface* UghElectricDreams::Material(const TCHAR* Path)
+{
+	return Find<UMaterialInterface>(Path);
 }
 
 UMaterialParameterCollection* UghElectricDreams::Collection(const TCHAR* Path)

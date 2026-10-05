@@ -126,16 +126,19 @@ def seats(part, leather):
     for (x, y, z), radius in ((layout.PILOT_SEAT, 0.16), (layout.PASSENGER_SEAT, 0.15)):
         part.tube([(x, y, FLOOR), (x, y, z - 0.05)], radius, "wood", sides=14)
         part.blob((x, y, z - 0.03), (radius + 0.01, radius, 0.04), leather)
-    seat = Vector(layout.PILOT_SEAT)
-    axle = seat + Vector(layout.PEDAL_AXLE)
-    grip = seat + Vector(layout.GRIP)
-    left, right = Vector((grip.x, grip.y, grip.z)), Vector((seat.x - layout.GRIP[0], grip.y, grip.z))
-    part.tube([(axle.x, axle.y, FLOOR), (axle.x, axle.y, grip.z)], 0.035, "bamboo", uv_length=0.22)
-    part.tube([right + Vector((-0.07, 0, 0)), left + Vector((0.07, 0, 0))], [0.026, 0.026], "bone", sides=8)
-    for end in (right + Vector((-0.08, 0, 0)), left + Vector((0.08, 0, 0))):
+    # the handlebar on a post at the crank's axle, in front of the pilot as he sits turned
+    def pilot(offset):
+        return Vector(layout.PILOT_SEAT) + Vector(layout.turned(offset, layout.PILOT_YAW))
+    axle = pilot(layout.PEDAL_AXLE)
+    left, right = (pilot((side * layout.GRIP[0], layout.GRIP[1], layout.GRIP[2])) for side in (1, -1))
+    across = Vector(layout.turned((1, 0, 0), layout.PILOT_YAW))
+    top = Vector((axle.x, axle.y, left.z))
+    part.tube([(axle.x, axle.y, FLOOR), top], 0.035, "bamboo", uv_length=0.22)
+    part.tube([right - across * 0.04, left + across * 0.04], [0.026, 0.026], "bone", sides=8)
+    for end in (right - across * 0.05, left + across * 0.05):
         part.blob(end, (0.035, 0.035, 0.035), "bone")
-    part.lash((axle.x, axle.y, grip.z), (1, 0, 0), 0.026)
-    part.lash((axle.x, axle.y, axle.z), (0, 0, 1), 0.035)
+    part.lash(top, across, 0.026)
+    part.lash(axle, (0, 0, 1), 0.035)
 
 
 def banner(part, leather, top, bottom):

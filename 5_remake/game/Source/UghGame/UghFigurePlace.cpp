@@ -39,8 +39,6 @@ FTransform UghFigurePlace::Of(const FUghFigureAction& Action, const FVector2D& A
 	{
 	case EUghModel::Caveman:
 	{
-		const double High = Size.Y * UghShapes::UnitsPerPixel / CavemanHeight;
-		Scale = FVector(FMath::Min(High, 1.0), FMath::Min(High, 1.0), High);   // a tall one is slender
 		const double Depth = Action.Door > 0 ? DoorDepth * (1 - Phase) : Action.Door < 0 ? DoorDepth * Phase : 0;
 		Origin = UghShapes::ToWorld(Middle, Action.bInWater ? At.Y + WaterLine : Bottom, Depth);
 		break;

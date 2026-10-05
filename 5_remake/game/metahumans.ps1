@@ -1,5 +1,5 @@
 # Makes the game's MetaHumans (UghMetaHumans.h) with MetaHuman Creator in the editor: the pilot and the passengers
-# of the cargo looks 1 .. 3 from Creator's presets, dressed as stone age people, assembled into
+# of the cargo looks 1 .. 3 from Creator's presets as stone age people (no outfit), assembled into
 # Content\External\MetaHumans (Python\metahumans.py; not in git: Epic's content, licensed for Unreal Engine projects),
 # then their actions (Python\metahuman_actions.py). Needs the plugin's optional content ("MetaHuman Creator Core
 # Data", Fab / Epic Games Launcher) and the editor logged in to an Epic account (the face rig and the skin textures come

@@ -3,8 +3,9 @@ origin is:
 
 - idle: standing (the origin on the ground between the feet), breathing, looking about,
 - sit: sitting (the origin is the seat), hands on the knees, the feet dangling,
-- pedal: sitting and pedalling the copter's crank (copter_layout: the axle and the pedals from the seat), holding its
-  handles; one turn of the crank per loop, the left pedal on top at the start, its top going forward,
+- pedal: sitting and pedalling the copter's crank (copter_layout: the axle and the pedals from the seat, in the scale
+  the game shows him in the copter), holding its handles; one turn of the crank per loop, the left pedal on top at the
+  start, its top going forward,
 - hang: hanging from a rope by both hands (the origin is where they hold it), the legs swinging,
 - walk, wave: on the ground as idle; walk is two steps forward (the left foot forward at the start), wave calls a
   copter with both arms over the head,
@@ -22,6 +23,10 @@ from ugh_rig import Pose, sides, turn
 
 # the water's surface (the origin of tread, swim, fall) is this far above the pelvis of the upright figure
 UNDER_WATER = 0.42
+# the caveman's height (m, UghFigurePlace::CavemanHeight); the game shows him as tall as the people in the copter, so
+# the crank and the handles are nearer to him by this
+HEIGHT = 1.15
+IN_COPTER = HEIGHT / layout.PERSON_HEIGHT
 
 
 def head_of(name):
@@ -74,15 +79,15 @@ def pedal(t):
     pose.turn["pelvis"] = turn(x=0.15, y=0.05 * math.sin(t))
     pose.turn["chest"] = turn(x=0.05, y=-0.06 * math.sin(t))
     pose.turn["head"] = turn(x=-0.2 + 0.04 * math.sin(2 * t))
-    axle = Vector(layout.PEDAL_AXLE)
+    axle = Vector(layout.PEDAL_AXLE) * IN_COPTER
+    spread, radius = layout.PEDAL_SPREAD * IN_COPTER, layout.PEDAL_RADIUS * IN_COPTER
     for side, name in sides():
         angle = t + (0 if side > 0 else math.pi)
-        pedal_at = axle + Vector((side * layout.PEDAL_SPREAD, -layout.PEDAL_RADIUS * math.sin(angle),
-                                  layout.PEDAL_RADIUS * math.cos(angle)))
+        pedal_at = axle + Vector((side * spread, -radius * math.sin(angle), radius * math.cos(angle)))
         ankle = pedal_at + Vector((0, 0.035, 0.045))
         pose.reach[f"thigh.{name}"] = (ankle, (0, -1, 0.5))
         pose.aim[f"foot.{name}"] = Vector((0, -1, -0.25 - 0.2 * math.sin(angle)))
-        grip = Vector((side * layout.GRIP[0], layout.GRIP[1], layout.GRIP[2]))
+        grip = Vector((side * layout.GRIP[0], layout.GRIP[1], layout.GRIP[2])) * IN_COPTER
         pose.reach[f"upperarm.{name}"] = (grip, (side * 0.7, 0.5, -0.3))
         pose.aim[f"hand.{name}"] = Vector((side * 0.1, -1, -0.2))
     return pose

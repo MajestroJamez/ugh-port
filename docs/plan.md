@@ -980,3 +980,27 @@ dekorace na místě, kde je v masce pevná římsa).
   v okně (`play.ps1`) - hlavně jak tmavá smí být noc a jak oranžový soumrak (`UghMood.cpp`). Pro krok 19e: moře je
   jeden box `UghWater::Box` (krychle), pro průlet stačí zvětšit `Reach` a `Front` (řez před kamerou pak schovat), vlny
   jsou jen v normálách (hladina plochá kvůli testu výšky). Další: **krok 19b**.
+- 2026-10-05: krok 19b hotový - lidé: listy, vlasy, sezení (`docs/visual-concept.md`). MetaHumani znovu
+  (`metahumans.ps1 -All`): bez oděvu (slot `Outfits` prázdný - tělo celé, pod listy spodní prádlo textur kůže),
+  kvalita `Medium` (karty vlasů jen v detailu 3, hra drží `GroomLOD` 3: skutečné vlasy, vousy i obočí, ne helmy).
+  Listy (`FUghLeaves`, `UghLeaves.cpp`): bederní rouška z listů tara Electric Dreams (`UghElectricDreams::LeafMaterial`,
+  výřezy listů v atlasu `LeafPictures`), každý list síť ovinutá kolem těla podle fyzikálního assetu postavy, postavená
+  za běhu v prostoru své kosti: vpředu a po stranách na stehnech (jdou s nohama, při sezení leží na klíně), vzadu
+  a krátký list před rozkrokem na pánvi, žena navíc pás přes prsa (`spine_05`); bez vzorku zelená plastelína.
+  Velikost: `UghFigurePlace::PersonHeight` 145 cm (chodící postava s vlasy vyplní 14 px spritu, o ~5 % nižší než
+  vestoje), stejná při chůzi, čekání, plavání i v kabině (dřív 115 cm v kabině, na zemi natažená podle spritu);
+  jeskynní muž z Blenderu škálovaný stejně. Kabina (`copter_layout.py`, `UghCopterModel.h`, `copter.py`
+  a `caveman_actions.py` znovu): pilot sedí natočený o 50° doleva a šlape, cestující o 50° doprava (kamera vidí sezení
+  z boku), klika a řídítka v rámci pilota (`PedalAxle`, `Grip`), pedály dál a níž, sedadlo pilota o 8 cm dozadu (tělo
+  vrtulníku dál v ±45). Veze-li vrtulník kámen (vzhled 4) v kabině, sedí na sedadle zmenšený na 0,32 a dívá se do
+  kamery (`SeatedStone`). Opraveno: akce MetaHumanů engine „retargetoval“ ze skeletu (sedící a mávající se vznášeli
+  ~7 cm) - teď `retarget_source_asset` = tělo, a test `Ugh.Figures.People` počítá pózy jako hra (`GetAnimationPose`
+  na síti), navíc kontroluje listy (boky od pasu po stehna, u ženy hruď); `Ugh.Copter.Model` kámen na sedadle.
+  Výkon: karty vlasů stály ~1 ms GPU a `levels.ps1` spadl na medián 23 (nejpomalejší 18); lidé teď nejsou ve scéně
+  ray tracingu a `DefaultEngine.ini` šetří, co není vidět (odrazy Lumenu poloviční, stíny slunce hrubší, objem
+  osvětlení průsvitných 32): `levels.ps1` (27,9 min) medián 25, nejpomalejší 16; archy bez vad, prohlédnuté i detaily
+  (`shot.ps1 -Cargo 1/2/3/4 -CloseUp [-Frame 6,4,22,14]`, 1p-03 `-Frame` s chodící ženou a stařcem, team-21).
+  CTest logiky, `6_verification` (163) a 177 testů v UE zelené. Čeká na Jana: posoudit listy a vlasy v okně
+  (`play.ps1`) - hlavně zda stačí pás listů u ženy (z boku je vidět šedá podprsenka textury); fps je na hraně
+  (medián přesně 25), další rezervu by dalo `r.Nanite.MaxPixelsPerEdge=2` nebo hrubší Lumen GI. Bez MetaHumanů
+  (jeskynní muž) nevyzkoušeno znovu shotem. Další: **krok 19c**.

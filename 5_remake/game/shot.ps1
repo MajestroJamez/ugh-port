@@ -4,10 +4,10 @@
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\shot.ps1 -Level 12 -Team
 # -Level: from 1 in the order of the mode (one player 1 .. 69, -Team 1 .. 81); -Commands: console commands before the
 # play, separated by commas (e.g. "r.Shadow.Virtual.Enable 0"); -Cargo <look>: the copters shown with a passenger of
-# the logic's cargo look in the cabin (1 .. 3), -Hanging below instead (4, the stone), -CloseUp: framing the copters
-# (the name of the shot ends in -cargo<look> / -hanging<look>, -closeup), -Frame <left>,<top>,<width>,<height>: framing
-# that part of the screen in pixels (a look at the figures; with -CloseUp from the first copter's corner: a look into
-# its cabin; the name ends in -frame<left>_<top>). All levels at once:
+# the logic's cargo look in the cabin (1 .. 4: 4 the stone, smaller), -Hanging below instead, -CloseUp: framing the
+# copters (the name of the shot ends in -cargo<look> / -hanging<look>, -closeup), -Frame <left>,<top>,<width>,<height>:
+# framing that part of the screen in pixels (a look at the figures; with -CloseUp from the first copter's corner: a look
+# into its cabin; the name ends in -frame<left>_<top>). All levels at once:
 # levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$CloseUp, [string]$Frame = '', [int]$TimeoutSeconds = 300)
