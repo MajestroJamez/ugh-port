@@ -42,6 +42,8 @@ namespace UghAssets
 	inline const TCHAR* Totem = TEXT("totem");
 	inline const TCHAR* Hut = TEXT("hut");
 	inline const TCHAR* Vines = TEXT("vines");
+	/** Made by a script of Blender/ too: the pads' boards, a mesh sign_<marks> each (AUghSigns). */
+	inline const TCHAR* Signs = TEXT("signs");
 	/**
 	 * The texture sets of the cliff's layers (UghMaterials::CliffLayers in the same order): a fractured cliff of blocks
 	 * and ledges (the cliff's material greys it into karst limestone), grey rock with lichen, grass, moss, red soil

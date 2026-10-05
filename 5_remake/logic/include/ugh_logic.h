@@ -186,6 +186,9 @@ enum {
  * that passenger in the water), else a sprite of the rules ("standingPassenger", "droppedPassenger",
  * "bouncedPassenger", "shakenTree") or a kind of bonus item ("energy3", "multiplier"). A sprite of two things is the
  * animation's (a flyer falling shows a frame of its flight, a stunned blower one of its blowing: see `stunned`).
+ * A passenger's speech bubble (ugh_logic_entity.bubble) is "destinationBubble" (frame: the index of the pad it wants
+ * to go to - the board with its number; the last frame for that pad and all after it, a blank board) or
+ * "impatientBubble" (a question mark: the copter left without it).
  */
 typedef struct {
     char name[32];
@@ -193,7 +196,7 @@ typedef struct {
     int frames;   /* the frames of the animation; 1 for a single sprite */
 } ugh_logic_sprite;
 
-/** Fills `info` with what `sprite` is; 0 when no entity of the data shows it (a bubble, a rotor, an unused one). */
+/** Fills `info` with what `sprite` is; 0 when no entity of the data shows it (a rotor, an unused one). */
 UGH_LOGIC_API int ugh_logic_get_sprite(const ugh_logic* logic, int sprite, ugh_logic_sprite* info);
 
 /* ------------------------------------------------------------------ the background of the level being played */

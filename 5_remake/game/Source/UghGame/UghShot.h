@@ -23,8 +23,9 @@ class FUghPasswords;
  * passenger of the logic's cargo look sitting in the cabin, with -UghShotHanging hanging below instead (only the
  * picture: the logic is not changed); -UghShotCloseUp frames the copters instead of the screen, -UghShotFrame=<left>,
  * <top>,<width>,<height> that part of the screen (pixels: a look at the figures; with -UghShotCloseUp from the first
- * copter's corner, wherever it hovers: a look into its cabin). Such a shot's name ends in
- * -cargo<look>, -hanging<look>, -closeup, -frame<left>_<top> (in this order).
+ * copter's corner, wherever it hovers: a look into its cabin). -UghShotBubbles gives every passenger shown a speech
+ * bubble, each the next of the data's bubbles (only the picture). Such a shot's name ends in -cargo<look>,
+ * -hanging<look>, -bubbles, -closeup, -frame<left>_<top> (in this order).
  */
 class FUghShot
 {
@@ -40,8 +41,11 @@ public:
 	/** One frame of the autopilot: its keys go to the game mode. */
 	EAction Tick(AUghGameMode& Mode, float DeltaSeconds);
 
-	/** The view as the shot shows it: the copters with the passenger of -UghShotCargo. */
-	void Dress(ugh_logic_view& View) const;
+	/**
+	 * The view of `Logic` as the shot shows it: the copters with the passenger of -UghShotCargo, the passengers with
+	 * the bubbles of -UghShotBubbles.
+	 */
+	void Dress(ugh_logic_view& View, const ugh_logic* Logic);
 	/**
 	 * The pixels to frame (in the play): -UghShotFrame its part of the screen, -UghShotCloseUp the copters, both that
 	 * part of the first copter.
@@ -50,6 +54,8 @@ public:
 
 private:
 	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 1, AfterShot = 0.5, LevelTimeLimit = 60;
+	/** The speech bubbles are looked for among the sprites below this one. */
+	static constexpr int32 BubbleSearch = 1000;
 	/** A close-up shows this many pixels around the copters. */
 	static constexpr double CloseUpMargin = 12;
 	/** A hanging passenger reaches this many pixels below the body (the stone passenger, 1 px below it, 11 px high). */
@@ -77,6 +83,8 @@ private:
 	bool bMenuShot = false;
 	int32 CargoLook = 0;      // -UghShotCargo
 	bool bHanging = false;    // -UghShotHanging
+	bool bBubbles = false;    // -UghShotBubbles
+	TArray<int32> Bubbles;    // the sprites of the data's speech bubbles, found the first time
 	bool bCloseUp = false;    // -UghShotCloseUp
 	TOptional<FBox2D> Frame;  // -UghShotFrame
 	FString Suffix;           // of the shots' names

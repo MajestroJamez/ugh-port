@@ -142,7 +142,12 @@ TEST(the_c_api_names_the_sprites_of_the_entities) {
     CHECK_EQUAL(1, info.frames);
     CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 297, &info));
     CHECK_EQUAL(std::string("multiplier"), std::string(info.name));
-    CHECK_EQUAL(0, ugh_logic_get_sprite(logic, 268, &info));   // a speech bubble
+    CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 270, &info));   // a speech bubble: to the third pad
+    CHECK_EQUAL(std::string("destinationBubble"), std::string(info.name));
+    CHECK_EQUAL(2, info.frame);
+    CHECK_EQUAL(6, info.frames);
+    CHECK_EQUAL(1, ugh_logic_get_sprite(logic, 274, &info));
+    CHECK_EQUAL(std::string("impatientBubble"), std::string(info.name));
     CHECK_EQUAL(0, ugh_logic_get_sprite(logic, 218, &info));   // a rotor
     ugh_logic_destroy(logic);
 }

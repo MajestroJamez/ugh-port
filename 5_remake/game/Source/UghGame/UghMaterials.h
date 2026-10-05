@@ -92,7 +92,10 @@ namespace UghMaterials
 	 * Wind (-1 .. 1, the flame leans that way). The shader code is Source/UghEditor/Shaders/UghFlame.hlsl.
 	 */
 	inline const TCHAR* Fire = TEXT("/Game/Generated/M_UghFire");
-	/** A sprite of the original on a card (unlit, colour 0 cut out). Texture parameter Art. */
+	/**
+	 * A picture on a card (unlit, transparent cut out, its front only: UghShapes::ShowCard), the original's sprites and
+	 * the speech bubbles. Texture parameter Art.
+	 */
 	inline const TCHAR* Sprite = TEXT("/Game/Generated/M_UghSprite");
 	/**
 	 * A PBR surface of an imported texture set (UghAssets: its instance MI_<id>): texture parameters BaseColor, Normal,

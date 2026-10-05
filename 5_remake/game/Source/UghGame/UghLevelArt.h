@@ -16,12 +16,18 @@ struct FUghArtTile
 /**
  * The original's drawing of every level: its 20 x 16 tiles (assets/levels.json, the levels in the order of the game
  * data, so a level's index is its level_id), each a sprite drawn 16 x 12 px apart with colour 0 transparent onto a
- * black screen - as the original's level setup draws them. The rock takes its colours from it; the boards with the
- * pads' numbers are shown as they are drawn (Signs); its doors are the cave's entrances (Doors, UghCavePortals).
+ * black screen - as the original's level setup draws them. The rock takes its colours from it; its boards with the
+ * pads' numbers stand where the pads get theirs (Signs, UghPadSigns); its doors are the cave's entrances (Doors,
+ * UghCavePortals).
  */
 class FUghLevelArt
 {
 public:
+	/** A tile is this big (pixels). */
+	static constexpr int32 TileWidth = 16, TileHeight = 12;
+	/** The sprites of the boards: I, II, III, IIII, the four crossed by a fifth (FirstSign + marks - 1); a blank one. */
+	static constexpr int32 FirstSign = 85, LastSign = 90;
+
 	/** Takes the tiles of the levels' file (UghJson::LevelsFile) read from `Path`; false and the reason when not. */
 	bool Load(const FJsonObject& LevelsFile, const FString& Path, FString& OutError);
 
@@ -37,9 +43,6 @@ public:
 	TArray<FUghArtTile> Doors(int32 LevelId) const;
 
 private:
-	static constexpr int32 TileWidth = 16, TileHeight = 12;
-	/** The sprites of the boards: I, II, III, IIII, V and a blank one. */
-	static constexpr int32 FirstSign = 85, LastSign = 90;
 	/** The top left tiles of the doors: a doorway (60, 61 over 80, 81), a cave's mouth (62, 63 over 82, 83). */
 	static constexpr int32 Doorway = 60, CaveMouth = 62;
 

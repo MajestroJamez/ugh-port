@@ -35,6 +35,7 @@ bool FUghShot::Configure()
 	bMenuShot = FParse::Param(CommandLine, TEXT("UghShotMenu"));
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
+	bBubbles = FParse::Param(CommandLine, TEXT("UghShotBubbles"));
 	bCloseUp = FParse::Param(CommandLine, TEXT("UghShotCloseUp"));
 	FString FrameText;
 	TArray<FString> Numbers;
@@ -47,6 +48,10 @@ bool FUghShot::Configure()
 	if (CargoLook > 0)
 	{
 		Suffix += FString::Printf(TEXT("-%s%d"), bHanging ? TEXT("hanging") : TEXT("cargo"), CargoLook);
+	}
+	if (bBubbles)
+	{
+		Suffix += TEXT("-bubbles");
 	}
 	if (bCloseUp)
 	{
@@ -193,12 +198,31 @@ FUghShot::EAction FUghShot::TakeShot(const FString& Name)
 	return EAction::TakeShot;
 }
 
-void FUghShot::Dress(ugh_logic_view& View) const
+void FUghShot::Dress(ugh_logic_view& View, const ugh_logic* Logic)
 {
 	for (int32 Player = 0; CargoLook > 0 && Player < View.copter_count; ++Player)
 	{
 		View.copters[Player].cargo_look = CargoLook;
 		View.copters[Player].destination = bHanging ? -1 : 1;
+	}
+	if (bBubbles && Bubbles.IsEmpty())
+	{
+		for (int32 Sprite = 0; Sprite < BubbleSearch; ++Sprite)
+		{
+			ugh_logic_sprite Info;
+			if (ugh_logic_get_sprite(Logic, Sprite, &Info) && FCStringAnsi::Strstr(Info.name, "Bubble"))
+			{
+				Bubbles.Add(Sprite);
+			}
+		}
+	}
+	for (int32 Index = 0, Shown = 0; !Bubbles.IsEmpty() && Index < View.entity_count; ++Index)
+	{
+		ugh_logic_entity& Entity = View.entities[Index];
+		if (Entity.kind == UGH_LOGIC_ENTITY_PASSENGER && Entity.sprite >= 0)
+		{
+			Entity.bubble = Bubbles[Shown++ % Bubbles.Num()];
+		}
 	}
 }
 

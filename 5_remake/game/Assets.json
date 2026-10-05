@@ -56,6 +56,13 @@
       "maps": { "color": "palm_bark_diff_2k.jpg", "normal": "palm_bark_nor_dx_2k.jpg", "arm": "palm_bark_arm_2k.jpg", "height": "palm_bark_disp_2k.png" }
     },
     {
+      "id": "rough_wood", "kind": "texture", "use": "wood: weathered, cracked timber (the boards with the pads' numbers)",
+      "page": "https://polyhaven.com/a/rough_wood", "license": "CC0-1.0", "author": "Rob Tuytel (Poly Haven)",
+      "path": "polyhaven/rough_wood",
+      "polyhaven": { "id": "rough_wood", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "rough_wood_diff_2k.jpg", "normal": "rough_wood_nor_dx_2k.jpg", "arm": "rough_wood_arm_2k.jpg", "height": "rough_wood_disp_2k.png" }
+    },
+    {
       "id": "grass004", "kind": "texture", "use": "grass: dense short grass",
       "page": "https://ambientcg.com/a/Grass004", "license": "CC0-1.0", "author": "Lennart Demes (ambientCG)",
       "path": "ambientcg/Grass004",
@@ -328,6 +335,13 @@
       "path": "generated/vines",
       "blender": { "script": "Blender/vines.py", "outputs": ["vines.glb"] },
       "import": ["vines.glb"]
+    },
+    {
+      "id": "signs", "kind": "generated", "use": "the boards with the pads' numbers: a weathered board on a post, the number carved in tally marks (sign_0 blank .. sign_5)",
+      "page": "Blender/signs.py", "license": "CC0-1.0", "author": "UGH remake (Blender/signs.py), texture rough_wood (Poly Haven)",
+      "path": "generated/signs",
+      "blender": { "script": "Blender/signs.py", "inputs": ["rough_wood"], "outputs": ["signs.glb"] },
+      "import": ["signs.glb"]
     }
   ]
 }

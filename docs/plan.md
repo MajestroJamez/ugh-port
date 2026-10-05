@@ -11,6 +11,9 @@ Pravidla platná pro všechny kroky:
 - Nic viditelného na notebooku bez souhlasu (okno hry, editor se scénou, Blender); příkazy pro Jana jen PowerShell 5.1.
 - Na konci každého kroku: testy zelené, krátký zápis do tohoto souboru (sekce Stav), commit po Janově souhlasu
   (kroky 13+ v noci 2026-10-04: commit a push rovnou, schváleno).
+- Snímky (Jan 2026-10-05): po každém kroku jen rychlá sada `levels.ps1 -Quick` (12 levelů se všemi náladami a jevy na
+  jednom archu `levels-quick.png`, asi 3 min); celých 150 levelů `levels.ps1` jen jednou denně v noci nebo před
+  milníkem.
 
 ## Krok 1 - Úklid a commit dosavadní práce
 
@@ -287,8 +290,9 @@ změny. Pravidla navíc:
   kdykoli stáhnout znovu. Co vznikne v Blenderu, dělají skripty v gitu (`5_remake/game/Blender/*.py`, `blender -b`).
 - **Import do UE commandletem** (jako materiály): `build.ps1` naimportuje assety do `Content/Imported` (gitignore).
   Chybí-li asset, hra spadne zpět na dnešní tvar a zaloguje to (repo bez assetů se dál přeloží a testy projdou).
-- Po každém kroku: testy logiky, `6_verification` a UE zelené, `levels.ps1` a kontrola archů, zápis do Stavu, commit
-  a push (v noci 2026-10-04 předem schváleno Janem).
+- Po každém kroku: testy logiky, `6_verification` a UE zelené, `levels.ps1 -Quick` a kontrola archu (celý
+  `levels.ps1` jednou denně v noci nebo před milníkem), zápis do Stavu, commit a push (v noci 2026-10-04 předem
+  schváleno Janem).
 
 ## Krok 13 - Zvuk a hudba
 
@@ -1034,3 +1038,28 @@ dekorace na místě, kde je v masce pevná římsa).
   (rozdíly v šumu ±3). Čeká na Jana: posoudit vápenec a vchody v okně (`play.ps1`) a pustit `levels.ps1` doma
   v noci znovu kvůli fps (rezerva `r.Nanite.MaxPixelsPerEdge=2` dala +2 fps); dřevěné rámy dveří kresby zatím jen
   skalní oblouk. Další: **krok 19d**.
+- 2026-10-05: krok 19d hotový - cedule s čísly a bubliny (`docs/visual-concept.md`). Cedule (`UghPadSigns`,
+  `AUghSigns`, `Blender/signs.py`, nový asset `signs` a textura Poly Haven `rough_wood` v `Assets.json`): zvětralé
+  prkno přibité na křivém kůlu, číslo vyřezané čárkami jako sprity originálu 85-90 (I až IIII, pět = čtyři přeškrtnuté
+  pátou, prázdné prkno), zářezy světlé čerstvé dřevo - čitelné i v noci. Každá plošina právě jednu: kde má kresba
+  originálu ceduli na plošině, tam (716 z 806 v 150 levelech), jinak co nejblíž středu mimo vchody do jeskyní a jiné
+  cedule (47 plošin v 81 mapách, kam nikdo nejezdí). Značky z čísla plošiny logiky (`ugh_logic_get_pad`); kresba se
+  s ním shoduje až na přehlédnutí originálu (level_id 31: II i na plošině 1) a druhou ceduli na téže plošině (level_id
+  74). Plošina čísla 6 (nepojmenovaná) prázdné prkno jako v originálu. Cedule stojí 88 jednotek za rovinou hry (za
+  dosahem těl vrtulníků a nepřátel), dekorace před ně nesmí (`FUghPlacer`, `Ugh.Scenery`); bez modelů karta se spritem.
+  Bubliny (`UghBubbles`): ostrý obrázek kreslený za běhu ze vzdáleností (bílá bublina, prkénko s čárkami cílové
+  plošiny, od šesté prázdné, nebo otazník), co ukazují, říká logika jménem spritu (`ugh_logic_get_sprite` teď jmenuje
+  `destinationBubble` s indexem plošiny a `impatientBubble`; test logiky). Zobáček: originál má jen sprity se
+  zobáčkem vlevo dole a kreslí bublinu vždy 11 px vpravo a 13 px nad cestujícím (`Frame.kt`) - zobáček míří na hlavu
+  cestujícího, ne k vrtulníku. Dva zobáčky byly chyba karty: krychle s oboustranným `M_UghSprite` ukazovala zezadu
+  zrcadlený obrázek přes průhledné místo vpředu; materiál je teď jednostranný. Bublina se kreslí na místě originálu,
+  jen kdyby vyjela vpravo z obrazovky, zrcadlí se nalevo se zobáčkem vpravo. `shot.ps1 -Bubbles` dá bublinu každému
+  cestujícímu (detaily 1p-01 `-Frame`). Nová pravidla snímků (Jan): `levels.ps1 -Quick` (12 levelů 1p 1, 3, 6, 8, 12,
+  23, 36, 43, 62, team 1, 21, 54 na archu `levels-quick.png`, 2,7 min) po každém kroku, celý běh jen jednou denně
+  v noci nebo před milníkem. Testy `Ugh.Signs` (každá plošina všech 150 levelů právě jednu ceduli se správným číslem,
+  ověřeno proti spritu kresby, na skále, nad plošinou, bez překryvu) a `Ugh.Bubbles` (obsah všech bublin dat, strana
+  zobáčku pro každou polohu cestujícího, špička na hlavě, obrázek s jedním zobáčkem). CTest logiky, `6_verification`
+  (163) a 180 testů v UE zelené. Výkon (A/B ve stejném běhu, rychlá sada): před krokem medián 34 fps (nejpomalejší
+  31), po něm 35 (29). Čeká na Jana: posoudit cedule a bubliny v okně (`play.ps1`); jestli má zobáček přece mířit
+  k vrtulníku (originál to nedělá), stačí změnit `UghBubbles::Place`. Celý `levels.ps1` tento krok nespuštěn (nové
+  pravidlo). Další: **krok 19e**.

@@ -6,6 +6,7 @@
 #include "Engine/StaticMesh.h"
 #include "Misc/AutomationTest.h"
 #include "UghAssets.h"
+#include "UghBubbles.h"
 #include "UghFigureActions.h"
 #include "UghFigureModels.h"
 #include "UghFigurePlace.h"
@@ -37,13 +38,14 @@ bool FUghFigureActionsTest::RunTest(const FString& Parameters)
 	{
 		return false;
 	}
-	// every sprite an entity of the data shows is an action its model has
+	// every sprite an entity of the data shows is an action its model has (a speech bubble is UghBubbles's)
 	TSet<EUghModel> Models;
 	int32 Named = 0;
 	for (int32 Sprite = 0; Sprite < Sprites.Count(); ++Sprite)
 	{
 		ugh_logic_sprite Info;
-		if (!ugh_logic_get_sprite(Simulation.GetLogic(), Sprite, &Info))
+		if (!ugh_logic_get_sprite(Simulation.GetLogic(), Sprite, &Info) ||
+			UghBubbles::Look(Simulation.GetLogic(), Sprite).IsSet())
 		{
 			continue;
 		}

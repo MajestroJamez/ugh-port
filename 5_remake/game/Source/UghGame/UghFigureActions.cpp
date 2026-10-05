@@ -1,5 +1,6 @@
 #include "UghFigureActions.h"
 
+#include "UghBubbles.h"
 #include "UghCaveman.h"
 #include "UghShapes.h"
 
@@ -87,9 +88,9 @@ void FUghFigureActions::Load(const ugh_logic* Logic, int32 SpriteCount)
 	for (int32 Sprite = 0; Sprite < SpriteCount; ++Sprite)
 	{
 		ugh_logic_sprite Info;
-		if (!ugh_logic_get_sprite(Logic, Sprite, &Info))
+		if (!ugh_logic_get_sprite(Logic, Sprite, &Info) || UghBubbles::Look(Logic, Sprite).IsSet())
 		{
-			continue;
+			continue;   // no figure's (a bubble is UghBubbles's)
 		}
 		if (TOptional<FUghFigureAction> Action = Describe(Info))
 		{

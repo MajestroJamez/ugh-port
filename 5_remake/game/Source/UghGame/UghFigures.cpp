@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Texture2D.h"
 #include "UghBetween.h"
+#include "UghBubbles.h"
 #include "UghFigureActions.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
@@ -21,9 +22,6 @@ namespace
 	/** The figures fill the slab of the play; a bubble is a card in front of it and of the rock's face. */
 	constexpr double FigureDepth = 0, FigureThickness = UghShapes::PlaneThickness;
 	constexpr double CardDepth = FUghRockMesh::FrontDepth - 3;
-
-	/** A bubble's card stands this far above its passenger, pixels. */
-	constexpr double BubbleGap = 2;
 
 	const ugh_logic_entity* FindEntity(const ugh_logic_view& View, int32 Kind, int32 Index)
 	{
@@ -84,10 +82,9 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 		const FVector2D At = P && P->sprite >= 0 ? UghBetween::Position(P->x, P->y, E.x, E.y, Alpha)
 			: UghBetween::Pixels(E.x, E.y);
 		const FIntPoint Size = Sprites.Size(E.sprite);
-		if (E.kind == UGH_LOGIC_ENTITY_PASSENGER && E.bubble >= 0)
+		if (E.kind == UGH_LOGIC_ENTITY_PASSENGER && BubbleLooks.IsValidIndex(E.bubble) && BubbleLooks[E.bubble])
 		{
-			const FIntPoint Bubble = Sprites.Size(E.bubble);
-			Bubbles.Add({ E.bubble, FVector2D(At.X + (Size.X - Bubble.X) / 2.0, At.Y - Bubble.Y - BubbleGap) });
+			Bubbles.Add({ *BubbleLooks[E.bubble], UghBubbles::Place(At, Size.X) });
 		}
 		const TOptional<FUghFigureAction> Action = Actions.Of(E, P);
 		const double Velocity = P && P->sprite >= 0 ? double(E.x - P->x) / UghShapes::Subpixels : 0;
@@ -108,11 +105,20 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 	UghShapes::SetShapes(Passengers, PassengerShapes);
 	UghShapes::SetShapes(Enemies, EnemyShapes);
 	UghShapes::SetShapes(BonusItems, BonusShapes);
-	ShowBubbles(Bubbles, Sprites);
+	ShowBubbles(Bubbles);
 }
 
-/** Each bubble on a card of its own (the cards differ in their sprite), the cards made as they are needed. */
-void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites& Sprites)
+void AUghFigures::LoadBubbles(const ugh_logic* Logic, int32 SpriteCount)
+{
+	BubbleLooks.Reset();
+	for (int32 Sprite = 0; Sprite < SpriteCount; ++Sprite)
+	{
+		BubbleLooks.Add(UghBubbles::Look(Logic, Sprite));
+	}
+}
+
+/** Each bubble on a card of its own (the cards differ in their picture), the cards made as they are needed. */
+void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles)
 {
 	for (int32 I = 0; I < FMath::Max(Bubbles.Num(), BubbleCards.Num()); ++I)
 	{
@@ -126,13 +132,15 @@ void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites&
 			BubbleCards.Add(UghShapes::AddCard(this));
 		}
 		const FBubble& Bubble = Bubbles[I];
-		TObjectPtr<UTexture2D>& Texture = SpriteTextures.FindOrAdd(Bubble.Sprite);
-		const FIntPoint Size = Sprites.Size(Bubble.Sprite);
+		const int32 Key = (Bubble.Look.Marks * 2 + Bubble.Look.bQuestion) * 2 + Bubble.Place.bTailLeft;
+		TObjectPtr<UTexture2D>& Texture = BubbleTextures.FindOrAdd(Key);
 		if (!Texture)
 		{
-			Texture = UghTexture::Create(this, Size.X, Size.Y, Sprites.Pixels(Bubble.Sprite), true);
+			Texture = UghTexture::Create(this, UghBubbles::PictureWidth, UghBubbles::PictureHeight,
+				UghBubbles::Draw(Bubble.Look, Bubble.Place.bTailLeft), false);
 		}
-		UghShapes::ShowCard(BubbleCards[I], Texture, Bubble.At.X, Bubble.At.Y, Size.X, Size.Y, CardDepth);
+		UghShapes::ShowCard(BubbleCards[I], Texture, Bubble.Place.At.X, Bubble.Place.At.Y, UghBubbles::Width,
+			UghBubbles::Height, CardDepth);
 	}
 }
 

@@ -192,12 +192,13 @@ polovina krabice je ve vzduchu, zadní se smí opřít o zadní stěnu jeskyně)
   opřené o nejbližší místo stěny za sebou, dolů nejvýš do 85 % místa pod stropem.
 
 Nic nezakrývá postavy, plošiny, cedule ani bubliny (`UghDecorations`, test `Ugh.Scenery` pro všech 150 levelů):
-nic není na obrazovce blíž než `SlabFront` (25 jednotek za rovinou hry: deska hry, cedule 23), nic vyššího než
+nic není na obrazovce blíž než `SlabFront` (25 jednotek za rovinou hry: deska hry), nic vyššího než
 pokryv země (5 px: tráva, květiny, kosti, malé kameny) blíž než `FigureReach` (80: tělo vrtulníku 45, triceratops,
 foukač a strom s tváří 70), nic vyššího než 16 px ani liána blíž než `SweepReach` (180: rotor 130, křídla letce 170);
 kde přistává vrtulník na plošině, tam kde je jeho tělo (11 px do stran, 20 nahoru) nic blíž než 80, kde se točí
 rotor (13 px do stran, 16-24 px nad plošinou) nic blíž než 180. Listnaté rostliny se smí prolínat (od sebe mají
-jen prostředky), tráva roste i u kmene palmy, do ohně nezasahuje nic.
+jen prostředky), tráva roste i u kmene palmy, do ohně nezasahuje nic; před cedulí plošiny nic (v jejím obdélníku
+nic blíž než její zadek, 108 jednotek).
 
 Kreslení (`AUghScenery`): jedna instancovaná komponenta na síť (Nanite), model vložený do své krabice; tráva
 a květiny nevrhají stíny, listy (maskované) nevidí ray tracing; bez modelů plastelínové tvary. Průsvitné materiály
@@ -358,3 +359,25 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   V otvoru se nic jiného neukáže: dekorace jen nízký pokryv na podlaze před obloukem, útesy a kořeny se zmenší nebo
   vypadnou, krápníky a spadané kameny před vchodem nejsou. Test `Ugh.Portals` (u každých dveří vchod na podlaze
   masky, otevřený od oblouku po místo, odkud vychází cestující, skála nad otvorem a vedle něj, podlaha, konec chodby).
+
+## Cedule s čísly a bubliny (krok 19d)
+
+- **Cedule** (`UghPadSigns`, `AUghSigns`, `Blender/signs.py`): zvětralé prkno (Poly Haven `rough_wood` do hnědé jako
+  prkno originálu, zubaté okraje, mírně prohnuté) přibité dvěma kolíky na křivý kůl, číslo plošiny vyřezané čárkami jako
+  sprity originálu (85-89: I až IIII, pět = čtyři přeškrtnuté pátou; 90 prázdné prkno): zářezy ukazují světlé čerstvé
+  dřevo, takže jsou čitelné i z dálky a v noci. Velké jako dlaždice originálu (prkno 1,46 x 0,8 m, 0,3 m nad zemí, kůl
+  1,22 m). Každá plošina má právě jednu: kde ji kresba originálu na plošině má (spodek dlaždice na povrchu plošiny),
+  stojí tam, jinak co nejblíž středu plošiny mimo vchody do jeskyní a jiné cedule (47 plošin, kam žádný cestující
+  nejezdí, originál nechal bez cedule). Značky jsou číslo plošiny z logiky (`ugh_logic_get_pad`), ne sprite: kresba
+  se s ním shoduje až na jedno přehlédnutí (level_id 31 má II i na plošině 1) a jednu druhou ceduli na téže plošině
+  (level_id 74, II dvakrát: stojí první). Plošina čísla 6 (originál ji nepojmenoval) dostane prázdné prkno. Cedule
+  stojí na své zemi 88 jednotek za rovinou hry (přední kolíky 81: za dosahem těl vrtulníků a nepřátel, test
+  `Ugh.Signs`), dekorace se jim vyhnou (`FUghPlacer`). Bez modelů karta se spritem originálu.
+- **Bubliny** (`UghBubbles`): obrázek kreslený za běhu ze vzdáleností (8 texelů na pixel: ostrý), bílá bublina
+  s břidlicovým obrysem, uvnitř prkénko plošiny, kam chce cestující (stejné čárky jako cedule; od šesté plošiny prázdné
+  jako v originálu), nebo otazník (vrtulník odletěl bez něj). Co ukazuje, říká logika jménem spritu
+  (`destinationBubble` s indexem plošiny, `impatientBubble`). **Zobáček:** originál má jen sprity se zobáčkem vlevo
+  dole a bublinu kreslí vždy 11 px vpravo a 13 px nad cestujícím (`Frame.kt`), zobáček tedy míří dolů na hlavu
+  cestujícího (ne k vrtulníku). Dva zobáčky byly chyba kartičky: krychle s oboustranným materiálem ukazovala zezadu
+  zrcadlený obrázek tam, kde je vpředu průhledno - `M_UghSprite` je teď jednostranný. Bublina, která by vpravo vyjela
+  z obrazovky, se zrcadlí na levou stranu cestujícího se zobáčkem vpravo (test `Ugh.Bubbles`).

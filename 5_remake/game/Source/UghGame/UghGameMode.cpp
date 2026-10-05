@@ -13,6 +13,7 @@
 #include "UghCopters.h"
 #include "UghDecorations.h"
 #include "UghFigures.h"
+#include "UghGround.h"
 #include "UghHud.h"
 #include "UghJson.h"
 #include "UghKeyboard.h"
@@ -21,9 +22,11 @@
 #include "UghRain.h"
 #include "UghRockField.h"
 #include "UghRockMesh.h"
+#include "UghPadSigns.h"
 #include "UghScenery.h"
 #include "UghShapes.h"
 #include "UghShot.h"
+#include "UghSigns.h"
 #include "UghSpeaker.h"
 #include "UghStage.h"
 #include "UghWater.h"
@@ -76,6 +79,7 @@ void AUghGameMode::StartPlay()
 		return;
 	}
 	FigureActions.Load(Simulation.GetLogic(), Sprites.Count());
+	Figures->LoadBubbles(Simulation.GetLogic(), Sprites.Count());
 	Speaker->GetPlayer().Load(Assets / TEXT("sound"));
 	if (!bShooting)
 	{
@@ -86,7 +90,7 @@ void AUghGameMode::StartPlay()
 }
 
 /**
- * The stage (light, air, camera), the level's background, the water, the rain, the copters, the figures, the campfire,
+ * The stage (light, air, camera), the level's background and the pads' boards, the water, the rain, the copters, the figures, the campfire,
  * the decorations, the rock dressing, the speaker.
  */
 void AUghGameMode::BuildStage()
@@ -94,6 +98,7 @@ void AUghGameMode::BuildStage()
 	UWorld* World = GetWorld();
 	Stage = World->SpawnActor<AUghStage>();
 	Background = World->SpawnActor<AUghBackground>();
+	Signs = World->SpawnActor<AUghSigns>();
 	Water = World->SpawnActor<AUghWater>();
 	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
@@ -138,8 +143,8 @@ void AUghGameMode::ShowFrame(double Seconds)
 	ugh_logic_view Previous = Simulation.GetPrevious(), Current = Simulation.GetCurrent();
 	if (bShooting)
 	{
-		Shot.Dress(Previous);
-		Shot.Dress(Current);
+		Shot.Dress(Previous, Simulation.GetLogic());
+		Shot.Dress(Current, Simulation.GetLogic());
 	}
 	if (Current.level_id != BackgroundLevel || Current.level != MoodLevel)
 	{
@@ -174,7 +179,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 }
 
 /**
- * The diorama of the level the view shows: the rock coloured by its drawing, the campfires, the decorations, the
+ * The diorama of the level the view shows: the rock coloured by its drawing, the pads' boards, the campfires, the decorations, the
  * scanned rock dressing the cliff; the light and the air of its mood (UghMood), its rain.
  */
 void AUghGameMode::BuildLevel(const ugh_logic_view& View)
@@ -187,10 +192,13 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	Field.Build(Logic, Art, LevelArt.Doors(View.level_id));
 	FUghRockMesh Rock;
 	Rock.Build(Field);
-	Background->Build(Rock, Art, LevelArt.Signs(View.level_id), Sprites);
+	Background->Build(Rock, Art);
+	const TArray<FUghPadSign> PadSigns = View.level_id < 0 ? TArray<FUghPadSign>()
+		: UghPadSigns::Plan(Logic, FUghGround(Logic, Field), LevelArt.Signs(View.level_id));
+	Signs->Show(Background->ShowsArt() ? TArray<FUghPadSign>() : PadSigns, Sprites);   // else the drawing shows them
 	const double Started = FPlatformTime::Seconds();
 	const TArray<FUghDecoration> Decorations = View.level_id < 0 ? TArray<FUghDecoration>()
-		: UghDecorations::Plan(Logic, Field, View.level_id, View.water_level / UghShapes::Subpixels);
+		: UghDecorations::Plan(Logic, Field, View.level_id, View.water_level / UghShapes::Subpixels, PadSigns);
 	UE_LOG(LogTemp, Display, TEXT("UGH decorations: %d in %.0f ms (%s)"), Decorations.Num(),
 		(FPlatformTime::Seconds() - Started) * 1000, *UghDecorations::Summary(Decorations));
 	Campfire->Place(Decorations, View.wind);

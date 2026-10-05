@@ -204,7 +204,7 @@ bool UUghMakeAssetsCommandlet::MakeSprite(UMaterial* Material)
 {
 	Material->BlendMode = BLEND_Masked;
 	Material->SetShadingModel(MSM_Unlit);
-	Material->TwoSided = true;
+	Material->TwoSided = false;   // a card's back would show its sprite mirrored through what is cut out in front
 	UMaterialExpression* Art = ArtTexture(Material);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("RGB"), MP_EmissiveColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("A"), MP_OpacityMask);

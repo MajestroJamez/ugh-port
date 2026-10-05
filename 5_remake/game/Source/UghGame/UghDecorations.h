@@ -5,6 +5,7 @@
 #include "UghShapes.h"
 
 class FUghRockField;
+struct FUghPadSign;
 struct ugh_logic;
 
 /** A decoration of a level's diorama, on the rock behind the slab of the play. */
@@ -56,7 +57,8 @@ struct FUghDecoration
  * - nothing taller than GroundCover nearer than FigureReach (the copters' bodies and the enemies reach that deep),
  * - nothing taller than Middle, and no liana, nearer than SweepReach (a copter's rotor and the flyer's wings),
  * - where a copter lands on a pad nothing nearer than FigureReach where its body is (PadBody), than SweepReach where
- *   its rotor sweeps (PadRotor).
+ *   its rotor sweeps (PadRotor),
+ * - nothing in front of a pad's board (UghPadSigns: nothing nearer than its Back where it stands).
  *
  * The same level always gets the same ones (its level_id seeds the choice).
  */
@@ -90,7 +92,8 @@ namespace UghDecorations
 
 	/**
 	 * The decorations of the level being played (its rock `Field`, level `LevelId`, the water's surface at the start at
-	 * `WaterRow`); none before a level.
+	 * `WaterRow`, the pads' boards `Signs`); none before a level.
 	 */
-	TArray<FUghDecoration> Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId, int32 WaterRow);
+	TArray<FUghDecoration> Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId, int32 WaterRow,
+		const TArray<FUghPadSign>& Signs);
 }

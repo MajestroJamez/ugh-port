@@ -136,6 +136,15 @@ bool nameSprite(const data::GameData& data, int sprite, SpriteName& out) {
         out = {kind->name, 0, 1};
         return true;
     }
+    if (sprite >= ids.firstDestinationBubble && sprite <= ids.lastDestinationBubble) {
+        out = {"destinationBubble", sprite - ids.firstDestinationBubble,
+               ids.lastDestinationBubble - ids.firstDestinationBubble + 1};
+        return true;
+    }
+    if (sprite == ids.impatientBubble) {
+        out = {"impatientBubble", 0, 1};
+        return true;
+    }
     return false;
 }
 

@@ -9,6 +9,7 @@
 #include "UghGround.h"
 #include "UghJson.h"
 #include "UghLevelArt.h"
+#include "UghPadSigns.h"
 #include "UghRockDressing.h"
 #include "UghRockField.h"
 #include "UghSimulation.h"
@@ -55,7 +56,8 @@ bool FUghDressingTest::RunTest(const FString& Parameters)
 			Field.Build(Logic, Art.Draw(View.level_id, Sprites), Art.Doors(View.level_id));
 			const FUghGround Ground(Logic, Field);
 			const TArray<FUghDecoration> Decorations =
-				UghDecorations::Plan(Logic, Field, View.level_id, View.water_level / UghShapes::Subpixels);
+				UghDecorations::Plan(Logic, Field, View.level_id, View.water_level / UghShapes::Subpixels,
+					UghPadSigns::Plan(Logic, Ground, Art.Signs(View.level_id)));
 			const TArray<FUghRockPiece> Pieces = UghRockDressing::Plan(Logic, Field, View.level_id, Decorations);
 			TestTrue(Name + TEXT(": the same pieces every time"),
 				Pieces == UghRockDressing::Plan(Logic, Field, View.level_id, Decorations));

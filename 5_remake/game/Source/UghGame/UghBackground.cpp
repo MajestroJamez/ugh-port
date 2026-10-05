@@ -10,7 +10,6 @@
 #include "UghMaterials.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
-#include "UghSprites.h"
 #include "UghTexture.h"
 
 namespace
@@ -155,8 +154,7 @@ bool AUghBackground::SetImportedLayer(UMaterialInstanceDynamic* Cliff, int32 Lay
 	return true;
 }
 
-void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, const TArray<FUghArtTile>& Signs,
-	const FUghSprites& Sprites)
+void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art)
 {
 	if (Rock)
 	{
@@ -164,7 +162,6 @@ void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, 
 		Rock = nullptr;
 	}
 	UStaticMesh* RockMesh = Mesh.ToStaticMesh(this);
-	ShowSigns(RockMesh && bCliff ? Signs : TArray<FUghArtTile>(), Sprites);   // the drawing on its own shows them
 	if (!RockMesh)
 	{
 		return;
@@ -180,30 +177,6 @@ void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, 
 	Rock->SetupAttachment(RootComponent);
 	Rock->RegisterComponent();
 	AddInstanceComponent(Rock);
-}
-
-void AUghBackground::ShowSigns(const TArray<FUghArtTile>& Signs, const FUghSprites& Sprites)
-{
-	for (int32 I = 0; I < FMath::Max(Signs.Num(), SignCards.Num()); ++I)
-	{
-		if (I >= Signs.Num())
-		{
-			SignCards[I]->SetVisibility(false);
-			continue;
-		}
-		if (I >= SignCards.Num())
-		{
-			SignCards.Add(UghShapes::AddCard(this));
-		}
-		const FUghArtTile& Sign = Signs[I];
-		const FIntPoint Size = Sprites.Size(Sign.Sprite);
-		TObjectPtr<UTexture2D>& Texture = SignTextures.FindOrAdd(Sign.Sprite);
-		if (!Texture)
-		{
-			Texture = UghTexture::Create(this, Size.X, Size.Y, Sprites.Pixels(Sign.Sprite), true);
-		}
-		UghShapes::ShowCard(SignCards[I], Texture, Sign.At.X, Sign.At.Y, Size.X, Size.Y, SignDepth);
-	}
 }
 
 void AUghBackground::SetWater(double Surface)

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ugh_logic.h"
+#include "UghBubbles.h"
 #include "UghFigureModels.h"
 #include "UghFigures.generated.h"
 
@@ -16,8 +17,8 @@ class UTexture2D;
  * The figures of the level besides the copters (AUghCopters) in the slab of the play: the passengers, the enemies and
  * the bonus items as the models of the Blender scripts doing what their sprites say (FUghFigureModels,
  * FUghFigureActions), plasticine shapes where a model is not imported; a passenger's speech bubble is a card with
- * the original's sprite (it shows the pad it wants to go to). Drawn between the views of two steps of the logic
- * (UghBetween). The raindrops are AUghRain's.
+ * its sharp picture (UghBubbles: the pad it wants to go to, a question). Drawn between the views of two steps of the
+ * logic (UghBetween). The raindrops are AUghRain's.
  */
 UCLASS()
 class AUghFigures : public AActor
@@ -34,21 +35,23 @@ public:
 	 */
 	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
 		const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& ClayRiders);
+	/** Learns what the speech bubbles among the `SpriteCount` sprites of `Logic`'s data show (UghBubbles::Look). */
+	void LoadBubbles(const ugh_logic* Logic, int32 SpriteCount);
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	/** A speech bubble to show: its sprite, its top left corner (pixels). */
+	/** A speech bubble to show: what it shows, where it is. */
 	struct FBubble
 	{
-		int32 Sprite;
-		FVector2D At;
+		FUghBubbleLook Look;
+		FUghBubblePlace Place;
 	};
 
 	void ShowEntities(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
 		const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& Riders);
-	void ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites& Sprites);
+	void ShowBubbles(const TArray<FBubble>& Bubbles);
 	void Clear();
 
 	UPROPERTY() FUghFigureModels Models;
@@ -56,5 +59,6 @@ private:
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Enemies;
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> BonusItems;
 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BubbleCards;   // made as many as needed, hidden when unused
-	UPROPERTY() TMap<int32, TObjectPtr<UTexture2D>> SpriteTextures;
+	UPROPERTY() TMap<int32, TObjectPtr<UTexture2D>> BubbleTextures;   // by the key of their look and side
+	TArray<TOptional<FUghBubbleLook>> BubbleLooks;   // by sprite (LoadBubbles)
 };

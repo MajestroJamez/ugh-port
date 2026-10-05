@@ -2,6 +2,7 @@
 
 #include "UghCavePortals.h"
 #include "UghGround.h"
+#include "UghPadSigns.h"
 #include "ugh_logic.h"
 
 namespace
@@ -74,12 +75,12 @@ namespace
 	}
 }
 
-FUghPlacer::FUghPlacer(const FUghGround& InGround, int32 InWaterRow)
-	: Ground(InGround), WaterRow(InWaterRow), Pads(Landings(InGround.GetLogic()))
+FUghPlacer::FUghPlacer(const FUghGround& InGround, int32 InWaterRow, const TArray<FUghPadSign>& Signs)
+	: Ground(InGround), WaterRow(InWaterRow), Pads(Landings(InGround.GetLogic(), Signs))
 {
 }
 
-TArray<FUghPlacer::FLanding> FUghPlacer::Landings(const ugh_logic* Logic)
+TArray<FUghPlacer::FLanding> FUghPlacer::Landings(const ugh_logic* Logic, const TArray<FUghPadSign>& Signs)
 {
 	TArray<FLanding> Landings;
 	for (int32 Index = 0; Index < ugh_logic_pad_count(Logic); ++Index)
@@ -93,6 +94,11 @@ TArray<FUghPlacer::FLanding> FUghPlacer::Landings(const ugh_logic* Logic)
 					Room.Front });
 			}
 		}
+	}
+	for (const FUghPadSign& Sign : Signs)
+	{
+		const FBox2D Box = Sign.Box();
+		Landings.Add({ Box.Min.X, Box.Max.X, Box.Min.Y, Box.Max.Y, UghPadSigns::Back });
 	}
 	return Landings;
 }
