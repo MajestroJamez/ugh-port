@@ -7,6 +7,7 @@
 #include "UghKeyboard.h"
 #include "UghMenu.h"
 #include "UghPasswords.h"
+#include "UghBursts.h"
 #include "UghShapes.h"
 
 namespace
@@ -72,6 +73,33 @@ bool FUghShot::Configure()
 		IntroAt = Intro;
 		Suffix += FString::Printf(TEXT("-intro%g"), Intro);
 	}
+	FString EffectList;
+	if (FParse::Value(CommandLine, TEXT("-UghShotEffect="), EffectList, false))
+	{
+		EffectList.ParseIntoArray(Effects, TEXT(","));
+		if (Effects == TArray<FString>{ TEXT("all") })
+		{
+			Effects.Reset();
+			for (int32 Burst = 0; Burst < int32(EUghBurst::Count); ++Burst)
+			{
+				Effects.Add(UghBursts::Get(EUghBurst(Burst)).Name);
+			}
+		}
+		Effects.RemoveAll([](const FString& Name)
+		{
+			if (UghBursts::Find(Name))
+			{
+				return false;
+			}
+			UE_LOG(LogTemp, Error, TEXT("UGH shot: no burst %s (UghBursts)"), *Name);
+			return true;
+		});
+	}
+	double Age = 0;
+	if (FParse::Value(CommandLine, TEXT("-UghShotEffectAge="), Age))
+	{
+		EffectAge = Age;
+	}
 	FString List = TEXT("1p:1");
 	FParse::Value(CommandLine, TEXT("-UghShotLevels="), List, false);
 	if (!AddTargets(List))
@@ -104,7 +132,10 @@ bool FUghShot::AddTargets(const FString& List)
 		}
 		for (int32 Level = From; Level <= To; ++Level)
 		{
-			Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1 });
+			for (int32 Effect = 0; Effect < FMath::Max(1, Effects.Num()); ++Effect)
+			{
+				Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1, Effects.IsEmpty() ? FString() : Effects[Effect] });
+			}
 		}
 	}
 	return !Targets.IsEmpty();
@@ -184,7 +215,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		}
 		UE_LOG(LogTemp, Display, TEXT("UGH shot: the flight at %.2f s"), Intro.GetTime());
 		bShotTaken = true;
-		return TakeShot(TargetName(Target.Players, Target.Level) + Suffix);
+		return TakeShot(NameOf(Target));
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION)
 	{
@@ -210,7 +241,13 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	UE_LOG(LogTemp, Display, TEXT("UGH shot: level_id %d, copter %d,%d, %.0f fps"), View.level_id, View.copters[0].x,
 		View.copters[0].y, Frames / PhaseTime);
 	bShotTaken = true;
-	return TakeShot(TargetName(Target.Players, Target.Level) + Suffix);
+	return TakeShot(NameOf(Target));
+}
+
+FString FUghShot::NameOf(const FTarget& Target) const
+{
+	const FString Effect = Target.Effect.IsEmpty() ? FString() : TEXT("-") + Target.Effect;
+	return TargetName(Target.Players, Target.Level) + Suffix + Effect;
 }
 
 FUghShot::EAction FUghShot::TakeShot(const FString& Name)
@@ -249,7 +286,8 @@ void FUghShot::Dress(ugh_logic_view& View, const ugh_logic* Logic)
 	}
 }
 
-TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View, const TOptional<FVector2D>& Looked) const
+TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View, const TOptional<FVector2D>& Looked,
+	double Around) const
 {
 	const bool bCopters = bCloseUp && View.copter_count > 0;
 	if (View.phase != UGH_LOGIC_PHASE_PLAY || (!Frame && !bCopters && !Looked))
@@ -260,7 +298,7 @@ TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View, const TOptional<
 	{
 		// around it, a little more room above (its flame, its smoke)
 		return Frame ? Frame->ShiftBy(*Looked)
-			: FBox2D(*Looked - LookAround * FVector2D(1, 1.2), *Looked + LookAround * FVector2D(1, 0.8));
+			: FBox2D(*Looked - Around * FVector2D(1, 1.2), *Looked + Around * FVector2D(1, 0.8));
 	}
 	if (Frame)
 	{

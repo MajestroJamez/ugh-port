@@ -14,6 +14,8 @@
 #include "UghCliffDressing.h"
 #include "UghCopters.h"
 #include "UghDecorations.h"
+#include "UghEffects.h"
+#include "UghEvents.h"
 #include "UghFalls.h"
 #include "UghFigures.h"
 #include "UghGround.h"
@@ -86,6 +88,7 @@ void AUghGameMode::StartPlay()
 	}
 	FigureActions.Load(Simulation.GetLogic(), Sprites.Count());
 	Figures->LoadBubbles(Simulation.GetLogic(), Sprites.Count());
+	Effects->GetPlayer().Load(Simulation.GetLogic(), &Sprites, &FigureActions);
 	Speaker->GetPlayer().Load(Assets / TEXT("sound"));
 	if (!bShooting)
 	{
@@ -97,7 +100,8 @@ void AUghGameMode::StartPlay()
 
 /**
  * The stage (light, air, camera), the level's background and the pads' boards, the water, the springs' streams, the
- * rain, the copters, the figures, the campfires, the torches, the decorations, the rock dressing, the speaker.
+ * rain, the copters, the figures, the bursts of the events, the campfires, the torches, the decorations, the rock
+ * dressing, the speaker.
  */
 void AUghGameMode::BuildStage()
 {
@@ -111,6 +115,7 @@ void AUghGameMode::BuildStage()
 	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
 	Figures = World->SpawnActor<AUghFigures>();
+	Effects = World->SpawnActor<AUghEffects>();
 	Campfire = World->SpawnActor<AUghCampfire>();
 	Torches = World->SpawnActor<AUghTorches>();
 	Scenery = World->SpawnActor<AUghScenery>();
@@ -129,7 +134,7 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	if (!bInMenu)
 	{
 		Simulation.Advance(DeltaSeconds);
-		PlaySounds();
+		PlayEvents();
 		if (Simulation.IsOver())
 		{
 			OpenMenu();
@@ -173,6 +178,11 @@ void AUghGameMode::ShowFrame(double Seconds)
 	TArray<FTransform> ClayRiders;
 	Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
 	Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
+	if (bShooting)
+	{
+		HoldShotEffect(Current);
+	}
+	Effects->Show(Previous, Current, Simulation.Alpha(), Seconds);
 
 	// the fade of the play; black around it (the HUD writes the captions) but after a level's flight; dimmed behind the
 	// menu
@@ -193,7 +203,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 			Controller->PlayerCameraManager->SetManualCameraFade(1.f - float(Shown), FLinearColor::Black, false);
 		}
 	}
-	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook) : TOptional<FBox2D>();
+	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook, ShotAround) : TOptional<FBox2D>();
 	const FUghCameraPose Game = AUghStage::Fit(CloseUp.Get(UghShapes::Screen()), AUghStage::ViewportAspect());
 	Stage->SetCamera(Intro.IsFlying() ? Intro.Pose(Game, UghShapes::ToWorld(0, Surface, 0).Z) : Game);
 }
@@ -258,6 +268,7 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 		return Shot.GetLook() == UghDecorations::Name(Decoration.Kind);
 	});
 	ShotLook = Looked ? FVector2D(Looked->X, Looked->Y - Looked->Height / 2) : TOptional<FVector2D>();
+	ShotAround = FUghShot::LookAround;
 	Campfire->Place(Decorations, View.wind, Mood.FireLight);
 	Torches->Place(Decorations, View.wind, Mood.FireLight);
 	Scenery->Show(Decorations);
@@ -354,6 +365,7 @@ void AUghGameMode::OpenMenu()
 	Speaker->GetPlayer().OnGameEnd(Simulation.GetResult());
 	bInMenu = true;
 	Intro.Stop();
+	Effects->Clear();
 	bIntroScene = false;
 	Previewed = Menu.GetChoice();
 	Simulation.Preview(Previewed);
@@ -382,12 +394,22 @@ int32 AUghGameMode::GetVolumePercent() const
 	return Speaker ? Speaker->GetPlayer().GetVolumePercent() : 0;
 }
 
-void AUghGameMode::PlaySounds()
+void AUghGameMode::PlayEvents()
 {
-	FUghSoundPlayer& Player = Speaker->GetPlayer();
-	for (const ugh_logic_event& Event : Simulation.GetEvents())
+	UghEvents::Play(Simulation.GetEvents(), Simulation.GetPrevious(), Simulation.GetCurrent(), Speaker->GetPlayer(),
+		Effects->GetPlayer());
+}
+
+void AUghGameMode::HoldShotEffect(const ugh_logic_view& View)
+{
+	const TOptional<EUghBurst> Burst = UghBursts::Find(Shot.GetEffect());
+	if (!Burst || View.phase != UGH_LOGIC_PHASE_PLAY || Effects->IsHolding())
 	{
-		Player.OnEvent(Event);
+		return;
 	}
-	Player.OnView(Simulation.GetCurrent());
+	const FVector2D Place = Effects->GetPlayer().ShotPlace(*Burst, View);
+	const UghBursts::FBurst& Shown = UghBursts::Get(*Burst);
+	Effects->Hold(*Burst, Place, View, Shot.GetEffectAge().Get(Shown.ShotAge));
+	ShotLook = Place;
+	ShotAround = Shown.Extent;
 }

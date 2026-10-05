@@ -11,9 +11,12 @@
 # pixels (a look at the figures; with -CloseUp from the first copter's corner: a look into its cabin, with -Look from
 # the middle of the campfire or torch; the name ends in -frame<left>_<top>), -Intro <seconds>: the flight to the stone
 # at the start of the level that many seconds into it instead (4.5 and later: its end, the game's camera; the name
-# ends in -intro<seconds>, e.g. -intro0.3). All levels at once: levels.ps1.
+# ends in -intro<seconds>, e.g. -intro0.3), -Effect <bursts>: a burst of the events (names of UghBursts.cpp separated
+# by commas, or all) held by the first copter, framed around it, one shot each (the name ends in -<burst>, e.g.
+# 1p-01-explosion), -EffectAge <seconds> into it (else its own moment). All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
-    [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [int]$TimeoutSeconds = 300)
+    [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
+    [string]$EffectAge = '', [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -56,10 +59,19 @@ if ($CloseUp) { $arguments += ' -UghShotCloseUp' }
 if ($Look) { $arguments += " -UghShotLook=$Look" }
 if ($Frame) { $arguments += " -UghShotFrame=$Frame" }
 if ($Intro) { $arguments += " -UghShotIntro=$Intro" }
+if ($Effect) { $arguments += " -UghShotEffect=$Effect" }
+if ($EffectAge) { $arguments += " -UghShotEffectAge=$EffectAge" }
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
-if ($code -ne 0 -or -not (Test-Path $shot)) {
-    Write-Host "FAILED: exit code $code (-1: no end in $TimeoutSeconds s), screenshot: $(Test-Path $shot), see $log" -ForegroundColor Red
+# the shots the game says it took (one a burst), else the one
+$shots = @($shot)
+if ($Effect -and (Test-Path $log)) {
+    $shots = @(Select-String -Path $log -Pattern 'UGH shot (.+\.png)$' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+}
+$wanted = if ($Effect -eq 'all') { 1 } elseif ($Effect) { $Effect.Split(',').Count } else { 1 }
+$missing = @($shots | Where-Object { -not (Test-Path $_) })
+if ($code -ne 0 -or $shots.Count -lt $wanted -or $missing.Count -gt 0) {
+    Write-Host "FAILED: exit code $code (-1: no end in $TimeoutSeconds s), $($shots.Count) screenshots, missing: $missing, see $log" -ForegroundColor Red
     exit 1
 }
-Write-Host "OK: $shot" -ForegroundColor Green
+foreach ($each in $shots) { Write-Host "OK: $each" -ForegroundColor Green }
 exit 0

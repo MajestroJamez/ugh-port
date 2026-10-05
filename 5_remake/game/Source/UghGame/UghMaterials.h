@@ -49,6 +49,23 @@ namespace UghMaterials
 	inline const TCHAR* BlowParameter = TEXT("Blow");
 	inline const TCHAR* DirectionParameter = TEXT("Direction");
 	inline const TCHAR* ReachParameter = TEXT("Reach");
+	/** The bursts of the events (UghBursts): their motion and look, as UghBurst.hlsl and UghBurstLook.hlsl name them. */
+	inline const TCHAR* ElapsedParameter = TEXT("Elapsed");
+	inline const TCHAR* LifeParameter = TEXT("Life");
+	inline const TCHAR* StaggerParameter = TEXT("Stagger");
+	inline const TCHAR* RepeatParameter = TEXT("Repeat");
+	inline const TCHAR* LiftParameter = TEXT("Lift");
+	inline const TCHAR* GravityParameter = TEXT("Gravity");
+	inline const TCHAR* DragParameter = TEXT("Drag");
+	inline const TCHAR* GrowParameter = TEXT("Grow");
+	inline const TCHAR* StretchParameter = TEXT("Stretch");
+	inline const TCHAR* ModeParameter = TEXT("Mode");
+	inline const TCHAR* FlutterParameter = TEXT("Flutter");
+	inline const TCHAR* SpinParameter = TEXT("Spin");
+	inline const TCHAR* BoxParameter = TEXT("Box");
+	inline const TCHAR* ScaleParameter = TEXT("Scale");
+	inline const TCHAR* FloorParameter = TEXT("Floor");
+	inline const TCHAR* ShapeParameter = TEXT("Shape");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -153,6 +170,22 @@ namespace UghMaterials
 	 * Color tints that light) - its BaseColor and Normal the imported model's (FUghFigureModels).
 	 */
 	inline const TCHAR* Membrane = TEXT("/Game/Generated/M_UghMembrane");
+	/**
+	 * The bursts of the events of the logic (AUghEffects, UghBursts): a mesh of tiny quads the material moves, each a
+	 * particle of its own (the second UV its seed). Elapsed (seconds since the burst began; each particle starts up
+	 * to Stagger later and lives about Life, again and again with Repeat 1), thrown from within Box (a vector: half its
+	 * size in units across, in depth, up) at up to Speed along Direction (Spread 0 straight, 1 a hemisphere, 2 every
+	 * way; its upward part times Lift), slowed by Drag (1/s), falling with Gravity (cm/s^2, below 0 rising), rocking
+	 * Flutter units aside, never below Floor (the world's z); Size growing Grow times, Stretch along its way; Mode 0
+	 * turned to the camera (slowly turning by Spin), 1 lying flat, 2 tumbling (Spin rad/s); Scale scales it all. Its
+	 * look is Shape (UghBursts::EShape), Color; nothing under WaterLevel.
+	 * The shader code is Source/UghEditor/Shaders/UghBurst.hlsl, UghBurstLook.hlsl. Three blends:
+	 * Burst translucent and lit (dust, smoke, spray: Opacity), Bits cut out, lit, tumbling with their light (debris,
+	 * leaves, feathers, shells: Roughness), Glint additive light (fire, sparks, glints: Intensity).
+	 */
+	inline const TCHAR* Burst = TEXT("/Game/Generated/M_UghBurst");
+	inline const TCHAR* Bits = TEXT("/Game/Generated/M_UghBits");
+	inline const TCHAR* Glint = TEXT("/Game/Generated/M_UghGlint");
 	/**
 	 * A picture on a card (unlit, transparent cut out, its front only: UghShapes::ShowCard), the original's sprites and
 	 * the speech bubbles. Texture parameter Art.

@@ -46,4 +46,8 @@ private:
 	/** The figures (UghMakeFigures.cpp): the blower's snort of dust, the flyer's wings. */
 	static bool MakePuff(UMaterial* Material);
 	static bool MakeMembrane(UMaterial* Material);
+	/** The bursts of the events (UghMakeEffects.cpp): dust, smoke and spray; tumbling bits; fire, sparks and glints. */
+	static bool MakeBurst(UMaterial* Material);
+	static bool MakeBits(UMaterial* Material);
+	static bool MakeGlint(UMaterial* Material);
 };

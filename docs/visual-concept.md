@@ -521,3 +521,24 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   tmavší = červenější) a poloha (pár cm: stíny a odlesky na stěnách tančí), měkké stíny (poloměr zdroje), Lumen barví
   skálu teple; jas podle nálady (`FUghMood::FireLight`: den 1, večer 1,05, soumrak 1,15, noc 1,3, bouřka 1,1), oheň
   9 cd, louč 0,8 cd. Pod vodou ohně i louče zhasnou.
+
+## Efekty událostí (krok 20)
+
+- Každá událost logiky má efekt (`FUghEffectPlayer::Cues`, tabulka v `5_remake/game/README.md`, „The events seen“)
+  a zvuk i efekt jdou ze stejné události: `UghEvents::Play` dá každou událost v jedné smyčce přehrávači zvuků
+  i efektům. Co událost nemá, se čte z pohledu: přistání vrtulníku na plošině (prach podle rychlosti klesání,
+  usednutí při vznášení ne), dopad bonusu na zem (trocha prachu), havárie do vody (k výbuchu šplouchnutí).
+- Niagara ne (binární assety z editoru): efekty jsou jako déšť kroku 19 sítě drobných čtverečků, které hýbe
+  a kreslí materiál na GPU (`UghBurst.hlsl`, `UghBurstLook.hlsl`): částice vyletí z krabice do kužele, brzdí ji
+  vzduch, padá (nebo stoupá), kolébá se, převrací se a leží na zemi pod sebou; pod hladinou zmizí. Tři materiály:
+  `M_UghBurst` (průsvitný, osvětlený: prach, kouř, tříšť, kroužky na vodě), `M_UghBits` (vyříznutý, osvětlený,
+  převrací se i se světlem: třísky, listí, peří, mušle, okvětní lístky), `M_UghGlint` (světlo: oheň výbuchu, jiskry,
+  třpyt, kapky). Za snímek se nastaví jen čas; od každého efektu nejvýš 3 naráz (nejstarší ustoupí), dvě světla
+  záblesků bez stínů, body za zaplacení a omráčení stoupají jako text (HUD).
+- Efekty (`UghBursts.cpp`): šplouchnutí, příboj u kamene při popisku (vidět z letu), výbuch (ohnivé jazyky,
+  kouř, třísky, jiskry, záblesk), prach, mušlové peníze, třpyt (u bonusu barva podle druhu), peří, proud vzduchu pod
+  křídly letce (smyčka do konce mávání), poryv foukače (listí, šmouhy větru, prach), dopad omráčeného (prach,
+  kamínky), listí ze stromu, oslava (okvětní lístky, třpyt, záblesk). Krátké (nejvýš 6 s), prach a kouř kryjí
+  nejvýš 0,7.
+- `shot.ps1 -Effect all` (`-UghShotEffect`): každý efekt zastavený ve svém okamžiku u prvního vrtulníku (vedle něj
+  ve vzduchu, na zemi nebo na vodě pod ním), detailní snímek `1p-01-<efekt>.png`.

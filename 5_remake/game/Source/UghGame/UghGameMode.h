@@ -19,6 +19,7 @@ class AUghCampfire;
 class AUghTorches;
 class AUghCliffDressing;
 class AUghCopters;
+class AUghEffects;
 class AUghFalls;
 class AUghFigures;
 class AUghRain;
@@ -33,9 +34,9 @@ class AUghWater;
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
  * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground, AUghSeaStack,
  * AUghSigns, AUghWater, AUghFalls, AUghRain, AUghCopters, AUghFigures, AUghCampfire, AUghTorches, AUghScenery,
- * AUghCliffDressing, the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu. Each level has its
- * mood (UghMood); its first caption shows the camera flying over the sea to the stone the level is carved into
- * (FUghIntro).
+ * AUghCliffDressing, the HUD), heard (AUghSpeaker) and its events seen as bursts (AUghEffects); the end of a game goes
+ * back to the menu. Each level has its mood (UghMood); its first caption shows the camera flying over the sea to the
+ * stone the level is carved into (FUghIntro).
  * Behind the menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of
  * the frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
  *
@@ -59,6 +60,8 @@ public:
 	static const TCHAR* KeysHelp() { return TEXT("U upscaler, G frame generation, PgUp/PgDn volume"); }
 
 	const FUghSimulation& GetSimulation() const { return Simulation; }
+	/** The bursts of the events (the HUD draws their scores). */
+	const AUghEffects* GetEffects() const { return Effects; }
 	const FUghUpscaler& GetUpscaler() const { return Upscaler; }
 	const FUghPasswords& GetPasswords() const { return Passwords; }
 	/** The volume of the sounds in percent. */
@@ -89,8 +92,10 @@ private:
 	void HandleMenuKey(const FKey& Key);
 	/** Page Up and Page Down: the volume; true when it was one of them. */
 	bool HandleVolumeKey(const FKey& Key, EInputEvent Event);
-	/** The sounds of the logic's events and of the frame's view. */
-	void PlaySounds();
+	/** The sounds and the effects of the logic's events and of the frame's view (UghEvents). */
+	void PlayEvents();
+	/** A shot of a burst (-UghShotEffect): held by the first copter in the play, framed. */
+	void HoldShotEffect(const ugh_logic_view& View);
 	/** Back to the menu after a game: how it ended, the level of the menu's choice behind it. */
 	void OpenMenu();
 	void Quit();
@@ -104,7 +109,8 @@ private:
 	FUghUpscaler Upscaler;
 	FUghShot Shot;
 	bool bShooting = false;   // -UghShot
-	TOptional<FVector2D> ShotLook;   // the middle of what the shot looks at (FUghShot::GetLook), pixels
+	TOptional<FVector2D> ShotLook;   // the middle of what the shot looks at (FUghShot::GetLook, GetEffect), pixels
+	double ShotAround = FUghShot::LookAround;   // and how far around it
 	bool bInMenu = true;
 	FUghGameChoice Previewed;   // whose level the diorama shows behind the menu
 	FKey StartKey;              // the key that started the game: its release is not a key of the game
@@ -124,6 +130,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghRain> Rain;
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
+	UPROPERTY() TObjectPtr<AUghEffects> Effects;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;
 	UPROPERTY() TObjectPtr<AUghTorches> Torches;
 	UPROPERTY() TObjectPtr<AUghScenery> Scenery;

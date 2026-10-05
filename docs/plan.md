@@ -1214,3 +1214,24 @@ Jan 2026-10-05: strom s obličejem, kamenný cestující a nepřátelé jsou je�
   (`play.ps1`) - hlavně tvář stromu (dosud trochu kreslená), barvu kůže triceratopsu (`walker_triceratops.py`
   `skin_graph`), sílu prachu z nozder (`UghMakeFigures.cpp`), zda T-rexovi stačí zavřená tlama (v koutku jsou vidět
   zuby); licence triceratopse ze Sketchfabu neznám (zapsána jen jako „stažený Janem“). Další: **krok 20**.
+- 2026-10-05: krok 20 hotový - efekty událostí (`docs/visual-concept.md`, tabulka událost -> efekt v
+  `5_remake/game/README.md` „The events seen“). Každá událost logiky má efekt (`FUghEffectPlayer::Cues`): popisek
+  příboj u kamene (vidět z letu), havárie výbuch (ohnivé jazyky, kouř, třísky, jiskry, záblesk; do vody i šplouchnutí),
+  dokončený level oslava nad vrtulníky (okvětní lístky, třpyt), nástup a puštění cestujícího prach, zaplacení mušlové
+  peníze s třpytem a stoupajícími body (HUD), rychlé doručení a sebraný bonus třpyt (barva podle druhu bonusu,
+  záblesk), cestující ve vodě šplouchnutí (kapky, tříšť, kroužky), křik letce peří, mávání proud vzduchu s prachem
+  a chmýřím pod křídly od startu do stopu (smyčka jako zvuk), foukač poryv (listí, šmouhy větru, prach), omráčení
+  dopad (prach, kamínky; letec peří) s body, strom padající listí. Bez události z pohledu: přistání na plošině prach
+  podle rychlosti klesání (usednutí při vznášení ne), dopad bonusu trocha prachu. `UghEvents::Play` dá každou událost
+  v jedné smyčce zvukům i efektům (zvuk i efekt ze stejné události). Niagara ne (binární assety): jako déšť kroku 19
+  sítě čtverečků, které hýbe a kreslí GPU - `M_UghBurst` (průsvitný osvětlený), `M_UghBits` (vyříznutý, převrací se
+  i se světlem), `M_UghGlint` (světlo), `UghBurst.hlsl`, `UghBurstLook.hlsl`, `UghMakeEffects.cpp`; recepty
+  `UghBursts.cpp`, zobrazení `AUghEffects` (od efektu nejvýš 3 naráz, za snímek jen čas, 2 světla záblesků bez
+  stínů). Efekty jen dekorace, logika beze změny. Testy `Ugh.Effects.Cues` (každá událost má efekt, smyčka zvuku je
+  smyčka efektu, efekty krátké, prach a kouř kryjí nejvýš 0,7), `Ugh.Effects.Events` (událost přes `UghEvents`
+  zahraje zvuk i efekt na správném místě, zmizelá entita tam, kde byla naposledy, havárie do vody), `Ugh.Effects.Landing`.
+  Snímky `shot.ps1 -Effect all` (`-UghShotEffect`, `-EffectAge`: efekt zastavený u prvního vrtulníku, detail):
+  `1p-01-<efekt>.png` pro všech 12 efektů. CTest logiky, `6_verification` (163) a 186 testů v UE zelené.
+  `levels.ps1 -Quick` a arch bez vad; fps ve stejném sezení před krokem medián 24 (nejpomalejší 14), po něm 23 (17),
+  tedy v šumu. Čeká na Jana: posoudit efekty ve hře (`play.ps1`) - hlavně výbuch, sílu prachu a poryvu foukače
+  (`UghBursts.cpp`), zda chce stoupající body (dočasně text v HUD, krok 21 ho předělá). Další: **krok 21**.

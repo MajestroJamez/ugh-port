@@ -4,6 +4,7 @@
 #include "Engine/Engine.h"
 #include "Engine/Font.h"
 #include "Engine/World.h"
+#include "UghEffects.h"
 #include "UghGameMode.h"
 #include "UghKeyboard.h"
 
@@ -21,6 +22,9 @@ namespace
 	/** The menu: where its rows start and how far apart they are (a part of the height). */
 	constexpr float MenuTop = 0.36f, MenuRowStep = 0.07f;
 	const FLinearColor Chosen = FLinearColor::Yellow, NotChosen = FLinearColor::White;
+	/** A score earned (AUghEffects::FPopup): its colour, how far it rises in its time (a part of the height). */
+	const FLinearColor PopupColor(1.f, 0.85f, 0.4f);
+	constexpr float PopupRise = 0.06f;
 }
 
 void AUghHud::DrawHUD()
@@ -41,6 +45,7 @@ void AUghHud::DrawHUD()
 		DrawMenu(*Mode);
 		return;
 	}
+	DrawPopups(*Mode);
 	const ugh_logic_view& View = Mode->GetSimulation().GetCurrent();
 	DrawRect(StatusBand, 0, 0, Canvas->ClipX, StatusBandHeight);
 	DrawText(FString::Printf(TEXT("Level %d   Lives %d   Score %u   x%d   Energy %d %%"), View.level + 1, View.lives,
@@ -59,6 +64,28 @@ void AUghHud::DrawHUD()
 		DrawCentred(FString::Printf(TEXT("Level %d"), View.level + 1), Canvas->ClipY * 0.4f, FLinearColor::Yellow,
 			2 * TextScale);
 		DrawCentred(TEXT("Press a key"), Canvas->ClipY * 0.55f, FLinearColor::White, TextScale);
+	}
+}
+
+/** The scores earned rising from where they were earned, fading. */
+void AUghHud::DrawPopups(const AUghGameMode& Mode)
+{
+	for (const AUghEffects::FPopup& Popup : Mode.GetEffects()->GetPopups())
+	{
+		const FVector At = Project(Popup.Where);
+		const float Part = float(Popup.Age / AUghEffects::PopupSeconds);
+		if (At.Z <= 0)
+		{
+			continue;   // behind the camera
+		}
+		const FString Text = FString::Printf(TEXT("+%d"), Popup.Points);
+		float Width = 0, Height = 0;
+		GetTextSize(Text, Width, Height, GEngine->GetLargeFont(), TextScale);
+		const float X = At.X - Width / 2, Y = At.Y - Height - PopupRise * Canvas->ClipY * Part;
+		const float Shown = 1 - Part * Part;
+		DrawText(Text, TextShadow * FLinearColor(1, 1, 1, Shown), X + ShadowOffset, Y + ShadowOffset,
+			GEngine->GetLargeFont(), TextScale);
+		DrawText(Text, PopupColor * FLinearColor(1, 1, 1, Shown), X, Y, GEngine->GetLargeFont(), TextScale);
 	}
 }
 
