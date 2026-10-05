@@ -19,6 +19,7 @@
 #include "UghMaterials.h"
 #include "UghMood.h"
 #include "UghShapes.h"
+#include "UghWater.h"
 
 namespace
 {
@@ -29,8 +30,12 @@ namespace
 	 * cells start there); it scatters the light a little back towards the camera (the sun is behind it).
 	 */
 	constexpr float VolumetricStart = 4000.f, VolumetricDistance = 12000.f, VolumetricScattering = -0.15f;
-	/** The sky's dome: this far around the middle of the screen, units. */
-	constexpr double SkyRadius = 100000;
+	/**
+	 * The sky's dome: this far around the middle of the screen, units; the fog does not reach it (FogReach, the camera
+	 * never further than a few hundred metres from the middle), so that the sky shows above the haze of the open sea.
+	 */
+	constexpr double SkyRadius = 1000000, FogReach = 500000;
+	static_assert(UghWater::OpenSea + 50000 < FogReach && FogReach + 50000 < SkyRadius);
 
 	/** The camera's horizontal field of view and how much it looks down (degrees); room around the screen. */
 	constexpr float FieldOfView = 30.f, LookDown = 4.f;
@@ -85,6 +90,7 @@ AUghStage::AUghStage()
 	Fog->SetVolumetricFogStartDistance(VolumetricStart);
 	Fog->SetVolumetricFogDistance(VolumetricDistance);
 	Fog->SetVolumetricFogScatteringDistribution(VolumetricScattering);
+	Fog->SetFogCutoffDistance(FogReach);
 
 	Look = CreateDefaultSubobject<UPostProcessComponent>(TEXT("Look"));
 	Look->SetupAttachment(RootComponent);
@@ -93,9 +99,7 @@ AUghStage::AUghStage()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(RootComponent);
-	Camera->SetFieldOfView(FieldOfView);
 	Camera->SetConstraintAspectRatio(false);
-	Camera->SetRelativeRotation(FRotator(-LookDown, -90, 0));   // looking along -Y (UghShapes)
 }
 
 void AUghStage::BeginPlay()
@@ -121,14 +125,8 @@ void AUghStage::BeginPlay()
 	SetMood(UghMood::Of(0, 0), 0);
 }
 
-void AUghStage::FitCamera(const FBox2D& Pixels)
+FUghCameraPose AUghStage::Fit(const FBox2D& Pixels, double Aspect)
 {
-	FVector2D Viewport(16, 9);
-	if (GEngine && GEngine->GameViewport)
-	{
-		GEngine->GameViewport->GetViewportSize(Viewport);
-	}
-	const double Aspect = Viewport.Y > 0 ? Viewport.X / Viewport.Y : 16.0 / 9.0;
 	const double HalfTan = FMath::Tan(FMath::DegreesToRadians(FieldOfView / 2));
 	const double Width = Pixels.GetSize().X * UghShapes::UnitsPerPixel * ScreenMargin;
 	const double Height = Pixels.GetSize().Y * UghShapes::UnitsPerPixel * ScreenMargin;
@@ -136,7 +134,31 @@ void AUghStage::FitCamera(const FBox2D& Pixels)
 	// looking down at the middle from above it
 	const double Above = Distance * FMath::Tan(FMath::DegreesToRadians(LookDown)) / UghShapes::UnitsPerPixel;
 	const FVector2D Middle = Pixels.GetCenter();
-	Camera->SetWorldLocation(UghShapes::ToWorld(Middle.X, Middle.Y - Above, -Distance));
+	FUghCameraPose Pose;
+	Pose.Location = UghShapes::ToWorld(Middle.X, Middle.Y - Above, -Distance);
+	Pose.Rotation = FRotator(-LookDown, -90, 0);   // looking along -Y (UghShapes)
+	Pose.FieldOfView = FieldOfView;
+	return Pose;
+}
+
+double AUghStage::ViewportAspect()
+{
+	FVector2D Viewport(16, 9);
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(Viewport);
+	}
+	return Viewport.X > 0 && Viewport.Y > 0 ? Viewport.X / Viewport.Y : 16.0 / 9.0;
+}
+
+void AUghStage::SetCamera(const FUghCameraPose& Pose)
+{
+	Camera->SetWorldLocationAndRotation(Pose.Location, Pose.Rotation);
+	Camera->SetFieldOfView(Pose.FieldOfView);
+	Look->Settings.bOverride_MotionBlurAmount = Pose.MotionBlur >= 0;
+	Look->Settings.MotionBlurAmount = FMath::Max(Pose.MotionBlur, 0.f);
+	Look->Settings.bOverride_AutoExposureBias = Pose.ExposureBias != 0;
+	Look->Settings.AutoExposureBias = Pose.ExposureBias;
 }
 
 void AUghStage::SetMood(const FUghMood& Mood, int32 Wind)
@@ -155,6 +177,7 @@ void AUghStage::SetMood(const FUghMood& Mood, int32 Wind)
 	{
 		SkyMaterial->SetTextureParameterValue(UghMaterials::SkyParameter, Sky);
 		SkyMaterial->SetVectorParameterValue(UghMaterials::ColorParameter, Mood.SkyTint);
+		SkyMaterial->SetScalarParameterValue(UghMaterials::SkySeenParameter, Mood.SkySeen);
 	}
 	if (SkyDome)
 	{

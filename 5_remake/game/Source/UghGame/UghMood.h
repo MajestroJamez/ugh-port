@@ -32,6 +32,11 @@ struct FUghMood
 	float Exposure;
 	/** How bright the caustics under the water are. */
 	float Caustics;
+	/**
+	 * How bright the sky looks where it is seen (flying to the stone, FUghIntro): as bright as the light it gives (the
+	 * sky light), but at night (the night's picture is as bright as a day's); the sky light captures it as it is.
+	 */
+	float SkySeen;
 };
 
 namespace UghMood

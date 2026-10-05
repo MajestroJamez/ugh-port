@@ -1063,3 +1063,43 @@ dekorace na místě, kde je v masce pevná římsa).
   31), po něm 35 (29). Čeká na Jana: posoudit cedule a bubliny v okně (`play.ps1`); jestli má zobáček přece mířit
   k vrtulníku (originál to nedělá), stačí změnit `UghBubbles::Place`. Celý `levels.ps1` tento krok nespuštěn (nové
   pravidlo). Další: **krok 19e**.
+- 2026-10-05: krok 19e hotový - úvod levelu: let nad mořem ke kameni (`docs/visual-concept.md`). Celý dnešní útes je
+  vytesaný do čela velkého samostatného kamene v otevřeném moři (`FUghStackField`, `AUghSeaStack`): krasová věž asi
+  108 m široká, 52 m hluboká, 90 m nad hladinou, klenutý vrchol s džunglí ze vzorku Electric Dreams (palmy, keře,
+  rostliny, kapradiny, kameny; keře na římsách, břečťan z horních hran stěn; asi 4000 kusů přes `AUghScenery`), boky
+  s boulemi, žlábky od deště, vrstvami vápence s římsami a převisy, rozpukanými bloky a zářezem vln, pata se pod
+  vodou rozšiřuje; čelo kolem skály levelu rovné (rám 1 m před rovinou hry, dál vystupuje o 2,2 m: level sedí ve
+  výklenku). Skála levelu sedí v dutině kamene: otevřený okraj její mřížky i neviditelný rubáš stínů
+  (`AUghBackground::ShroudBoxes`) jsou v kameni. Pole na mřížce 0,6 m a surface nets (`UghSurfaceNets` je teď šablona
+  pro obě mřížky, `FUghRockMesh::Build` z bodů a čtyřúhelníků), materiál čela `M_UghCliff` (vrstvy skály 2,5krát
+  větší, z dálky se neopakují); kámen se vyrobí při prvním letu (1-1,5 s, 164 tisíc vrcholů, 331 tisíc trojúhelníků)
+  a mimo let je schovaný a odregistrovaný ze scény (stíny, ray tracing, Lumen: hře nic nestojí). Let (`FUghIntro`,
+  kód místo Sequenceru): při prvním popisku levelu (ne po havárii) 8 snímků v černé (render se usadí), 0,3 s
+  rozsvícení, 4,5 s z 260 m před kamerou hry 2,6 m nad vlnami po křivce Catmull-Rom s kličkou, polovinu času asi
+  90 m/s, pak brzdí do zastavení; náklon do zatáček (nejvýš 10°), houpání výšky, objektiv 72° -> 30°, pohled po
+  dráze a na level, menší rozmazání pohybem, venku expozice o 0,8 EV tmavší, ke konci zpět. Konec je přesně kamera
+  hry (`AUghStage::Fit` + `SetCamera`, `FUghCameraPose`; `ScreenMargin` beze změny). Klávesa zrychlí zbytek na 0,6 s
+  (vždy před začátkem hry: zhasnutí popisku a černá před hrou trvají 73 snímků logiky), jde do logiky jako dřív;
+  logika a její časování beze změny. Během letu, popisku, černé před hrou a roztmívání je scéna vidět (dřív černá),
+  popisek má stín; po havárii černý popisek jako dřív. `-UghNoIntro` nebo `FUghIntro::bFlies` let vypne. Moře
+  během letu otevřené 4 km kolem (`UghWater::Box(…, true)`), v `UghWater.hlsl` daleko od kamene (od 25 m; kamera hry
+  vidí jen 15 m před útes) vyšší vlny, bílé hřebínky, drsnější hladina, malé vlny s dálkou mizí, při pohledu skoro
+  vodorovně klidnější a voda bez dna už není černá. Obloha nálady: kopule 10 km, mlha jen do 5 km
+  (`FogCutoffDistance`), kamera ji vidí jasně jako světlo, které dává (`FUghMood::SkySeen`, v noci tmavá; `UghSky.hlsl`
+  pozná zachycení sky lightem a to nechává beze změny) - světlo hry se nemění. `shot.ps1 -Intro <s>`
+  (`-UghShotIntro`) uloží let v čase; prohlédnuté 1p-01 a 1p-03 (0,4 / 1,2 / 2,4 / 3,5 / 4,5 s: konec je snímek hry),
+  1p-05 soumrak, 1p-06 noc (z otvoru svítí ohně), 1p-43 bouřka, team-21. Autopilot `shot.ps1` / `levels.ps1` let
+  zrychlí první klávesou popisku. Nové testy `Ugh.Intro` (konec přesně kamera hry pro 16:9 a 16:10 a dvě výšky vody,
+  start daleko a nízko, nad vodou, aspoň 2 m od kamene, nikdy za kamerou hry, plynulý, náklon, měkké zastavení,
+  objektiv; hodiny: usazení, dlouhý snímek, zrychlení klávesou dřív než hra) a `Ugh.Stack` (okraj mřížky skály
+  a rubáš v kameni, z kamery hry nic z kamene ani džungle, rostliny na kameni, deterministické), `Ugh.Water.Level`
+  i s otevřeným mořem. CTest logiky, `6_verification` (163) a 182 testů v UE zelené. `levels.ps1 -Quick` (2,8 min)
+  a arch bez vad (snímky hry jako v 19d), medián 30 fps (nejpomalejší 13 při zahřátém GPU); A/B ve stejném sezení
+  s `-UghNoIntro` také medián 30 (notebook teď pomalejší než při 19d, 35). Offscreen běží let jen 8-15 fps, Lumen odrazy
+  moře potřebují pár snímků (v prvních desetinách sekundy je moře tmavší). Čeká na Jana: posoudit let v okně
+  (`play.ps1`) - rychlost a délku (`UghIntro.cpp`: `Waypoints`, `Cruise`, `Duration`), tvar a velikost kamene
+  (`UghStackField.cpp`), oblohu a expozici nálad venku (`SkySeen`, `Outdoors`); postavy a vrtulník se objeví až se
+  začátkem hry (při popisku je logika nemá); má-li být v kameře hry kolem levelu vidět víc kamene, zvětšit
+  `ScreenMargin` v `UghStage.cpp` (hra se zmenší; nad 1,15 je třeba posunout dutinu kamene). Pro krok 19f: kámen
+  je mimo let schovaný, vodopád do moře je tedy jen ve skále levelu; voda během letu je `UghWater::Box(…, true)`.
+  Další: **krok 19f**.

@@ -10,7 +10,8 @@
 //
 // The surface of a sea: a swell rolling in towards the cliff and chop drifting with the wind, the rings of what swims
 // or floats, the rings of raindrops; foam where the surface meets the rock (washing up and down) and around what
-// floats; caustics, the light the waves focus, dancing on what lies below it where the sun shone through the surface.
+// floats; caustics, the light the waves focus, dancing on what lies below it where the sun shone through the surface;
+// far from the stone the open sea's higher swell with whitecaps.
 // The cut near the camera (seen when the rising water is above the camera) is not a surface: no reflection, only the
 // water seen through it. The water is a clear green-blue; what is behind it is seen through as much water as the view
 // crosses and as deep as it lies (its light came down through the water), so that the deep is bluer and darker.
@@ -35,6 +36,10 @@ float below = max(WaterLevel - behind.z, 0.0);
 float2 p = Position.xy;
 float2 slope = 0;
 float storm = abs(Wind);
+// the open sea far from the stone (seen only while the camera flies in: the stone, AUghSeaStack, stands 54 m to each
+// side of the screen's middle and 52 m deep behind its plane): a higher swell, whitecaps, a rougher surface
+float open = smoothstep(2500, 25000, length(max(abs(p - float2(1600, -2600)) - float2(5500, 2700), 0)));
+float away = length(toPixel);
 // (the swell rolls in towards the cliff: world y is minus the depth)
 const float4 waves[6] = { float4(0.2, -1.0, 1300, 0.06), float4(-0.5, -0.8, 750, 0.05), float4(0.8, -0.6, 420, 0.045),
 	float4(-0.6, 0.8, 230, 0.04), float4(0.95, -0.3, 120, 0.035), float4(-0.2, 1.0, 60, 0.03) };
@@ -43,8 +48,13 @@ const float4 waves[6] = { float4(0.2, -1.0, 1300, 0.06), float4(-0.5, -0.8, 750,
 	float2 d = normalize(waves[i].xy + float2(Wind * 1.5, 0));
 	float k = Pi2 / waves[i].z;
 	float phase = k * dot(d, p) - sqrt(Gravity * k) * t;
-	slope += d * waves[i].w * (1 + storm * 1.5) * cos(phase);
+	// (on the open sea a wave fades out from 30 to 60 of its wavelengths away: no shimmer of the small ones far off)
+	float lod = lerp(1, saturate(2 - away / (waves[i].z * 30)), open);
+	slope += d * waves[i].w * (1 + storm * 1.5) * lod * cos(phase);
 }
+// (seen at a grazing angle its waves would mirror what is below the horizon - the sky light has nothing there: it lies
+// smoother far off)
+slope *= lerp(1, 2.2 * pow(saturate(-normalize(toPixel).z / 0.2), 1.5), open);
 // the rings of what floats: ripples running out of it
 float foam = 0;
 const float4 rings[6] = { Ring0, Ring1, Ring2, Ring3, Ring4, Ring5 };
@@ -79,6 +89,9 @@ UGH_NOISE(p * 0.21 - float2(t * 0.1, t * 0.2), n2);
 float wash = 35 + 25 * sin(t * 0.9 + p.x * 0.004 + n1 * 2);
 float shore = 1 - saturate(through / wash);
 foam = saturate((saturate(shore * 1.2 + foam) - (n1 * 0.6 + n2 * 0.4) * 0.8) * 1.8);
+float n3;
+UGH_NOISE(p * 0.012 + float2(t * 0.05, 0), n3);
+foam = max(foam, open * smoothstep(0.86, 0.96, n3) * smoothstep(0.5, 0.8, n1) * 0.6);
 
 // caustics: where the sunlight lying on what is behind came through the surface, the waves' pattern there
 float3 sun = normalize(Sun);
@@ -104,10 +117,13 @@ Behind = 1 + Caustics * c * lit;
 float deep = max(WaterLevel - Position.z, 0.0);
 float scale = (through + deep) / max(through, 1.0);
 Absorption = float3(0.0035, 0.0011, 0.0009) * scale;
-Scattering = float3(0.0008, 0.0016, 0.0017) * scale * exp(-deep * 0.0015) * 200 / (200 + through);
+// (the open sea has no floor: lit as though its view crossed a few metres, a deep blue)
+float crossed = 200 / (200 + lerp(through, min(through, 400.0), open));
+Scattering = float3(0.0008, 0.0016, 0.0017) * lerp(1, float3(0.6, 0.85, 1.1), open) * scale * exp(-deep * 0.0015) *
+	crossed;
 
 WaterNormal = top ? waved : normalize(VertexNormal);
 WaterOpacity = top ? foam * 0.7 : 0;
-WaterRough = top ? 0.03 + Rain * 0.08 + foam * 0.6 : 1;
+WaterRough = top ? 0.03 + Rain * 0.08 + foam * 0.6 + 0.1 * open : 1;
 WaterSpecular = top ? 0.5 : 0;
 return float3(0.75, 0.78, 0.78);

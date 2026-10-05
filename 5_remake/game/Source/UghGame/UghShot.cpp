@@ -61,6 +61,12 @@ bool FUghShot::Configure()
 	{
 		Suffix += FString::Printf(TEXT("-frame%.0f_%.0f"), Frame->Min.X, Frame->Min.Y);
 	}
+	double Intro = 0;
+	if (FParse::Value(CommandLine, TEXT("-UghShotIntro="), Intro))
+	{
+		IntroAt = Intro;
+		Suffix += FString::Printf(TEXT("-intro%g"), Intro);
+	}
 	FString List = TEXT("1p:1");
 	FParse::Value(CommandLine, TEXT("-UghShotLevels="), List, false);
 	if (!AddTargets(List))
@@ -162,6 +168,18 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		Frames = 0;
 		ReleasePedals(Mode);
 		HoverY[0] = HoverY[1] = -1;
+	}
+	if (View.phase == UGH_LOGIC_PHASE_CAPTION && IntroAt)
+	{
+		// no key: the flight goes on to the moment of the shot (its end at the latest; not while it settles in black)
+		const FUghIntro& Intro = Mode.GetIntro();
+		if (Intro.GetTime() < FMath::Clamp(*IntroAt, UE_KINDA_SMALL_NUMBER, FUghIntro::Duration))
+		{
+			return EAction::None;
+		}
+		UE_LOG(LogTemp, Display, TEXT("UGH shot: the flight at %.2f s"), Intro.GetTime());
+		bShotTaken = true;
+		return TakeShot(TargetName(Target.Players, Target.Level) + Suffix);
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION)
 	{

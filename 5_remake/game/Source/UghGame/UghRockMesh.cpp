@@ -47,7 +47,15 @@ void FUghRockMesh::Build(const FUghRockField& Field)
 	TArray<FVector> Points;
 	TArray<FUghNetQuad> Quads;
 	UghSurfaceNets::Build(Field, Points, Quads);
+	Build(Points, Quads, [&](const FVector& Point) { return -Field.Gradient(Point).GetSafeNormal(); },
+		[&](const FVector& Point, const FVector& Outward) { return Shade(Field, Point, Outward); });
+	UE_LOG(LogTemp, Display, TEXT("UGH rock: %d vertices, %d triangles in %.0f ms"), Vertices.Num(),
+		Triangles.Num() / 3, (FPlatformTime::Seconds() - Started) * 1000);
+}
 
+void FUghRockMesh::Build(const TArray<FVector>& Points, const TArray<FUghNetQuad>& Quads,
+	TFunctionRef<FVector(const FVector&)> Outward, TFunctionRef<FColor(const FVector&, const FVector&)> Color)
+{
 	Vertices.SetNumUninitialized(Points.Num());
 	Normals.SetNumUninitialized(Points.Num());
 	UVs.SetNumUninitialized(Points.Num());
@@ -55,14 +63,14 @@ void FUghRockMesh::Build(const FUghRockField& Field)
 	ParallelFor(Points.Num(), [&](int32 Index)
 	{
 		const FVector& Point = Points[Index];
-		const FVector Outward = -Field.Gradient(Point).GetSafeNormal();
+		const FVector Out = Outward(Point);
 		Vertices[Index] = World(Point);
-		Normals[Index] = WorldDirection(Outward);
+		Normals[Index] = WorldDirection(Out);
 		UVs[Index] = FVector2D(Point.X / UghShapes::ScreenWidth, Point.Y / UghShapes::ScreenHeight);
-		Colors[Index] = Shade(Field, Point, Outward);
+		Colors[Index] = Color(Point, Out);
 	});
 
-	Triangles.Reserve(Quads.Num() * 6);
+	Triangles.Reset(Quads.Num() * 6);
 	for (const FUghNetQuad& Quad : Quads)
 	{
 		const int32* C = Quad.Corners;
@@ -79,8 +87,6 @@ void FUghRockMesh::Build(const FUghRockField& Field)
 			Triangles.Append({ A, M, B, A, D, M });
 		}
 	}
-	UE_LOG(LogTemp, Display, TEXT("UGH rock: %d vertices, %d triangles in %.0f ms"), Vertices.Num(),
-		Triangles.Num() / 3, (FPlatformTime::Seconds() - Started) * 1000);
 }
 
 UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer) const
@@ -159,8 +165,12 @@ FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, con
 			}
 		}
 	}
-	const double Patches = 0.5 + 0.5 * (0.65 * FMath::PerlinNoise3D(Point * PatchScale) +
-		0.35 * FMath::PerlinNoise3D(Point * PatchScale * 3.1));
 	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far) * (1 - Dark)), uint8(255 * Deep), uint8(255 * Lip),
-		uint8(255 * FMath::Clamp(Patches, 0.0, 1.0)));
+		uint8(255 * Patches(Point)));
+}
+
+double FUghRockMesh::Patches(const FVector& Point)
+{
+	return FMath::Clamp(0.5 + 0.5 * (0.65 * FMath::PerlinNoise3D(Point * PatchScale) +
+		0.35 * FMath::PerlinNoise3D(Point * PatchScale * 3.1)), 0.0, 1.0);
 }

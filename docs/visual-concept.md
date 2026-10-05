@@ -114,7 +114,8 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
 
 ## Kamera
 
-Pevná, úzký objektiv (30°), celý řez v záběru, mírně shora (-4°), aby byly vidět horní plochy plošin.
+Pevná, úzký objektiv (30°), celý řez v záběru, mírně shora (-4°), aby byly vidět horní plochy plošin. Na začátku
+levelu k ní kamera přiletí nad mořem (krok 19e, níže).
 
 ## Technika
 
@@ -381,3 +382,39 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   cestujícího (ne k vrtulníku). Dva zobáčky byly chyba kartičky: krychle s oboustranným materiálem ukazovala zezadu
   zrcadlený obrázek tam, kde je vpředu průhledno - `M_UghSprite` je teď jednostranný. Bublina, která by vpravo vyjela
   z obrazovky, se zrcadlí na levou stranu cestujícího se zobáčkem vpravo (test `Ugh.Bubbles`).
+
+## Úvod levelu: let nad mořem ke kameni (krok 19e)
+
+- **Kámen** (`FUghStackField`, `AUghSeaStack`): level je vytesaný do čela velkého samostatného kamene v moři (krasová
+  věž jako v zátoce Ha Long): asi 108 m široký, 52 m hluboký, 90 m nad hladinou, nahoře klenutý. Pole na hrubé mřížce
+  (6 px = 0,6 m) a stejné surface nets jako skála levelu (`UghSurfaceNets` je teď šablona pro obě mřížky); boky
+  a záda zaoblené, reliéf z velkých boulí, svislých žlábků od deště, vrstev vápence (u každé spodní hrany římsa,
+  pod ní mírný převis), rozpukaných bloků a zářezu vln u hladiny; pata se pod vodou rozšiřuje. Čelo je kolem skály
+  levelu rovné: rám o 1 m před rovinou hry (čelo skály je nejvýš 0,6 m), dál od otvoru vystupuje až o 2,2 m, takže
+  level sedí ve vytesaném výklenku. Skála levelu sedí v dutině kamene asi 4 px uvnitř své mřížky (otevřený okraj
+  mřížky je v kameni) a kámen drží i neviditelný „rubáš“ stínů `AUghBackground` (test `Ugh.Stack`). Materiál je
+  `M_UghCliff` čela (stejný šedý vápenec, mech, tráva nahoře a přes hrany), vrstvy skály 2,5krát větší (z dálky
+  se neopakují), kresba jen jako neutrální teplá skála. Džungle (`AUghScenery`, modely Electric Dreams): palmy
+  12-22 m, keře, rostliny s velkými listy, kapradiny a kameny na vrcholu, keře a kapradiny na římsách, břečťan visící
+  z horních hran stěn (asi 4000 kusů). Kámen je stejný pro všechny levely, vyrobí se při prvním letu (asi 1 s)
+  a mimo let je schovaný: hře nic nestojí.
+- **Let** (`FUghIntro`): při prvním popisku levelu (ne po havárii) kamera jako FPV dron: 8 snímků drží v černé (render
+  se usadí), 0,3 s se rozsvítí, pak 4,5 s z 260 m před kamerou hry nízko nad vlnami (2,6 m nad hladinou) po křivce
+  Catmull-Rom s kličkou vpravo a zpět, polovinu času plnou rychlostí (asi 90 m/s), pak brzdí do zastavení; náklon
+  do zatáček (nejvýš 10°) z bočního zrychlení, lehké houpání výšky, objektiv z 72° na hráčových 30°, pohled
+  z poloviny po dráze, z poloviny na level, nakonec jen na level; menší rozmazání pohybem; venku o 0,8 EV tmavší
+  expozice, která se ke konci vrací na náladu levelu (jako oko vlétající do jeskyně). Poslední snímek je přesně
+  kamera hry (`AUghStage::Fit`, test `Ugh.Intro`), do kamene nevlétá (aspoň 2 m od něj, nikdy blíž než kamera hry).
+  Klávesa zbytek letu zrychlí na 0,6 s (vždy dřív, než začne hra: zhasnutí popisku a černá před hrou trvají 73
+  snímků logiky); logika a její časování beze změny, klávesa jde do logiky jako dřív. Během letu, popisku, černé
+  před hrou a jejího roztmívání je scéna vidět (dřív černá); po havárii zůstává černý popisek jako dřív.
+  `-UghNoIntro` nebo `FUghIntro::bFlies` let vypne.
+- **Moře** (`UghWater::Box(…, bOpenSea)`): během letu otevřené moře 4 km kolem (jinak stará krabice), daleko od kamene
+  (`UghWater.hlsl`: od 25 m) vyšší vlny, bílé hřebínky, drsnější hladina, malé vlny s dálkou mizí (žádné třpytivé
+  zrnění) a při pohledu skoro vodorovně se uklidní (jinak by zrcadlily tmu pod obzorem), voda bez dna rozptyluje
+  světlo jako pár metrů hluboká (dřív černá). U útesu (co vidí kamera hry) beze změny.
+- **Obloha** (`UghSky.hlsl`, `FUghMood::SkySeen`): kopule je 10 km daleko a mlha sahá jen 5 km, takže obloha nálady je
+  vidět nad oparem moře; kamera ji vidí tak jasně jako světlo, které dává (sky light ji zachytává beze změny), v noci
+  tmavší (noční HDRI je jasné jako denní). Ve hře obloha vidět není, světlo scény se nemění.
+- **Snímky**: `shot.ps1 -Intro <s>` (`-UghShotIntro`) uloží let v čase (začátek 0,4, střed 2,4, konec 4,5 = kamera
+  hry); autopilot `shot.ps1` / `levels.ps1` let zrychlí první klávesou popisku, snímky hry beze změny.

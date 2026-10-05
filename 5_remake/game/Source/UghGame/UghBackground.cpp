@@ -61,7 +61,7 @@ AUghBackground::AUghBackground()
 void AUghBackground::BeginPlay()
 {
 	Super::BeginPlay();
-	RockMaterial = MakeCliffMaterial();
+	RockMaterial = MakeCliffMaterial(this);
 	bCliff = RockMaterial != nullptr;
 	if (!bCliff)
 	{
@@ -75,6 +75,11 @@ void AUghBackground::AddShroud()
 	UInstancedStaticMeshComponent* Shroud = UghShapes::AddShapes(this, UghShapes::EShape::Cube, nullptr);
 	Shroud->SetHiddenInGame(true);
 	Shroud->SetCastHiddenShadow(true);
+	UghShapes::SetShapes(Shroud, ShroudBoxes());
+}
+
+TArray<FTransform> AUghBackground::ShroudBoxes()
+{
 	constexpr double Front = FUghRockMesh::FrontDepth, Back = FUghRockMesh::BackDepth, Thick = ShroudThickness;
 	constexpr double Left = ShroudOverlap - FUghRockMesh::MarginX;
 	constexpr double Right = Width + FUghRockMesh::MarginX - ShroudOverlap;
@@ -83,13 +88,13 @@ void AUghBackground::AddShroud()
 	{
 		return UghShapes::Box(X, Y, W, H, (Front + Back) / 2, Back - Front);
 	};
-	UghShapes::SetShapes(Shroud, { Box(Left - Thick, Top - Thick, Right - Left + 2 * Thick, Thick),
-		Box(Left - Thick, Top, Thick, Bottom - Top), Box(Right, Top, Thick, Bottom - Top) });
+	return { Box(Left - Thick, Top - Thick, Right - Left + 2 * Thick, Thick), Box(Left - Thick, Top, Thick, Bottom - Top),
+		Box(Right, Top, Thick, Bottom - Top) };
 }
 
-UMaterialInstanceDynamic* AUghBackground::MakeCliffMaterial()
+UMaterialInstanceDynamic* AUghBackground::MakeCliffMaterial(UObject* Outer)
 {
-	UMaterialInstanceDynamic* Cliff = UghShapes::Material(this, UghMaterials::Cliff);
+	UMaterialInstanceDynamic* Cliff = UghShapes::Material(Outer, UghMaterials::Cliff);
 	for (int32 Layer = 0; Layer < UE_ARRAY_COUNT(UghMaterials::CliffLayers); ++Layer)
 	{
 		if (!SetScannedLayer(Cliff, Layer) && !SetImportedLayer(Cliff, Layer))

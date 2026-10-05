@@ -20,6 +20,12 @@ namespace UghWater
 	 */
 	constexpr double Front = -5000;
 	constexpr double Reach = 2000;
+	/**
+	 * The open sea while the camera flies in over it (FUghIntro): this far around the middle of the screen every way
+	 * (units: its edge lies at the horizon, in the fog; AUghStage) and this deep below the screen (pixels: the stone's
+	 * foot, AUghSeaStack).
+	 */
+	constexpr double OpenSea = 400000, OpenSeaDepth = 150;
 	/** At most this many things stir the water (UghMaterials::RingParameters). */
 	constexpr int32 MaxRings = 6;
 
@@ -27,9 +33,9 @@ namespace UghWater
 	double Surface(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha);
 	/**
 	 * The sea with its surface at `Surface` (pixels): a box (a cube's) from Front to the cave's back wall, Reach beyond
-	 * the screen's sides; none when the surface is below the screen.
+	 * the screen's sides; none when the surface is below the screen. `bOpenSea`: the open sea (OpenSea) instead.
 	 */
-	TOptional<FTransform> Box(double Surface);
+	TOptional<FTransform> Box(double Surface, bool bOpenSea = false);
 	/**
 	 * What swims or floats at the surface `Surface` (pixels) in `View` - passengers in the water, copters on it: its
 	 * place on the surface (world) and how much it stirs it (w); at most MaxRings.
@@ -52,8 +58,11 @@ class AUghWater : public AActor
 public:
 	AUghWater();
 
-	/** The surface at `Surface` (pixels from the top of the screen), stirred by `Rings` (UghWater::Rings). */
-	void Show(double Surface, const TArray<FVector4>& Rings);
+	/**
+	 * The surface at `Surface` (pixels from the top of the screen), stirred by `Rings` (UghWater::Rings); the open sea
+	 * around the stone while the camera flies in (`bOpenSea`).
+	 */
+	void Show(double Surface, const TArray<FVector4>& Rings, bool bOpenSea = false);
 	/** The weather: rain on it with wind (-1, 1; 0 calm), the sunlight's way, how bright its caustics are. */
 	void SetWeather(int32 Wind, const FVector& Sun, float Caustics);
 	/** The world's z of the surface shown. */

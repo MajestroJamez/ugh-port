@@ -22,13 +22,18 @@ double UghWater::Surface(const ugh_logic_view& Previous, const ugh_logic_view& C
 	return FMath::Lerp(double(From.water_level), double(Current.water_level), Alpha) / UghShapes::Subpixels;
 }
 
-TOptional<FTransform> UghWater::Box(double Surface)
+TOptional<FTransform> UghWater::Box(double Surface, bool bOpenSea)
 {
 	if (Surface >= Height)
 	{
 		return {};
 	}
 	const double Top = FMath::Max(Surface, double(-FUghRockMesh::MarginY));
+	if (bOpenSea)
+	{
+		constexpr double Around = OpenSea / UghShapes::UnitsPerPixel;
+		return UghShapes::Box(Width / 2.0 - Around, Top, 2 * Around, Height + OpenSeaDepth - Top, 0, 2 * OpenSea);
+	}
 	constexpr double Back = FUghRockMesh::BackDepth;
 	return UghShapes::Box(-Reach, Top, Width + 2 * Reach,
 		Height + FUghRockMesh::MarginY - Top, (Back + Front) / 2, Back - Front);
@@ -76,9 +81,9 @@ void AUghWater::BeginPlay()
 	Water->SetCastShadow(false);   // the light under it is the water's to dim
 }
 
-void AUghWater::Show(double Surface, const TArray<FVector4>& Rings)
+void AUghWater::Show(double Surface, const TArray<FVector4>& Rings, bool bOpenSea)
 {
-	const TOptional<FTransform> Box = UghWater::Box(Surface);
+	const TOptional<FTransform> Box = UghWater::Box(Surface, bOpenSea);
 	UghShapes::SetShapes(Water, Box ? TArray<FTransform>{ *Box } : TArray<FTransform>());
 	Material->SetScalarParameterValue(UghMaterials::WaterLevelParameter, UghShapes::ToWorld(0, Surface, 0).Z);
 	for (int32 I = 0; I < UghWater::MaxRings; ++I)

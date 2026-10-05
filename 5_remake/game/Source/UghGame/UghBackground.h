@@ -31,15 +31,22 @@ public:
 	/** The water's surface, pixels from the top of the screen: the rock is wet there and under it. */
 	void SetWater(double Surface);
 
+	/**
+	 * The cliff's material (on `Outer`; the stone around the level's too, AUghSeaStack), each layer the scanned surface
+	 * of UghElectricDreams where it has one and it was copied, else its imported texture set; none when that is
+	 * missing too.
+	 */
+	static UMaterialInstanceDynamic* MakeCliffMaterial(UObject* Outer);
+	/**
+	 * The unseen cliff around the rock's grid (above it and at its sides) that only shades the cave, as boxes of
+	 * UghShapes (the stone around the level holds it, FUghStackField).
+	 */
+	static TArray<FTransform> ShroudBoxes();
+
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	/**
-	 * The cliff's material, each layer the scanned surface of UghElectricDreams where it has one and it was copied,
-	 * else its imported texture set; none when that is missing too.
-	 */
-	UMaterialInstanceDynamic* MakeCliffMaterial();
 	/** Gives `Cliff` layer `Layer` of the scanned surfaces, of the imported texture sets; false when it is missing. */
 	static bool SetScannedLayer(UMaterialInstanceDynamic* Cliff, int32 Layer);
 	static bool SetImportedLayer(UMaterialInstanceDynamic* Cliff, int32 Layer);

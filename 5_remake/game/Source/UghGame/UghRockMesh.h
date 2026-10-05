@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "UghRockField.h"
 #include "UghShapes.h"
+#include "UghSurfaceNets.h"
 
 class UStaticMesh;
 
@@ -35,10 +36,18 @@ public:
 	/** The surface of `Field` (none when it is empty). */
 	void Build(const FUghRockField& Field);
 	/**
+	 * The surface of the points and quads of UghSurfaceNets (pixels) in the world: each point's normal the way
+	 * `Outward` says the surface faces there (pixels), its colour `Color`'s (the point, that way).
+	 */
+	void Build(const TArray<FVector>& Points, const TArray<FUghNetQuad>& Quads,
+		TFunctionRef<FVector(const FVector&)> Outward, TFunctionRef<FColor(const FVector&, const FVector&)> Color);
+	/**
 	 * The mesh as the engine's static mesh (one material slot): drawn, shadowed and ray traced like any static mesh,
 	 * so its shadows and ray tracing are built once, not every frame. None when empty.
 	 */
 	UStaticMesh* ToStaticMesh(UObject* Outer) const;
+	/** The large patches at a point (pixels), 0 .. 1 over metres (the vertex colours' alpha). */
+	static double Patches(const FVector& Point);
 
 private:
 	/** The colour of a vertex at `Point` (pixels) whose surface faces `Outward`. */

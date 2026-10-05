@@ -129,6 +129,17 @@ bool FUghWaterLevelTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("towards the camera"), Bounds.Max.Y >= -UghWater::Front - 1);
 		TestEqual(TEXT("its top at the surface"), Bounds.Max.Z, UghShapes::ToWorld(0, Last, 0).Z, 1e-3);
 	}
+	// the open sea while the camera flies in (FUghIntro): as far every way, its surface the same
+	const TOptional<FTransform> Open = UghWater::Box(Last, true);
+	if (TestTrue(TEXT("the open sea is shown"), Open.IsSet()))
+	{
+		const FBox Bounds = FBox(FVector(-50), FVector(50)).TransformBy(*Open);
+		const double Middle = UghShapes::ToWorld(UghShapes::ScreenWidth / 2.0, 0, 0).X;
+		TestTrue(TEXT("the open sea all around"), Bounds.Min.X <= Middle - UghWater::OpenSea + 1 &&
+			Bounds.Max.X >= Middle + UghWater::OpenSea - 1 && Bounds.Min.Y <= -UghWater::OpenSea + 1 &&
+			Bounds.Max.Y >= UghWater::OpenSea - 1);
+		TestEqual(TEXT("its top at the surface"), Bounds.Max.Z, UghShapes::ToWorld(0, Last, 0).Z, 1e-3);
+	}
 	return true;
 }
 

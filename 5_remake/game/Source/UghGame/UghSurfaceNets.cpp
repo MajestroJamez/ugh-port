@@ -1,26 +1,22 @@
 #include "UghSurfaceNets.h"
 
 #include "UghRockField.h"
+#include "UghStackField.h"
 
 namespace
 {
-	constexpr int32 NX = FUghRockField::Columns, NY = FUghRockField::Rows;
-
 	/** The corners of a cell, bit 0 along x, bit 1 along y, bit 2 along the depth; its edges as pairs of them. */
 	constexpr int32 Edges[12][2] = { { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 }, { 0, 2 }, { 1, 3 }, { 4, 6 }, { 5, 7 },
 		{ 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 } };
-
-	FVector Node(int32 I, int32 J, int32 K)
-	{
-		return FVector(FUghRockOutline::X(I), FUghRockOutline::Y(J), FUghRockField::Depths()[K]);
-	}
 }
 
-void UghSurfaceNets::Build(const FUghRockField& Field, TArray<FVector>& OutPoints, TArray<FUghNetQuad>& OutQuads)
+template <class TGrid>
+void UghSurfaceNets::Build(const TGrid& Grid, TArray<FVector>& OutPoints, TArray<FUghNetQuad>& OutQuads)
 {
 	OutPoints.Reset();
 	OutQuads.Reset();
-	const int32 NZ = FUghRockField::Layers();
+	constexpr int32 NX = TGrid::Columns, NY = TGrid::Rows;
+	const int32 NZ = TGrid::Layers();
 	auto CellIndex = [](int32 I, int32 J, int32 K) { return (K * (NY - 1) + J) * (NX - 1) + I; };
 	TArray<int32> CellPoints;
 	CellPoints.Init(INDEX_NONE, (NX - 1) * (NY - 1) * (NZ - 1));
@@ -36,7 +32,7 @@ void UghSurfaceNets::Build(const FUghRockField& Field, TArray<FVector>& OutPoint
 				int32 Solid = 0;
 				for (int32 Corner = 0; Corner < 8; ++Corner)
 				{
-					Values[Corner] = Field.At(I + (Corner & 1), J + (Corner >> 1 & 1), K + (Corner >> 2));
+					Values[Corner] = Grid.At(I + (Corner & 1), J + (Corner >> 1 & 1), K + (Corner >> 2));
 					Solid += Values[Corner] > 0;
 				}
 				if (Solid == 0 || Solid == 8)
@@ -49,8 +45,8 @@ void UghSurfaceNets::Build(const FUghRockField& Field, TArray<FVector>& OutPoint
 				{
 					if ((Values[A] > 0) != (Values[B] > 0))
 					{
-						const FVector From = Node(I + (A & 1), J + (A >> 1 & 1), K + (A >> 2));
-						const FVector To = Node(I + (B & 1), J + (B >> 1 & 1), K + (B >> 2));
+						const FVector From = TGrid::Node(I + (A & 1), J + (A >> 1 & 1), K + (A >> 2));
+						const FVector To = TGrid::Node(I + (B & 1), J + (B >> 1 & 1), K + (B >> 2));
 						Sum += FMath::Lerp(From, To, double(Values[A] / (Values[A] - Values[B])));
 						++Crossings;
 					}
@@ -79,8 +75,8 @@ void UghSurfaceNets::Build(const FUghRockField& Field, TArray<FVector>& OutPoint
 					}
 					int32 Node1[3] = { I, J, K };
 					++Node1[Axis];
-					const bool bSolid0 = Field.At(Node0[0], Node0[1], Node0[2]) > 0;
-					if (bSolid0 == (Field.At(Node1[0], Node1[1], Node1[2]) > 0))
+					const bool bSolid0 = Grid.At(Node0[0], Node0[1], Node0[2]) > 0;
+					if (bSolid0 == (Grid.At(Node1[0], Node1[1], Node1[2]) > 0))
 					{
 						continue;
 					}
@@ -102,3 +98,6 @@ void UghSurfaceNets::Build(const FUghRockField& Field, TArray<FVector>& OutPoint
 		}
 	}
 }
+
+template void UghSurfaceNets::Build<FUghRockField>(const FUghRockField&, TArray<FVector>&, TArray<FUghNetQuad>&);
+template void UghSurfaceNets::Build<FUghStackField>(const FUghStackField&, TArray<FVector>&, TArray<FUghNetQuad>&);

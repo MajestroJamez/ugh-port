@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "UghFigureActions.h"
+#include "UghIntro.h"
 #include "UghLevelArt.h"
 #include "UghMenu.h"
 #include "UghPasswords.h"
@@ -23,18 +24,21 @@ class AUghScenery;
 class AUghSigns;
 class AUghSpeaker;
 class AUghStage;
+class AUghSeaStack;
 class AUghWater;
 
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
- * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground,
+ * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground, AUghSeaStack,
  * AUghSigns, AUghWater, AUghRain, AUghCopters, AUghFigures, AUghCampfire, AUghScenery, AUghCliffDressing, the HUD) and heard
- * (AUghSpeaker); the end of a game goes back to the menu. Each level has its mood (UghMood).
+ * (AUghSpeaker); the end of a game goes back to the menu. Each level has its mood (UghMood); its first caption shows
+ * the camera flying over the sea to the stone the level is carved into (FUghIntro).
  * Behind the menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of
  * the frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
  *
  * -UghAssets=<folder> reads the data from elsewhere than assets/ (of the package, else of the repository).
- * -UghShot=<folder>: the game plays by itself for screenshots (FUghShot).
+ * -UghShot=<folder>: the game plays by itself for screenshots (FUghShot). -UghNoIntro: a level starts without the
+ * flight to the stone (FUghIntro, AUghSeaStack).
  */
 UCLASS()
 class AUghGameMode : public AGameModeBase
@@ -59,6 +63,8 @@ public:
 	/** The menu is shown (no game is played). */
 	bool IsInMenu() const { return bInMenu; }
 	const FUghMenu& GetMenu() const { return Menu; }
+	/** The flight to the stone at the start of a level. */
+	const FUghIntro& GetIntro() const { return Intro; }
 	/** How the last game ended, for the menu; empty before the first one. */
 	const FString& GetLastGame() const { return LastGame; }
 	/** Why there is no game (the data cannot be read); empty when there is one. */
@@ -72,6 +78,11 @@ private:
 	/** The frame of the view (`Seconds` after the last one). */
 	void ShowFrame(double Seconds);
 	void BuildLevel(const ugh_logic_view& View);
+	/**
+	 * The flight to the stone (FUghIntro) at the first caption of a level: starts it, flies it on `Seconds`, hurries it
+	 * when the play begins, shows the stone meanwhile.
+	 */
+	void FlyIntro(const ugh_logic_view& View, double Seconds);
 	void HandleMenuKey(const FKey& Key);
 	/** Page Up and Page Down: the volume; true when it was one of them. */
 	bool HandleVolumeKey(const FKey& Key, EInputEvent Event);
@@ -95,11 +106,16 @@ private:
 	FKey StartKey;              // the key that started the game: its release is not a key of the game
 	FString LastGame;
 	FString Problem;
+	FUghIntro Intro;
+	bool bIntro = false;        // the levels start with the flight (FUghIntro::bFlies, not -UghNoIntro)
+	int32 IntroLevel = -1;      // the level (of the mode) of the last flight in this game
+	bool bIntroScene = false;   // since its flight began until the play is fully shown: the scene is not black
 
 	UPROPERTY() TObjectPtr<AUghStage> Stage;
 	UPROPERTY() TObjectPtr<AUghBackground> Background;
 	UPROPERTY() TObjectPtr<AUghSigns> Signs;
 	UPROPERTY() TObjectPtr<AUghWater> Water;
+	UPROPERTY() TObjectPtr<AUghSeaStack> SeaStack;
 	UPROPERTY() TObjectPtr<AUghRain> Rain;
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;

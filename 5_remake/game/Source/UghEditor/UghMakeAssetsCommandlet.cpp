@@ -277,7 +277,8 @@ bool UUghMakeAssetsCommandlet::MakeSky(UMaterial* Material)
 	UMaterialExpression* Sky = Custom(Material, ShaderCode(TEXT("UghSky.hlsl")), CMOT_Float3, {
 		{ TEXT("ToCamera"), Add<UMaterialExpressionCameraVectorWS>(Material) },
 		{ UghMaterials::SkyParameter,
-			TextureObject(Material, UghMaterials::SkyParameter, SAMPLERTYPE_Color, DefaultColor) } });
+			TextureObject(Material, UghMaterials::SkyParameter, SAMPLERTYPE_Color, DefaultColor) },
+		{ TEXT("Seen"), Scalar(Material, UghMaterials::SkySeenParameter, 1.f) } });
 	if (!Sky)
 	{
 		return false;

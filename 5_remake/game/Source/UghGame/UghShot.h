@@ -25,7 +25,9 @@ class FUghPasswords;
  * <top>,<width>,<height> that part of the screen (pixels: a look at the figures; with -UghShotCloseUp from the first
  * copter's corner, wherever it hovers: a look into its cabin). -UghShotBubbles gives every passenger shown a speech
  * bubble, each the next of the data's bubbles (only the picture). Such a shot's name ends in -cargo<look>,
- * -hanging<look>, -bubbles, -closeup, -frame<left>_<top> (in this order).
+ * -hanging<look>, -bubbles, -closeup, -frame<left>_<top> (in this order). -UghShotIntro=<seconds> saves the flight to
+ * the stone at the start of the level that many seconds into it instead (FUghIntro; FUghIntro::Duration and later:
+ * its end, the game's camera), its name ending in -intro<seconds> after those, and gives the game up.
  */
 class FUghShot
 {
@@ -87,6 +89,7 @@ private:
 	TArray<int32> Bubbles;    // the sprites of the data's speech bubbles, found the first time
 	bool bCloseUp = false;    // -UghShotCloseUp
 	TOptional<FBox2D> Frame;  // -UghShotFrame
+	TOptional<double> IntroAt; // -UghShotIntro
 	FString Suffix;           // of the shots' names
 	TArray<FTarget> Targets;
 	int32 Next = 0;            // the target being shot

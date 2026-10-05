@@ -8,10 +8,11 @@
 # with a speech bubble (each the next of the data's), -CloseUp: framing the copters (the name of the shot ends in
 # -cargo<look> / -hanging<look>, -bubbles, -closeup), -Frame <left>,<top>,<width>,<height>:
 # framing that part of the screen in pixels (a look at the figures; with -CloseUp from the first copter's corner: a look
-# into its cabin; the name ends in -frame<left>_<top>). All levels at once:
-# levels.ps1.
+# into its cabin; the name ends in -frame<left>_<top>), -Intro <seconds>: the flight to the stone at the start of the
+# level that many seconds into it instead (4.5 and later: its end, the game's camera; the name ends in -intro<seconds>,
+# e.g. -intro0.3). All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
-    [switch]$Bubbles, [switch]$CloseUp, [string]$Frame = '', [int]$TimeoutSeconds = 300)
+    [switch]$Bubbles, [switch]$CloseUp, [string]$Frame = '', [string]$Intro = '', [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -26,6 +27,16 @@ if ($Frame) {
     if ($corner.Count -ne 4) { Write-Host "-Frame wants <left>,<top>,<width>,<height>" -ForegroundColor Red; exit 1 }
     $suffix += '-frame{0}_{1}' -f $corner[0], $corner[1]
 }
+if ($Intro) {
+    # the seconds as the game writes them (invariant: a dot, no trailing zeros)
+    $invariant = [Globalization.CultureInfo]::InvariantCulture
+    $seconds = 0.0
+    if (-not [double]::TryParse($Intro, [Globalization.NumberStyles]::Float, $invariant, [ref]$seconds)) {
+        Write-Host "-Intro wants seconds (e.g. 2.5)" -ForegroundColor Red; exit 1
+    }
+    $Intro = $seconds.ToString('G', $invariant)
+    $suffix += '-intro' + $Intro
+}
 $shot = Join-Path $folder ('{0}-{1:D2}{2}.png' -f $mode, $Level, $suffix)
 $log = Join-Path $PSScriptRoot 'Saved\Logs\UghShot.log'
 if (Test-Path $shot) { Remove-Item -Force $shot }
@@ -36,6 +47,7 @@ if ($Hanging) { $arguments += ' -UghShotHanging' }
 if ($Bubbles) { $arguments += ' -UghShotBubbles' }
 if ($CloseUp) { $arguments += ' -UghShotCloseUp' }
 if ($Frame) { $arguments += " -UghShotFrame=$Frame" }
+if ($Intro) { $arguments += " -UghShotIntro=$Intro" }
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
 if ($code -ne 0 -or -not (Test-Path $shot)) {
     Write-Host "FAILED: exit code $code (-1: no end in $TimeoutSeconds s), screenshot: $(Test-Path $shot), see $log" -ForegroundColor Red

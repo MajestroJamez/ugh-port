@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "UghIntro.h"
 #include "UghShapes.h"
 #include "UghStage.generated.h"
 
@@ -23,7 +24,8 @@ struct FUghMood;
  * in which the sunlight falls into the cave in shafts, a mist over the water in a storm, a fixed exposure for each
  * mood with a film look; the wind in the scanned plants (the Electric Dreams sample's foliage sways harder and with
  * the wind in a storm); and the camera: fixed, a narrow lens, a little from above, the whole screen of the original in
- * view whatever the window's aspect. The game mode makes it the view target.
+ * view whatever the window's aspect (Fit), flying there at the start of a level (FUghIntro). The game mode makes it
+ * the view target.
  */
 UCLASS()
 class AUghStage : public AActor
@@ -34,10 +36,14 @@ public:
 	AUghStage();
 
 	/**
-	 * Moves the camera so the whole screen is in view at the viewport's current aspect, or only `Pixels` of it (a
-	 * close-up of FUghShot).
+	 * The game's camera: the whole screen in view at `Aspect` (width / height), or only `Pixels` of it (a close-up of
+	 * FUghShot). Fixed, a narrow lens, a little from above.
 	 */
-	void FitCamera(const FBox2D& Pixels = UghShapes::Screen());
+	static FUghCameraPose Fit(const FBox2D& Pixels, double Aspect);
+	/** The viewport's aspect now (width / height; 16:9 without one). */
+	static double ViewportAspect();
+	/** Puts the camera there (the game's, or on its way to it: FUghIntro). */
+	void SetCamera(const FUghCameraPose& Pose);
 	/** The light and the air of `Mood`; the plants in a level with this wind (ugh_logic_view.wind). */
 	void SetMood(const FUghMood& Mood, int32 Wind);
 	/** The water's surface, pixels from the top of the screen (the mist lies on it). */

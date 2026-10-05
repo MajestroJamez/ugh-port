@@ -14,6 +14,9 @@ namespace
 	/** Behind the status line and the keys: a dark band, readable where the rock reaches the top of the screen. */
 	constexpr float StatusBandHeight = 76;
 	const FLinearColor StatusBand(0.f, 0.f, 0.f, 0.55f);
+	/** The shadow of the centred texts, pixels down and right. */
+	const FLinearColor TextShadow(0.f, 0.f, 0.f, 0.7f);
+	constexpr float ShadowOffset = 2;
 
 	/** The menu: where its rows start and how far apart they are (a part of the height). */
 	constexpr float MenuTop = 0.36f, MenuRowStep = 0.07f;
@@ -97,5 +100,7 @@ void AUghHud::DrawCentred(const FString& Text, float Y, const FLinearColor& Colo
 	UFont* Font = GEngine->GetLargeFont();
 	float Width = 0, Height = 0;
 	GetTextSize(Text, Width, Height, Font, Scale);
+	// a shadow: readable over the scene too (a level's flight, the menu)
+	DrawText(Text, TextShadow, (Canvas->ClipX - Width) / 2 + ShadowOffset, Y + ShadowOffset, Font, Scale);
 	DrawText(Text, Color, (Canvas->ClipX - Width) / 2, Y, Font, Scale);
 }

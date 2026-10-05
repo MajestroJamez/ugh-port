@@ -50,6 +50,11 @@ public:
 	static constexpr int32 Columns = FUghRockOutline::Width, Rows = FUghRockOutline::Height;
 	static int32 Layers() { return Depths().Num(); }
 	float At(int32 I, int32 J, int32 K) const { return Values[(K * Rows + J) * Columns + I]; }
+	/** Where the grid's node I, J, K is: x, y (pixels of the screen), depth (pixels). */
+	static FVector Node(int32 I, int32 J, int32 K)
+	{
+		return FVector(FUghRockOutline::X(I), FUghRockOutline::Y(J), Depths()[K]);
+	}
 	/** The field at x, y (pixels of the screen) and depth (pixels), between the grid's points; clamped to the grid. */
 	float Sample(const FVector& Point) const;
 	/** Which way the field grows at the point (per pixel). */

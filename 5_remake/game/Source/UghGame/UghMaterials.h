@@ -21,6 +21,7 @@ namespace UghMaterials
 	inline const TCHAR* HeightParameter = TEXT("Height");
 	inline const TCHAR* TilingParameter = TEXT("Tiling");
 	inline const TCHAR* SkyParameter = TEXT("Sky");
+	inline const TCHAR* SkySeenParameter = TEXT("SkySeen");
 	inline const TCHAR* SizeParameter = TEXT("Size");
 	inline const TCHAR* HeightMaskParameter = TEXT("HeightMask");
 	inline const TCHAR* WaterLevelParameter = TEXT("WaterLevel");
@@ -112,7 +113,8 @@ namespace UghMaterials
 	inline const TCHAR* Scan = TEXT("/Game/Generated/M_UghScan");
 	/**
 	 * The sky around the world: an HDR picture of it (texture parameter Sky, long-lat) seen in every direction, tinted
-	 * by Color, times Intensity; unlit, the sky light captures it (it lights the scene and shows in reflections).
+	 * by Color, times Intensity; unlit, the sky light captures it (it lights the scene and shows in reflections), the
+	 * camera sees it times SkySeen (its picture is far brighter than the exposure of the scene wants).
 	 */
 	inline const TCHAR* Sky = TEXT("/Game/Generated/M_UghSky");
 }

@@ -24,6 +24,7 @@
 #include "UghRockMesh.h"
 #include "UghPadSigns.h"
 #include "UghScenery.h"
+#include "UghSeaStack.h"
 #include "UghShapes.h"
 #include "UghShot.h"
 #include "UghSigns.h"
@@ -63,6 +64,7 @@ void AUghGameMode::StartPlay()
 	Upscaler.ChooseBest();
 
 	bShooting = Shot.Configure();
+	bIntro = FUghIntro::bFlies && !FParse::Param(FCommandLine::Get(), TEXT("UghNoIntro"));
 
 	const FString Assets = AssetsDir();
 	const FString LevelsPath = Assets / UghJson::LevelsFile;
@@ -100,6 +102,7 @@ void AUghGameMode::BuildStage()
 	Background = World->SpawnActor<AUghBackground>();
 	Signs = World->SpawnActor<AUghSigns>();
 	Water = World->SpawnActor<AUghWater>();
+	SeaStack = World->SpawnActor<AUghSeaStack>();
 	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
 	Figures = World->SpawnActor<AUghFigures>();
@@ -111,7 +114,7 @@ void AUghGameMode::BuildStage()
 	{
 		Controller->SetViewTarget(Stage);
 	}
-	Stage->FitCamera();
+	Stage->SetCamera(AUghStage::Fit(UghShapes::Screen(), AUghStage::ViewportAspect()));
 }
 
 void AUghGameMode::Tick(float DeltaSeconds)
@@ -150,9 +153,11 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		BuildLevel(Current);
 	}
+	FlyIntro(Current, Seconds);
 	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
 	Background->SetWater(Surface);
-	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface));
+	SeaStack->SetWater(Surface);
+	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface), Intro.IsFlying());
 	Rain->Show(Current, Surface);
 	Stage->SetWater(Surface);
 	Campfire->SetWater(Surface);
@@ -160,9 +165,14 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
 	Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
 
-	// the fade of the play; black around it (the HUD writes the captions); dimmed behind the menu
+	// the fade of the play; black around it (the HUD writes the captions) but after a level's flight; dimmed behind the
+	// menu
 	double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY
 		? FMath::Clamp(double(Current.fade) / UghShapes::FadeShown, 0.0, 1.0) : 0.0;
+	if (bIntroScene)
+	{
+		Shown = FMath::Max(Shown, Intro.Shown());
+	}
 	if (bInMenu && Current.level_id >= 0)
 	{
 		Shown = MenuShown;
@@ -175,7 +185,32 @@ void AUghGameMode::ShowFrame(double Seconds)
 		}
 	}
 	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current) : TOptional<FBox2D>();
-	Stage->FitCamera(CloseUp.Get(UghShapes::Screen()));
+	const FUghCameraPose Game = AUghStage::Fit(CloseUp.Get(UghShapes::Screen()), AUghStage::ViewportAspect());
+	Stage->SetCamera(Intro.IsFlying() ? Intro.Pose(Game, UghShapes::ToWorld(0, Surface, 0).Z) : Game);
+}
+
+void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)
+{
+	const bool bPlay = View.phase == UGH_LOGIC_PHASE_PLAY;
+	if (bPlay && View.fade >= UghShapes::FadeShown)
+	{
+		bIntroScene = false;   // the play's own fades again
+	}
+	if (bIntro && !bInMenu && View.phase == UGH_LOGIC_PHASE_CAPTION && View.level != IntroLevel)
+	{
+		IntroLevel = View.level;   // not again after a crash
+		Intro.Start();
+		bIntroScene = true;
+	}
+	else if (Intro.IsFlying())
+	{
+		if (bPlay)
+		{
+			Intro.Hurry();   // never into the play
+		}
+		Intro.Advance(Seconds);
+	}
+	SeaStack->Show(Intro.IsFlying());
 }
 
 /**
@@ -253,6 +288,10 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 		StartKey = FKey();   // a caption would take it
 		return true;
 	}
+	if (Event == IE_Pressed)
+	{
+		Intro.Hurry();   // (the key goes to the logic all the same)
+	}
 	FUghKeyboard::Handle(Simulation, Key, Event);
 	return true;
 }
@@ -267,6 +306,7 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 			Speaker->GetPlayer().OnNewGame();
 			bInMenu = false;
 			StartKey = Key;
+			IntroLevel = -1;
 		}
 		break;
 	case FUghMenu::EAction::Quit:
@@ -290,6 +330,8 @@ void AUghGameMode::OpenMenu()
 		: FString::Printf(TEXT("Game over in level %d, score %u"), View.level + 1, View.score);
 	Speaker->GetPlayer().OnGameEnd(Simulation.GetResult());
 	bInMenu = true;
+	Intro.Stop();
+	bIntroScene = false;
 	Previewed = Menu.GetChoice();
 	Simulation.Preview(Previewed);
 }
