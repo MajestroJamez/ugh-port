@@ -113,12 +113,13 @@ namespace
 				return TEXT("in front of ") + Volume.Name;
 			}
 		}
-		// the figures' reach: anything taller than ground cover; the rotors' and wings' sweep: the tall and the hanging
+		// the figures' reach: anything taller than ground cover; the rotors' and wings' sweep: the tall, the hanging
+		// and the torches up on the walls
 		if (Decoration.Height > UghDecorations::GroundCover && Decoration.Front() < UghDecorations::FigureReach)
 		{
 			return TEXT("within the figures' reach");
 		}
-		if ((Decoration.Hangs() || Decoration.Height > UghDecorations::Middle) &&
+		if ((Decoration.Hangs() || Decoration.Kind == EKind::Torch || Decoration.Height > UghDecorations::Middle) &&
 			Decoration.Front() < UghDecorations::SweepReach)
 		{
 			return TEXT("within the rotors' and wings' sweep");
@@ -133,6 +134,10 @@ namespace
 				bHeld = Field.Sample(FVector(Decoration.X, Decoration.Y + Decoration.Height * Along,
 					Decoration.Back() / UghShapes::UnitsPerPixel)) > 0;
 			}
+		}
+		else if (Decoration.Kind == EKind::Torch)
+		{
+			bHeld = Field.Sample(FVector(Decoration.X, Decoration.Y - 1, Decoration.Back() / UghShapes::UnitsPerPixel)) > 0;
 		}
 		else
 		{
@@ -175,7 +180,7 @@ bool FUghSceneryTest::RunTest(const FString& Parameters)
 	{
 		return false;
 	}
-	int32 Fewest = MAX_int32, Total = 0, Checked = 0;
+	int32 Fewest = MAX_int32, Total = 0, Checked = 0, Torches = 0, Torchlit = 0, PortalTorches = 0, WithPortals = 0;
 	for (const auto& [Players, Count] : Modes)
 	{
 		for (int32 Level = 0; Level < Count; ++Level)
@@ -211,6 +216,21 @@ bool FUghSceneryTest::RunTest(const FString& Parameters)
 				Decorations.Num(), Kinds.Num(), Meadow),
 				Decorations.Num() >= MinCount && Kinds.Num() >= MinKinds && Meadow >= MinMeadow);
 			TestTrue(Name + TEXT(": a palm"), Kinds.Contains(EKind::Palm));
+			// torches: beside the cave entrances (most levels with one), on the walls
+			const TArray<FDecoration> Lit = Decorations.FilterByPredicate(
+				[](const FDecoration& Decoration) { return Decoration.Kind == EKind::Torch; });
+			TestTrue(Name + TEXT(": at most 4 torches (their lights)"), Lit.Num() <= 4);
+			Torches += Lit.Num();
+			Torchlit += !Lit.IsEmpty();
+			WithPortals += !Field.GetPortals().IsEmpty();
+			PortalTorches += Lit.ContainsByPredicate([&](const FDecoration& Torch)
+			{
+				return Field.GetPortals().ContainsByPredicate([&](const FUghCavePortal& Portal)
+				{
+					return FMath::Abs(Torch.X - Portal.X) < FUghCavePortal::HalfWidth * 3 &&
+						FMath::Abs(Torch.Y - Portal.Floor) < FUghCavePortal::Height / 2;
+				});
+			});
 			Fewest = FMath::Min(Fewest, Decorations.Num());
 			Total += Decorations.Num();
 			++Checked;
@@ -218,6 +238,9 @@ bool FUghSceneryTest::RunTest(const FString& Parameters)
 	}
 	AddInfo(FString::Printf(TEXT("%d levels: %d decorations on average, at least %d"), Checked,
 		Total / FMath::Max(Checked, 1), Fewest));
+	AddInfo(FString::Printf(TEXT("torches: %d in %d levels, beside an entrance in %d of the %d levels with entrances"),
+		Torches, Torchlit, PortalTorches, WithPortals));
+	TestTrue(TEXT("torches in most levels with cave entrances"), PortalTorches * 4 >= WithPortals * 3);
 	return true;
 }
 

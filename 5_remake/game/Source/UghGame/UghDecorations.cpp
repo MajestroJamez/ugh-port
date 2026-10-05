@@ -16,7 +16,7 @@ namespace
 
 	/** Campfires: how many, their box (pixels: the stones and the flame), the ledge they need, how far apart. */
 	constexpr int32 CampfireCount = 3;
-	constexpr double CampfireWidth = 12, CampfireHeight = 12;
+	constexpr double CampfireWidth = 12, CampfireHeight = 15;
 	constexpr int32 CampfireLedge = 14, CampfireRoom = 16, CampfireApart = 40;
 	/**
 	 * Palms, pixels: how many, at least and at most this tall, PalmAspect as wide as tall but at most PalmCanopy (so
@@ -33,6 +33,8 @@ namespace
 	constexpr double LandmarkTurn = 35;
 	/** Each is put this many units further back than the nearest it may be, at most. */
 	constexpr double BackMax = 60;
+	/** The torches' numbers are this far beyond the first part's. */
+	constexpr int32 TorchNumbers = 50;
 
 	FDecoration Make(EKind Kind, double X, double Y, double Width, double Height, FRandomStream& Random)
 	{
@@ -112,15 +114,15 @@ const TCHAR* UghDecorations::Name(FUghDecoration::EKind Kind)
 {
 	static const TCHAR* const Names[] = { TEXT("grass"), TEXT("flower"), TEXT("rock"), TEXT("bones"), TEXT("fern"),
 		TEXT("bush"), TEXT("plant"), TEXT("stump"), TEXT("palm"), TEXT("totem"), TEXT("hut"), TEXT("vine"),
-		TEXT("creeper"), TEXT("campfire") };
-	static_assert(UE_ARRAY_COUNT(Names) == int32(EKind::Campfire) + 1);
+		TEXT("creeper"), TEXT("campfire"), TEXT("torch") };
+	static_assert(UE_ARRAY_COUNT(Names) == int32(EKind::Torch) + 1);
 	return Names[int32(Kind)];
 }
 
 FString UghDecorations::Summary(const TArray<FUghDecoration>& Decorations)
 {
 	TArray<int32> Counts;
-	Counts.Init(0, int32(EKind::Campfire) + 1);
+	Counts.Init(0, int32(EKind::Torch) + 1);
 	for (const FDecoration& Decoration : Decorations)
 	{
 		++Counts[int32(Decoration.Kind)];
@@ -135,7 +137,7 @@ FString UghDecorations::Summary(const TArray<FUghDecoration>& Decorations)
 
 double UghDecorations::NearestFront(const FUghDecoration& Decoration)
 {
-	if (Decoration.Hangs() || Decoration.Height > Middle)
+	if (Decoration.Hangs() || Decoration.Kind == FUghDecoration::EKind::Torch || Decoration.Height > Middle)
 	{
 		return SweepReach;
 	}
@@ -218,6 +220,12 @@ TArray<FUghDecoration> UghDecorations::Plan(const ugh_logic* Logic, const FUghRo
 	{
 		FRandomStream Random(LevelId * 101 + Part);
 		Parts[Part](Placer, Random);
+		if (Part == 0)
+		{
+			// the torches after the campfires (their own numbers too, beyond the others')
+			FRandomStream Torches(LevelId * 101 + TorchNumbers);
+			UghPlans::AddTorches(Placer, Torches);
+		}
 	}
 	return Placer.TakePlaced();
 }

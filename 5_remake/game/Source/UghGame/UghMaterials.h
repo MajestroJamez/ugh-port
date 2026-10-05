@@ -42,6 +42,10 @@ namespace UghMaterials
 	inline const TCHAR* SaturationParameter = TEXT("Saturation");
 	inline const TCHAR* MossParameter = TEXT("Moss");
 	inline const TCHAR* RiseParameter = TEXT("Rise");
+	inline const TCHAR* SpreadParameter = TEXT("Spread");
+	inline const TCHAR* FlipbookParameter = TEXT("Flipbook");
+	inline const TCHAR* GlowParameter = TEXT("Glow");
+	inline const TCHAR* UndersideParameter = TEXT("Underside");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -109,11 +113,30 @@ namespace UghMaterials
 	/** A raindrop of the logic as a streak on a card (u along its way, its head at 1): translucent, Color, Opacity. */
 	inline const TCHAR* Raindrop = TEXT("/Game/Generated/M_UghRaindrop");
 	/**
-	 * A campfire's flame on a card (unlit, additive, seen from both sides; card UVs: u across, v down): tongues of fire
-	 * licking upwards, sparks above them, each card of instanced ones flickering its own way. Parameters Intensity and
-	 * Wind (-1 .. 1, the flame leans that way). The shader code is Source/UghEditor/Shaders/UghFlame.hlsl.
+	 * A flame on a card (unlit, additive, seen from both sides; card UVs: u across, v down): the flipbook of a simulated
+	 * flame (texture parameter Flipbook, UghFlames) playing, two frames blended, each card of instanced ones from its own
+	 * frame, fading out where the camera sees it edge on (crossed cards); Intensity, Wind (-1 .. 1, the flame leans that
+	 * way). The shader code is Source/UghEditor/Shaders/UghFlame.hlsl.
 	 */
-	inline const TCHAR* Fire = TEXT("/Game/Generated/M_UghFire");
+	inline const TCHAR* Flame = TEXT("/Game/Generated/M_UghFlame");
+	/**
+	 * A fire's sparks: a mesh of tiny quads (UghFireParts::Sparks) moved by the material, each a spark shooting up out
+	 * of the flame from its quad's middle up to Rise (units), Spread aside, Size big, drifting with the Wind, cooling
+	 * from yellow to red; additive, unlit, Intensity. The shader code is Source/UghEditor/Shaders/UghSparks.hlsl.
+	 */
+	inline const TCHAR* Sparks = TEXT("/Game/Generated/M_UghSparks");
+	/**
+	 * A fire's thin plume of smoke: a mesh of tiny quads (UghFireParts::Smoke) moved by the material, each a puff
+	 * rising from its quad's middle up to Rise (units), growing to Size, drifting with the Wind; translucent, lit:
+	 * Color, Opacity. The shader code is Source/UghEditor/Shaders/UghSmoke.hlsl.
+	 */
+	inline const TCHAR* Smoke = TEXT("/Game/Generated/M_UghSmoke");
+	/**
+	 * Burning wood (the campfires' logs and coals, the torches' heads): black cracked charcoal, a little grey ash on top,
+	 * its embers glowing in the cracks and breathing slowly (Glow how bright, Underside 0 .. 1 how much more where it
+	 * faces down or aside). The shader code is Source/UghEditor/Shaders/UghEmbers.hlsl.
+	 */
+	inline const TCHAR* Embers = TEXT("/Game/Generated/M_UghEmbers");
 	/**
 	 * A picture on a card (unlit, transparent cut out, its front only: UghShapes::ShowCard), the original's sprites and
 	 * the speech bubbles. Texture parameter Art.

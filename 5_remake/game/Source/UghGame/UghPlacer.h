@@ -10,7 +10,8 @@ struct FUghStream;
 
 /**
  * The decorations of a level placed so far, and whether another one fits (UghDecorations): on the screen above the
- * water, settled on the rock at its own depth (its foot on a floor, a liana under a ceiling) with its box all air,
+ * water, settled on the rock at its own depth (its foot on a floor, a liana under a ceiling, a torch wedged into the
+ * wall behind it) with its box all air,
  * as far behind the plane of the play as it must be there (UghDecorations::NearestFront, and more where a copter lands
  * on a pad, behind the pads' boards where they stand, off the streams' beds and bridges), not in another one's box
  * (ground cover among ground cover may be), nowhere near a campfire, nowhere in front of a cave's entrance but ground

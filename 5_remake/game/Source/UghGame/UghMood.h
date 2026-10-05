@@ -37,6 +37,8 @@ struct FUghMood
 	 * sky light), but at night (the night's picture is as bright as a day's); the sky light captures it as it is.
 	 */
 	float SkySeen;
+	/** How bright the campfires' and torches' lights are, times their brightness by day: the main light in the dark. */
+	float FireLight;
 };
 
 namespace UghMood

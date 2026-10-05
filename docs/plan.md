@@ -1141,3 +1141,31 @@ světlem barvit a rozpohybovat okolí (stíny a odlesky na stěnách).
   bez vad; fps A/B ve stejném sezení (notebook teď zahřátý a pomalý): před krokem medián 12, po něm 12 (ráno 31).
   Čeká na Jana: posoudit vodopády a let v okně (`play.ps1`) - šířku potoka (`UghStreams::Width` 7 px), kolik levelů
   (`MaxStreams`, `MinDrop`), mlhu u paty (`UghMakeFlow.cpp`). Další: **krok 19g**.
+- 2026-10-05: krok 19g hotový - oheň a louče (`docs/visual-concept.md`). Niagara Fluids vyzkoušen (plugin zapnutý,
+  hra bez okna pálila šablonu a scene capture snímal snímky): 3D šablony (`Grid3D_Gas_Fire` …) kreslí heterogenními
+  objemy, které tu nekreslí nic ani v hlavním pohledu; 2D `Grid2D_Gas_SmokeFire` se zapéct dá, ale je to pevná scéna
+  ohně rozfoukaného do strany bez parametrů - proto vlastní offline simulátor (zadání to připouští), plugin zase
+  vypnutý. `FUghFireSim` (UghEditor): stabilní tekutina na posunuté mřížce 160 x 320, palivo hoří v teplo a saze,
+  vztlak, vorticity confinement, stoupající šum dvou velikostí, MacCormack, tlak Gauss-Seidel; tři vrstvy se seedy
+  vedle sebe (hloubka plamene). Commandlet `UghMakeFlames` (`build.ps1`, ~2 min) zapeče flipbooky 8 x 8 snímků 128 x 256
+  (30 fps, smyčka prolnutím 16 snímků, ořez podle průměru, bílá = 98,5. percentil) do `T_UghFlameCampfire` /
+  `T_UghFlameTorch` (bez streamování: jinak karta ukazovala jen nejmenší mipy - černo), náhled `Saved/Flames`. Materiály
+  (`UghMakeFire.cpp`): `M_UghFlame` (flipbook na dvou zkřížených kartičkách, z boku mizí, vítr ho naklání; nahradil
+  `M_UghFire`), `M_UghSparks` a `M_UghSmoke` (čtverečky posouvané GPU), `M_UghEmbers` (černé popraskané uhlí, popel,
+  dýchající žár v prasklinách). Ohniště (`FUghHearths`): kruh kamenů `SmallStonesPack` vzorku Electric Dreams, spálené
+  větve `OldTreeBranch`/`DryBranches` opřené jako stan, řeřavé uhlíky (9 assetů navíc v `UghElectricDreams.h`,
+  `electric-dreams.ps1` znovu); bez vzorku Kenney. Louče (`AUghTorches`, nový Blender `torch.py` a asset `torch`):
+  zaražené do skály, nakloněné ven, hlavice žhne, malý plamen, jiskry, dým; rozmístění `UghTorchPlan.cpp`
+  (dekorace `Torch`: vedle vchodů do jeskyní na straně bez zatáčky chodby, pak na zadní stěně nad dlouhými římsami,
+  nejvýš 4, za `SweepReach`, zaklíněné do stěny ve `FUghPlacer::Settle`, vlastní čísla náhody - ostatní dekorace
+  beze změny; ohně mají box 15 px místo 12 kvůli vyššímu plameni). Světlo (`UghFireParts::FFlicker`): šum tří
+  rychlostí mění jas, teplotu barvy (1850 K ± 350) a polohu (stíny a odlesky na stěnách tančí), měkké stíny, jas podle
+  nálady (`FUghMood::FireLight` 1 / 1,05 / 1,15 / 1,3 / 1,1); oheň 9 cd, louč 0,8 cd; pod vodou zhasnou. Opraveno
+  cestou: hloubka „ke kameře“ je +Y světa (louč se napoprvé zanořila do skály). `shot.ps1 -Look campfire|torch`
+  (`-UghShotLook`) zabere první oheň / louč levelu. Snímky: `1p-01-campfire`, `1p-01-torch` (den), `1p-06-campfire`,
+  `1p-06-torch` (noc), mihotání `1p-06-campfire-at2` vs. `-at2.1` (jiný tvar plamene i jas země). `Ugh.Scenery`
+  hlídá i louče (na stěně, za dosahem rotorů, nejvýš 4; 470 loučí ve 148 levelech, u vchodu ve 148 ze 150 levelů se
+  vchody). CTest logiky, `6_verification` (163) a 183 testů v UE zelené. `levels.ps1 -Quick` a arch bez vad. Výkon
+  (rychlá sada A/B ve stejném sezení, notebook zahřátý): před krokem medián 15 (nejpomalejší 12), po něm 15 (5: první level po přestavbě materiálů ještě kompiluje shadery); dřív v sezení po kroku 23 fps. Čeká na Jana: posoudit oheň a louče v okně
+  (`play.ps1`) - hlavně zda plamen ze simulace stačí (jinak oheň z Fabu), jas světel (`UghCampfire.cpp`,
+  `UghTorches.cpp`, `FireLight` v `UghMood.cpp`); v noci horní louče silně prosvětlují strop. Další: **krok 20**.

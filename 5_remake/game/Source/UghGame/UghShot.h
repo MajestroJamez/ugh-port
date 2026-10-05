@@ -24,8 +24,10 @@ class FUghPasswords;
  * picture: the logic is not changed); -UghShotCloseUp frames the copters instead of the screen, -UghShotFrame=<left>,
  * <top>,<width>,<height> that part of the screen (pixels: a look at the figures; with -UghShotCloseUp from the first
  * copter's corner, wherever it hovers: a look into its cabin). -UghShotBubbles gives every passenger shown a speech
- * bubble, each the next of the data's bubbles (only the picture). Such a shot's name ends in -cargo<look>,
- * -hanging<look>, -bubbles, -closeup, -frame<left>_<top> (in this order). -UghShotIntro=<seconds> saves the flight to
+ * bubble, each the next of the data's bubbles (only the picture). -UghShotLook=campfire (or torch) frames the first
+ * campfire (torch) of the level, with -UghShotFrame that part from its middle. Such a shot's name ends in
+ * -cargo<look>, -hanging<look>, -bubbles, -closeup, -campfire / -torch, -frame<left>_<top> (in this order).
+ * -UghShotIntro=<seconds> saves the flight to
  * the stone at the start of the level that many seconds into it instead (FUghIntro; FUghIntro::Duration and later:
  * its end, the game's camera), its name ending in -intro<seconds> after those, and gives the game up.
  */
@@ -50,9 +52,12 @@ public:
 	void Dress(ugh_logic_view& View, const ugh_logic* Logic);
 	/**
 	 * The pixels to frame (in the play): -UghShotFrame its part of the screen, -UghShotCloseUp the copters, both that
-	 * part of the first copter.
+	 * part of the first copter; `Looked` (the middle of what -UghShotLook wants, pixels) around it, with -UghShotFrame
+	 * that part from it.
 	 */
-	TOptional<FBox2D> CloseUp(const ugh_logic_view& View) const;
+	TOptional<FBox2D> CloseUp(const ugh_logic_view& View, const TOptional<FVector2D>& Looked) const;
+	/** What -UghShotLook=<kind> wants framed: "campfire", "torch" (the first of its kind of the level), or nothing. */
+	const FString& GetLook() const { return Look; }
 
 private:
 	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 1, AfterShot = 0.5, LevelTimeLimit = 60;
@@ -60,6 +65,8 @@ private:
 	static constexpr int32 BubbleSearch = 1000;
 	/** A close-up shows this many pixels around the copters. */
 	static constexpr double CloseUpMargin = 12;
+	/** A look at a decoration (-UghShotLook) shows this many pixels around its middle. */
+	static constexpr double LookAround = 16;
 	/** A hanging passenger reaches this many pixels below the body (the stone passenger, 1 px below it, 11 px high). */
 	static constexpr double HangingBelow = 12;
 
@@ -88,6 +95,7 @@ private:
 	bool bBubbles = false;    // -UghShotBubbles
 	TArray<int32> Bubbles;    // the sprites of the data's speech bubbles, found the first time
 	bool bCloseUp = false;    // -UghShotCloseUp
+	FString Look;             // -UghShotLook
 	TOptional<FBox2D> Frame;  // -UghShotFrame
 	TOptional<double> IntroAt; // -UghShotIntro
 	FString Suffix;           // of the shots' names

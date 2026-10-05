@@ -16,6 +16,7 @@
 
 class AUghBackground;
 class AUghCampfire;
+class AUghTorches;
 class AUghCliffDressing;
 class AUghCopters;
 class AUghFalls;
@@ -31,9 +32,10 @@ class AUghWater;
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
  * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground, AUghSeaStack,
- * AUghSigns, AUghWater, AUghFalls, AUghRain, AUghCopters, AUghFigures, AUghCampfire, AUghScenery, AUghCliffDressing,
- * the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu. Each level has its mood (UghMood); its
- * first caption shows the camera flying over the sea to the stone the level is carved into (FUghIntro).
+ * AUghSigns, AUghWater, AUghFalls, AUghRain, AUghCopters, AUghFigures, AUghCampfire, AUghTorches, AUghScenery,
+ * AUghCliffDressing, the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu. Each level has its
+ * mood (UghMood); its first caption shows the camera flying over the sea to the stone the level is carved into
+ * (FUghIntro).
  * Behind the menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of
  * the frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
  *
@@ -102,6 +104,7 @@ private:
 	FUghUpscaler Upscaler;
 	FUghShot Shot;
 	bool bShooting = false;   // -UghShot
+	TOptional<FVector2D> ShotLook;   // the middle of what the shot looks at (FUghShot::GetLook), pixels
 	bool bInMenu = true;
 	FUghGameChoice Previewed;   // whose level the diorama shows behind the menu
 	FKey StartKey;              // the key that started the game: its release is not a key of the game
@@ -122,6 +125,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;
+	UPROPERTY() TObjectPtr<AUghTorches> Torches;
 	UPROPERTY() TObjectPtr<AUghScenery> Scenery;
 	UPROPERTY() TObjectPtr<AUghCliffDressing> Dressing;
 	UPROPERTY() TObjectPtr<AUghSpeaker> Speaker;

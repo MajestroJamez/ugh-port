@@ -101,7 +101,7 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
 - Ohně (krok 18): až tři na nejdelších suchých římsách (napřed bez plošiny), za deskou hry: kamenný kruh a polena
   (Kenney, v tmavší plastelíně), plamen ze tří zkřížených kartiček (materiál `M_UghFire`, `UghFlame.hlsl`: jazyky ohně
   olizují vzhůru stoupajícím šumem, jiskry, každá kartička jinak) a blikající oranžové bodové světlo každého (Lumen),
-  každý oheň jinak; zhasne, když voda vystoupí nad jeho římsu.
+  každý oheň jinak; zhasne, když voda vystoupí nad jeho římsu. Od kroku 19g jinak (viz Oheň a louče níže).
 - Mlha: nízká přízemní (exponential height fog) s objemovou mlhou, ať je hloubka čitelná.
 - Vítr (krok 12, 19): level s větrem je bouřka - slabší chladné světlo, zatažená obloha (`sky_kloofendal_overcast`
   ztmavená), hustá šedá mlha a mlžný opar nad vodou, rostliny vzorku Electric Dreams se klátí silněji a po větru
@@ -458,3 +458,37 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   kamene (`UghWater.hlsl`) teď moře zrcadlí oblohu samo (`Mirror`: krychle oblohy nálady podle odrazu vlny a Fresnela,
   pod ní vlastní hluboká modř osvětlená oblohou), odrazy enginu tam slábnou; přibyly dlouhé vlny (34 a 21 m), aby byly
   hřebeny čitelné i zdálky. U útesu (co vidí kamera hry) beze změny.
+
+## Oheň a louče (krok 19g)
+
+- Plamen je zapečená simulace ohně (Jan chtěl Niagara Fluids): šablony 3D ohně pluginu (`Grid3D_Gas_Fire` …) kreslí
+  heterogenními objemy, které v tomto projektu nekreslí nic (ani v hlavním pohledu, offscreen i se scene capture -
+  vyzkoušeno, bake hrou bez okna fungoval jen s 2D šablonou `Grid2D_Gas_SmokeFire`, což je pevná scéna ohně
+  rozfoukaného do strany bez parametrů). Proto vlastní offline simulátor plynu (`FUghFireSim`, commandlet
+  `UghMakeFlames` v `build.ps1`, ~2 min): stabilní tekutina na posunuté mřížce 160 x 320 (Stam), palivo přiváděné
+  šumem na loži hoří, kde je horko, v teplo a trochu sazí; teplo stoupá (vztlak), víry drží vorticity confinement
+  a rozvíří je stoupající šum dvou velikostí, teplo a palivo nese MacCormack (ostré jazyky), tok bez divergence
+  (tlak Gauss-Seidel s převolněním), teplo chladne. Světlo plamene = barva žhavého plynu (tmavě červená, oranžová,
+  žlutá, světle žlutá) krát teplo na 4; plamen = tři vrstvy (tři simulace s jiným seedem kousek vedle sebe, jako hloubka
+  skutečného plamene). `UghFlipbook`: bílá = 98,5. percentil jasu, ořez na místo, kde hoří v průměru všech snímků,
+  posledních 16 snímků přechází do prvních (smyčka bez skoku), 8 x 8 snímků 128 x 256 při 30 fps (2,1 s), textury
+  `T_UghFlameCampfire` / `T_UghFlameTorch` v `Content/Generated` (bez streamování - karta ukazuje malý kus textury
+  zblízka), náhled `Saved/Flames/*.png`.
+- Materiál `M_UghFlame` (`UghFlame.hlsl`) hraje flipbook na dvou zkřížených kartičkách (čelem ke kameře a napříč;
+  kartička viděná z boku mizí), dva snímky prolnuté, každá kartička od svého snímku, ve větru se plamen naklání,
+  lehce se tetelí. Jiskry (`M_UghSparks`, `UghSparks.hlsl`) a tenký dým (`M_UghSmoke`, `UghSmoke.hlsl`) jsou čtverečky,
+  které posouvá GPU (jako déšť a mlha u vodopádu): jiskry vyletí, zpomalí, víří, chladnou ze žluté do červené; dým
+  stoupá, roste a řídne, unáší ho vítr.
+- Ohniště (`FUghHearths`): kruh naskenovaných kamenů `SmallStonesPack` vzorku Electric Dreams, uprostřed větve
+  `OldTreeBranch` / `DryBranches` opřené o sebe jako stan, spálené na uhel, a řeřavé uhlíky (malé kameny) -
+  materiál `M_UghEmbers` (`UghEmbers.hlsl`): černé popraskané dřevěné uhlí, trochu popela nahoře, v prasklinách
+  žhnoucí žár, který pomalu dýchá, u polen víc zespodu. Bez vzorku Kenneyho ohniště v plastelíně.
+- Louče (`AUghTorches`, `Blender/torch.py`): křivá násada, hlavice z lýka a smůly svázaná provázky (slot `char` žhne),
+  zaražená do skály, nakloněná ven a trochu stranou, malý plamen (`T_UghFlameTorch`), pár jisker, chomáč dýmu.
+  Rozmístění (`UghTorchPlan.cpp`, deterministicky): vedle vchodů do jeskyní na straně, kam se chodba nestáčí (při
+  málo vchodech i na druhé), 7 px nad podlahou, pak na zadní stěně nad nejdelšími římsami daleko od ohňů; nejvýš 4
+  na level, vždy za dosahem rotorů a křídel (`SweepReach`, jako liány), zaklíněná do stěny (`FUghPlacer::Settle`).
+- Světlo (`UghFireParts`): bodové světlo každého ohně a louče bliká šumem tří rychlostí - jas, teplota barvy (1850 K,
+  tmavší = červenější) a poloha (pár cm: stíny a odlesky na stěnách tančí), měkké stíny (poloměr zdroje), Lumen barví
+  skálu teple; jas podle nálady (`FUghMood::FireLight`: den 1, večer 1,05, soumrak 1,15, noc 1,3, bouřka 1,1), oheň
+  9 cd, louč 0,8 cd. Pod vodou ohně i louče zhasnou.

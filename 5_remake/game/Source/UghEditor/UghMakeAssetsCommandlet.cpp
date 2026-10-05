@@ -6,11 +6,9 @@
 #include "Materials/MaterialExpressionBumpOffset.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
 #include "Materials/MaterialExpressionNoise.h"
-#include "Materials/MaterialExpressionPerInstanceRandom.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
-#include "Materials/MaterialExpressionTime.h"
 #include "Materials/MaterialExpressionVertexColor.h"
 #include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
@@ -111,10 +109,12 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	};
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
-		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Fire, &MakeFire }, { UghMaterials::Sprite, &MakeSprite },
+		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Sprite, &MakeSprite },
 		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky },
 		{ UghMaterials::Rain, &MakeRain }, { UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop },
-		{ UghMaterials::Flow, &MakeFlow }, { UghMaterials::Mist, &MakeMist } };
+		{ UghMaterials::Flow, &MakeFlow }, { UghMaterials::Mist, &MakeMist },
+		{ UghMaterials::Flame, &MakeFlame }, { UghMaterials::Sparks, &MakeSparks }, { UghMaterials::Smoke, &MakeSmoke },
+		{ UghMaterials::Embers, &MakeEmbers } };
 	bool bAllMade = true;
 	for (const FRecipe& Recipe : Recipes)
 	{
@@ -179,25 +179,6 @@ bool UUghMakeAssetsCommandlet::MakeCliff(UMaterial* Material)
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffNormal"), MP_Normal);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffRough"), MP_Roughness);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffOcclusion"), MP_AmbientOcclusion);
-	return true;
-}
-
-bool UUghMakeAssetsCommandlet::MakeFire(UMaterial* Material)
-{
-	Material->BlendMode = BLEND_Additive;
-	Material->SetShadingModel(MSM_Unlit);
-	Material->TwoSided = true;
-	UMaterialExpression* Flame = Custom(Material, ShaderCode(TEXT("UghFlame.hlsl")), CMOT_Float3, {
-		{ TEXT("UV"), Add<UMaterialExpressionTextureCoordinate>(Material) },
-		{ TEXT("Time"), Add<UMaterialExpressionTime>(Material) },
-		{ TEXT("Seed"), Add<UMaterialExpressionPerInstanceRandom>(Material) },
-		{ UghMaterials::WindParameter, Scalar(Material, UghMaterials::WindParameter, 0.f) },
-		{ UghMaterials::IntensityParameter, Scalar(Material, UghMaterials::IntensityParameter, 1.5f) } });
-	if (!Flame)
-	{
-		return false;
-	}
-	UMaterialEditingLibrary::ConnectMaterialProperty(Flame, TEXT(""), MP_EmissiveColor);
 	return true;
 }
 

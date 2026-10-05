@@ -44,6 +44,8 @@ namespace UghAssets
 	inline const TCHAR* Vines = TEXT("vines");
 	/** Made by a script of Blender/ too: the pads' boards, a mesh sign_<marks> each (AUghSigns). */
 	inline const TCHAR* Signs = TEXT("signs");
+	/** Made by a script of Blender/ too: the torches on the cave's walls (AUghTorches). */
+	inline const TCHAR* Torch = TEXT("torch");
 	/** The texture set of the logs of the streams' footbridges (AUghFalls): weathered timber. */
 	inline const TCHAR* BridgeWood = TEXT("rough_wood");
 	/**

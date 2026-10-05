@@ -13,6 +13,11 @@ namespace UghPlans
 	void AddSprings(FUghPlacer& Placer, FRandomStream& Random);
 	/** Campfires (a few) in the middle of the longest dry ledges, those without a pad first. */
 	void AddCampfires(FUghPlacer& Placer, FRandomStream& Random);
+	/**
+	 * Torches (a few) wedged into the rock beside the cave entrances' openings (on the side away from where their
+	 * passages turn, the other too when there are few), then on the cave's back wall above the longest ledges.
+	 */
+	void AddTorches(FUghPlacer& Placer, FRandomStream& Random);
 	/** Palms (a few), the tallest that fit, apart from each other. */
 	void AddPalms(FUghPlacer& Placer, FRandomStream& Random);
 	/** Totems and huts of the tribe where there is room for them. */

@@ -24,6 +24,8 @@ namespace
 	 * things crowd each other and ground cover only with their middles, this part of their width: leaves mingle.
 	 */
 	constexpr double PalmTrunk = 3, LeafyCore = 0.5;
+	/** A torch is wedged into the wall this far above the foot of its shaft (pixels), its back this deep in (units). */
+	constexpr double TorchHold = 1, TorchWedge = 3;
 
 	bool IsLeafy(const FDecoration& Decoration)
 	{
@@ -129,6 +131,16 @@ double FUghPlacer::NearestFront(const FDecoration& Decoration) const
 
 bool FUghPlacer::Settle(FDecoration& Decoration) const
 {
+	if (Decoration.Kind == EKind::Torch)
+	{
+		// its back wedged into the wall behind the foot of its shaft
+		const TOptional<double> Wall = Ground.Wall(Decoration.X, Decoration.Y - TorchHold, Decoration.Depth);
+		if (Wall.IsSet())
+		{
+			Decoration.Depth = *Wall + TorchWedge - Decoration.Width * UghShapes::UnitsPerPixel / 2;
+		}
+		return Wall.IsSet();
+	}
 	if (Decoration.Kind == EKind::Creeper)
 	{
 		// against the nearest of the wall behind it (its back half in the wall there): it hangs free where the wall is

@@ -6,13 +6,14 @@
 # play, separated by commas (e.g. "r.Shadow.Virtual.Enable 0"); -Cargo <look>: the copters shown with a passenger of
 # the logic's cargo look in the cabin (1 .. 4: 4 the stone, smaller), -Hanging below instead, -Bubbles: every passenger
 # with a speech bubble (each the next of the data's), -CloseUp: framing the copters (the name of the shot ends in
-# -cargo<look> / -hanging<look>, -bubbles, -closeup), -Frame <left>,<top>,<width>,<height>:
-# framing that part of the screen in pixels (a look at the figures; with -CloseUp from the first copter's corner: a look
-# into its cabin; the name ends in -frame<left>_<top>), -Intro <seconds>: the flight to the stone at the start of the
-# level that many seconds into it instead (4.5 and later: its end, the game's camera; the name ends in -intro<seconds>,
-# e.g. -intro0.3). All levels at once: levels.ps1.
+# -cargo<look> / -hanging<look>, -bubbles, -closeup), -Look campfire|torch: framing the first campfire (torch) of the
+# level (the name ends in -campfire / -torch), -Frame <left>,<top>,<width>,<height>: framing that part of the screen in
+# pixels (a look at the figures; with -CloseUp from the first copter's corner: a look into its cabin, with -Look from
+# the middle of the campfire or torch; the name ends in -frame<left>_<top>), -Intro <seconds>: the flight to the stone
+# at the start of the level that many seconds into it instead (4.5 and later: its end, the game's camera; the name
+# ends in -intro<seconds>, e.g. -intro0.3). All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
-    [switch]$Bubbles, [switch]$CloseUp, [string]$Frame = '', [string]$Intro = '', [int]$TimeoutSeconds = 300)
+    [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -22,6 +23,12 @@ $suffix = ''
 if ($Cargo -gt 0) { $suffix += '-{0}{1}' -f $(if ($Hanging) { 'hanging' } else { 'cargo' }), $Cargo }
 if ($Bubbles) { $suffix += '-bubbles' }
 if ($CloseUp) { $suffix += '-closeup' }
+if ($Look) {
+    if ($Look -ne 'campfire' -and $Look -ne 'torch') {
+        Write-Host "-Look wants campfire or torch" -ForegroundColor Red; exit 1
+    }
+    $suffix += '-' + $Look
+}
 if ($Frame) {
     $corner = $Frame.Split(',')
     if ($corner.Count -ne 4) { Write-Host "-Frame wants <left>,<top>,<width>,<height>" -ForegroundColor Red; exit 1 }
@@ -46,6 +53,7 @@ if ($Cargo -gt 0) { $arguments += " -UghShotCargo=$Cargo" }
 if ($Hanging) { $arguments += ' -UghShotHanging' }
 if ($Bubbles) { $arguments += ' -UghShotBubbles' }
 if ($CloseUp) { $arguments += ' -UghShotCloseUp' }
+if ($Look) { $arguments += " -UghShotLook=$Look" }
 if ($Frame) { $arguments += " -UghShotFrame=$Frame" }
 if ($Intro) { $arguments += " -UghShotIntro=$Intro" }
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds

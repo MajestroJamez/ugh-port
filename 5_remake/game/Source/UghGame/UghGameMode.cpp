@@ -10,6 +10,7 @@
 #include "UghAssets.h"
 #include "UghBackground.h"
 #include "UghCampfire.h"
+#include "UghTorches.h"
 #include "UghCliffDressing.h"
 #include "UghCopters.h"
 #include "UghDecorations.h"
@@ -96,7 +97,7 @@ void AUghGameMode::StartPlay()
 
 /**
  * The stage (light, air, camera), the level's background and the pads' boards, the water, the springs' streams, the
- * rain, the copters, the figures, the campfire, the decorations, the rock dressing, the speaker.
+ * rain, the copters, the figures, the campfires, the torches, the decorations, the rock dressing, the speaker.
  */
 void AUghGameMode::BuildStage()
 {
@@ -111,6 +112,7 @@ void AUghGameMode::BuildStage()
 	Copters = World->SpawnActor<AUghCopters>();
 	Figures = World->SpawnActor<AUghFigures>();
 	Campfire = World->SpawnActor<AUghCampfire>();
+	Torches = World->SpawnActor<AUghTorches>();
 	Scenery = World->SpawnActor<AUghScenery>();
 	Dressing = World->SpawnActor<AUghCliffDressing>();
 	Speaker = World->SpawnActor<AUghSpeaker>();
@@ -167,6 +169,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Rain->Show(Current, Surface);
 	Stage->SetWater(Surface);
 	Campfire->SetWater(Surface);
+	Torches->SetWater(Surface);
 	TArray<FTransform> ClayRiders;
 	Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
 	Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
@@ -190,7 +193,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 			Controller->PlayerCameraManager->SetManualCameraFade(1.f - float(Shown), FLinearColor::Black, false);
 		}
 	}
-	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current) : TOptional<FBox2D>();
+	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook) : TOptional<FBox2D>();
 	const FUghCameraPose Game = AUghStage::Fit(CloseUp.Get(UghShapes::Screen()), AUghStage::ViewportAspect());
 	Stage->SetCamera(Intro.IsFlying() ? Intro.Pose(Game, UghShapes::ToWorld(0, Surface, 0).Z) : Game);
 }
@@ -221,7 +224,8 @@ void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)
 
 /**
  * The diorama of the level the view shows: the rock coloured by its drawing, the pads' boards, its springs' streams, the
- * campfires, the decorations, the scanned rock dressing the cliff; the light and the air of its mood (UghMood), its rain.
+ * campfires and torches, the decorations, the scanned rock dressing the cliff; the light and the air of its mood
+ * (UghMood), its rain.
  */
 void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
@@ -247,7 +251,15 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 		: UghDecorations::Plan(Logic, Field, View.level_id, WaterRow, PadSigns, Streams);
 	UE_LOG(LogTemp, Display, TEXT("UGH decorations: %d in %.0f ms (%s), streams %d"), Decorations.Num(),
 		(FPlatformTime::Seconds() - Started) * 1000, *UghDecorations::Summary(Decorations), Streams.Num());
-	Campfire->Place(Decorations, View.wind);
+	const FUghMood& Mood = UghMood::Of(View.level, View.wind);
+	// what a shot wants to look at
+	const FUghDecoration* Looked = Decorations.FindByPredicate([this](const FUghDecoration& Decoration)
+	{
+		return Shot.GetLook() == UghDecorations::Name(Decoration.Kind);
+	});
+	ShotLook = Looked ? FVector2D(Looked->X, Looked->Y - Looked->Height / 2) : TOptional<FVector2D>();
+	Campfire->Place(Decorations, View.wind, Mood.FireLight);
+	Torches->Place(Decorations, View.wind, Mood.FireLight);
 	Scenery->Show(Decorations);
 	const TArray<FUghRockPiece> Pieces = View.level_id < 0 ? TArray<FUghRockPiece>()
 		: UghRockDressing::Plan(Logic, Field, View.level_id, Decorations, Streams);
@@ -255,7 +267,6 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 		Pieces.FilterByPredicate([](const FUghRockPiece& Piece) { return Piece.Kind == FUghRockPiece::EKind::Root; }).Num();
 	UE_LOG(LogTemp, Display, TEXT("UGH rock dressing: %d cliffs, %d roots"), Pieces.Num() - Roots, Roots);
 	Dressing->Show(Pieces);
-	const FUghMood& Mood = UghMood::Of(View.level, View.wind);
 	UE_LOG(LogTemp, Display, TEXT("UGH mood: %s"), Mood.Name);
 	Stage->SetMood(Mood, View.wind);
 	Water->SetWeather(View.wind, Stage->SunDirection(), Mood.Caustics);

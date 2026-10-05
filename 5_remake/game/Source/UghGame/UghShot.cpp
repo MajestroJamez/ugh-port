@@ -37,6 +37,7 @@ bool FUghShot::Configure()
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
 	bBubbles = FParse::Param(CommandLine, TEXT("UghShotBubbles"));
 	bCloseUp = FParse::Param(CommandLine, TEXT("UghShotCloseUp"));
+	FParse::Value(CommandLine, TEXT("-UghShotLook="), Look);
 	FString FrameText;
 	TArray<FString> Numbers;
 	if (FParse::Value(CommandLine, TEXT("-UghShotFrame="), FrameText, false) &&
@@ -56,6 +57,10 @@ bool FUghShot::Configure()
 	if (bCloseUp)
 	{
 		Suffix += TEXT("-closeup");
+	}
+	if (!Look.IsEmpty())
+	{
+		Suffix += TEXT("-") + Look;
 	}
 	if (Frame)
 	{
@@ -244,12 +249,18 @@ void FUghShot::Dress(ugh_logic_view& View, const ugh_logic* Logic)
 	}
 }
 
-TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View) const
+TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View, const TOptional<FVector2D>& Looked) const
 {
 	const bool bCopters = bCloseUp && View.copter_count > 0;
-	if (View.phase != UGH_LOGIC_PHASE_PLAY || (!Frame && !bCopters))
+	if (View.phase != UGH_LOGIC_PHASE_PLAY || (!Frame && !bCopters && !Looked))
 	{
 		return {};
+	}
+	if (Looked)
+	{
+		// around it, a little more room above (its flame, its smoke)
+		return Frame ? Frame->ShiftBy(*Looked)
+			: FBox2D(*Looked - LookAround * FVector2D(1, 1.2), *Looked + LookAround * FVector2D(1, 0.8));
 	}
 	if (Frame)
 	{

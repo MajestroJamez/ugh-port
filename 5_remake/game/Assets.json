@@ -342,6 +342,13 @@
       "path": "generated/signs",
       "blender": { "script": "Blender/signs.py", "inputs": ["rough_wood"], "outputs": ["signs.glb"] },
       "import": ["signs.glb"]
+    },
+    {
+      "id": "torch", "kind": "generated", "use": "the torches on the cave's walls: a crooked shaft, its head a bundle of bark and pitch bound with cords (slot char glows)",
+      "page": "Blender/torch.py", "license": "CC0-1.0", "author": "UGH remake (Blender/torch.py), texture rough_wood (Poly Haven)",
+      "path": "generated/torch",
+      "blender": { "script": "Blender/torch.py", "inputs": ["rough_wood"], "outputs": ["torch.glb"] },
+      "import": ["torch.glb"]
     }
   ]
 }

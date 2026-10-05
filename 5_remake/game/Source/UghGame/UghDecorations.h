@@ -20,7 +20,12 @@ struct FUghDecoration
 		/** A liana hanging down the cave's back wall (from where it is: Y its top). */
 		Creeper,
 		/** A campfire (AUghCampfire shows them): its flame, a light. */
-		Campfire
+		Campfire,
+		/**
+		 * A torch wedged into the rock of a wall (AUghTorches shows them): Y the lower end of its shaft, its back in the
+		 * wall; its flame, a light.
+		 */
+		Torch
 	};
 
 	EKind Kind = EKind::Rock;
@@ -50,7 +55,8 @@ struct FUghDecoration
 /**
  * The decorations of the level being played: campfires, palms, totems, huts, bushes, ferns, jungle plants, rocks,
  * stumps and bones on the dry tops of the rock, meadows of grass and flowers along them, lianas from its ceilings and
- * down the cave's back wall -
+ * down the cave's back wall, torches on its walls (beside the cave entrances; behind the rotors' sweep like the
+ * lianas) -
  * each standing on the rock (FUghRockField, at its own depth) with room for its whole box, never hiding a figure:
  *
  * - nothing comes nearer the plane of the play than SlabFront (the slab of the play, where the figures are, and the

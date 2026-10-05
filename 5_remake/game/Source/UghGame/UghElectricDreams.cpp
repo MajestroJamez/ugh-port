@@ -41,7 +41,7 @@ TArray<const TCHAR*> UghElectricDreams::All()
 {
 	TArray<const TCHAR*> Paths;
 	const TConstArrayView<const TCHAR*> Lists[] = { Grasses, Flowers, Rocks, Ferns, Bushes, Plants, Stumps, Palms, Vines,
-		Creepers, Cliffs, Roots };
+		Creepers, FireStones, FireLogs, Cliffs, Roots };
 	for (const TConstArrayView<const TCHAR*> List : Lists)
 	{
 		Paths.Append(List.GetData(), List.Num());

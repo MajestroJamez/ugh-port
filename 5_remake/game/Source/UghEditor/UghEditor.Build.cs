@@ -1,8 +1,9 @@
 using UnrealBuildTool;
 
 /**
- * The editor's part of the game: the commandlets that make the materials (UghMakeAssets), import the 3D assets
- * (UghImportAssets) and copy the assets of the Electric Dreams sample (UghCopyElectricDreams).
+ * The editor's part of the game: the commandlets that make the materials (UghMakeAssets), bake the flames
+ * (UghMakeFlames), import the 3D assets (UghImportAssets) and copy the assets of the Electric Dreams sample
+ * (UghCopyElectricDreams).
  */
 public class UghEditor : ModuleRules
 {

@@ -26,7 +26,6 @@ private:
 	static bool MakeClay(UMaterial* Material);
 	static bool MakeRock(UMaterial* Material);
 	static bool MakeCliff(UMaterial* Material);
-	static bool MakeFire(UMaterial* Material);
 	static bool MakeSprite(UMaterial* Material);
 	static bool MakePbr(UMaterial* Material);
 	static bool MakeScan(UMaterial* Material);
@@ -39,4 +38,9 @@ private:
 	/** The springs' water (UghMakeFlow.cpp): flowing water, a waterfall's mist. */
 	static bool MakeFlow(UMaterial* Material);
 	static bool MakeMist(UMaterial* Material);
+	/** The fires (UghMakeFire.cpp): a flame of a flipbook, its sparks, its smoke, burning wood. */
+	static bool MakeFlame(UMaterial* Material);
+	static bool MakeSparks(UMaterial* Material);
+	static bool MakeSmoke(UMaterial* Material);
+	static bool MakeEmbers(UMaterial* Material);
 };

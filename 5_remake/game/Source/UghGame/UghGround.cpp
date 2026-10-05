@@ -23,6 +23,11 @@ bool FUghGround::AtEntrance(const FBox2D& Box) const
 	});
 }
 
+const TArray<FUghCavePortal>& FUghGround::GetPortals() const
+{
+	return Field.GetPortals();
+}
+
 bool FUghGround::Solid(int32 X, int32 Y) const
 {
 	return ugh_logic_solid(Logic, X, Y) != 0;

@@ -72,6 +72,19 @@ namespace UghElectricDreams
 		TEXT("Megascans/3D_Plants/Ivy/SM_Ivy_12"),
 		TEXT("Megascans/3D_Plants/Ivy/SM_Ivy_16"), TEXT("Megascans/3D_Plants/Ivy/SM_Ivy_18"),
 		TEXT("Megascans/3D_Plants/Ivy/SM_Ivy_19"), TEXT("Megascans/3D_Plants/Ivy/SM_Ivy_22") };
+	/**
+	 * The campfires (AUghCampfire): a ring of scanned stones around branches burnt to charcoal; small stones its
+	 * glowing coals.
+	 */
+	inline const TCHAR* const FireStones[] = { TEXT("Megascans/3D_Assets/SmallStonesPack/SM_SmallStonesPack_02"),
+		TEXT("Megascans/3D_Assets/SmallStonesPack/SM_SmallStonesPack_04"),
+		TEXT("Megascans/3D_Assets/SmallStonesPack/SM_SmallStonesPack_06"),
+		TEXT("Megascans/3D_Assets/SmallStonesPack/SM_SmallStonesPack_08"),
+		TEXT("Megascans/3D_Assets/SmallStonesPack/SM_SmallStonesPack_10") };
+	inline const TCHAR* const FireLogs[] = { TEXT("Megascans/3D_Assets/OldTreeBranch/SM_OldTreeBranch_01"),
+		TEXT("Megascans/3D_Assets/OldTreeBranch/SM_OldTreeBranch_03"),
+		TEXT("Megascans/3D_Assets/DryBranches/SM_DryBranches_02"),
+		TEXT("Megascans/3D_Assets/DryBranches/SM_DryBranches_05") };
 
 	/**
 	 * The scanned rock dressing the cave (UghRockDressing): grey cliffs of fractured rock on its back wall (their scans
