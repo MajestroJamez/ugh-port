@@ -6,6 +6,7 @@
 
 class FUghRockField;
 struct FUghPadSign;
+struct FUghStream;
 struct ugh_logic;
 
 /** A decoration of a level's diorama, on the rock behind the slab of the play. */
@@ -59,6 +60,7 @@ struct FUghDecoration
  * - where a copter lands on a pad nothing nearer than FigureReach where its body is (PadBody), than SweepReach where
  *   its rotor sweeps (PadRotor),
  * - nothing in front of a pad's board (UghPadSigns: nothing nearer than its Back where it stands).
+ * - nothing on a stream's bed or in front of its spring, nothing but behind its bridge's deck there (UghStreams::Rooms).
  *
  * The same level always gets the same ones (its level_id seeds the choice).
  */
@@ -92,8 +94,9 @@ namespace UghDecorations
 
 	/**
 	 * The decorations of the level being played (its rock `Field`, level `LevelId`, the water's surface at the start at
-	 * `WaterRow`, the pads' boards `Signs`); none before a level.
+	 * `WaterRow`, the pads' boards `Signs`, its `Streams`: rocks at their springs, nothing on their beds and bridges);
+	 * none before a level.
 	 */
 	TArray<FUghDecoration> Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId, int32 WaterRow,
-		const TArray<FUghPadSign>& Signs);
+		const TArray<FUghPadSign>& Signs, const TArray<FUghStream>& Streams);
 }

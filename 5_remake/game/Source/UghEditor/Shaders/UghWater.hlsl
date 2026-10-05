@@ -4,14 +4,18 @@
 // far from the camera the water and the scene behind it are, along its view), Time (seconds), WaterLevel (the
 // world's z of the surface), Rain (0 .. 1), Wind (-1 .. 1: where the wind blows along x), Caustics (how bright the
 // caustics are, 0 none), Sun (where the sunlight goes, world) and Ring0 .. Ring5 (what floats on the water: xyz its
-// place on the surface, w how much it stirs it, 0 nothing). It returns the colour of the foam; WaterNormal (world),
+// place on the surface, w how much it stirs it, 0 nothing), Fall0 .. Fall1 (where a waterfall pours into it: xyz
+// the middle of its foot on the surface, w its width, 0 none), Sky (the mood's sky, a cube), SkySeen (how bright the
+// camera sees it) and SkyReflection (1: Sky is the mood's). It returns the colour of the foam; WaterNormal (world),
 // WaterOpacity (the foam's cover), WaterRough, WaterSpecular, Scattering and Absorption (the water's coefficients,
-// 1/cm) and Behind (the light of what is behind the water: the caustics) are its other outputs.
+// 1/cm), Behind (the light of what is behind the water: the caustics) and Mirror (the open sea's own light: the sky
+// it mirrors, its deep blue) are its other outputs.
 //
 // The surface of a sea: a swell rolling in towards the cliff and chop drifting with the wind, the rings of what swims
 // or floats, the rings of raindrops; foam where the surface meets the rock (washing up and down) and around what
 // floats; caustics, the light the waves focus, dancing on what lies below it where the sun shone through the surface;
-// far from the stone the open sea's higher swell with whitecaps.
+// far from the stone the open sea's higher swell with whitecaps, mirroring the sky; where a waterfall pours in, a
+// churning patch of foam with waves running out of it.
 // The cut near the camera (seen when the rising water is above the camera) is not a surface: no reflection, only the
 // water seen through it. The water is a clear green-blue; what is behind it is seen through as much water as the view
 // crosses and as deep as it lies (its light came down through the water), so that the deep is bluer and darker.
@@ -52,9 +56,16 @@ const float4 waves[6] = { float4(0.2, -1.0, 1300, 0.06), float4(-0.5, -0.8, 750,
 	float lod = lerp(1, saturate(2 - away / (waves[i].z * 30)), open);
 	slope += d * waves[i].w * (1 + storm * 1.5) * lod * cos(phase);
 }
-// (seen at a grazing angle its waves would mirror what is below the horizon - the sky light has nothing there: it lies
-// smoother far off)
-slope *= lerp(1, 2.2 * pow(saturate(-normalize(toPixel).z / 0.2), 1.5), open);
+// the open sea's long swell, its crests a few metres apart, readable from far (a ridge's two sides lit differently)
+const float4 swells[2] = { float4(0.35, -1.0, 3400, 0.07), float4(-0.45, -0.9, 2100, 0.06) };
+[unroll] for (int sw = 0; sw < 2; ++sw)
+{
+	float2 d = normalize(swells[sw].xy + float2(Wind * 0.8, 0));
+	float k = Pi2 / swells[sw].z;
+	slope += d * swells[sw].w * (1 + storm) * open * cos(k * dot(d, p) - sqrt(Gravity * k) * t + sw * 1.7);
+}
+// (the open sea higher: whatever a wave tilted towards the view mirrors, it is the sky, Mirror)
+slope *= lerp(1, 1.8, open);
 // the rings of what floats: ripples running out of it
 float foam = 0;
 const float4 rings[6] = { Ring0, Ring1, Ring2, Ring3, Ring4, Ring5 };
@@ -65,6 +76,19 @@ const float4 rings[6] = { Ring0, Ring1, Ring2, Ring3, Ring4, Ring5 };
 	float k = Pi2 / 22, fade = rings[r].w * exp(-dist / 140) * saturate(dist / 15);
 	slope += d / dist * fade * 0.35 * cos(k * dist - Pi2 * 1.6 * t);
 	foam += rings[r].w * saturate(1 - dist / 45) * 0.7;
+}
+// where a waterfall pours in (its foot a line across x): the water churns and foams, waves run out of it
+const float4 falls[2] = { Fall0, Fall1 };
+[unroll] for (int f = 0; f < 2; ++f)
+{
+	float2 d = p - falls[f].xy;
+	float2 off = float2(sign(d.x) * max(abs(d.x) - falls[f].w / 2, 0), d.y);
+	float dist = max(length(off), 0.001), on = falls[f].w > 0 ? 1 : 0;
+	float churn;
+	UGH_NOISE(p * 0.08 + float2(t * 0.9, -t * 1.3), churn);
+	slope += on * off / dist * exp(-dist / 220) * 0.3 * cos(Pi2 / 40 * dist - Pi2 * 1.4 * t + churn * 2);
+	slope += on * (float2(churn, frac(churn * 7.31)) - 0.5) * 0.5 * saturate(1 - dist / 90);
+	foam += on * (1.6 * saturate(1 - dist / 70) + 0.5 * saturate(1 - dist / 160));
 }
 // raindrops: each cell of a grid a drop now and then, a ring spreading from it (two grids, offset)
 [unroll] for (int g = 0; g < 2; ++g)
@@ -122,8 +146,21 @@ float crossed = 200 / (200 + lerp(through, min(through, 400.0), open));
 Scattering = float3(0.0008, 0.0016, 0.0017) * lerp(1, float3(0.6, 0.85, 1.1), open) * scale * exp(-deep * 0.0015) *
 	crossed;
 
+// the open sea mirrors the sky itself (the picture of the mood's sky, as bright as the camera sees it): the engine's
+// reflections there would be traced from a camera rushing over the waves (noisy) and see black below the horizon
+// where a wave tilts towards the view; under them its own deep blue, lit by the sky
+float mirror = top ? open * SkyReflection : 0;
+float3 view = normalize(toPixel);
+float3 bounce = reflect(view, waved);
+bounce.z = max(abs(bounce.z), 0.04);   // (the picture has no sky under its horizon)
+// (a storm's rough, streaked sea mirrors less of its bright overcast)
+float fresnel = (0.02 + 0.8 * pow(1 - saturate(dot(-view, waved)), 5)) * (1 - 0.5 * storm);
+float3 sky = TextureCubeSampleLevel(Sky, SkySampler, bounce, 2.5 + 3 * foam).rgb;
+float3 ambient = TextureCubeSampleLevel(Sky, SkySampler, float3(0, 0, 1), 7).rgb;
+Mirror = mirror * (1 - foam * 0.7) * SkySeen * (sky * fresnel + (1 - fresnel) * float3(0.02, 0.075, 0.1) * ambient);
+
 WaterNormal = top ? waved : normalize(VertexNormal);
 WaterOpacity = top ? foam * 0.7 : 0;
 WaterRough = top ? 0.03 + Rain * 0.08 + foam * 0.6 + 0.1 * open : 1;
-WaterSpecular = top ? 0.5 : 0;
+WaterSpecular = top ? 0.5 * (1 - mirror) : 0;
 return float3(0.75, 0.78, 0.78);

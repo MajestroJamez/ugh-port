@@ -1,5 +1,5 @@
 // The scanned rock dressing the cave of every level as an automation test of the editor (Ugh.Dressing): on the back
-// wall, behind every figure's sweep and the decorations in front of it.
+// wall, behind every figure's sweep and the decorations in front of it, none over a spring.
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Dom/JsonObject.h"
@@ -14,6 +14,7 @@
 #include "UghRockField.h"
 #include "UghSimulation.h"
 #include "UghSprites.h"
+#include "UghStreams.h"
 #include "ugh_logic.h"
 
 namespace
@@ -55,12 +56,15 @@ bool FUghDressingTest::RunTest(const FString& Parameters)
 			FUghRockField Field;
 			Field.Build(Logic, Art.Draw(View.level_id, Sprites), Art.Doors(View.level_id));
 			const FUghGround Ground(Logic, Field);
+			const int32 WaterRow = View.water_level / UghShapes::Subpixels;
+			const TArray<FUghPadSign> Signs = UghPadSigns::Plan(Logic, Ground, Art.Signs(View.level_id));
+			const TArray<FUghStream> Streams = UghStreams::Plan(Logic, Field, WaterRow, Signs);
+			Field.CarveChannels(Streams);
 			const TArray<FUghDecoration> Decorations =
-				UghDecorations::Plan(Logic, Field, View.level_id, View.water_level / UghShapes::Subpixels,
-					UghPadSigns::Plan(Logic, Ground, Art.Signs(View.level_id)));
-			const TArray<FUghRockPiece> Pieces = UghRockDressing::Plan(Logic, Field, View.level_id, Decorations);
+				UghDecorations::Plan(Logic, Field, View.level_id, WaterRow, Signs, Streams);
+			const TArray<FUghRockPiece> Pieces = UghRockDressing::Plan(Logic, Field, View.level_id, Decorations, Streams);
 			TestTrue(Name + TEXT(": the same pieces every time"),
-				Pieces == UghRockDressing::Plan(Logic, Field, View.level_id, Decorations));
+				Pieces == UghRockDressing::Plan(Logic, Field, View.level_id, Decorations, Streams));
 			int32 Cliffs = 0;
 			for (const FUghRockPiece& Piece : Pieces)
 			{
@@ -78,6 +82,10 @@ bool FUghDressingTest::RunTest(const FString& Parameters)
 					return UghRockDressing::InFrontOf(Decoration, Piece) && Piece.Nearest() < Decoration.Depth;
 				});
 				TestTrue(What + TEXT(": behind the middles of the decorations in front of it"), Hidden == nullptr);
+				TestFalse(What + TEXT(": over a spring"), Streams.ContainsByPredicate([&](const FUghStream& Stream)
+				{
+					return UghRockDressing::ScreenBox(Piece).Intersect(Stream.Course());
+				}));
 			}
 			TestTrue(FString::Printf(TEXT("%s: rich (%d cliffs)"), *Name, Cliffs), Cliffs >= MinCliffs);
 			Fewest = FMath::Min(Fewest, Cliffs);

@@ -200,18 +200,20 @@ void UghPlans::AddLandmarks(FUghPlacer& Placer, FRandomStream& Random)
 }
 
 TArray<FUghDecoration> UghDecorations::Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId,
-	int32 WaterRow, const TArray<FUghPadSign>& Signs)
+	int32 WaterRow, const TArray<FUghPadSign>& Signs, const TArray<FUghStream>& Streams)
 {
 	if (Field.IsEmpty())
 	{
 		return {};
 	}
 	const FUghGround Ground(Logic, Field);
-	FUghPlacer Placer(Ground, WaterRow, Signs);
+	FUghPlacer Placer(Ground, WaterRow, Signs, Streams);
 	// each part its own sequence of the level's numbers: a change in one leaves the others as they were
 	void (*const Parts[])(FUghPlacer&, FRandomStream&) = { &UghPlans::AddCampfires, &UghPlans::AddPalms,
 		&UghPlans::AddLandmarks, &UghPlans::AddPlants, &UghPlans::AddMeadows, &UghPlans::AddVines,
 		&UghPlans::AddCreepers };
+	FRandomStream Springs(LevelId * 101 + UE_ARRAY_COUNT(Parts));
+	UghPlans::AddSprings(Placer, Springs);   // first: at their springs
 	for (int32 Part = 0; Part < UE_ARRAY_COUNT(Parts); ++Part)
 	{
 		FRandomStream Random(LevelId * 101 + Part);

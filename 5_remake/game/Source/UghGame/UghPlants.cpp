@@ -1,8 +1,9 @@
-// The plants, rocks and bones along the ledges of a level, and its meadows (UghPlans).
+// The plants, rocks and bones along the ledges of a level, its meadows and the rocks of its springs (UghPlans).
 #include "UghGround.h"
 #include "UghLedges.h"
 #include "UghPlacer.h"
 #include "UghPlans.h"
+#include "UghStreams.h"
 
 namespace
 {
@@ -41,6 +42,12 @@ namespace
 	constexpr double GrassMin = 2.5, GrassMax = 5, FlowerMin = 2.5, FlowerMax = 4.5;
 	constexpr double FlowerPatch = 0.2, FlowerShare = 0.5, FlowerStray = 0.03, PatchScale = 0.07;
 	constexpr int32 MeadowRoom = 6;
+	/**
+	 * A spring's rocks beside its hole, a fern beyond each: their box (pixels), how far from the bank (pixels) and from
+	 * the back wall (units).
+	 */
+	constexpr double SpringRock = 2.6, SpringRockAspect = 1.5, SpringFern = 7, SpringFernAspect = 1.4;
+	constexpr double SpringRockOut = 1.6, SpringFernOut = 5, SpringRockFront = 20, SpringFernFront = 45;
 
 	const FAlong& Pick(FRandomStream& Random)
 	{
@@ -115,6 +122,26 @@ void UghPlans::AddMeadows(FUghPlacer& Placer, FRandomStream& Random)
 				Placer.TryAddBehind(Make(bFlower ? EKind::Flower : EKind::Grass, X, Ledge.Y, Height,
 					Random.FRandRange(MeadowAspectMin, MeadowAspect), Random), Row + Random.FRandRange(0, MeadowRows / 2));
 			}
+		}
+	}
+}
+
+void UghPlans::AddSprings(FUghPlacer& Placer, FRandomStream& Random)
+{
+	for (const FUghStream& Stream : Placer.GetStreams())
+	{
+		for (const double Side : { -1.0, 1.0 })
+		{
+			const double Bank = Side < 0 ? Stream.Left : Stream.Right;
+			const double RockWidth = SpringRock * SpringRockAspect, FernWidth = SpringFern * SpringFernAspect;
+			FDecoration Rock = Make(EKind::Rock, Bank + Side * (SpringRockOut + RockWidth / 2), Stream.Y, SpringRock,
+				SpringRockAspect, Random);
+			Rock.Depth = Stream.Spring - SpringRockFront - RockWidth * UghShapes::UnitsPerPixel / 2;
+			Placer.TryAdd(Rock);
+			FDecoration Fern = Make(EKind::Fern, Bank + Side * (SpringFernOut + FernWidth / 2), Stream.Y, SpringFern,
+				SpringFernAspect, Random);
+			Fern.Depth = Stream.Spring - SpringFernFront - FernWidth * UghShapes::UnitsPerPixel / 2;
+			Placer.TryAdd(Fern);
 		}
 	}
 }

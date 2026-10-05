@@ -5,7 +5,7 @@
 #include "Materials/MaterialExpressionCameraPositionWS.h"
 #include "Materials/MaterialExpressionPixelDepth.h"
 #include "Materials/MaterialExpressionSingleLayerWaterMaterialOutput.h"
-#include "Materials/MaterialExpressionTextureCoordinate.h"
+#include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTime.h"
 #include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
@@ -29,14 +29,6 @@ namespace
 	{
 		const UClass* Class = FindObject<UClass>(nullptr, TEXT("/Script/Engine.MaterialExpressionSceneDepthWithoutWater"));
 		return Class ? UMaterialEditingLibrary::CreateMaterialExpression(Material, const_cast<UClass*>(Class)) : nullptr;
-	}
-
-	/** Texture coordinates of channel `Index`. */
-	UMaterialExpression* Coordinates(UMaterial* Material, int32 Index)
-	{
-		UMaterialExpressionTextureCoordinate* Expression = Add<UMaterialExpressionTextureCoordinate>(Material);
-		Expression->CoordinateIndex = Index;
-		return Expression;
 	}
 
 	/** Translucent and unlit: Color times `Cover` (0 .. 1) times Opacity shines over what is behind. */
@@ -79,12 +71,21 @@ bool UUghMakeAssetsCommandlet::MakeWater(UMaterial* Material)
 	{
 		Inputs.Add({ Ring, WithAlpha(Material, Vector(Material, Ring, FLinearColor(0, 0, 0, 0))) });
 	}
+	for (const TCHAR* Fall : UghMaterials::FallParameters)
+	{
+		Inputs.Add({ Fall, WithAlpha(Material, Vector(Material, Fall, FLinearColor(0, 0, 0, 0))) });
+	}
+	// the sky the open sea mirrors (the mood's, SkyReflection 1)
+	Inputs.Add({ UghMaterials::SkyParameter,
+		TextureObject(Material, UghMaterials::SkyParameter, SAMPLERTYPE_Color, DefaultCube) });
+	Inputs.Add({ UghMaterials::SkySeenParameter, Scalar(Material, UghMaterials::SkySeenParameter, 1.f) });
+	Inputs.Add({ UghMaterials::SkyReflectionParameter, Scalar(Material, UghMaterials::SkyReflectionParameter, 0.f) });
 	// the outputs after "return" (the foam's colour), in this order
-	enum EOutput : int32 { Normal = 1, Opacity, Rough, Specular, Scattering, Absorption, Behind };
+	enum EOutput : int32 { Normal = 1, Opacity, Rough, Specular, Scattering, Absorption, Behind, Mirror };
 	UMaterialExpressionCustom* Water = Custom(Material, ShaderCode(TEXT("UghWater.hlsl")), CMOT_Float3, Inputs,
 		{ { TEXT("WaterNormal"), CMOT_Float3 }, { TEXT("WaterOpacity"), CMOT_Float1 }, { TEXT("WaterRough"), CMOT_Float1 },
 			{ TEXT("WaterSpecular"), CMOT_Float1 }, { TEXT("Scattering"), CMOT_Float3 },
-			{ TEXT("Absorption"), CMOT_Float3 }, { TEXT("Behind"), CMOT_Float3 } });
+			{ TEXT("Absorption"), CMOT_Float3 }, { TEXT("Behind"), CMOT_Float3 }, { TEXT("Mirror"), CMOT_Float3 } });
 	if (!Water)
 	{
 		return false;
@@ -94,6 +95,7 @@ bool UUghMakeAssetsCommandlet::MakeWater(UMaterial* Material)
 	UMaterialEditingLibrary::ConnectMaterialProperty(Water, TEXT("WaterOpacity"), MP_Opacity);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Water, TEXT("WaterRough"), MP_Roughness);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Water, TEXT("WaterSpecular"), MP_Specular);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Water, TEXT("Mirror"), MP_EmissiveColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, WaterIor), TEXT(""), MP_Refraction);
 	UMaterialExpressionSingleLayerWaterMaterialOutput* Volume =
 		Add<UMaterialExpressionSingleLayerWaterMaterialOutput>(Material);

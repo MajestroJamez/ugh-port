@@ -44,6 +44,8 @@ namespace UghAssets
 	inline const TCHAR* Vines = TEXT("vines");
 	/** Made by a script of Blender/ too: the pads' boards, a mesh sign_<marks> each (AUghSigns). */
 	inline const TCHAR* Signs = TEXT("signs");
+	/** The texture set of the logs of the streams' footbridges (AUghFalls): weathered timber. */
+	inline const TCHAR* BridgeWood = TEXT("rough_wood");
 	/**
 	 * The texture sets of the cliff's layers (UghMaterials::CliffLayers in the same order): a fractured cliff of blocks
 	 * and ledges (the cliff's material greys it into karst limestone), grey rock with lichen, grass, moss, red soil

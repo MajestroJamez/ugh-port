@@ -442,6 +442,17 @@ dekorace na místě, kde je v masce pevná římsa).
 - Hotovo když: aspoň v několika levelech pramen, potok, můstek a vodopád s pěnou a vlnami dole, `Ugh.Scenery`
   a `Ugh.Rock` zelené, archy bez vad.
 
+## Krok 19g - Oheň a louče
+
+Jan 2026-10-05: pěkné ohniště s realisticky udělaným hořením a louče, které osvětlují okolí; plamen má mihotavým
+světlem barvit a rozpohybovat okolí (stíny a odlesky na stěnách).
+- Hoření z pluginu Niagara Fluids (UE 5.8, simulace ohně a kouře) zapečené do animované textury (flipbook), aby běželo
+  levně; ohniště z kamenů a polen s jiskrami a kouřem; louče na stěnách u jeskynních vchodů a v jeskyních; mihotavé
+  bodové světlo (jas, barva a mírně poloha), Lumen GI barví okolí, hlavně v nočních a soumrakových levelech. Pokud by
+  zapečený oheň nestačil, Jan najde zdarma oheň ve Fabu.
+- Hotovo když: detailní snímky ohniště a louče ve dne i v noci, oheň pod vodou zhasne, `Ugh.Scenery` zelený, fps
+  quick setu bez poklesu.
+
 ## Krok 20 - Efekty událostí
 
 - Niagara: šplouchnutí cestujícího a vrtulníku, výbuch a kouř při havárii, prach při přistání, jiskry bonusu, peníze
@@ -1103,3 +1114,30 @@ dekorace na místě, kde je v masce pevná římsa).
   `ScreenMargin` v `UghStage.cpp` (hra se zmenší; nad 1,15 je třeba posunout dutinu kamene). Pro krok 19f: kámen
   je mimo let schovaný, vodopád do moře je tedy jen ve skále levelu; voda během letu je `UghWater::Box(…, true)`.
   Další: **krok 19f**.
+- 2026-10-05: krok 19f hotový - pramen, potok, můstek a vodopád a obloha s mořem při letu (`docs/visual-concept.md`).
+  Kde je místo (`UghStreams::Plan`, deterministicky z masky a pole skály: římsa s aspoň 14 px vzduchu nad sebou, pod
+  ní skála celou cestu až 3 px pod hladinu v 7 px potoka a 4 px kolem, aspoň 12 px vysoko, dál než 16 px od plošin,
+  mimo přistání vrtulníku, cedule a vchody do jeskyní, zadní stěna a podlaha k ní; nejvyšší vodopád, jeden na level)
+  vytéká z díry v zadní stěně potok, teče korytem 1,5 px hlubokým vytesaným do skály jen před deskou hry a za ní
+  (`FUghRockField::CarveChannels`; deska hry zůstává maska, `Ugh.Rock` i s korytem), pod můstkem z klád (vršky pod
+  povrchem římsy, vzadu nízké zábradlí za postavami; `UghFalls::Bridge`, `rough_wood`) a zářezem v hraně čela padá
+  jako vodopád před čelem do moře (vysouvá se ke kameře, s pádem se rozšiřuje). Voda je síť materiálu `M_UghFlow`
+  (`UghFlow.hlsl`: průsvitná, vzor plyne s vodou, čeření a pěna v korytě, bílé pruhy, chuchvalce a mezery ve vodopádu,
+  pod hladinou moře mizí - stoupající voda vodopád zkracuje), dole moře pění a vře a běží z něj vlny (`UghWater.hlsl`,
+  `Fall0..1`) a stoupá mlha (`M_UghMist`: obláčky na kartičkách, které posouvá materiál jako déšť, nic za snímek).
+  U pramene kameny a kapradiny (`UghPlans::AddSprings`), dekorace mimo koryto, most a pramen (`UghStreams::Rooms`),
+  útesy zadní stěny nad pramenem ne. 38 ze 150 levelů (v rychlé sadě 1p-12, 1p-36, 1p-62); detaily 1p-36 a 1p-49
+  (`-Frame`), celé 1p-12, 1p-29, 1p-30, 1p-48, 1p-49, 1p-51. Nový test `Ugh.Streams` (skála pod vodopádem až pod
+  vodu, dál od plošin, cedulí a vchodů, klády pod povrchem a nad skálou, zábradlí za deskou a nízké, vodopád před
+  čelem a stále blíž, pramen na stěně, voda nad korytem, deterministicky); `Ugh.Scenery`, `Ugh.Dressing` hlídají
+  potoky. Společné sítě za běhu `UghMeshes` (i déšť). Oprava letu (review 19e): obloha byla jednolitě šedá - import
+  dělá z HDRI krychli (`TextureCube`), materiál ji četl jako 2D a engine dosadil šedou výchozí texturu, kterou snímal
+  i sky light; `M_UghSky` teď čte krychli: obloha nálady s mraky a září u obzoru a sky light snímá skutečnou oblohu
+  (noci jsou ve hře o něco tmavší, jinak archy jako dřív). Otevřené moře daleko od kamene zrcadlí oblohu samo
+  (`Mirror`: krychle oblohy podle odrazu vlny a Fresnela, pod ní hluboká modř; v bouřce méně), odrazy enginu tam
+  slábnou, přibyly dlouhé vlny 34 a 21 m: modré moře s odrazy oblohy, čitelné vlny, bez černého zrnění (snímky
+  `-Intro 0.4 / 2.4 / 4.5` 1p-01 den, 1p-03 večer, 1p-05 soumrak, 1p-06 noc, 1p-43 bouřka; staré v
+  `Saved/Shots/Before19f`). CTest logiky, `6_verification` (163) a 183 testů v UE zelené. `levels.ps1 -Quick` a arch
+  bez vad; fps A/B ve stejném sezení (notebook teď zahřátý a pomalý): před krokem medián 12, po něm 12 (ráno 31).
+  Čeká na Jana: posoudit vodopády a let v okně (`play.ps1`) - šířku potoka (`UghStreams::Width` 7 px), kolik levelů
+  (`MaxStreams`, `MinDrop`), mlhu u paty (`UghMakeFlow.cpp`). Další: **krok 19g**.

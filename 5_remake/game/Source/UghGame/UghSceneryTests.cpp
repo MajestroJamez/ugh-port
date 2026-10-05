@@ -13,6 +13,7 @@
 #include "UghRockField.h"
 #include "UghSimulation.h"
 #include "UghSprites.h"
+#include "UghStreams.h"
 #include "ugh_logic.h"
 
 namespace
@@ -56,10 +57,10 @@ namespace
 	 * Where nothing may be in the level of `Logic`: the screen above the water nearer than the slab of the play
 	 * (UghDecorations::SlabFront); where a copter lands on a pad, nearer than its body and the sweep of its rotor
 	 * reach; the pads' boards, nearer than their backs; the passages of the cave's entrances (of its
-	 * rock `Field`), at any depth.
+	 * rock `Field`), at any depth; what its `Streams` keep clear (UghStreams::Rooms).
 	 */
 	TArray<FVolume> Protected(const ugh_logic* Logic, int32 WaterRow, const TArray<FUghPadSign>& Signs,
-		const FUghRockField& Field)
+		const FUghRockField& Field, const TArray<FUghStream>& Streams)
 	{
 		TArray<FVolume> Volumes;
 		Volumes.Add({ TEXT("the slab of the play"), 0, double(UghShapes::ScreenWidth), 0, double(WaterRow),
@@ -85,6 +86,13 @@ namespace
 			const FBox2D Passage = Portal.Passage();
 			Volumes.Add({ TEXT("a cave's entrance"), Passage.Min.X, Passage.Max.X, Passage.Min.Y, Passage.Max.Y,
 				UE_BIG_NUMBER, true });
+		}
+		for (const FUghStream& Stream : Streams)
+		{
+			for (const UghStreams::FRoom& Room : UghStreams::Rooms(Stream))
+			{
+				Volumes.Add({ TEXT("a stream"), Room.Box.Min.X, Room.Box.Max.X, Room.Box.Min.Y, Room.Box.Max.Y, Room.Front });
+			}
 		}
 		return Volumes;
 	}
@@ -181,12 +189,15 @@ bool FUghSceneryTest::RunTest(const FString& Parameters)
 			FUghRockField Field;
 			Field.Build(Logic, Art.Draw(View.level_id, Sprites), Art.Doors(View.level_id));
 			const TArray<FUghPadSign> Signs = UghPadSigns::Plan(Logic, FUghGround(Logic, Field), Art.Signs(View.level_id));
-			const TArray<FDecoration> Decorations = UghDecorations::Plan(Logic, Field, View.level_id, WaterRow, Signs);
+			const TArray<FUghStream> Streams = UghStreams::Plan(Logic, Field, WaterRow, Signs);
+			Field.CarveChannels(Streams);
+			const TArray<FDecoration> Decorations =
+				UghDecorations::Plan(Logic, Field, View.level_id, WaterRow, Signs, Streams);
 			TestTrue(Name + TEXT(": the same decorations every time"),
-				Decorations == UghDecorations::Plan(Logic, Field, View.level_id, WaterRow, Signs));
+				Decorations == UghDecorations::Plan(Logic, Field, View.level_id, WaterRow, Signs, Streams));
 			TSet<EKind> Kinds;
 			int32 Meadow = 0;
-			const TArray<FVolume> Volumes = Protected(Logic, WaterRow, Signs, Field);
+			const TArray<FVolume> Volumes = Protected(Logic, WaterRow, Signs, Field, Streams);
 			for (const FDecoration& Decoration : Decorations)
 			{
 				Kinds.Add(Decoration.Kind);

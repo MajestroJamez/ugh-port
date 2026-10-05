@@ -6,11 +6,14 @@
 #include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
 #include "UghJson.h"
+#include "UghGround.h"
 #include "UghLevelArt.h"
+#include "UghPadSigns.h"
 #include "UghRockField.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghSimulation.h"
+#include "UghStreams.h"
 #include "ugh_logic.h"
 
 namespace
@@ -233,6 +236,10 @@ bool FUghRockTest::RunTest(const FString& Parameters)
 			Done.Add(LevelId);
 			FUghRockField Field;
 			Field.Build(Logic, {}, Art.Doors(LevelId));   // with its cave's entrances behind the slab
+			// and the channels of its streams in front of and behind it
+			const TArray<FUghPadSign> Signs = UghPadSigns::Plan(Logic, FUghGround(Logic, Field), Art.Signs(LevelId));
+			Field.CarveChannels(UghStreams::Plan(Logic, Field, Simulation.GetCurrent().water_level / UghShapes::Subpixels,
+				Signs));
 			FUghRockMesh Mesh;
 			Mesh.Build(Field);
 			for (const double Depth : CutDepths)

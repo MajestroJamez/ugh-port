@@ -18,6 +18,7 @@ class AUghBackground;
 class AUghCampfire;
 class AUghCliffDressing;
 class AUghCopters;
+class AUghFalls;
 class AUghFigures;
 class AUghRain;
 class AUghScenery;
@@ -30,9 +31,9 @@ class AUghWater;
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys
  * (FUghKeyboard), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground, AUghSeaStack,
- * AUghSigns, AUghWater, AUghRain, AUghCopters, AUghFigures, AUghCampfire, AUghScenery, AUghCliffDressing, the HUD) and heard
- * (AUghSpeaker); the end of a game goes back to the menu. Each level has its mood (UghMood); its first caption shows
- * the camera flying over the sea to the stone the level is carved into (FUghIntro).
+ * AUghSigns, AUghWater, AUghFalls, AUghRain, AUghCopters, AUghFigures, AUghCampfire, AUghScenery, AUghCliffDressing,
+ * the HUD) and heard (AUghSpeaker); the end of a game goes back to the menu. Each level has its mood (UghMood); its
+ * first caption shows the camera flying over the sea to the stone the level is carved into (FUghIntro).
  * Behind the menu the diorama shows the level the menu would start, dimmed. No map: the scene is built here. Keys of
  * the frontend: in a game U the next upscaler, G the frame generation; everywhere Page Up and Page Down the volume.
  *
@@ -115,6 +116,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghBackground> Background;
 	UPROPERTY() TObjectPtr<AUghSigns> Signs;
 	UPROPERTY() TObjectPtr<AUghWater> Water;
+	UPROPERTY() TObjectPtr<AUghFalls> Falls;
 	UPROPERTY() TObjectPtr<AUghSeaStack> SeaStack;
 	UPROPERTY() TObjectPtr<AUghRain> Rain;
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;

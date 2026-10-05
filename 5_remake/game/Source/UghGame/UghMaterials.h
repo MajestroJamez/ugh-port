@@ -30,6 +30,8 @@ namespace UghMaterials
 	inline const TCHAR* SunParameter = TEXT("Sun");
 	inline const TCHAR* const RingParameters[] = { TEXT("Ring0"), TEXT("Ring1"), TEXT("Ring2"), TEXT("Ring3"),
 		TEXT("Ring4"), TEXT("Ring5") };
+	inline const TCHAR* const FallParameters[] = { TEXT("Fall0"), TEXT("Fall1") };
+	inline const TCHAR* SkyReflectionParameter = TEXT("SkyReflection");
 	inline const TCHAR* TopParameter = TEXT("Top");
 	inline const TCHAR* BottomParameter = TEXT("Bottom");
 	inline const TCHAR* LeftParameter = TEXT("Left");
@@ -39,6 +41,7 @@ namespace UghMaterials
 	inline const TCHAR* WidthParameter = TEXT("Width");
 	inline const TCHAR* SaturationParameter = TEXT("Saturation");
 	inline const TCHAR* MossParameter = TEXT("Moss");
+	inline const TCHAR* RiseParameter = TEXT("Rise");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -65,8 +68,11 @@ namespace UghMaterials
 	 * The water (Single Layer Water: the engine draws what is behind it through as much water as the view crosses,
 	 * refracted, and the surface's reflections with Lumen): on its surface (what faces up) swells and chop drifting
 	 * with the wind, the rings of what floats (vector parameters RingParameters: xyz its place on the surface, w how
-	 * much it stirs it), of raindrops (scalar Rain 0 .. 1) and foam where it meets the rock and around what floats; its
-	 * cut (what faces the camera, seen from under the surface) only lets the water be seen through. Scalars
+	 * much it stirs it), of raindrops (scalar Rain 0 .. 1) and foam where it meets the rock and around what floats, a
+	 * churning patch of foam where a waterfall pours in (vector parameters FallParameters: xyz the middle of its foot
+	 * on the surface, w its width; 0 none); the open sea mirrors the sky itself (texture parameter Sky, the mood's
+	 * cube, scalar SkySeen how bright the camera sees it, SkyReflection 1 when Sky is set); its cut (what faces the
+	 * camera, seen from under the surface) only lets the water be seen through. Scalars
 	 * WaterLevel (the world's z of the surface: what lies deeper is bluer and darker), Wind (-1 .. 1), Caustics (how
 	 * bright the caustics on what lies below the surface are), vector Sun (where the sunlight goes). The shader code
 	 * is Source/UghEditor/Shaders/UghWater.hlsl.
@@ -85,6 +91,21 @@ namespace UghMaterials
 	 * Source/UghEditor/Shaders/UghSplash.hlsl.
 	 */
 	inline const TCHAR* Splash = TEXT("/Game/Generated/M_UghSplash");
+	/**
+	 * Flowing water (AUghFalls: a spring's spout, its stream, its waterfall), translucent and lit: its pattern moves
+	 * with the water - the first UV's u across it (0 .. 1), v the seconds the water has flowed to get there -, ripples
+	 * and foam at the banks of a stream, a falling sheet (the second UV's u: 0 lying, 1 falling) white with long
+	 * streaks and gaps, whiter towards its foot (the second UV's v 0 .. 1); gone under the scalar WaterLevel (the world's
+	 * z of the water's surface). The shader code is Source/UghEditor/Shaders/UghFlow.hlsl.
+	 */
+	inline const TCHAR* Flow = TEXT("/Game/Generated/M_UghFlow");
+	/**
+	 * The spray and the mist where a waterfall pours into the sea: a mesh of quads (AUghFalls) the material moves - each
+	 * a puff rising from the scalar WaterLevel (the world's z of the surface) up to Rise (units), drifting out, growing
+	 * from a part of Size (units), turned to the camera, fading -; translucent, lit by the air around it: Color, Opacity.
+	 * The shader code is Source/UghEditor/Shaders/UghMist.hlsl.
+	 */
+	inline const TCHAR* Mist = TEXT("/Game/Generated/M_UghMist");
 	/** A raindrop of the logic as a streak on a card (u along its way, its head at 1): translucent, Color, Opacity. */
 	inline const TCHAR* Raindrop = TEXT("/Game/Generated/M_UghRaindrop");
 	/**
@@ -112,7 +133,7 @@ namespace UghMaterials
 	 */
 	inline const TCHAR* Scan = TEXT("/Game/Generated/M_UghScan");
 	/**
-	 * The sky around the world: an HDR picture of it (texture parameter Sky, long-lat) seen in every direction, tinted
+	 * The sky around the world: an HDR picture of it (texture parameter Sky, a cube) seen in every direction, tinted
 	 * by Color, times Intensity; unlit, the sky light captures it (it lights the scene and shows in reflections), the
 	 * camera sees it times SkySeen (its picture is far brighter than the exposure of the scene wants).
 	 */

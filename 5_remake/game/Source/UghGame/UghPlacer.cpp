@@ -3,6 +3,7 @@
 #include "UghCavePortals.h"
 #include "UghGround.h"
 #include "UghPadSigns.h"
+#include "UghStreams.h"
 #include "ugh_logic.h"
 
 namespace
@@ -75,12 +76,14 @@ namespace
 	}
 }
 
-FUghPlacer::FUghPlacer(const FUghGround& InGround, int32 InWaterRow, const TArray<FUghPadSign>& Signs)
-	: Ground(InGround), WaterRow(InWaterRow), Pads(Landings(InGround.GetLogic(), Signs))
+FUghPlacer::FUghPlacer(const FUghGround& InGround, int32 InWaterRow, const TArray<FUghPadSign>& Signs,
+	const TArray<FUghStream>& InStreams)
+	: Ground(InGround), WaterRow(InWaterRow), Streams(InStreams), Pads(Landings(InGround.GetLogic(), Signs, InStreams))
 {
 }
 
-TArray<FUghPlacer::FLanding> FUghPlacer::Landings(const ugh_logic* Logic, const TArray<FUghPadSign>& Signs)
+TArray<FUghPlacer::FLanding> FUghPlacer::Landings(const ugh_logic* Logic, const TArray<FUghPadSign>& Signs,
+	const TArray<FUghStream>& Streams)
 {
 	TArray<FLanding> Landings;
 	for (int32 Index = 0; Index < ugh_logic_pad_count(Logic); ++Index)
@@ -99,6 +102,13 @@ TArray<FUghPlacer::FLanding> FUghPlacer::Landings(const ugh_logic* Logic, const 
 	{
 		const FBox2D Box = Sign.Box();
 		Landings.Add({ Box.Min.X, Box.Max.X, Box.Min.Y, Box.Max.Y, UghPadSigns::Back });
+	}
+	for (const FUghStream& Stream : Streams)
+	{
+		for (const UghStreams::FRoom& Room : UghStreams::Rooms(Stream))
+		{
+			Landings.Add({ Room.Box.Min.X, Room.Box.Max.X, Room.Box.Min.Y, Room.Box.Max.Y, Room.Front });
+		}
 	}
 	return Landings;
 }

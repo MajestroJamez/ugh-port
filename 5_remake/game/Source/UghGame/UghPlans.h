@@ -9,6 +9,8 @@ class FUghPlacer;
 /** Each adds its decorations where FUghPlacer lets them stand, in the order of Plan (the bigger first). */
 namespace UghPlans
 {
+	/** Rocks beside the holes of the springs (UghStreams), a fern beyond each, at the back wall. */
+	void AddSprings(FUghPlacer& Placer, FRandomStream& Random);
 	/** Campfires (a few) in the middle of the longest dry ledges, those without a pad first. */
 	void AddCampfires(FUghPlacer& Placer, FRandomStream& Random);
 	/** Palms (a few), the tallest that fit, apart from each other. */

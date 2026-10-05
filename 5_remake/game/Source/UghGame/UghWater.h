@@ -10,6 +10,7 @@
 class FUghSprites;
 class UInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
+class UTexture;
 
 /** Where the water is and what stirs it: only the frontend's (the logic knows its surface, ugh_logic_view). */
 namespace UghWater
@@ -26,8 +27,8 @@ namespace UghWater
 	 * foot, AUghSeaStack).
 	 */
 	constexpr double OpenSea = 400000, OpenSeaDepth = 150;
-	/** At most this many things stir the water (UghMaterials::RingParameters). */
-	constexpr int32 MaxRings = 6;
+	/** At most this many things stir the water (UghMaterials::RingParameters), waterfalls pour into it (FallParameters). */
+	constexpr int32 MaxRings = 6, MaxFalls = 2;
 
 	/** The surface between two steps of the logic (Alpha 0 .. 1), pixels from the top of the screen. */
 	double Surface(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha);
@@ -48,7 +49,7 @@ namespace UghWater
  * refracted, the surface reflecting the cliff and the sky): its surface exactly at the logic's water level between two
  * steps (the rising water rises smoothly), a swell rolling in and chop drifting with the wind, foam at the rock, rings
  * around what swims or floats and around raindrops, caustics on what lies below it, the water darker and bluer the
- * deeper it is.
+ * deeper it is, foam where a waterfall pours in; the open sea mirroring the sky.
  */
 UCLASS()
 class AUghWater : public AActor
@@ -65,6 +66,13 @@ public:
 	void Show(double Surface, const TArray<FVector4>& Rings, bool bOpenSea = false);
 	/** The weather: rain on it with wind (-1, 1; 0 calm), the sunlight's way, how bright its caustics are. */
 	void SetWeather(int32 Wind, const FVector& Sun, float Caustics);
+	/**
+	 * The sky of the mood (none: the engine's reflections only), as bright as the camera sees it: the open sea mirrors
+	 * it.
+	 */
+	void SetSky(UTexture* Sky, float Seen);
+	/** Where waterfalls pour into it: x, y the middle of each foot (world), w its width (units); at most MaxFalls. */
+	void SetFalls(TConstArrayView<FVector4> Falls);
 	/** The world's z of the surface shown. */
 	double SurfaceZ() const;
 

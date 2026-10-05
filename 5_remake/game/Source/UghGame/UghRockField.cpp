@@ -5,6 +5,7 @@
 #include "UghCavePortals.h"
 #include "UghRockFeatures.h"
 #include "UghRockNoise.h"
+#include "UghStreams.h"
 #include "ugh_logic.h"
 
 namespace
@@ -45,6 +46,8 @@ namespace
 	constexpr double RimClosing = 72;
 	/** How smoothly the rock meets its back wall and its stalactites and fallen rocks, pixels. */
 	constexpr double WallSmooth = 10, StampSmooth = 0.8;
+	/** How smoothly a stream's channel is cut into the rock, pixels. */
+	constexpr double ChannelSmooth = 0.5;
 
 	double Noise(double X, double Y, double Scale)
 	{
@@ -328,4 +331,33 @@ FVector FUghRockField::Gradient(const FVector& Point) const
 	return FVector(Sample(Point + FVector(Step, 0, 0)) - Sample(Point - FVector(Step, 0, 0)),
 		Sample(Point + FVector(0, Step, 0)) - Sample(Point - FVector(0, Step, 0)),
 		Sample(Point + FVector(0, 0, Step)) - Sample(Point - FVector(0, 0, Step))) / (2 * Step);
+}
+
+void FUghRockField::CarveChannels(TConstArrayView<FUghStream> Streams)
+{
+	const TConstArrayView<double> Layers = Depths();
+	for (const FUghStream& Stream : Streams)
+	{
+		const int32 FirstColumn = FMath::Max(FMath::FloorToInt32(Stream.Left) - 1 + FUghRockOutline::MarginX, 0);
+		const int32 LastColumn = FMath::Min(FMath::CeilToInt32(Stream.Right) + 1 + FUghRockOutline::MarginX, Columns - 1);
+		const int32 FirstRow = FMath::Max(FMath::FloorToInt32(Stream.Y - Stream.SpringHeight - UghStreams::HoleHeight) -
+			1 + FUghRockOutline::MarginY, 0);
+		const int32 LastRow = FMath::Min(FMath::CeilToInt32(Stream.Y + UghStreams::ChannelDepth) + 2 +
+			FUghRockOutline::MarginY, Rows - 1);
+		ParallelFor(Layers.Num(), [&](int32 K)
+		{
+			if (FMath::Abs(Layers[K]) < UghStreams::ChannelFrom)
+			{
+				return;   // never in the slab of the play
+			}
+			for (int32 J = FirstRow; J <= LastRow; ++J)
+			{
+				for (int32 I = FirstColumn; I <= LastColumn; ++I)
+				{
+					float& Field = Values[(K * Rows + J) * Columns + I];
+					Field = -SmoothMax(-Field, UghStreams::Channel(Stream, Node(I, J, K)), ChannelSmooth);
+				}
+			}
+		});
+	}
 }

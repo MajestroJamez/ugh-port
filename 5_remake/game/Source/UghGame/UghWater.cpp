@@ -14,6 +14,7 @@ namespace
 	/** How much a swimmer and a copter on the water stir it. */
 	constexpr float SwimmerStir = 1.f, CopterStir = 1.5f;
 	static_assert(UghWater::MaxRings == UE_ARRAY_COUNT(UghMaterials::RingParameters));
+	static_assert(UghWater::MaxFalls == UE_ARRAY_COUNT(UghMaterials::FallParameters));
 }
 
 double UghWater::Surface(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha)
@@ -110,4 +111,24 @@ double AUghWater::SurfaceZ() const
 	FTransform Box;
 	Water->GetInstanceTransform(0, Box, true);
 	return Box.GetLocation().Z + Box.GetScale3D().Z * UghShapes::ShapeSize / 2;
+}
+
+void AUghWater::SetSky(UTexture* Sky, float Seen)
+{
+	if (Sky)
+	{
+		Material->SetTextureParameterValue(UghMaterials::SkyParameter, Sky);
+	}
+	Material->SetScalarParameterValue(UghMaterials::SkyReflectionParameter, Sky ? 1.f : 0.f);
+	Material->SetScalarParameterValue(UghMaterials::SkySeenParameter, Seen);
+}
+
+void AUghWater::SetFalls(TConstArrayView<FVector4> Falls)
+{
+	check(Falls.Num() <= UghWater::MaxFalls);
+	for (int32 I = 0; I < UghWater::MaxFalls; ++I)
+	{
+		const FVector4 Fall = I < Falls.Num() ? Falls[I] : FVector4(0, 0, 0, 0);
+		Material->SetVectorParameterValue(UghMaterials::FallParameters[I], FLinearColor(Fall.X, Fall.Y, Fall.Z, Fall.W));
+	}
 }

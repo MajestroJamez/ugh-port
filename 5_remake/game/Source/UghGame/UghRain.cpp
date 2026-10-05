@@ -4,10 +4,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "MeshDescription.h"
-#include "StaticMeshAttributes.h"
 #include "UghLedges.h"
 #include "UghMaterials.h"
+#include "UghMeshes.h"
 #include "UghShapes.h"
 
 namespace
@@ -39,62 +38,11 @@ namespace
 	/** The engine's plane (a card for a raindrop): this many units across, facing up. */
 	constexpr double PlaneSize = 100;
 
-	/** A quad of a mesh standing upright, facing the camera: its middle, size, the second UV (its own numbers). */
-	struct FQuad
-	{
-		FVector Middle;
-		FVector2D Size;
-		FVector2D Seed;
-	};
-
-	/** A static mesh of `Quads` (UV: u across, v down; the second UV their Seed); one material slot. */
-	UStaticMesh* MakeQuads(UObject* Outer, const TArray<FQuad>& Quads)
-	{
-		FMeshDescription Description;
-		FStaticMeshAttributes Attributes(Description);
-		Attributes.Register();
-		Attributes.GetVertexInstanceUVs().SetNumChannels(2);
-		const FName Slot = TEXT("Quads");
-		const FPolygonGroupID Group = Description.CreatePolygonGroup();
-		Attributes.GetPolygonGroupMaterialSlotNames()[Group] = Slot;
-		const TVertexAttributesRef<FVector3f> Positions = Attributes.GetVertexPositions();
-		const TVertexInstanceAttributesRef<FVector3f> Normals = Attributes.GetVertexInstanceNormals();
-		const TVertexInstanceAttributesRef<FVector3f> Tangents = Attributes.GetVertexInstanceTangents();
-		const TVertexInstanceAttributesRef<FVector2f> UVs = Attributes.GetVertexInstanceUVs();
-		const FVector2f Corners[] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
-		for (const FQuad& Quad : Quads)
-		{
-			FVertexInstanceID Instances[4];
-			for (int32 Corner = 0; Corner < 4; ++Corner)
-			{
-				const FVector2f UV = Corners[Corner];
-				const FVertexID Vertex = Description.CreateVertex();
-				Positions[Vertex] = FVector3f(Quad.Middle + FVector((UV.X - 0.5) * Quad.Size.X, 0, (0.5 - UV.Y) *
-					Quad.Size.Y));
-				Instances[Corner] = Description.CreateVertexInstance(Vertex);
-				Normals[Instances[Corner]] = FVector3f::UnitY();   // towards the camera
-				Tangents[Instances[Corner]] = FVector3f::UnitX();
-				UVs.Set(Instances[Corner], 0, UV);
-				UVs.Set(Instances[Corner], 1, FVector2f(Quad.Seed));
-			}
-			Description.CreateTriangle(Group, { Instances[0], Instances[2], Instances[1] });
-			Description.CreateTriangle(Group, { Instances[0], Instances[3], Instances[2] });
-		}
-		UStaticMesh* Mesh = NewObject<UStaticMesh>(Outer);
-		Mesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, Slot));
-		UStaticMesh::FBuildMeshDescriptionsParams Params;
-		Params.bFastBuild = true;   // at run time
-		Params.bCommitMeshDescription = false;
-		Params.bMarkPackageDirty = false;
-		Mesh->BuildFromMeshDescriptions({ &Description }, Params);
-		return Mesh;
-	}
-
 	/** The streaks: tiny quads anywhere in the rain's box, each with its own number. */
-	TArray<FQuad> StreakQuads()
+	TArray<UghMeshes::FQuad> StreakQuads()
 	{
 		FRandomStream Random(StreakCount);
-		TArray<FQuad> Quads;
+		TArray<UghMeshes::FQuad> Quads;
 		for (int32 I = 0; I < StreakCount; ++I)
 		{
 			const double X = Random.FRandRange(RainLeft, RainRight), Y = Random.FRandRange(RainTop, RainBottom);
@@ -102,21 +50,6 @@ namespace
 			Quads.Add({ Middle, FVector2D(StreakCorner), FVector2D(Random.FRand(), 0) });
 		}
 		return Quads;
-	}
-
-	/** A component drawing `Material`, no collision, no shadow. */
-	template <typename TComponent>
-	TComponent* NewPart(AActor* Owner, UMaterialInterface* Material)
-	{
-		TComponent* Component = NewObject<TComponent>(Owner);
-		Component->SetMobility(EComponentMobility::Movable);
-		Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Component->SetCastShadow(false);
-		Component->SetMaterial(0, Material);
-		Component->SetupAttachment(Owner->GetRootComponent());
-		Component->RegisterComponent();
-		Owner->AddInstanceComponent(Component);
-		return Component;
 	}
 }
 
@@ -169,11 +102,11 @@ void AUghRain::BeginPlay()
 	{
 		StreakMaterial->SetScalarParameterValue(Parameter.Key, Parameter.Value);
 	}
-	Streaks = NewPart<UStaticMeshComponent>(this, StreakMaterial);
-	Streaks->SetStaticMesh(MakeQuads(this, StreakQuads()));
+	Streaks = UghMeshes::NewPart<UStaticMeshComponent>(this, StreakMaterial);
+	Streaks->SetStaticMesh(UghMeshes::Quads(this, StreakQuads()));
 	SplashMaterial = UghShapes::Material(this, UghMaterials::Splash);
-	Splashes = NewPart<UStaticMeshComponent>(this, SplashMaterial);
-	Drops = NewPart<UInstancedStaticMeshComponent>(this, UghShapes::Material(this, UghMaterials::Raindrop));
+	Splashes = UghMeshes::NewPart<UStaticMeshComponent>(this, SplashMaterial);
+	Drops = UghMeshes::NewPart<UInstancedStaticMeshComponent>(this, UghShapes::Material(this, UghMaterials::Raindrop));
 	Drops->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")));
 	Build(nullptr, -1, 0);
 }
@@ -190,13 +123,13 @@ void AUghRain::Build(const ugh_logic* Logic, int32 LevelId, int32 InWind)
 		return;
 	}
 	StreakMaterial->SetScalarParameterValue(UghMaterials::WindParameter, Wind);
-	TArray<FQuad> Quads;
+	TArray<UghMeshes::FQuad> Quads;
 	for (const UghRain::FSpot& Spot : UghRain::Spots(Logic, LevelId))
 	{
 		Quads.Add({ Spot.At + FVector(0, 0, SplashHeight / 2), FVector2D(SplashWidth, SplashHeight),
 			FVector2D(Spot.Seed, Spot.bOnWater ? 1 : 0) });
 	}
-	Splashes->SetStaticMesh(MakeQuads(this, Quads));
+	Splashes->SetStaticMesh(UghMeshes::Quads(this, Quads));
 }
 
 void AUghRain::Show(const ugh_logic_view& View, double Surface)

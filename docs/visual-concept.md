@@ -415,6 +415,46 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   světlo jako pár metrů hluboká (dřív černá). U útesu (co vidí kamera hry) beze změny.
 - **Obloha** (`UghSky.hlsl`, `FUghMood::SkySeen`): kopule je 10 km daleko a mlha sahá jen 5 km, takže obloha nálady je
   vidět nad oparem moře; kamera ji vidí tak jasně jako světlo, které dává (sky light ji zachytává beze změny), v noci
-  tmavší (noční HDRI je jasné jako denní). Ve hře obloha vidět není, světlo scény se nemění.
+  tmavší (noční HDRI je jasné jako denní). Ve hře obloha vidět není (do kroku 19f ji materiál četl špatně, níže).
 - **Snímky**: `shot.ps1 -Intro <s>` (`-UghShotIntro`) uloží let v čase (začátek 0,4, střed 2,4, konec 4,5 = kamera
   hry); autopilot `shot.ps1` / `levels.ps1` let zrychlí první klávesou popisku, snímky hry beze změny.
+
+## Pramen, potok, můstek a vodopád (krok 19f)
+
+- **Kde** (`UghStreams::Plan`, deterministicky z masky a pole skály): na římse (řádek masky s aspoň 14 px vzduchu
+  nad sebou), pod kterou je skála celou cestu až 3 px pod hladinu na začátku levelu (aspoň 12 px vysoko; sloupce
+  potoka a 4 px kolem: vodopád padá jen před skálou, nikdy před vzduchem, kudy létají postavy, ani před vodou, kde
+  plavou), dál než 16 px od konce plošiny a mimo místo přistání vrtulníku, cedule a vchody do jeskyní, se zadní stěnou
+  aspoň 1,6 m za rovinou hry a podlahou celou cestu k ní; z kandidátů nejvyšší vodopád, nejblíž středu obrazovky,
+  jeden na level (38 ze 150 levelů). Jen vizuální: logika o ničem neví.
+- **Pramen**: díra v zadní stěně jeskyně, kde podlaha stoupá do stěny, vytesaná do pole skály (tunel 2,4 px vysoký,
+  60 jednotek do stěny); u ní dva kameny a za nimi kapradiny (`UghPlans::AddSprings`).
+- **Potok** (7 px široký): koryto 1,5 px hluboké vytesané do skály před deskou hry a za ní (`FUghRockField::
+  CarveChannels`, `UghStreams::Channel`; v desce -20 .. 20 jednotek zůstává maska, test `Ugh.Rock` i s korytem), voda
+  0,9 px pod povrchem římsy proudí z díry ke kameře (kde podlaha stoupá do stěny, je to bílá kaskáda), deskou hry
+  prochází skrytá ve skále a ústí zářezem v hraně čela.
+- **Můstek** (`UghFalls::Bridge`): klády napříč korytem od hrany čela po 60 jednotek za rovinu hry na dvou trámech,
+  jejich vršky těsně pod povrchem římsy (postavy po nich chodí, nic jim nezakrývá nohy), vzadu zábradlí (dva sloupky
+  a tyč, 3,6 px: jako nízký porost, za postavami); textura `rough_wood`.
+- **Vodopád**: ze zářezu přes hranu čela dolů do moře, před čelem aspoň o 6 jednotek, s pádem se vysouvá ke kameře
+  (odmocnina výšky), trochu se rozšiřuje; síť materiálu `M_UghFlow` (`UghFlow.hlsl`: průsvitná osvětlená voda, vzor
+  plyne s vodou podle času toku - pomalé čeření a pěna u břehů v korytě, bílé pruhy, chuchvalce a mezery mezi
+  prameny ve vodopádu, dole bělejší; pod hladinou moře mizí, takže stoupající voda vodopád zkracuje a nakonec
+  pohltí). Kde dopadá: moře pění a vře a běží z něj vlny (`UghWater.hlsl`, `Fall0..1`), stoupá mlha a tříšť
+  (`M_UghMist`, `UghMist.hlsl`: obláčky na kartičkách, které posouvá materiál jako déšť kroku 19, nic za snímek,
+  rostou, stoupají a mizí; Niagara ne - binární assety). Vše zůstává v ploše potoka (`FUghStream::Area`).
+- **Pravidla** (testy `Ugh.Streams`, `Ugh.Scenery`, `Ugh.Dressing`, `Ugh.Rock`): pod potokem a vodopádem skála,
+  daleko od plošin, cedulí a vchodů, klády mostu pod povrchem římsy a nad skálou, zábradlí za deskou hry a ne vyšší
+  než nízký porost, vodopád před čelem a stále blíž ke kameře, pramen na zadní stěně, voda nad korytem; dekorace
+  nestojí v korytě ani před pramenem (`UghStreams::Rooms`), útesy a kořeny zadní stěny nezakrývají pramen.
+
+## Obloha a moře během letu (krok 19f)
+
+- Obloha byla během letu jednolitě šedá: import udělá z long-lat HDRI krychlovou texturu (`TextureCube`), ale
+  materiál oblohy ji četl jako 2D obrázek (engine pak dosadil výchozí šedou texturu - a tu snímal i sky light).
+  `M_UghSky` teď čte krychli (`UghSky.hlsl`): je vidět obloha nálady s mraky a obzorem a sky light snímá skutečnou
+  oblohu (osvětlení scény a odrazy ve vodě jsou teď podle nálady, ne šedé).
+- Otevřené moře bylo skoro černé a zrnité (odrazy Lumenu z kamery letící nad vlnami a pod obzorem tma). Daleko od
+  kamene (`UghWater.hlsl`) teď moře zrcadlí oblohu samo (`Mirror`: krychle oblohy nálady podle odrazu vlny a Fresnela,
+  pod ní vlastní hluboká modř osvětlená oblohou), odrazy enginu tam slábnou; přibyly dlouhé vlny (34 a 21 m), aby byly
+  hřebeny čitelné i zdálky. U útesu (co vidí kamera hry) beze změny.

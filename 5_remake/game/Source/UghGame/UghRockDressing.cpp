@@ -2,6 +2,7 @@
 
 #include "UghGround.h"
 #include "UghRockField.h"
+#include "UghStreams.h"
 
 namespace
 {
@@ -175,7 +176,7 @@ bool UghRockDressing::InFrontOf(const FUghDecoration& Decoration, const FUghRock
 }
 
 TArray<FUghRockPiece> UghRockDressing::Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId,
-	const TArray<FUghDecoration>& Decorations)
+	const TArray<FUghDecoration>& Decorations, const TArray<FUghStream>& Streams)
 {
 	TArray<FUghRockPiece> Pieces;
 	if (Field.IsEmpty())
@@ -186,5 +187,13 @@ TArray<FUghRockPiece> UghRockDressing::Plan(const ugh_logic* Logic, const FUghRo
 	FRandomStream Cliffs(LevelId * 131 + 1), Roots(LevelId * 131 + 2);
 	AddCliffs(Ground, Decorations, Cliffs, Pieces);
 	AddRoots(Ground, Decorations, Roots, Pieces);
+	// none over a spring: its water comes out of the wall there
+	Pieces.RemoveAll([&](const FUghRockPiece& Piece)
+	{
+		return Streams.ContainsByPredicate([&](const FUghStream& Stream)
+		{
+			return ScreenBox(Piece).Intersect(Stream.Course());
+		});
+	});
 	return Pieces;
 }

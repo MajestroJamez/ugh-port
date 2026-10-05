@@ -36,4 +36,7 @@ private:
 	static bool MakeRain(UMaterial* Material);
 	static bool MakeSplash(UMaterial* Material);
 	static bool MakeRaindrop(UMaterial* Material);
+	/** The springs' water (UghMakeFlow.cpp): flowing water, a waterfall's mist. */
+	static bool MakeFlow(UMaterial* Material);
+	static bool MakeMist(UMaterial* Material);
 };

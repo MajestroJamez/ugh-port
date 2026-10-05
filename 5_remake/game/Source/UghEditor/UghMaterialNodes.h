@@ -26,6 +26,8 @@ namespace UghMaterialNodes
 	UMaterialExpressionTextureObjectParameter* TextureObject(UMaterial* Material, const FString& Name,
 		EMaterialSamplerType Sampler, const TCHAR* Default);
 	UMaterialExpression* Times(UMaterial* Material, UMaterialExpression* A, UMaterialExpression* B);
+	/** Texture coordinates of channel `Index`. */
+	UMaterialExpression* Coordinates(UMaterial* Material, int32 Index);
 	/** The red, green, blue and alpha of `Expression` as one (its first output has only the colour: vertex colours, vector
 	 * parameters). */
 	UMaterialExpression* WithAlpha(UMaterial* Material, UMaterialExpression* Expression);
@@ -43,4 +45,6 @@ namespace UghMaterialNodes
 	inline const TCHAR* DefaultColor = TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture");
 	inline const TCHAR* DefaultNormal = TEXT("/Engine/EngineMaterials/DefaultNormal.DefaultNormal");
 	inline const TCHAR* DefaultMasks = TEXT("/Engine/EngineMaterials/DefaultDiffuse_TC_Masks.DefaultDiffuse_TC_Masks");
+	/** A cube (the imported skies are cubes made from their long-lat pictures). */
+	inline const TCHAR* DefaultCube = TEXT("/Engine/EngineResources/DefaultTextureCube.DefaultTextureCube");
 }

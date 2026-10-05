@@ -6,6 +6,7 @@
 #include "Materials/MaterialExpressionConstant.h"
 #include "Materials/MaterialExpressionMultiply.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
+#include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Misc/FileHelper.h"
@@ -42,7 +43,7 @@ UMaterialExpressionTextureObjectParameter* UghMaterialNodes::TextureObject(UMate
 	UMaterialExpressionTextureObjectParameter* Expression = Add<UMaterialExpressionTextureObjectParameter>(Material);
 	Expression->ParameterName = *Name;
 	Expression->SamplerType = Sampler;
-	Expression->Texture = LoadObject<UTexture2D>(nullptr, Default);
+	Expression->Texture = LoadObject<UTexture>(nullptr, Default);
 	return Expression;
 }
 
@@ -52,6 +53,13 @@ UMaterialExpression* UghMaterialNodes::Times(UMaterial* Material, UMaterialExpre
 	UMaterialEditingLibrary::ConnectMaterialExpressions(A, TEXT(""), Multiply, TEXT("A"));
 	UMaterialEditingLibrary::ConnectMaterialExpressions(B, TEXT(""), Multiply, TEXT("B"));
 	return Multiply;
+}
+
+UMaterialExpression* UghMaterialNodes::Coordinates(UMaterial* Material, int32 Index)
+{
+	UMaterialExpressionTextureCoordinate* Expression = Add<UMaterialExpressionTextureCoordinate>(Material);
+	Expression->CoordinateIndex = Index;
+	return Expression;
 }
 
 UMaterialExpression* UghMaterialNodes::WithAlpha(UMaterial* Material, UMaterialExpression* Expression)

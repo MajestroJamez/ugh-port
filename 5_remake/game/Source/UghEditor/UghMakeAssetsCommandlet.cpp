@@ -112,8 +112,9 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
 		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Fire, &MakeFire }, { UghMaterials::Sprite, &MakeSprite },
-		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky }, { UghMaterials::Rain, &MakeRain },
-		{ UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop } };
+		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky },
+		{ UghMaterials::Rain, &MakeRain }, { UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop },
+		{ UghMaterials::Flow, &MakeFlow }, { UghMaterials::Mist, &MakeMist } };
 	bool bAllMade = true;
 	for (const FRecipe& Recipe : Recipes)
 	{
@@ -277,7 +278,7 @@ bool UUghMakeAssetsCommandlet::MakeSky(UMaterial* Material)
 	UMaterialExpression* Sky = Custom(Material, ShaderCode(TEXT("UghSky.hlsl")), CMOT_Float3, {
 		{ TEXT("ToCamera"), Add<UMaterialExpressionCameraVectorWS>(Material) },
 		{ UghMaterials::SkyParameter,
-			TextureObject(Material, UghMaterials::SkyParameter, SAMPLERTYPE_Color, DefaultColor) },
+			TextureObject(Material, UghMaterials::SkyParameter, SAMPLERTYPE_Color, DefaultCube) },
 		{ TEXT("Seen"), Scalar(Material, UghMaterials::SkySeenParameter, 1.f) } });
 	if (!Sky)
 	{

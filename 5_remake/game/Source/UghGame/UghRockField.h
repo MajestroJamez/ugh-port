@@ -7,6 +7,7 @@
 #include "UghShapes.h"
 
 struct FUghRockStamp;
+struct FUghStream;
 struct ugh_logic;
 
 /**
@@ -42,6 +43,11 @@ public:
 	 * its doors (FUghLevelArt::Doors: an entrance each). None before a level.
 	 */
 	void Build(const ugh_logic* Logic, TConstArrayView<FColor> Art, TConstArrayView<FUghArtTile> Doors = {});
+	/**
+	 * The channels of `Streams` (UghStreams::Channel) cut into the rock in front of and behind the slab of the play,
+	 * never in it; after Build.
+	 */
+	void CarveChannels(TConstArrayView<FUghStream> Streams);
 	/** No level was built. */
 	bool IsEmpty() const { return Values.IsEmpty(); }
 	/** The cave's entrances. */
