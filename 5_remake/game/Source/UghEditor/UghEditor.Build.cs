@@ -3,7 +3,7 @@ using UnrealBuildTool;
 /**
  * The editor's part of the game: the commandlets that make the materials (UghMakeAssets), bake the flames
  * (UghMakeFlames), import the 3D assets (UghImportAssets) and copy the assets of the Electric Dreams sample
- * (UghCopyElectricDreams).
+ * (UghCopyElectricDreams) and export some of them for the Blender scripts (UghExportElectricDreams).
  */
 public class UghEditor : ModuleRules
 {
@@ -12,7 +12,8 @@ public class UghEditor : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		CppStandard = CppStandardVersion.Cpp20;
 		PrivateDependencyModuleNames.AddRange(new string[] {
-			"Core", "CoreUObject", "Engine", "UnrealEd", "MaterialEditor", "AssetRegistry", "Json",
+			"Core", "CoreUObject", "Engine", "UnrealEd", "MaterialEditor", "AssetRegistry", "Json", "ImageCore",
+			"MeshDescription", "StaticMeshDescription",   // the scans exported for Blender
 			"InterchangeCore", "InterchangeEngine",   // the import of glTF, FBX and images
 			"UghGame"   // UghMaterials.h, UghAssets.h: the names the game uses
 		});

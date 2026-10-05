@@ -1,9 +1,12 @@
 {
-  "about": "The 3D assets of the remake: free (CC0) and downloadable without an account. fetch-assets.ps1 downloads them to <folder> (never committed), the commandlet UghImportAssets (build.ps1) imports them to Content/Imported/<id>. kind: texture (a PBR set: maps by role -> a material instance of M_UghPbr), model (the files of import, glTF or FBX), hdri (a sky), generated (made by a Blender script alone, imported like a model: static meshes, or a skeletal mesh with its animations). Source: polyhaven (the files of its API, https://api.polyhaven.com/files/<id>: <map>.<format> at a resolution, checked by its MD5) or download (a file or an archive, checked by size and SHA-256; an archive is extracted to path), none for a generated asset. blender: a script of Blender/ run on the asset's folder (and the folders of its inputs, ids of assets) that makes outputs.",
+  "about": "The 3D assets of the remake: free (CC0) and downloadable without an account, and a few local ones (Jan's models, scans of Epic's samples) the scripts never download. fetch-assets.ps1 downloads them to <folder> (never committed), the commandlet UghImportAssets (build.ps1) imports them to Content/Imported/<id>. kind: texture (a PBR set: maps by role -> a material instance of M_UghPbr), model (the files of import, glTF or FBX), hdri (a sky), generated (made by a Blender script alone, imported like a model: static meshes, or a skeletal mesh with its animations), local (its files put there by hand or by electric-dreams.ps1, only an input of a generated asset; without them it and what is made of it are absent and the game shows the older model). Source: polyhaven (the files of its API, https://api.polyhaven.com/files/<id>: <map>.<format> at a resolution, checked by its MD5) or download (a file or an archive, checked by size and SHA-256; an archive is extracted to path), none for a generated asset. blender: a script of Blender/ run on the asset's folder (and the folders of its inputs, ids of assets) that makes outputs.",
   "folder": "assets/3d",
   "budgetGB": 100,
   "licenses": {
-    "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/"
+    "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "Fab-Standard": "https://www.fab.com/eula (Fab's standard license: Jan's copy, local only, never in git)",
+    "Sketchfab-Download": "https://sketchfab.com/licenses (a model Jan downloaded from Sketchfab: local only, never in git)",
+    "Epic-Sample": "Epic's sample content, for Unreal Engine projects only (local only, never in git)"
   },
   "assets": [
     {
@@ -349,6 +352,52 @@
       "path": "generated/torch",
       "blender": { "script": "Blender/torch.py", "inputs": ["rough_wood"], "outputs": ["torch.glb"] },
       "import": ["torch.glb"]
+    },
+    {
+      "id": "trex_fab", "kind": "local", "use": "Jan's T-rex from Fab: a static mesh standing, its low poly mesh and PBR maps (the blower is made of it)",
+      "page": "https://www.fab.com (bought by Jan; put into assets/3d/fab/trex by hand)", "license": "Fab-Standard", "author": "its seller on Fab",
+      "path": "fab/trex",
+      "files": ["trex_export/trex_lowpoly/SM_trex_lowpoly.fbx", "trex_export/trex_lowpoly/trex_lowpoly_basecolor.png", "trex_export/trex_lowpoly/trex_lowpoly_normal.png", "trex_export/trex_lowpoly/trex_lowpoly_roughness.png"]
+    },
+    {
+      "id": "triceratops_sketchfab", "kind": "local", "use": "Jan's triceratops from Sketchfab: a rigged Unity FBX with its actions walk, run, attack1, die, eat, idle and its texture (the walker is made of it)",
+      "page": "https://sketchfab.com (downloaded by Jan; put into assets/3d/sketchfab/triceratops by hand)", "license": "Sketchfab-Download", "author": "its author on Sketchfab",
+      "path": "sketchfab/triceratops",
+      "files": ["source/Triceratops/triceratops.fbx", "textures/triceratops_col4.png"]
+    },
+    {
+      "id": "electricdreams_scans", "kind": "local", "use": "scans of Epic's Electric Dreams sample as OBJ and PNG (UghElectricDreams::ForBlender: a hornbeam sapling, a mossy rock), the tree and the stone passenger are made of them",
+      "page": "electric-dreams.ps1 (exports them from its copy of the sample)", "license": "Epic-Sample", "author": "Epic Games, Quixel Megascans",
+      "path": "electricdreams",
+      "files": ["SM_EuropeanHornbeam_Sapling_03/SM_EuropeanHornbeam_Sapling_03.obj", "SM_EuropeanHornbeam_Sapling_03/Tileable_Albedo.png", "SM_EuropeanHornbeam_Sapling_03/TwoSided_Albedo.png", "SM_MossyForestRock_02/SM_MossyForestRock_02.obj", "SM_MossyForestRock_02/default_material_Albedo.png"]
+    },
+    {
+      "id": "walker_triceratops", "kind": "generated", "use": "the walker from Jan's triceratops, refined (rigged; actions walk, watch, charge, recover, stunned); without it triceratops",
+      "page": "Blender/walker_triceratops.py", "license": "Sketchfab-Download", "author": "its author on Sketchfab, refined by the UGH remake (Blender/walker_triceratops.py)",
+      "path": "generated/walker_triceratops",
+      "blender": { "script": "Blender/walker_triceratops.py", "inputs": ["triceratops_sketchfab"], "outputs": ["walker_triceratops.glb"] },
+      "import": ["walker_triceratops.glb"]
+    },
+    {
+      "id": "blower_trex", "kind": "generated", "use": "the blower from Jan's T-rex lying asleep (rigged; actions blow, stunned; a bone at its nostrils); without it blower",
+      "page": "Blender/blower_trex.py", "license": "Fab-Standard", "author": "its seller on Fab, rigged and posed by the UGH remake (Blender/blower_trex.py)",
+      "path": "generated/blower_trex",
+      "blender": { "script": "Blender/blower_trex.py", "inputs": ["trex_fab"], "outputs": ["blower_trex.glb"] },
+      "import": ["blower_trex.glb"]
+    },
+    {
+      "id": "stone_boulder", "kind": "generated", "use": "the stone passenger from a scanned mossy rock with wet eyes under lids of rock; without it stone_passenger",
+      "page": "Blender/stone_boulder.py", "license": "Epic-Sample", "author": "Quixel Megascans (Electric Dreams sample), eyes by the UGH remake (Blender/stone_boulder.py)",
+      "path": "generated/stone_boulder",
+      "blender": { "script": "Blender/stone_boulder.py", "inputs": ["electricdreams_scans"], "outputs": ["stone_boulder.glb"] },
+      "import": ["stone_boulder.glb"]
+    },
+    {
+      "id": "tree_hornbeam", "kind": "generated", "use": "the tree with a face that drops fruit: an old hornbeam of scanned bark and crowns, a face carved into it (rigged; actions sway, shaken); without it fruit_tree",
+      "page": "Blender/tree_hornbeam.py", "license": "Epic-Sample", "author": "Quixel Megascans (Electric Dreams sample), the trunk and its face by the UGH remake (Blender/tree_hornbeam.py)",
+      "path": "generated/tree_hornbeam",
+      "blender": { "script": "Blender/tree_hornbeam.py", "inputs": ["electricdreams_scans"], "outputs": ["tree_hornbeam.glb"] },
+      "import": ["tree_hornbeam.glb"]
     }
   ]
 }

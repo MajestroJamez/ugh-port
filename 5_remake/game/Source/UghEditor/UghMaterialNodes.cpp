@@ -8,6 +8,7 @@
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
+#include "Materials/MaterialExpressionTextureSampleParameter2D.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -35,6 +36,16 @@ UMaterialExpression* UghMaterialNodes::Vector(UMaterial* Material, const TCHAR* 
 	Expression->ParameterName = Name;
 	Expression->DefaultValue = Default;
 	return Expression;
+}
+
+UMaterialExpressionTextureSampleParameter2D* UghMaterialNodes::TextureSample(UMaterial* Material, const TCHAR* Name,
+	EMaterialSamplerType Sampler, const TCHAR* Default)
+{
+	UMaterialExpressionTextureSampleParameter2D* Sample = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
+	Sample->ParameterName = Name;
+	Sample->SamplerType = Sampler;
+	Sample->Texture = LoadObject<UTexture2D>(nullptr, Default);
+	return Sample;
 }
 
 UMaterialExpressionTextureObjectParameter* UghMaterialNodes::TextureObject(UMaterial* Material, const FString& Name,

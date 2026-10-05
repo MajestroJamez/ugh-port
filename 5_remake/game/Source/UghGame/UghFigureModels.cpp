@@ -5,8 +5,11 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "UghAssets.h"
 #include "UghFigurePlace.h"
+#include "UghMaterials.h"
+#include "UghShapes.h"
 
 namespace
 {
@@ -28,10 +31,24 @@ void FUghFigureModels::Load()
 {
 	Caveman.Load();
 	Flyer.Load(UghAssets::Pterodactyl, FUghFigureActions::ActionsOf(EUghModel::Flyer));
-	Walker.Load(UghAssets::Triceratops, FUghFigureActions::ActionsOf(EUghModel::Walker));
-	Blower.Load(UghAssets::Blower, FUghFigureActions::ActionsOf(EUghModel::Blower));
-	Tree.Load(UghAssets::FruitTree, FUghFigureActions::ActionsOf(EUghModel::Tree));
-	Stone = UghAssets::Mesh(UghAssets::StonePassenger, TEXT("stone_passenger"));
+	// the photoreal ones where they were made (from local assets), else the older ones
+	const auto Either = [](FUghRig& Rig, const TCHAR* Id, const TCHAR* Older, EUghModel Model)
+	{
+		Rig.Load(Id, FUghFigureActions::ActionsOf(Model)) || Rig.Load(Older, FUghFigureActions::ActionsOf(Model));
+	};
+	Either(Walker, UghAssets::WalkerTriceratops, UghAssets::Triceratops, EUghModel::Walker);
+	Either(Blower, UghAssets::BlowerTrex, UghAssets::Blower, EUghModel::Blower);
+	Either(Tree, UghAssets::TreeHornbeam, UghAssets::FruitTree, EUghModel::Tree);
+	Stone = UghAssets::Stone();
+	Wings = nullptr;
+	UTexture* WingPicture = Flyer.IsLoaded() ? UghAssets::Texture(UghAssets::Pterodactyl, WingColor) : nullptr;
+	UTexture* WingRelief = WingPicture ? UghAssets::Texture(UghAssets::Pterodactyl, WingNormal) : nullptr;
+	if (WingRelief)
+	{
+		Wings = UghShapes::Material(GetTransientPackage(), UghMaterials::Membrane);
+		Wings->SetTextureParameterValue(UghMaterials::BaseColorParameter, WingPicture);
+		Wings->SetTextureParameterValue(UghMaterials::NormalParameter, WingRelief);
+	}
 	Items.Reset();
 	for (UStaticMesh* Item : UghAssets::Meshes({ UghAssets::BonusItems }))
 	{
@@ -104,6 +121,10 @@ bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const
 		if (!Slot.Rigged)
 		{
 			Slot.Rigged = RigOf(Action.Model)->Add(Owner);
+			if (Action.Model == EUghModel::Flyer && Wings)
+			{
+				Slot.Rigged->SetMaterialByName(WingSlot, Wings);
+			}
 		}
 		if (Slot.Rigged->GetSkeletalMeshAsset() != Wanted)
 		{
@@ -134,7 +155,21 @@ bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const
 			Part->SetVisibility(Part == Shown, true);
 		}
 	}
+	if (bRigged && Action.Model == EUghModel::Blower)
+	{
+		Slot.Snort.Show(Owner, Slot.Rigged, FCString::Strcmp(Action.Action, TEXT("blow")) == 0, Slot.Clock.Phase());
+	}
+	else
+	{
+		Slot.Snort.Hide();
+	}
 	return true;
+}
+
+USkeletalMesh* FUghFigureModels::SkeletalMeshOf(EUghModel Model) const
+{
+	const FUghRig* Rig = RigOf(Model);
+	return Rig ? Rig->GetMesh() : nullptr;
 }
 
 /** The person of the passenger's look `Look` in `Slot`, made anew when the look changes. */

@@ -57,6 +57,35 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   nafouknou a pak vyfouknou (smyčka 10 spritů, první 3 nádech), omráčený se schoulí pod hvězdičkami; strom s tváří
   (kůra `palm_bark`, koruna z listnatých bochníků a lístků, červené plody, mrká v posledním snímku houpání, setřesený
   zavře oči a třese se). Všichni se dívají směrem pohybu (o 20-35° ke kameře), velcí jako svůj sprite.
+- **Nepřátelé a kámen fotorealisticky** (krok 19h; kde chybí lokální zdroje, zůstávají modely kroku 17):
+  - Walker je Janův triceratops ze Sketchfabu (`walker_triceratops.py`): import opravený (kořenová kost FBX má měřítko
+    0,2, které Blender dá síti, ale ne kostem - síť ×5 kolem kořene), otočený a 3,1 m dlouhý, síť dvakrát
+    subdivovaná s ostrými hranami (rohy, okraj límce, drápy), kůže upečená z jeho textury do olivově hnědé se šupinami
+    v prostoru modelu (velké destičky mezi drobnými šupinkami, tmavší spáry; barva, normála, drsnost 2048). Akce z jeho
+    vlastních: chůze = walk, čekání = idle, výpad = run, zotavení = attack1 (pohodí rohy), omráčený = začátek die (sesune
+    se na břicho, hlava se kymácí).
+  - Foukač je Janův T-rex z Fabu (`blower_trex.py`, low poly 28 tis. vrcholů, jeho PBR mapy): kostra 27 kostí
+    a automatické váhy Blenderu, spodní čelist jen čelisti; leží a spí na břiše (nohy složené pod tělem jako u ptáka,
+    ocas po zemi zatočený dozadu od kamery, hlava na zemi pootočená ke kameře, tlama zavřená, oči zavřené - víčka
+    domalovaná do textury), ta póza je jeho klidová. Ve hře natočený doleva o 25° ke kameře zabere 3,1 m (sprite
+    3,2 m), nic blíž kameře než 60 cm, ocas sahá za desku hry. Akce: `blow` = hluboký nádech (žebra se vzdouvají,
+    hlava se zvedne; první 3 z 10 spritů) a mocné odfrknutí (hlava vyrazí dopředu, žebra splasknou), `stunned` =
+    třepe hlavou. Při odfrknutí mu z nozder (kost `nostrils`) vyletí obláček prachu a dechu (`FUghSnort`, materiál
+    `M_UghPuff`: čtverečky posouvané GPU, nic za snímek).
+  - Strom s tváří (`tree_hornbeam.py`) je starý hrabový pahýl: zavalitý rýhovaný kmen s kořeny a větvemi
+    (metaballs), kůra naskenovaná z Electric Dreams (dlaždicová kůra habru promítnutá ze tří os, tmavší v dutinách)
+    s vyřezanou tváří (hluboké oční důlky pod obočím s vlhkýma očima, suk nosu, otevřená ústa), koruna ze dvou
+    naskenovaných korun mladého habru (větvičky a listy), mezi listy pár planých jablek; víčka z kůry ukáže jen
+    mrknutí. Akce jako dřív (`sway` s mrknutím, `shaken`).
+  - Kámen (cestující vzhledu 4 i zmenšený na sedadle) je naskenovaný mechem porostlý kámen `MossyForestRock_02`
+    (`stone_boulder.py`: z milionu trojúhelníků 40 tisíc, jeho mapy) vtěsnaný do elipsoidu kroku 16, s vlhkýma očima
+    zapuštěnýma do mechové tváře pod těžkými víčky z kamene.
+  - Pterodaktyl (`pterodactyl.py` znovu): štíhlý pteranodon s hlubokou hrudí, dlouhým zúženým zobákem z rohoviny,
+    hřebenem dozadu (červené a okrové pruhy), malýma plazíma očima, blánou křídla od konce prstu ke kotníkům a malou
+    přední blánou; kůže a blány upečené (tmavý hřbet, světlé břicho, jemné šupinky a chmýří; blána teplá hnědá,
+    světlejší, kde je tenká, s vlákny od prstu k zadnímu okraji a tmavými větvenými žilkami). Při mávání ruka
+    zaostává za paží a při zdvihu se křídlo napůl složí. Blány mají ve hře vlastní materiál `M_UghMembrane`
+    (dvoustranný „foliage“ s mapami modelu): proti slunci teple prosvítají.
 - **Bonusové předměty** (krok 17): devět plodů podle spritů originálu (jablko, meloun, jahoda, kiwi, kokos, hruška,
   půlka kokosu, třešně, banán) a kamenná tabulka se zeleným X (násobitel), asi 1 m, pomalu se otáčejí.
 - Bez modelů (repo bez assetů) zůstávají tvary z plastelíny (cestující válec, nepřítel koule, bonus kužel).

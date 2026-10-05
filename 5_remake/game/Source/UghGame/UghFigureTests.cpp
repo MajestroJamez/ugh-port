@@ -121,12 +121,12 @@ bool FUghFigureModelsTest::RunTest(const FString& Parameters)
 	struct FSized
 	{
 		EUghModel Model;
-		const TCHAR* Id;
+		const TCHAR* Id;   // the figure
 		FIntPoint Sprite;   // px
 	};
-	const FSized Rigged[] = { { EUghModel::Flyer, UghAssets::Pterodactyl, { 32, 23 } },
-		{ EUghModel::Walker, UghAssets::Triceratops, { 32, 22 } }, { EUghModel::Blower, UghAssets::Blower, { 32, 22 } },
-		{ EUghModel::Tree, UghAssets::FruitTree, { 32, 24 } } };
+	const FSized Rigged[] = { { EUghModel::Flyer, TEXT("the flyer"), { 32, 23 } },
+		{ EUghModel::Walker, TEXT("the walker"), { 32, 22 } }, { EUghModel::Blower, TEXT("the blower"), { 32, 22 } },
+		{ EUghModel::Tree, TEXT("the tree"), { 32, 24 } } };
 	for (const FSized& Each : Rigged)
 	{
 		if (!Models.Has(Each.Model))
@@ -135,13 +135,30 @@ bool FUghFigureModelsTest::RunTest(const FString& Parameters)
 			continue;
 		}
 		// about as long as its sprite is wide (it may reach a little further: wings, a tail), not higher than it
-		const FBox Box = UghAssets::SkeletalMesh(Each.Id)->GetBounds().GetBox();
+		const USkeletalMesh* Mesh = Models.SkeletalMeshOf(Each.Model);
+		AddInfo(FString::Printf(TEXT("%s: %s"), Each.Id, *Mesh->GetPathName()));
+		const FBox Box = Mesh->GetBounds().GetBox();
 		const FVector2D Wanted = FVector2D(Each.Sprite) * UghShapes::UnitsPerPixel;
 		const double Scale = Each.Model == EUghModel::Flyer ? UghFigurePlace::FlyerScale : 1;
 		const FVector2D Got = FVector2D(FMath::Max(Box.GetSize().X, Box.GetSize().Y), Box.GetSize().Z) * Scale;
 		TestTrue(FString::Printf(TEXT("%s is as big as its sprite (%.0f x %.0f, its sprite %.0f x %.0f)"), Each.Id,
 			Got.X, Got.Y, Wanted.X, Wanted.Y),
 			Got.X > Wanted.X * 0.7 && Got.X < Wanted.X * 1.4 && Got.Y < Wanted.Y * 1.4);
+	}
+	// the light shines through the flyer's wings: their slot and maps are there
+	if (const USkeletalMesh* Flyer = Models.SkeletalMeshOf(EUghModel::Flyer))
+	{
+		TestTrue(TEXT("the flyer has wings"), Flyer->GetMaterials().ContainsByPredicate([](const FSkeletalMaterial& Slot)
+			{ return Slot.MaterialSlotName == FUghFigureModels::WingSlot; }));
+		TestTrue(TEXT("the wings' maps"), UghAssets::Texture(UghAssets::Pterodactyl, FUghFigureModels::WingColor) &&
+			UghAssets::Texture(UghAssets::Pterodactyl, FUghFigureModels::WingNormal));
+	}
+	// the T-rex snorts its dust out of its nostrils, along their way from its head
+	if (const USkeletalMesh* Trex = UghAssets::SkeletalMesh(UghAssets::BlowerTrex))
+	{
+		const FReferenceSkeleton& Bones = Trex->GetRefSkeleton();
+		TestTrue(TEXT("the T-rex has nostrils and a head"), Bones.FindBoneIndex(FUghSnort::Nostrils) !=
+			INDEX_NONE && Bones.FindBoneIndex(FUghSnort::Head) != INDEX_NONE);
 	}
 	if (Models.Has(EUghModel::BonusItem))
 	{

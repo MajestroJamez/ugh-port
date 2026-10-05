@@ -94,7 +94,7 @@ bool FUghCopterModelTest::RunTest(const FString& Parameters)
 			Box.Min.Z > Wanted.Max.Z * 0.8 && Box.Max.Z < Wanted.Max.Z + 5);
 	}
 	// the stone passenger is as big as its sprite (16 x 11 px) and stands on its origin
-	const FBox Stone = UghAssets::Mesh(UghAssets::StonePassenger, StonePassenger)->GetBoundingBox();
+	const FBox Stone = UghAssets::Stone()->GetBoundingBox();
 	TestTrue(FString::Printf(TEXT("the stone passenger %s"), *Stone.ToString()),
 		FMath::IsNearlyEqual(Stone.GetSize().X, 16 * UghShapes::UnitsPerPixel, 15.0) &&
 		FMath::IsNearlyEqual(Stone.GetSize().Z, 11 * UghShapes::UnitsPerPixel, 15.0) && FMath::Abs(Stone.Min.Z) < 5);

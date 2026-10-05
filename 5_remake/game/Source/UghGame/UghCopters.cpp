@@ -67,7 +67,7 @@ bool AUghCopters::LoadModels()
 	using namespace UghCopterModel;
 	UStaticMesh* CrankMesh = UghAssets::Mesh(UghAssets::Copter, Crank);
 	UStaticMesh* SlingMesh = UghAssets::Mesh(UghAssets::Copter, Sling);
-	UStaticMesh* StoneMesh = UghAssets::Mesh(UghAssets::StonePassenger, StonePassenger);
+	UStaticMesh* StoneMesh = UghAssets::Stone();
 	TArray<UStaticMesh*> BodyMeshes, RotorMeshes;
 	for (int32 Player = 0; Player < UE_ARRAY_COUNT(Bodies); ++Player)
 	{

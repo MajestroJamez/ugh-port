@@ -1,8 +1,10 @@
 # Downloads the 3D assets of Assets.json to assets\3d (never committed): only what is missing, each file checked by
 # its size and hash (Poly Haven: the MD5 of its API; a download: the SHA-256 of the manifest), archives extracted,
 # Blender scripts run where an asset needs one (a generated asset is made by its script alone, and made again whenever
-# a script in the folder Blender is newer than it); the whole folder stays under the manifest's budget. Ends with a table
-# of the assets. build.ps1 then imports them into Content\Imported. Windows PowerShell 5.1:
+# a script in the folder Blender is newer than it); the whole folder stays under the manifest's budget. A local asset
+# is not downloaded (Jan's own models, the scans electric-dreams.ps1 exports): without its files it is absent, and so is
+# what is made of it (the game shows the older model then) - no failure. Ends with a table of the assets. build.ps1
+# then imports them into Content\Imported. Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\fetch-assets.ps1
 # -Only: some assets (ids, comma separated); -Verify: hash the files already there too. Blender: $env:BLENDER or the
 # default place of Blender 5.2.
@@ -72,12 +74,13 @@ function Get-Files($Asset) {
     return ,$files
 }
 
-# What the asset must have once fetched: its maps, the files to import, the outputs of its Blender script.
+# What the asset must have once fetched: its maps, the files to import, a local asset's files.
 function Get-Missing($Asset) {
     $folder = Join-Path $root $Asset.path
     $needed = @()
     if ($Asset.maps) { $needed += @($Asset.maps.PSObject.Properties | ForEach-Object { $_.Value }) }
     if ($Asset.import) { $needed += @($Asset.import) }
+    if ($Asset.files) { $needed += @($Asset.files) }
     return @($needed | Where-Object { -not (Test-Path -LiteralPath (Join-Path $folder $_)) })
 }
 
@@ -116,13 +119,26 @@ if ($present + $toDownload -gt $budget) {
 }
 Write-Host ('{0:N1} MB to download into {1}' -f ($toDownload / 1MB), $root)
 
+# a local asset without its files, and what is made of one
+$absent = @{}
+foreach ($asset in $manifest.assets) {
+    if ($asset.kind -eq 'local' -and (Get-Missing $asset).Count -gt 0) { $absent[$asset.id] = "put $($asset.path) there first ($($asset.page))" }
+}
+foreach ($asset in $manifest.assets) {
+    $lacking = @($asset.blender.inputs | Where-Object { $_ -and $absent.ContainsKey($_) })
+    if ($lacking.Count -gt 0) { $absent[$asset.id] = "needs $($lacking -join ', ')" }
+}
+
 $rows = @()
 foreach ($item in $plan) {
     $asset = $item.Asset
     $folder = Join-Path $root $asset.path
     $status = if ($item.Wanted.Count -gt 0) { 'downloaded' } else { 'present' }
     $problem = $item.Error
-    if (-not $problem) {
+    if ($absent.ContainsKey($asset.id)) {
+        $status = 'absent'
+        $problem = $absent[$asset.id]
+    } elseif (-not $problem) {
         try {
             foreach ($file in $item.Wanted) {
                 Write-Host "  $($asset.id): $($file.Url)"
@@ -168,7 +184,7 @@ foreach ($item in $plan) {
             $problem = "$_"
         }
     }
-    if ($problem) { $status = 'FAILED' }
+    if ($problem -and $status -ne 'absent') { $status = 'FAILED' }
     $rows += New-Object PSObject -Property ([ordered]@{
         Id = $asset.id; Kind = $asset.kind; License = $asset.license; Status = $status
         MB = [math]::Round((Get-FolderBytes $folder) / 1MB, 1); Problem = $problem })
@@ -177,6 +193,7 @@ foreach ($item in $plan) {
 $rows | Format-Table -AutoSize Id, Kind, License, Status, MB | Out-String -Width 200 | Write-Host
 $failed = @($rows | Where-Object { $_.Status -eq 'FAILED' })
 foreach ($row in $failed) { Write-Host "$($row.Id): $($row.Problem)" -ForegroundColor Red }
+foreach ($row in @($rows | Where-Object { $_.Status -eq 'absent' })) { Write-Host "$($row.Id) absent: $($row.Problem)" -ForegroundColor Yellow }
 Write-Host ('{0:N2} GB in {1} (budget {2} GB)' -f ((Get-FolderBytes $root) / 1GB), $root, $manifest.budgetGB)
 if ($failed.Count -gt 0) { Write-Host "FAILED: $($failed.Count) of $($rows.Count) assets" -ForegroundColor Red; exit 1 }
 Write-Host 'OK' -ForegroundColor Green

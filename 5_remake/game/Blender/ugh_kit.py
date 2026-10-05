@@ -10,6 +10,8 @@ import sys
 
 import bmesh
 import bpy
+import mathutils.bvhtree
+import mathutils.geometry
 import numpy
 from mathutils import Vector
 
@@ -238,6 +240,24 @@ def blob(bm, centre, radii, seed=0, bumps=0.0, segments=16, rings=10, material_i
             for loop, (u, v) in zip(face.loops, coords):
                 loop[uv].uv = (u / segments, 1 - v / rings)
     bmesh.ops.remove_doubles(bm, verts=[v for row in grid for v in row], dist=1e-6)
+
+
+def surface_uvs(made, slot, surface):
+    """The UVs of `made`'s faces in `slot`: those of the nearest points of object `surface` (its picture goes on over
+    them: a lid of rock, of bark)."""
+    tree = mathutils.bvhtree.BVHTree.FromObject(surface, bpy.context.evaluated_depsgraph_get())
+    surface_uv = surface.data.uv_layers[0].data
+    uvs = made.data.uv_layers[0].data
+    for polygon in made.data.polygons:
+        if polygon.material_index != slot:
+            continue
+        for index in polygon.loop_indices:
+            point = made.data.vertices[made.data.loops[index].vertex_index].co
+            nearest, _, face, _ = tree.find_nearest(point)
+            corners = surface.data.polygons[face].loop_indices[:3]
+            positions = [surface.data.vertices[surface.data.loops[i].vertex_index].co for i in corners]
+            flat = [Vector((*surface_uv[i].uv, 0)) for i in corners]
+            uvs[index].uv = mathutils.geometry.barycentric_transform(nearest, *positions, *flat).to_2d()
 
 
 def mesh_object(name, bm, materials):

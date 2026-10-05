@@ -46,6 +46,9 @@ namespace UghMaterials
 	inline const TCHAR* FlipbookParameter = TEXT("Flipbook");
 	inline const TCHAR* GlowParameter = TEXT("Glow");
 	inline const TCHAR* UndersideParameter = TEXT("Underside");
+	inline const TCHAR* BlowParameter = TEXT("Blow");
+	inline const TCHAR* DirectionParameter = TEXT("Direction");
+	inline const TCHAR* ReachParameter = TEXT("Reach");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -137,6 +140,19 @@ namespace UghMaterials
 	 * faces down or aside). The shader code is Source/UghEditor/Shaders/UghEmbers.hlsl.
 	 */
 	inline const TCHAR* Embers = TEXT("/Game/Generated/M_UghEmbers");
+	/**
+	 * The blower's snort: a mesh of quads at its nostrils (FUghFigureModels) the material moves - puffs of dust and
+	 * breath leaving one after another as the snort goes on (Blow 0 .. 1: before it 0, nothing shows), each shooting out
+	 * along Direction (the world's way the nostrils blow) up to Reach (units), slowing, fanning out, growing to Size,
+	 * turned to the camera, fading -; translucent, lit: Color, Opacity. The shader code is
+	 * Source/UghEditor/Shaders/UghPuff.hlsl.
+	 */
+	inline const TCHAR* Puff = TEXT("/Game/Generated/M_UghPuff");
+	/**
+	 * The flyer's wings: thin skin the light shines through (two-sided foliage: lit from behind they glow warm,
+	 * Color tints that light) - its BaseColor and Normal the imported model's (FUghFigureModels).
+	 */
+	inline const TCHAR* Membrane = TEXT("/Game/Generated/M_UghMembrane");
 	/**
 	 * A picture on a card (unlit, transparent cut out, its front only: UghShapes::ShowCard), the original's sprites and
 	 * the speech bubbles. Texture parameter Art.

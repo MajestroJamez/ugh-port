@@ -145,6 +145,15 @@ namespace UghElectricDreams
 	inline const TCHAR* FoliageWind =
 		TEXT("MSPresets/MS_Foliage_Material_LATEST/MaterialParameterCollection/MPC_GlobalFoliageActor");
 
+	/**
+	 * What Blender scripts make figures of (the commandlet UghExportElectricDreams exports them from the copy to
+	 * assets/3d/electricdreams/<name>): a hornbeam sapling for the tree with a face (its crown and its bark), a mossy
+	 * rock for the stone passenger.
+	 */
+	inline const TCHAR* const ForBlender[] = {
+		TEXT("Megascans/3D_Plants/EuropeanHornbeam/Geometry/SimpleWind/SM_EuropeanHornbeam_Sapling_03"),
+		TEXT("Megascans/3D_Assets/MossyForestRock/SM_MossyForestRock_02") };
+
 	/** The copy is there (its first asset is; the log says it once when not). */
 	bool IsCopied();
 	/** Every asset of the lists above (what the commandlet copies, with what they need). */

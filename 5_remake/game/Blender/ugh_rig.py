@@ -9,17 +9,20 @@ action is a loop (its last frame is its first) on an NLA track of its own, so th
 import math
 
 import bpy
+import mathutils.kdtree
 import numpy
 from mathutils import Matrix, Quaternion, Vector
 
 FPS = 24
 
 
-def build(name, bones, figure, slot_bones=None, slot_allowed=None, falloff=0.025, most=3):
+def build(name, bones, figure, slot_bones=None, slot_allowed=None, falloff=0.025, most=3, heat=False):
     """The armature `name` of `bones` with `figure` skinned to it: a vertex follows the bones nearest to it (weights
     falling off by `falloff` metres per metre further away, at most `most` bones); the vertices of a material slot in
     `slot_bones` (slot name -> bone) follow only that bone, those of a slot in `slot_allowed` (slot name -> bones) only
-    those bones. A bone named root moves the whole and holds no vertex."""
+    those bones. A bone named root moves the whole and holds no vertex. `heat`: Blender's automatic weights instead
+    (heat flowing from the bones through the mesh: limbs bend well), a vertex they miss (a loose part: an eye, a
+    tooth) as its nearest vertex with weights."""
     data = bpy.data.armatures.new(name)
     armature = bpy.data.objects.new(name + "_rig", data)
     bpy.context.scene.collection.objects.link(armature)
@@ -32,8 +35,31 @@ def build(name, bones, figure, slot_bones=None, slot_allowed=None, falloff=0.025
             bone.parent = data.edit_bones[parent]
             bone.use_connect = (Vector(head) - Vector(bones[parent][1])).length < 1e-6
     bpy.ops.object.mode_set(mode="OBJECT")
-    skin(figure, armature, bones, slot_bones or {}, slot_allowed or {}, falloff, most)
+    if heat:
+        heat_skin(figure, armature)
+    else:
+        skin(figure, armature, bones, slot_bones or {}, slot_allowed or {}, falloff, most)
     return armature
+
+
+def heat_skin(figure, armature):
+    if "root" in armature.data.bones:
+        armature.data.bones["root"].use_deform = False
+    bpy.ops.object.select_all(action="DESELECT")
+    figure.select_set(True)
+    armature.select_set(True)
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    weighted = [vertex for vertex in figure.data.vertices if vertex.groups]
+    tree = mathutils.kdtree.KDTree(len(weighted))
+    for index, vertex in enumerate(weighted):
+        tree.insert(vertex.co, index)
+    tree.balance()
+    for vertex in figure.data.vertices:
+        if not vertex.groups:
+            nearest = weighted[tree.find(vertex.co)[1]]
+            for entry in nearest.groups:
+                figure.vertex_groups[entry.group].add([vertex.index], entry.weight, "REPLACE")
 
 
 def skin(figure, armature, bones, slot_bones, slot_allowed, falloff, most):

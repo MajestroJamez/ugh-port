@@ -17,8 +17,6 @@ namespace UghCopterModel
 	inline const TCHAR* const Rotors[] = { TEXT("Rotor_1"), TEXT("Rotor_2") };
 	inline const TCHAR* Crank = TEXT("Crank");
 	inline const TCHAR* Sling = TEXT("Sling");
-	/** The stone passenger's mesh (UghAssets::StonePassenger), its origin at its bottom middle. */
-	inline const TCHAR* StonePassenger = TEXT("stone_passenger");
 
 	/** The body's half depth: it stays behind the rock's face (FUghRockMesh::FrontDepth) and the bubbles. */
 	constexpr double BodyHalfDepth = 45;

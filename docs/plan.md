@@ -453,6 +453,20 @@ světlem barvit a rozpohybovat okolí (stíny a odlesky na stěnách).
 - Hotovo když: detailní snímky ohniště a louče ve dne i v noci, oheň pod vodou zhasne, `Ugh.Scenery` zelený, fps
   quick setu bez poklesu.
 
+## Krok 19h - Nepřátelé a kámen fotorealisticky
+
+Jan 2026-10-05: strom s obličejem, kamenný cestující a nepřátelé jsou ještě staré gumové modely z kroku 17.
+- Strom: skutečný strom z Electric Dreams (kůra, koruna s ovocem) s obličejem vyřezaným do kůry, animace jako dnes.
+- Kamenný cestující: naskenovaný kámen s mechem a očima (i zmenšený na sedadle vrtulníku).
+- Foukač: T-rex od Jana (Fab, `assets/3d/fab/trex`, statický model bez kostry) ležící a spící: kostra a animace
+  v Blenderu (dýchání ve spánku, nadechnutí a odfouknutí při foukání, otřesení při omráčení), zavřená tlama.
+- Walker: triceratops od Jana (`assets/3d/sketchfab/triceratops`, Unity FBX 2,3 tis. vrcholů, kostra a animace walk,
+  run, attack1, die, eat, idle) zachovat, ale vylepšit v Blenderu: opravit měřítko importu, zjemnit síť
+  (subdivision + tvar), detailnější kůže (normálová mapa šupin, PBR textura ve vyšším rozlišení), mapovat jeho
+  animace na stavy walkera.
+- Pterodaktyl: přepracovat v Blenderu se skutečnou texturou kůže a blan křídel (realistický zdarma není).
+- Hotovo když: detailní snímky každého nepřítele a kamene, `Ugh.Figures.*` zelené, quick set bez poklesu fps.
+
 ## Krok 20 - Efekty událostí
 
 - Niagara: šplouchnutí cestujícího a vrtulníku, výbuch a kouř při havárii, prach při přistání, jiskry bonusu, peníze
@@ -1169,3 +1183,34 @@ světlem barvit a rozpohybovat okolí (stíny a odlesky na stěnách).
   (rychlá sada A/B ve stejném sezení, notebook zahřátý): před krokem medián 15 (nejpomalejší 12), po něm 15 (5: první level po přestavbě materiálů ještě kompiluje shadery); dřív v sezení po kroku 23 fps. Čeká na Jana: posoudit oheň a louče v okně
   (`play.ps1`) - hlavně zda plamen ze simulace stačí (jinak oheň z Fabu), jas světel (`UghCampfire.cpp`,
   `UghTorches.cpp`, `FireLight` v `UghMood.cpp`); v noci horní louče silně prosvětlují strop. Další: **krok 20**.
+- 2026-10-05: krok 19h hotový - nepřátelé a kámen fotorealisticky (`docs/visual-concept.md`). Nový druh assetu
+  `local` v `Assets.json` (Janův T-rex z Fabu `trex_fab`, triceratops ze Sketchfabu `triceratops_sketchfab`, skeny
+  Electric Dreams `electricdreams_scans`; licence Fab-Standard, Sketchfab-Download, Epic-Sample; nikdy se nestahuje
+  ani necommituje): bez souborů je „absent“ a s ním i co se z něj dělá, hra pak ukáže modely kroku 17 (`fetch-assets.ps1`
+  to vypíše, neselže; ověřeno odsunutím `fab/trex`). `electric-dreams.ps1` po kopii exportuje commandletem
+  `UghExportElectricDreams` skeny `UghElectricDreams::ForBlender` (zdrojová síť, ne fallback Nanite, jako OBJ, textury
+  materiálů jako PNG, parametry JSON) do `assets/3d/electricdreams`. Nové Blender skripty: `walker_triceratops.py`
+  (import FBX opravený - kořenová kost má měřítko 0,2, které Blender dá síti, ale ne kostem, kostra pak vyšla 5× větší
+  a kůže se trhala; síť ×5 kolem kořene, otočení, 3,1 m, 2× subdivize s ostrými hranami, kůže upečená Cycles ze
+  ztmavlé textury + šupiny v prostoru modelu; akce walk/idle/run/attack1 = chůze/čekání/výpad/zotavení, omráčený =
+  začátek die na břiše s kymácející se hlavou), `blower_trex.py` (low poly T-rex, kostra 27 kostí, automatické váhy,
+  póza ležícího spícího zvířete jako klidová, zavřená tlama, oči zavřené domalováním textury, kost `nostrils`; akce
+  `blow` hluboký nádech 3/10 a odfrknutí, `stunned` třepe hlavou; natočený jako ve hře zabere 3,1 m a nic není blíž
+  kameře než 60 cm), `tree_hornbeam.py` (kmen z metaballs s naskenovanou kůrou habru upečenou ze tří os a tmavšími
+  dutinami, vyřezaná tvář s vlhkýma očima a víčky z kůry, koruna ze dvou korun habru Sapling_03, plané jablko),
+  `stone_boulder.py` (`MossyForestRock_02` z milionu na 40 tisíc trojúhelníků v elipsoidu kroku 16, oči pod víčky
+  z kamene) a přepracovaný `pterodactyl.py` (pteranodon: zúžený zobák, hřeben, blána od prstu ke kotníkům, upečená
+  kůže a blány se žilkami a vlákny); společné `ugh_bake.py` (pečení barvy, normály a drsnosti Cycles), `ugh_rig.build`
+  umí automatické váhy, `creature_kit` vlhké oko a víčko, `ugh_kit.surface_uvs`. UE: `FUghFigureModels` bere nové
+  modely, jinak staré (`UghAssets::Stone()` i pro vrtulník), blány letce dostanou `M_UghMembrane` (dvoustranný
+  „foliage“, proti slunci teple prosvítají), T-rex při odfrknutí vyfoukne z nozder obláček prachu (`FUghSnort`,
+  `M_UghPuff`, `UghPuff.hlsl`, `UghMakeFigures.cpp`; po zemi, kde leží hlava). Akce i jména akcí beze změny, tabulka
+  `FUghFigureActions` platí; `Ugh.Figures.Models` měří zobrazené modely, kontroluje kosti `nostrils`/`head` T-rexe
+  a blány letce. Snímky (detaily `-Frame` v den i noc): strom 1p-01, 1p-05, 1p-06; kámen 1p-01, 1p-12 a na sedadle
+  (`-Cargo 4 -CloseUp` 1p-01, 1p-06); foukač 1p-04, 1p-19 (odfrknutí s prachem), 1p-18 noc; walker 1p-05, 1p-37,
+  1p-18 noc; letec 1p-02, 1p-12 noc. CTest logiky, `6_verification` (163) a 183 testů v UE zelené. `levels.ps1
+  -Quick` a arch bez vad. Výkon (rychlá sada A/B ve stejném sezení, nové importy odsunuté / vrácené, dvakrát): bez
+  nových modelů medián 25 a 22, s nimi 23 a 25 - rozdíl v šumu. Čeká na Jana: posoudit nepřátele v okně
+  (`play.ps1`) - hlavně tvář stromu (dosud trochu kreslená), barvu kůže triceratopsu (`walker_triceratops.py`
+  `skin_graph`), sílu prachu z nozder (`UghMakeFigures.cpp`), zda T-rexovi stačí zavřená tlama (v koutku jsou vidět
+  zuby); licence triceratopse ze Sketchfabu neznám (zapsána jen jako „stažený Janem“). Další: **krok 20**.

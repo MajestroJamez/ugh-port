@@ -9,6 +9,7 @@
 class UMaterial;
 class UMaterialExpression;
 class UMaterialExpressionTextureObjectParameter;
+class UMaterialExpressionTextureSampleParameter2D;
 
 /** New expressions in a material, as UghMakeAssets wires them. */
 namespace UghMaterialNodes
@@ -22,6 +23,9 @@ namespace UghMaterialNodes
 	UMaterialExpression* Constant(UMaterial* Material, float Value);
 	UMaterialExpression* Scalar(UMaterial* Material, const TCHAR* Name, float Default);
 	UMaterialExpression* Vector(UMaterial* Material, const TCHAR* Name, const FLinearColor& Default);
+	/** A texture parameter sampled (its UVs the first texture coordinates), the engine's `Default` until it is set. */
+	UMaterialExpressionTextureSampleParameter2D* TextureSample(UMaterial* Material, const TCHAR* Name,
+		EMaterialSamplerType Sampler, const TCHAR* Default);
 	/** A texture parameter as an object (for custom code), the engine's texture `Default` until it is set. */
 	UMaterialExpressionTextureObjectParameter* TextureObject(UMaterial* Material, const FString& Name,
 		EMaterialSamplerType Sampler, const TCHAR* Default);

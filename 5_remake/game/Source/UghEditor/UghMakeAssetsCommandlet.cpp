@@ -1,7 +1,6 @@
 #include "UghMakeAssetsCommandlet.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "Engine/Texture2D.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialExpressionBumpOffset.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
@@ -33,10 +32,7 @@ namespace
 	/** The texture parameter Art (the engine's default texture until the game sets one). */
 	UMaterialExpressionTextureSampleParameter2D* ArtTexture(UMaterial* Material)
 	{
-		UMaterialExpressionTextureSampleParameter2D* Art = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
-		Art->ParameterName = UghMaterials::ArtParameter;
-		Art->Texture = LoadObject<UTexture2D>(nullptr, DefaultColor);
-		return Art;
+		return TextureSample(Material, UghMaterials::ArtParameter, SAMPLERTYPE_Color, DefaultColor);
 	}
 
 	/** A gentle unevenness of hand-made clay: a factor around 1 from noise in world space. */
@@ -114,7 +110,8 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 		{ UghMaterials::Rain, &MakeRain }, { UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop },
 		{ UghMaterials::Flow, &MakeFlow }, { UghMaterials::Mist, &MakeMist },
 		{ UghMaterials::Flame, &MakeFlame }, { UghMaterials::Sparks, &MakeSparks }, { UghMaterials::Smoke, &MakeSmoke },
-		{ UghMaterials::Embers, &MakeEmbers } };
+		{ UghMaterials::Embers, &MakeEmbers }, { UghMaterials::Puff, &MakePuff },
+		{ UghMaterials::Membrane, &MakeMembrane } };
 	bool bAllMade = true;
 	for (const FRecipe& Recipe : Recipes)
 	{
@@ -207,10 +204,7 @@ bool UUghMakeAssetsCommandlet::MakePbr(UMaterial* Material)
 	UMaterialEditingLibrary::ConnectMaterialExpressions(Relief, TEXT(""), Coordinates, TEXT("Height"));
 	auto Texture = [&](const TCHAR* Name, EMaterialSamplerType Sampler, const TCHAR* Default)
 	{
-		UMaterialExpressionTextureSampleParameter2D* Sample = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
-		Sample->ParameterName = Name;
-		Sample->SamplerType = Sampler;
-		Sample->Texture = LoadObject<UTexture2D>(nullptr, Default);
+		UMaterialExpressionTextureSampleParameter2D* Sample = TextureSample(Material, Name, Sampler, Default);
 		UMaterialEditingLibrary::ConnectMaterialExpressions(Coordinates, TEXT(""), Sample, TEXT("UVs"));
 		return Sample;
 	};
@@ -229,11 +223,7 @@ bool UUghMakeAssetsCommandlet::MakeScan(UMaterial* Material)
 {
 	auto Texture = [&](const TCHAR* Name, EMaterialSamplerType Sampler, const TCHAR* Default)
 	{
-		UMaterialExpressionTextureSampleParameter2D* Sample = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
-		Sample->ParameterName = Name;
-		Sample->SamplerType = Sampler;
-		Sample->Texture = LoadObject<UTexture2D>(nullptr, Default);
-		return Sample;
+		return TextureSample(Material, Name, Sampler, Default);
 	};
 	UMaterialExpression* Greyed = Custom(Material, TEXT("float grey = dot(Color, float3(0.3, 0.59, 0.11));\n")
 		TEXT("float3 c = lerp(grey.xxx, Color, Saturation) * Tint;\n")

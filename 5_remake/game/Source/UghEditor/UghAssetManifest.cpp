@@ -43,6 +43,10 @@ bool UghAssetManifest::Read(const FString& Path, const FString& RepositoryDir, T
 			OutError = FString::Printf(TEXT("%s: an asset without id, kind or path"), *Path);
 			return false;
 		}
+		if (Asset.Kind == TEXT("local"))
+		{
+			continue;   // only an input of a Blender script, nothing to import
+		}
 		Asset.Folder = Root / Entry->GetStringField(TEXT("path"));
 		const TSharedPtr<FJsonObject>* Maps = nullptr;
 		if (Entry->TryGetObjectField(TEXT("maps"), Maps))

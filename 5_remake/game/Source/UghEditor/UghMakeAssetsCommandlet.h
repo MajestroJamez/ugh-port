@@ -43,4 +43,7 @@ private:
 	static bool MakeSparks(UMaterial* Material);
 	static bool MakeSmoke(UMaterial* Material);
 	static bool MakeEmbers(UMaterial* Material);
+	/** The figures (UghMakeFigures.cpp): the blower's snort of dust, the flyer's wings. */
+	static bool MakePuff(UMaterial* Material);
+	static bool MakeMembrane(UMaterial* Material);
 };

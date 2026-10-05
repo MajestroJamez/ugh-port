@@ -99,3 +99,14 @@ UTexture* UghAssets::Texture(const TCHAR* Id)
 	const TArray<UObject*> Textures = Find(Id, UTexture::StaticClass());
 	return Textures.IsEmpty() ? nullptr : CastChecked<UTexture>(Textures[0]);
 }
+
+UTexture* UghAssets::Texture(const TCHAR* Id, const TCHAR* Name)
+{
+	return FindOne<UTexture>(Id, [&](const FString& Found) { return Found == Name; }, Name);
+}
+
+UStaticMesh* UghAssets::Stone()
+{
+	UStaticMesh* Scanned = Mesh(StoneBoulder, StoneBoulder);
+	return Scanned ? Scanned : Mesh(StonePassenger, StonePassenger);
+}

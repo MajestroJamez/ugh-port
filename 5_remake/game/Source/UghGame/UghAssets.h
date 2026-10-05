@@ -71,6 +71,15 @@ namespace UghAssets
 	inline const TCHAR* Blower = TEXT("blower");
 	inline const TCHAR* FruitTree = TEXT("fruit_tree");
 	inline const TCHAR* BonusItems = TEXT("bonus_items");
+	/**
+	 * Made by the scripts of Blender/ of local assets (Jan's T-rex and triceratops, scans of the Electric Dreams
+	 * sample): the blower, the walker, the tree and the stone passenger photoreal; where one is missing the frontend
+	 * shows the one above.
+	 */
+	inline const TCHAR* BlowerTrex = TEXT("blower_trex");
+	inline const TCHAR* WalkerTriceratops = TEXT("walker_triceratops");
+	inline const TCHAR* TreeHornbeam = TEXT("tree_hornbeam");
+	inline const TCHAR* StoneBoulder = TEXT("stone_boulder");
 
 	/** The content folder of asset `Id`. */
 	inline FString Folder(const FString& Id) { return FString(ImportedRoot) / Id; }
@@ -89,4 +98,11 @@ namespace UghAssets
 	UMaterialInterface* Material(const TCHAR* Id);
 	/** The texture of sky `Id`; none (and a log line) when it is missing. */
 	UTexture* Texture(const TCHAR* Id);
+	/** The texture `Name` imported for `Id` (a model's); none (and a log line) when it is missing. */
+	UTexture* Texture(const TCHAR* Id, const TCHAR* Name);
+	/**
+	 * The stone passenger (its origin at its bottom middle; the mesh is named as its asset): StoneBoulder, else
+	 * StonePassenger; none (and log lines) without both.
+	 */
+	UStaticMesh* Stone();
 }
