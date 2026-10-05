@@ -27,6 +27,8 @@ namespace
 	constexpr int32 RootStep = 5, RootEvery = 2, RootRoom = 14;
 	constexpr double RootMin = 8, RootMax = 18, RootReach = 0.5, RootOutMin = 0.4, RootOutMax = 0.8, RootHang = -90;
 	constexpr double RootTilt = 20;
+	/** A piece seen in a cave's entrance gets smaller by ShrinkStep, down to Shrink of its radius (else none). */
+	constexpr double Shrink = 0.4, ShrinkStep = 0.85;
 	/** Units: a piece stays this far behind the middles of the decorations in front of it. */
 	constexpr double DecorationGap = 10;
 	/**
@@ -51,14 +53,20 @@ namespace
 	}
 
 	/**
-	 * Adds `Piece` (its X, Y given) if there is a wall behind it and it keeps apart from the others of its kind: its
-	 * surface the wall's (or `Before` where that is nearer, though not nearer than its radius behind its limit), its
-	 * limit behind the middle of every decoration in front of it (their backs may lean on it as on the cave's wall);
-	 * it is left out where it would be all hidden in the wall.
+	 * Adds `Piece` (its X, Y given) if there is a wall behind it and it keeps apart from the others of its kind, made
+	 * smaller (down to Shrink of its radius) where it would be seen in a cave's entrance (whose passage goes deeper
+	 * than the wall): its surface the wall's (or `Before` where that is nearer, though not nearer than its radius
+	 * behind its limit), its limit behind the middle of every decoration in front of it (their backs may lean on it as
+	 * on the cave's wall); it is left out where it would be all hidden in the wall.
 	 */
 	void Add(FUghRockPiece Piece, const FUghGround& Ground, const TArray<FUghDecoration>& Decorations,
 		TArray<FUghRockPiece>& Pieces, TOptional<double> Before = {})
 	{
+		const double Smallest = Piece.Radius * Shrink;
+		while (Ground.AtEntrance(UghRockDressing::ScreenBox(Piece)) && Piece.Radius > Smallest)
+		{
+			Piece.Radius *= ShrinkStep;
+		}
 		const bool bCrowded = Pieces.ContainsByPredicate([&](const FUghRockPiece& Other)
 		{
 			return Other.Kind == Piece.Kind &&
@@ -67,7 +75,7 @@ namespace
 		});
 		// none where the rock is already there in front of it (the mask's rock, the cliff closing beyond the screen)
 		const TOptional<double> Wall = Ground.Wall(Piece.X, Piece.Y, UghRockDressing::BackFront);
-		if (!Wall || bCrowded)
+		if (!Wall || bCrowded || Ground.AtEntrance(UghRockDressing::ScreenBox(Piece)))
 		{
 			return;
 		}
@@ -101,9 +109,11 @@ namespace
 				Piece.Y = Y + Random.FRandRange(-CliffStep, CliffStep) / 2.0;
 				Piece.Radius = Random.FRandRange(CliffMin, CliffMax);
 				Piece.Out = Random.FRandRange(CliffOutMin, CliffOutMax);
-				// its face towards the camera, give or take
-				Piece.Rotation = FRotator(Random.FRandRange(-CliffTilt, CliffTilt), Random.FRandRange(-CliffTurn, CliffTurn),
-					Random.FRandRange(-CliffTilt, CliffTilt));
+				// its face towards the camera, give or take, on its side (the scans' upright columns lie as beds of
+				// limestone; their flat foot is not seen as a shelf)
+				const FQuat Side(FVector::YAxisVector, FMath::DegreesToRadians(Random.RandBool() ? 90.0 : -90.0));
+				Piece.Rotation = (FQuat(FRotator(Random.FRandRange(-CliffTilt, CliffTilt),
+					Random.FRandRange(-CliffTurn, CliffTurn), Random.FRandRange(-CliffTilt, CliffTilt))) * Side).Rotator();
 				Piece.Variant = Random.RandHelper(MAX_int16);
 				Add(Piece, Ground, Decorations, Pieces);
 			}
@@ -150,12 +160,18 @@ double FUghRockPiece::Nearest() const
 	return FMath::Max(Surface - Out * 2 * Radius * UghShapes::UnitsPerPixel, Limit);
 }
 
-bool UghRockDressing::InFrontOf(const FUghDecoration& Decoration, const FUghRockPiece& Piece)
+FBox2D UghRockDressing::ScreenBox(const FUghRockPiece& Piece)
 {
 	const double Reach = Piece.Radius * ModelReach;
+	return FBox2D(FVector2D(Piece.X - Reach, Piece.Y - Reach), FVector2D(Piece.X + Reach, Piece.Y + Reach));
+}
+
+bool UghRockDressing::InFrontOf(const FUghDecoration& Decoration, const FUghRockPiece& Piece)
+{
+	const FBox2D Box = ScreenBox(Piece);
 	return !Decoration.Hangs() && Decoration.Height > UghDecorations::GroundCover &&
-		Decoration.Left() < Piece.X + Reach && Piece.X - Reach < Decoration.Right() &&
-		Decoration.Top() < Piece.Y + Reach && Piece.Y - Reach < Decoration.Bottom();
+		Decoration.Left() < Box.Max.X && Box.Min.X < Decoration.Right() && Decoration.Top() < Box.Max.Y &&
+		Box.Min.Y < Decoration.Bottom();
 }
 
 TArray<FUghRockPiece> UghRockDressing::Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId,

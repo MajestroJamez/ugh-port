@@ -1,5 +1,6 @@
 #include "UghPlacer.h"
 
+#include "UghCavePortals.h"
 #include "UghGround.h"
 #include "ugh_logic.h"
 
@@ -181,6 +182,15 @@ bool FUghPlacer::Crowds(const FDecoration& Decoration) const
 	return false;
 }
 
+bool FUghPlacer::AtEntrance(const FDecoration& Decoration) const
+{
+	// ground cover may grow on the floor in front of an entrance's arch, nothing else anywhere in front of its passage
+	const bool bFloor = IsGroundCover(Decoration) &&
+		Decoration.Back() < FUghCavePortal::Nearest * UghShapes::UnitsPerPixel;
+	return !bFloor && Ground.AtEntrance(FBox2D(FVector2D(Decoration.Left(), Decoration.Top()),
+		FVector2D(Decoration.Right(), Decoration.Bottom())));
+}
+
 bool FUghPlacer::TryAdd(FDecoration Decoration)
 {
 	if (!Settle(Decoration))
@@ -189,7 +199,7 @@ bool FUghPlacer::TryAdd(FDecoration Decoration)
 	}
 	const bool bOnScreen = Decoration.Left() >= 0 && Decoration.Right() <= UghShapes::ScreenWidth &&
 		Decoration.Top() >= 0 && Decoration.Bottom() < WaterRow;
-	if (!bOnScreen || Decoration.Front() < NearestFront(Decoration) || Crowds(Decoration) ||
+	if (!bOnScreen || Decoration.Front() < NearestFront(Decoration) || AtEntrance(Decoration) || Crowds(Decoration) ||
 		!Ground.Clear(Decoration))
 	{
 		return false;

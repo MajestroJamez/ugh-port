@@ -10,7 +10,9 @@ class FUghGround;
  * The decorations of a level placed so far, and whether another one fits (UghDecorations): on the screen above the
  * water, settled on the rock at its own depth (its foot on a floor, a liana under a ceiling) with its box all air,
  * as far behind the plane of the play as it must be there (UghDecorations::NearestFront, and more where a copter lands
- * on a pad), not in another one's box (ground cover among ground cover may be), nowhere near a campfire.
+ * on a pad), not in another one's box (ground cover among ground cover may be), nowhere near a campfire, nowhere in
+ * front of a cave's entrance but ground cover on the floor in front of its arch (it stays open: the passengers come
+ * out of it).
  */
 class FUghPlacer
 {
@@ -40,6 +42,8 @@ private:
 	static TArray<FLanding> Landings(const ugh_logic* Logic);
 	/** Puts its foot on the floor at its depth (or its top under the ceiling); false when there is none, or uneven. */
 	bool Settle(FUghDecoration& Decoration) const;
+	/** It is seen in front of (or in) a cave's entrance, where it may not be. */
+	bool AtEntrance(const FUghDecoration& Decoration) const;
 	/** It is in the box of one placed (or near a campfire). */
 	bool Crowds(const FUghDecoration& Decoration) const;
 

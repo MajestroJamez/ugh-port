@@ -24,18 +24,25 @@ namespace
 	/** Rich: at least this many decorations, of this many kinds, this many of them grass and flowers. */
 	constexpr int32 MinCount = 150, MinKinds = 6, MinMeadow = 100;
 
-	/** A protected box: what it is; pixels of the screen (y down), how near the plane of the play it reaches (units). */
+	/**
+	 * A protected box: what it is; pixels of the screen (y down), how near the plane of the play it reaches (units);
+	 * whether ground cover may grow in front of an entrance's arch there.
+	 */
 	struct FVolume
 	{
 		FString Name;
 		double Left, Right, Top, Bottom, Front;
+		bool bEntrance = false;
 	};
 
 	/** The box of `Decoration` reaches into `Volume` (its x and y, and nearer than its Front). */
 	bool Into(const FDecoration& Decoration, const FVolume& Volume)
 	{
-		return Decoration.Left() < Volume.Right && Volume.Left < Decoration.Right() && Decoration.Top() < Volume.Bottom &&
-			Volume.Top < Decoration.Bottom() && Decoration.Front() < Volume.Front;
+		const bool bFloor = Volume.bEntrance && Decoration.Height <= UghDecorations::GroundCover &&
+			!Decoration.Hangs() && Decoration.Kind != EKind::Campfire &&
+			Decoration.Back() < FUghCavePortal::Nearest * UghShapes::UnitsPerPixel;
+		return !bFloor && Decoration.Left() < Volume.Right && Volume.Left < Decoration.Right() &&
+			Decoration.Top() < Volume.Bottom && Volume.Top < Decoration.Bottom() && Decoration.Front() < Volume.Front;
 	}
 
 	bool Overlap(const FDecoration& A, const FDecoration& B)
@@ -47,10 +54,11 @@ namespace
 	/**
 	 * Where nothing may be in the level of `Logic`: the screen above the water nearer than the slab of the play
 	 * (UghDecorations::SlabFront); where a copter lands on a pad, nearer than its body and the sweep of its rotor
-	 * reach; the boards with the pads' numbers, nearer than they stand.
+	 * reach; the boards with the pads' numbers, nearer than they stand; the passages of the cave's entrances (of its
+	 * rock `Field`), at any depth.
 	 */
 	TArray<FVolume> Protected(const ugh_logic* Logic, int32 WaterRow, const TArray<FUghArtTile>& Signs,
-		const FUghSprites& Sprites)
+		const FUghSprites& Sprites, const FUghRockField& Field)
 	{
 		TArray<FVolume> Volumes;
 		Volumes.Add({ TEXT("the slab of the play"), 0, double(UghShapes::ScreenWidth), 0, double(WaterRow),
@@ -70,6 +78,12 @@ namespace
 			const FIntPoint Size = Sprites.Size(Sign.Sprite);
 			Volumes.Add({ TEXT("a pad's board"), double(Sign.At.X), double(Sign.At.X + Size.X), double(Sign.At.Y),
 				double(Sign.At.Y + Size.Y), AUghBackground::SignDepth + 1 });
+		}
+		for (const FUghCavePortal& Portal : Field.GetPortals())
+		{
+			const FBox2D Passage = Portal.Passage();
+			Volumes.Add({ TEXT("a cave's entrance"), Passage.Min.X, Passage.Max.X, Passage.Min.Y, Passage.Max.Y,
+				UE_BIG_NUMBER, true });
 		}
 		return Volumes;
 	}
@@ -164,14 +178,14 @@ bool FUghSceneryTest::RunTest(const FString& Parameters)
 				FString::Printf(TEXT("%s level %d"), Players == 1 ? TEXT("one player") : TEXT("team"), Level + 1);
 			const int32 WaterRow = View.water_level / UghShapes::Subpixels;
 			FUghRockField Field;
-			Field.Build(Logic, Art.Draw(View.level_id, Sprites));
+			Field.Build(Logic, Art.Draw(View.level_id, Sprites), Art.Doors(View.level_id));
 			const TArray<FDecoration> Decorations = UghDecorations::Plan(Logic, Field, View.level_id, WaterRow);
 			TestTrue(Name + TEXT(": the same decorations every time"),
 				Decorations == UghDecorations::Plan(Logic, Field, View.level_id, WaterRow));
 			TSet<EKind> Kinds;
 			int32 Meadow = 0;
 			const TArray<FVolume> Volumes =
-				Protected(Logic, WaterRow, Art.Signs(View.level_id), Sprites);
+				Protected(Logic, WaterRow, Art.Signs(View.level_id), Sprites, Field);
 			for (const FDecoration& Decoration : Decorations)
 			{
 				Kinds.Add(Decoration.Kind);

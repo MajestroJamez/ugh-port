@@ -416,7 +416,11 @@ vycházejí cestující) jako skutečné skalní portály s tmou uvnitř, ne dí
 
 - Cedule s čísly plošin jako 3D (vyřezané do dřeva nebo kamene) místo pixelového spritu; bubliny cestujících ostré
   (vektorové / UI s číslem plošiny nebo otazníkem), ne kostičkované.
-- Hotovo když: každá cedule a bublina čitelná v archu, test, že každá plošina má cedulku se správným číslem.
+- Zobáček bubliny (Jan 2026-10-05): dnes je vidět na obě strany a vypadá divně. Originál měl jen jeden zobáček podle
+  toho, z které strany vůči hráči se bublina ukazuje, a mířil k hráči (vrtulníku). Zjistit z originálu / Kotlin portu,
+  jak se strana vybírá (sprite bubliny, poloha vůči vrtulníku), a kreslit jen ten jeden.
+- Hotovo když: každá cedule a bublina čitelná v archu, test, že každá plošina má cedulku se správným číslem, a test, že
+  zobáček míří ke správné straně.
 
 ## Krok 19e - Úvod levelu: let nad mořem ke kameni
 
@@ -1004,3 +1008,29 @@ dekorace na místě, kde je v masce pevná římsa).
   (`play.ps1`) - hlavně zda stačí pás listů u ženy (z boku je vidět šedá podprsenka textury); fps je na hraně
   (medián přesně 25), další rezervu by dalo `r.Nanite.MaxPixelsPerEdge=2` nebo hrubší Lumen GI. Bez MetaHumanů
   (jeskynní muž) nevyzkoušeno znovu shotem. Další: **krok 19c**.
+- 2026-10-05: krok 19c hotový - skály podle reference: šedý krasový vápenec, vchody do jeskyní
+  (`docs/visual-concept.md`). Čelo skály: vrstva skály je Poly Haven `marble_cliff_03` (rozpukané bloky a římsy,
+  nové v `Assets.json`, `cliff_side` vypadl) převedená v `UghCliff.hlsl` do světle šedého vápence s vyšším
+  kontrastem a tmavými stékanými pruhy, šedý kámen je `mossy_rock` (lišejník), mech ve škvírách, na malých římsách
+  a ve skvrnách, tráva jen na plochách nahoru a přes hrany, suchá skála matná (drsnost aspoň 0,75), mokrá jen do metru
+  nad vodou, kresba už netónuje barvu; tráva, mech a hlína dál ze vzorku Electric Dreams, každá vrstva zvlášť
+  (`AUghBackground`; `BeachCliff` a `T_Rock_03` z kopie vypadly). Reliéf čela (`UghRockNoise`): rozpukané bloky
+  s rovnými nakloněnými plochami místo vrstev pískovce, jen před deskou hry. Útesy vzadu: šedé
+  `HugeNordicCoastalCliff_01/_02`, `MassiveNordicCoastalCliff_01` položené na bok (lavice), přebarvené novým
+  levným materiálem `M_UghScan` (jejich textury, 30 % sytosti, šedý tón, mech nahoře) - A/B snímky team-21 stejné fps
+  jako s Megascans masterem vzorku; `MossyRockFace_03` vyzkoušen a zahozen. Vchody do jeskyní (`FUghCavePortal`,
+  `UghCavePortals`, `FUghLevelArt::Doors`): každé dveře kresby (dřevěný rám 60/61/80/81 i ústí 62/63/82/83, 377
+  v 81 levelech) jsou v poli skály oblouk rozpukaných bloků 18 px za rovinou hry (za dosahem rotoru a křídel), který
+  splývá se zadní stěnou, otvor 22 x 22 px, chodba 72 px hluboko stočená ke kraji, stěny chodby ve vrcholových barvách
+  zavřené (tma); cestující vychází z tmy 21 px hluboko (`DoorDepth`). V chodbě nic jiného: dekorace jen pokryv před
+  obloukem (`FUghPlacer`), útesy a kořeny se zmenší nebo vypadnou, krápníky a kameny před vchodem ne. Nový test
+  `Ugh.Portals`; `Ugh.Rock` teď s vchody (nejvýš 0,12 px), `Ugh.Scenery` a `Ugh.Dressing` hlídají chodby
+  (nejméně 21 útesů, 187 dekorací). Snímky reference / před / po v `Saved/Shots/Before19c/pair-*.png` (1p-01, 1p-03,
+  1p-43, team-21), archy `levels.ps1` (33,5 min) bez vad (večer a soumrak barví vápenec do okrova), bez
+  `Content/External` stejná skála s CC0 trávou a mechem, shot prošel. CTest logiky, `6_verification` (163) a 178
+  testů v UE zelené. Výkon: `levels.ps1` medián 19 fps, nejpomalejší 8 - ale notebook je teď (ráno po uspání, Jan
+  v práci) pomalejší celkově: jednotlivý snímek team-21 24-29 fps (v noci 18b 42-46), prvních 45 levelů běhu 31-35,
+  pak propad na ~18 (úsporný stav GPU jako v kroku 19); A/B na tomto stavu: vchody ani materiál útesů fps nemění
+  (rozdíly v šumu ±3). Čeká na Jana: posoudit vápenec a vchody v okně (`play.ps1`) a pustit `levels.ps1` doma
+  v noci znovu kvůli fps (rezerva `r.Nanite.MaxPixelsPerEdge=2` dala +2 fps); dřevěné rámy dveří kresby zatím jen
+  skalní oblouk. Další: **krok 19d**.

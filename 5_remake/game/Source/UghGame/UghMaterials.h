@@ -36,6 +36,8 @@ namespace UghMaterials
 	inline const TCHAR* SpeedParameter = TEXT("Speed");
 	inline const TCHAR* LengthParameter = TEXT("Length");
 	inline const TCHAR* WidthParameter = TEXT("Width");
+	inline const TCHAR* SaturationParameter = TEXT("Saturation");
+	inline const TCHAR* MossParameter = TEXT("Moss");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -99,6 +101,12 @@ namespace UghMaterials
 	 * (repeats of the textures per UV unit).
 	 */
 	inline const TCHAR* Pbr = TEXT("/Game/Generated/M_UghPbr");
+	/**
+	 * A scanned model of its own textures (mesh UVs), greyed: texture parameters BaseColor, Normal, Roughness (its green
+	 * channel); its colour kept Saturation (0 .. 1) and tinted by Color, a dark mossy green on what faces up (Moss
+	 * 0 .. 1 of it). The cliffs of the cave's dressing (AUghCliffDressing) in the cliff's limestone.
+	 */
+	inline const TCHAR* Scan = TEXT("/Game/Generated/M_UghScan");
 	/**
 	 * The sky around the world: an HDR picture of it (texture parameter Sky, long-lat) seen in every direction, tinted
 	 * by Color, times Intensity; unlit, the sky light captures it (it lights the scene and shows in reflections).

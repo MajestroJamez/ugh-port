@@ -43,10 +43,11 @@ namespace UghAssets
 	inline const TCHAR* Hut = TEXT("hut");
 	inline const TCHAR* Vines = TEXT("vines");
 	/**
-	 * The texture sets of the cliff's layers (UghMaterials::CliffLayers in the same order): a warm layered rock, a
-	 * grey rock face, grass, moss, red soil with stones.
+	 * The texture sets of the cliff's layers (UghMaterials::CliffLayers in the same order): a fractured cliff of blocks
+	 * and ledges (the cliff's material greys it into karst limestone), grey rock with lichen, grass, moss, red soil
+	 * with stones.
 	 */
-	inline const TCHAR* const CliffSets[] = { TEXT("cliff_side"), TEXT("rock_face_03"), TEXT("grass004"),
+	inline const TCHAR* const CliffSets[] = { TEXT("marble_cliff_03"), TEXT("mossy_rock"), TEXT("grass004"),
 		TEXT("moss002"), TEXT("red_laterite_soil_stones") };
 	/** The skies of the moods (UghMood): a day with clouds, a golden evening, a dusk, a night, an overcast storm. */
 	inline const TCHAR* SkyDay = TEXT("sky_kloofendal_cloudy");

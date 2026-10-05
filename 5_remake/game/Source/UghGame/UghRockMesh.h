@@ -12,9 +12,10 @@ class UStaticMesh;
  * the world. In the plane of the play its edge is the collision mask's (test Ugh.Rock); in front of the slab of the
  * play the rock's face, behind it the cave reaching to its back wall, beyond the screen the cliff going on. The
  * normals follow the field (smooth), the UVs map the screen onto the drawing of the level (FUghLevelArt), the vertex
- * colours tell the material how open the surface is (red: 1 open, 0 in a crevice), how deep (green: 0 at the slab, 1
- * at the back wall), how near below the rock's top edge in the plane of the play (blue: 1 at the edge, 0 a few
- * pixels below it and behind the slab: grass and moss hang over it) and its large patches (alpha: 0 .. 1 over metres).
+ * colours tell the material how open the surface is (red: 1 open, 0 in a crevice or deep in the passage of a cave's
+ * entrance), how deep (green: 0 at the slab, 1 at the back wall), how near below the rock's top edge in the plane of
+ * the play (blue: 1 at the edge, 0 a few pixels below it and behind the slab: grass and moss hang over it) and its
+ * large patches (alpha: 0 .. 1 over metres).
  */
 class FUghRockMesh
 {

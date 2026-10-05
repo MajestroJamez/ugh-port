@@ -6,6 +6,7 @@
 #include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
 #include "UghDecorations.h"
+#include "UghGround.h"
 #include "UghJson.h"
 #include "UghLevelArt.h"
 #include "UghRockDressing.h"
@@ -51,7 +52,8 @@ bool FUghDressingTest::RunTest(const FString& Parameters)
 			const FString Name =
 				FString::Printf(TEXT("%s level %d"), Players == 1 ? TEXT("one player") : TEXT("team"), Level + 1);
 			FUghRockField Field;
-			Field.Build(Logic, Art.Draw(View.level_id, Sprites));
+			Field.Build(Logic, Art.Draw(View.level_id, Sprites), Art.Doors(View.level_id));
+			const FUghGround Ground(Logic, Field);
 			const TArray<FUghDecoration> Decorations =
 				UghDecorations::Plan(Logic, Field, View.level_id, View.water_level / UghShapes::Subpixels);
 			const TArray<FUghRockPiece> Pieces = UghRockDressing::Plan(Logic, Field, View.level_id, Decorations);
@@ -67,6 +69,8 @@ bool FUghDressingTest::RunTest(const FString& Parameters)
 					Piece.Nearest() < Piece.Surface);
 				TestTrue(What + TEXT(": behind every figure's sweep"), Piece.Nearest() >= UghRockDressing::BackFront &&
 					UghRockDressing::BackFront > UghDecorations::SweepReach);
+				TestFalse(What + TEXT(": seen in a cave's entrance"),
+					Ground.AtEntrance(UghRockDressing::ScreenBox(Piece)));
 				const FUghDecoration* Hidden = Decorations.FindByPredicate([&](const FUghDecoration& Decoration)
 				{
 					return UghRockDressing::InFrontOf(Decoration, Piece) && Piece.Nearest() < Decoration.Depth;

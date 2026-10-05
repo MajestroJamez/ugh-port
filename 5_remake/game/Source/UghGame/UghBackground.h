@@ -41,13 +41,13 @@ protected:
 
 private:
 	/**
-	 * The cliff's material with the layers of the scanned surfaces (UghElectricDreams), else of the imported texture
-	 * sets; none when one of them is missing.
+	 * The cliff's material, each layer the scanned surface of UghElectricDreams where it has one and it was copied,
+	 * else its imported texture set; none when that is missing too.
 	 */
 	UMaterialInstanceDynamic* MakeCliffMaterial();
-	/** Gives `Cliff` the layers of the scanned surfaces, of the imported texture sets; false when one is missing. */
-	static bool SetScannedLayers(UMaterialInstanceDynamic* Cliff);
-	static bool SetImportedLayers(UMaterialInstanceDynamic* Cliff);
+	/** Gives `Cliff` layer `Layer` of the scanned surfaces, of the imported texture sets; false when it is missing. */
+	static bool SetScannedLayer(UMaterialInstanceDynamic* Cliff, int32 Layer);
+	static bool SetImportedLayer(UMaterialInstanceDynamic* Cliff, int32 Layer);
 	void ShowSigns(const TArray<FUghArtTile>& Signs, const FUghSprites& Sprites);
 	/** The unseen cliff around the rock's grid that only shades it (ShroudThickness). */
 	void AddShroud();

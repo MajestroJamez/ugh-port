@@ -27,7 +27,7 @@ using namespace UghMaterialNodes;
 namespace
 {
 	/** How many metres one texture of each layer of the cliff covers (UghMaterials::CliffLayers). */
-	constexpr float CliffSizes[] = { 4.f, 3.f, 1.5f, 1.5f, 2.5f };
+	constexpr float CliffSizes[] = { 4.5f, 3.f, 1.5f, 1.5f, 2.5f };
 	static_assert(UE_ARRAY_COUNT(CliffSizes) == UE_ARRAY_COUNT(UghMaterials::CliffLayers));
 	/** How far the relief of a texture set shifts its textures with the view (parallax), of its size. */
 	constexpr float ParallaxRatio = 0.02f;
@@ -112,7 +112,7 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
 		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Fire, &MakeFire }, { UghMaterials::Sprite, &MakeSprite },
-		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Sky, &MakeSky }, { UghMaterials::Rain, &MakeRain },
+		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky }, { UghMaterials::Rain, &MakeRain },
 		{ UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop } };
 	bool bAllMade = true;
 	for (const FRecipe& Recipe : Recipes)
@@ -240,6 +240,32 @@ bool UUghMakeAssetsCommandlet::MakePbr(UMaterial* Material)
 		Texture(UghMaterials::RoughnessParameter, SAMPLERTYPE_Masks, DefaultMasks), TEXT("G"), MP_Roughness);
 	UMaterialEditingLibrary::ConnectMaterialProperty(
 		Texture(UghMaterials::OcclusionParameter, SAMPLERTYPE_Masks, DefaultMasks), TEXT("R"), MP_AmbientOcclusion);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeScan(UMaterial* Material)
+{
+	auto Texture = [&](const TCHAR* Name, EMaterialSamplerType Sampler, const TCHAR* Default)
+	{
+		UMaterialExpressionTextureSampleParameter2D* Sample = Add<UMaterialExpressionTextureSampleParameter2D>(Material);
+		Sample->ParameterName = Name;
+		Sample->SamplerType = Sampler;
+		Sample->Texture = LoadObject<UTexture2D>(nullptr, Default);
+		return Sample;
+	};
+	UMaterialExpression* Greyed = Custom(Material, TEXT("float grey = dot(Color, float3(0.3, 0.59, 0.11));\n")
+		TEXT("float3 c = lerp(grey.xxx, Color, Saturation) * Tint;\n")
+		TEXT("return lerp(c, grey * float3(0.45, 0.6, 0.25), Moss * smoothstep(0.55, 0.9, Up.z));"), CMOT_Float3, {
+		{ TEXT("Color"), Texture(UghMaterials::BaseColorParameter, SAMPLERTYPE_Color, DefaultColor) },
+		{ TEXT("Up"), Add<UMaterialExpressionVertexNormalWS>(Material) },
+		{ TEXT("Tint"), Vector(Material, UghMaterials::ColorParameter, FLinearColor::White) },
+		{ TEXT("Saturation"), Scalar(Material, UghMaterials::SaturationParameter, 1.f) },
+		{ TEXT("Moss"), Scalar(Material, UghMaterials::MossParameter, 0.f) } });
+	UMaterialEditingLibrary::ConnectMaterialProperty(Greyed, TEXT(""), MP_BaseColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(
+		Texture(UghMaterials::NormalParameter, SAMPLERTYPE_Normal, DefaultNormal), TEXT("RGB"), MP_Normal);
+	UMaterialEditingLibrary::ConnectMaterialProperty(
+		Texture(UghMaterials::RoughnessParameter, SAMPLERTYPE_Masks, DefaultMasks), TEXT("G"), MP_Roughness);
 	return true;
 }
 

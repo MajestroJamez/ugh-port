@@ -7,18 +7,18 @@
   },
   "assets": [
     {
-      "id": "cliff_side", "kind": "texture", "use": "rock: an eroded layered cliff (warm)",
-      "page": "https://polyhaven.com/a/cliff_side", "license": "CC0-1.0", "author": "James Ray Cock, Jenelle van Heerden, Dario Barresi (Poly Haven)",
-      "path": "polyhaven/cliff_side",
-      "polyhaven": { "id": "cliff_side", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
-      "maps": { "color": "cliff_side_diff_2k.jpg", "normal": "cliff_side_nor_dx_2k.jpg", "arm": "cliff_side_arm_2k.jpg", "height": "cliff_side_disp_2k.png" }
-    },
-    {
       "id": "rock_face_03", "kind": "texture", "use": "rock: a natural rock face (grey)",
       "page": "https://polyhaven.com/a/rock_face_03", "license": "CC0-1.0", "author": "Dario Barresi, Rico Cilliers (Poly Haven)",
       "path": "polyhaven/rock_face_03",
       "polyhaven": { "id": "rock_face_03", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
       "maps": { "color": "rock_face_03_diff_2k.jpg", "normal": "rock_face_03_nor_dx_2k.jpg", "arm": "rock_face_03_arm_2k.jpg", "height": "rock_face_03_disp_2k.png" }
+    },
+    {
+      "id": "marble_cliff_03", "kind": "texture", "use": "rock: a fractured cliff of blocks and ledges (the cliff's karst limestone, greyed)",
+      "page": "https://polyhaven.com/a/marble_cliff_03", "license": "CC0-1.0", "author": "Amal Kumar (Poly Haven)",
+      "path": "polyhaven/marble_cliff_03",
+      "polyhaven": { "id": "marble_cliff_03", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },
+      "maps": { "color": "marble_cliff_03_diff_2k.jpg", "normal": "marble_cliff_03_nor_dx_2k.jpg", "arm": "marble_cliff_03_arm_2k.jpg", "height": "marble_cliff_03_disp_2k.png" }
     },
     {
       "id": "rock_wall_02", "kind": "texture", "use": "rock: a cracked rock wall",
@@ -28,7 +28,7 @@
       "maps": { "color": "rock_wall_02_diff_2k.jpg", "normal": "rock_wall_02_nor_dx_2k.jpg", "arm": "rock_wall_02_arm_2k.jpg", "height": "rock_wall_02_disp_2k.png" }
     },
     {
-      "id": "mossy_rock", "kind": "texture", "use": "rock with moss (the tops of ledges)",
+      "id": "mossy_rock", "kind": "texture", "use": "grey rock with lichen (the cliff's grey stone: patches in its limestone, the cave's walls)",
       "page": "https://polyhaven.com/a/mossy_rock", "license": "CC0-1.0", "author": "Rob Tuytel (Poly Haven)",
       "path": "polyhaven/mossy_rock",
       "polyhaven": { "id": "mossy_rock", "resolution": "2k", "files": ["Diffuse.jpg", "nor_dx.jpg", "arm.jpg", "Displacement.png"] },

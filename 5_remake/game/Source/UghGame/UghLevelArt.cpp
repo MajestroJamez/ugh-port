@@ -67,17 +67,27 @@ TArray<FColor> FUghLevelArt::Draw(int32 LevelId, const FUghSprites& Sprites) con
 
 TArray<FUghArtTile> FUghLevelArt::Signs(int32 LevelId) const
 {
-	TArray<FUghArtTile> Signs;
+	return TilesWhere(LevelId, [](int32 Sprite) { return Sprite >= FirstSign && Sprite <= LastSign; });
+}
+
+TArray<FUghArtTile> FUghLevelArt::Doors(int32 LevelId) const
+{
+	return TilesWhere(LevelId, [](int32 Sprite) { return Sprite == Doorway || Sprite == CaveMouth; });
+}
+
+TArray<FUghArtTile> FUghLevelArt::TilesWhere(int32 LevelId, TFunctionRef<bool(int32 Sprite)> Takes) const
+{
+	TArray<FUghArtTile> Found;
 	if (Tiles.IsValidIndex(LevelId) && Columns > 0)
 	{
 		const TArray<int32>& LevelTiles = Tiles[LevelId];
 		for (int32 Index = 0; Index < LevelTiles.Num(); ++Index)
 		{
-			if (LevelTiles[Index] >= FirstSign && LevelTiles[Index] <= LastSign)
+			if (Takes(LevelTiles[Index]))
 			{
-				Signs.Add({ LevelTiles[Index], FIntPoint(Index % Columns * TileWidth, Index / Columns * TileHeight) });
+				Found.Add({ LevelTiles[Index], FIntPoint(Index % Columns * TileWidth, Index / Columns * TileHeight) });
 			}
 		}
 	}
-	return Signs;
+	return Found;
 }

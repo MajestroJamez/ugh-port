@@ -40,8 +40,8 @@ struct FUghRockPiece
 /**
  * The scanned rock dressing the cave of the level being played (AUghCliffDressing shows it): cliffs overlapping into
  * a wall of scanned rock on the cave's back wall and roots hanging from its ceilings there, behind everything a figure
- * reaches (BackFront) and behind the middles of the decorations in front of them. The rock's edge in the plane of the
- * play stays the collision mask's. The same level always gets the same ones (its level_id seeds the choice).
+ * reaches (BackFront) and behind the middles of the decorations in front of them, none seen in a cave's entrance
+ * (FUghCavePortal). The rock's edge in the plane of the play stays the collision mask's. The same level always gets the same ones (its level_id seeds the choice).
  */
 namespace UghRockDressing
 {
@@ -55,6 +55,8 @@ namespace UghRockDressing
 	 */
 	TArray<FUghRockPiece> Plan(const ugh_logic* Logic, const FUghRockField& Field, int32 LevelId,
 		const TArray<FUghDecoration>& Decorations);
+	/** Where the model of `Piece` may be on the screen (pixels). */
+	FBox2D ScreenBox(const FUghRockPiece& Piece);
 	/**
 	 * `Decoration` is seen where the model of `Piece` may be (their boxes on the screen meet), and it is neither ground
 	 * cover nor a liana.

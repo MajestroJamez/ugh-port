@@ -9,13 +9,15 @@
 //
 // Each map is seen from the three axes and blended by the way the surface faces (triplanar: nothing stretches), only
 // the projections and layers that count are sampled. The layers: grass on what faces up and along the top edges of
-// the face, moss hanging below it, where the drawing is green, on deep floors and in the wet; soil on slopes and in
-// the crevices of what faces up; else rock - the warm sandstone where the drawing is warm (its rock), with patches of
-// the grey stone, grey where the drawing is grey (its cave walls) and deep in the cave; where two meet, the higher
-// relief of the two wins (height blend). The sandstone is sampled at two scales, the large patches choosing between
-// them, so that its tiles do not repeat visibly; the grey stone's relief, finer, lies on all the rock. Crevices and
-// the hollows of the relief are darker, the large patches lighter and darker, warmer and greyer, the rock at the water
-// and under it wet; the drawing tints it all a little, so that each level keeps its colours.
+// the face, moss hanging below it, in the crevices and hollows, in some of the large patches, where the drawing is
+// green, on the little ledges and slopes, on deep floors and in the wet; soil in the crevices of what faces up; else
+// rock - the limestone of fractured blocks where the drawing is warm (its rock), with patches of the grey stone with
+// lichen, that stone where the drawing is grey (its cave walls) and deep in the cave; where two meet, the higher
+// relief of the two wins (height blend). The limestone is sampled at two scales, the large patches choosing between
+// them, so that its tiles do not repeat visibly; the grey stone's relief, finer, lies on all the rock. The limestone
+// is greyed (weathered karst: light grey, a little warm, dark streaks down it), the rock matte; crevices and the
+// hollows of the relief are darker, the large patches lighter and darker, warmer and greyer, the rock just at the
+// water and under it wet; the drawing shades it a little, so that each level keeps its light and dark areas.
 
 #define UGH_WRAP View.MaterialTextureBilinearWrapedSampler
 float3 n = normalize(VertexNormal);
@@ -53,20 +55,25 @@ float open = Shade.r, deep = Shade.g, patches = Shade.a;
 float back = smoothstep(0.25, 0.6, deep);   // the cave's back wall: grey, darker
 // below a top edge, on what faces the camera or up (not the sides of the slab of the play)
 float lip = Shade.b * saturate(max(n.y, n.z) * 3);
-// wet at the water and up to a metre or two above it (here more, there less), and under it
-float wet = 1 - smoothstep(0, 0.6 + 1.4 * patches, m.z - WaterLevel * 0.01);
+// wet at the water and up to a metre above it (here more, there less), and under it
+float wet = 1 - smoothstep(0, 0.3 + 0.7 * patches, m.z - WaterLevel * 0.01);
+// moss: in the crevices and hollows of the face, on its little ledges and the slopes of the cave, in a part of the
+// large patches
+float mossy = max(max(smoothstep(0.55, 0.15, open) * (1 - back),
+	smoothstep(0.45, 0.75, n.z) * smoothstep(0.4, 0.65, 1 - patches) * 0.8),
+	smoothstep(0.62, 0.78, 1 - patches) * 0.85);
 
 // the layers' shares: Rock, Stone, Grass, Moss, Soil
 float W[5];
-W[2] = max(smoothstep(0.55, 0.8, n.z) * (1 - 0.6 * deep), smoothstep(0.3, 0.65, lip + 0.3 * (patches - 0.5)));
-W[3] = saturate(max(max(green * 0.8, smoothstep(0.3, 0.7, n.z) * deep),
+W[2] = max(smoothstep(0.75, 0.92, n.z) * (1 - 0.6 * deep), smoothstep(0.3, 0.65, lip + 0.3 * (patches - 0.5)));
+W[3] = saturate(max(max(max(green * 0.8, smoothstep(0.3, 0.7, n.z) * deep), mossy),
 	max(smoothstep(0.0, 0.25, lip), wet * smoothstep(0.45, 0.7, patches))) - W[2]);
-W[4] = smoothstep(0.2, 0.5, n.z + 0.25 * (1 - open)) * saturate(1 - W[2] - W[3]) * 0.8;
+W[4] = smoothstep(0.45, 0.75, n.z + 0.25 * (1 - open)) * saturate(1 - W[2] - W[3]) * 0.8;
 float rest = saturate(1 - W[2] - W[3] - W[4]);
-W[1] = rest * saturate(max(1 - warm, back) + 0.8 * smoothstep(0.58, 0.78, patches));
+W[1] = rest * saturate(max(1 - warm, back) + 0.8 * smoothstep(0.5, 0.72, patches));
 W[0] = rest - W[1];
 
-// the sandstone at two scales: where the large patches (and the reliefs) say, the one or the other
+// the limestone at two scales: where the large patches (and the reliefs) say, the one or the other
 float kRock = 1 / RockSize, kRock2 = 0.71 / RockSize;
 float2 shift = float2(0.37, 0.61);
 float swap = 0;
@@ -125,20 +132,27 @@ base /= sum;
 bump /= sum;
 rough /= sum;
 
-// the sandstone of the cave's cliffs: the warm rock muted towards ochre
-base = lerp(base, dot(base, float3(0.3, 0.59, 0.11)) * float3(1.65, 1.28, 0.86), 0.6 * W[0] / sum);
+// weathered karst limestone: the blocks greyed to a light, a little warm grey (more contrast: darker cracks and
+// weathering), the stone with lichen a little greyer too
+float grey = dot(base, float3(0.3, 0.59, 0.11));
+float3 limestone = 0.22 * pow(max(grey / 0.25, 0), 1.4) * float3(1.04, 1.0, 0.92);
+base = lerp(base, limestone, (W[0] + 0.3 * W[1]) / sum);
 // large patches lighter and darker, warmer and greyer
-base *= lerp(0.78, 1.22, patches) * lerp(float3(0.95, 0.98, 1.02), float3(1.05, 1.0, 0.94), patches);
+base *= lerp(0.8, 1.2, patches) * lerp(float3(0.97, 0.99, 1.02), float3(1.03, 1.0, 0.96), patches);
+// dark streaks of weathering down the limestone (where rain water runs): its relief stretched downwards
+float streak = dot(Texture2DSampleLevel(RockHeight, UGH_WRAP, float2((m.x + m.y) * 0.3, m.z * 0.03), 3).rgb,
+	RockHeightMask.rgb);
+base *= lerp(1, 0.6, smoothstep(0.42, 0.25, streak) * W[0] / sum * (1 - wet));
 // crevices of the rock and hollows of the relief darker
-base *= lerp(0.45, 1, open) * lerp(0.7, 1.08, saturate(relief * 1.5));
-// the drawing's hue and lightness a little, deep in the cave a little darker
-float3 hue = art / lum;
-base *= lerp(1, hue, 0.15) * lerp(1, saturate(lum * 2.5), 0.1) * lerp(1, 0.55, back);
-// wet: darker, glossy
-base *= lerp(1, 0.45, wet);
-rough = lerp(rough, 0.25, 0.85 * wet);
+base *= lerp(0.35, 1, open) * lerp(0.65, 1.08, saturate(relief * 1.5));
+// the drawing's lightness a little, deep in the cave darker
+base *= lerp(1, saturate(lum * 2.5), 0.1) * lerp(1, 0.5, back);
+// matte: dry rock never glossy; wet: darker, glossy
+rough = max(rough, 0.75 * rock);
+base *= lerp(1, 0.5, wet);
+rough = lerp(rough, 0.3, 0.8 * wet);
 
-CliffNormal = normalize(n + 1.3 * bump);
+CliffNormal = normalize(n + 1.8 * bump);
 CliffRough = rough;
 CliffOcclusion = lerp(0.3, 1, open) * lerp(0.75, 1, saturate(relief * 1.5));
 return base;

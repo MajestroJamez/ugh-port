@@ -2,11 +2,15 @@
 
 #include "Algo/BinarySearch.h"
 #include "Async/ParallelFor.h"
+#include "UghCavePortals.h"
 #include "UghRockFeatures.h"
+#include "UghRockNoise.h"
 #include "ugh_logic.h"
 
 namespace
 {
+	using UghRockNoise::SmoothMax;
+
 	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
 
 	/**
@@ -16,8 +20,8 @@ namespace
 	 */
 	constexpr double EdgeRadius = 2.5, FaceBase = 0.8, FaceRelief = 2.4, FaceBulge = 0.8, BulgeWidth = 8;
 	static_assert(FaceBase + FaceRelief + FaceBulge <= FUghRockField::FaceMax);
-	/** The face's layers of sandstone are about this high, pixels. */
-	constexpr double StrataHeight = 9;
+	/** The face's fractured blocks of limestone: about this wide and high, pixels (ledges); smaller ones on them. */
+	constexpr double BlockWidth = 16, BlockHeight = 9, SmallBlocks = 0.4;
 	/**
 	 * Behind the slab: the exact outline turns into the blurred one within Blend pixels; walls and ceilings reach up to
 	 * GrowMax pixels further into the cave (half of it GrowDepth deep); their roughness grows with the depth.
@@ -42,12 +46,6 @@ namespace
 	/** How smoothly the rock meets its back wall and its stalactites and fallen rocks, pixels. */
 	constexpr double WallSmooth = 10, StampSmooth = 0.8;
 
-	double SmoothMax(double A, double B, double K)
-	{
-		const double H = FMath::Max(K - FMath::Abs(A - B), 0.0) / K;
-		return FMath::Max(A, B) + H * H * K / 4;
-	}
-
 	double Noise(double X, double Y, double Scale)
 	{
 		return FMath::PerlinNoise2D(FVector2D(X, Y) * Scale);
@@ -59,22 +57,18 @@ namespace
 	}
 
 	/**
-	 * How far the face stands out at x, y (pixels), 0 .. 1: layers of sandstone (wavy, each standing out more towards
-	 * its foot, a recess under it; more marked here, less there), joints across them (nearly upright cracks), broad
-	 * swellings and a grain.
+	 * How far the face stands out at x, y (pixels), 0 .. 1: fractured blocks of limestone (each standing out its own
+	 * way with a flat face, a crack around it; smaller blocks on them), broad swellings and a grain.
 	 */
 	double Relief(double X, double Y)
 	{
-		const double Layer = Y / StrataHeight * (1 + 0.35 * Noise(X, Y, 0.008)) + 1.4 * Noise(X, Y, 0.012) +
-			0.3 * Noise(X, Y, 0.06);
-		const double Within = Layer - FMath::Floor(Layer);   // 0 at a layer's top, 1 at its foot
-		const double Strata = FMath::SmoothStep(0.0, 0.8, Within) * (1 - FMath::SmoothStep(0.8, 1.0, Within)) *
-			FMath::Clamp(0.5 + 1.3 * Noise(X, Y + 1000 * FMath::Floor(Layer), 0.03), 0.0, 1.0);
-		const double Crack = FMath::Abs(FMath::PerlinNoise2D(FVector2D(X * 0.05, Y * 0.012)));
-		const double Joint = FMath::SmoothStep(0.0, 0.07, Crack + 0.15 * FMath::Max(Noise(X, Y, 0.02), 0.0));
-		const double Swell = 0.5 + 0.5 * (0.7 * Noise(X, Y, 0.04) + 0.3 * Noise(X, Y, 0.11));
+		const UghRockNoise::FBlock Big = UghRockNoise::Blocks(X, Y, BlockWidth, BlockHeight, 0);
+		const UghRockNoise::FBlock Small =
+			UghRockNoise::Blocks(X, Y, BlockWidth * SmallBlocks, BlockHeight * SmallBlocks, 7);
+		const double Blocks = (0.85 * Big.Height + 0.15 * Small.Height) * (0.7 + 0.3 * Small.Crack);
+		const double Swell = 0.5 + 0.5 * Noise(X, Y, 0.04);
 		const double Grain = 0.5 + 0.5 * Noise(X, Y, 0.35);
-		return FMath::Clamp(0.5 * Strata + 0.35 * Swell + 0.15 * Grain, 0.0, 1.0) * (0.35 + 0.65 * Joint);
+		return FMath::Clamp(0.8 * Blocks + 0.12 * Swell + 0.08 * Grain, 0.0, 1.0) * (0.25 + 0.75 * Big.Crack);
 	}
 
 	/** The luminance of the drawing at each pixel of the screen, blurred over Radius pixels (the holes, not the cracks). */
@@ -131,9 +125,10 @@ TConstArrayView<double> FUghRockField::Depths()
 	return Layers;
 }
 
-void FUghRockField::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art)
+void FUghRockField::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art, TConstArrayView<FUghArtTile> Doors)
 {
 	Values.Reset();
+	Portals.Reset();
 	if (ugh_logic_pad_count(Logic) == 0)
 	{
 		return;   // no level yet
@@ -155,10 +150,49 @@ void FUghRockField::Build(const ugh_logic* Logic, TConstArrayView<FColor> Art)
 			}
 		}
 	});
+	Portals = UghCavePortals::Plan(Outline, Doors);
 	for (const FUghRockStamp& Each : UghRockFeatures::Plan(Logic))
 	{
-		Stamp(Each);
+		// none in front of a cave's entrance
+		const FBox2D Around(FVector2D(Each.Centre.X - Each.Radius, Each.Centre.Y - Each.Radius),
+			FVector2D(Each.Centre.X + Each.Radius, Each.Centre.Y + Each.Radius + Each.Length));
+		if (!Portals.ContainsByPredicate([&](const FUghCavePortal& Portal)
+			{
+				return Portal.Reach().Intersect(Around);
+			}))
+		{
+			Stamp(Each);
+		}
 	}
+	for (const FUghCavePortal& Portal : Portals)
+	{
+		Carve(Portal);
+	}
+}
+
+void FUghRockField::Carve(const FUghCavePortal& Portal)
+{
+	const FBox2D Reach = Portal.Reach();
+	const int32 FirstColumn = FMath::Max(FMath::FloorToInt32(Reach.Min.X) + FUghRockOutline::MarginX, 0);
+	const int32 LastColumn = FMath::Min(FMath::CeilToInt32(Reach.Max.X) + FUghRockOutline::MarginX, Columns - 1);
+	const int32 FirstRow = FMath::Max(FMath::FloorToInt32(Reach.Min.Y) + FUghRockOutline::MarginY, 0);
+	const int32 LastRow = FMath::Min(FMath::CeilToInt32(Reach.Max.Y) + FUghRockOutline::MarginY, Rows - 1);
+	const TConstArrayView<double> Layers = Depths();
+	ParallelFor(Layers.Num(), [&](int32 K)
+	{
+		if (Layers[K] < FUghCavePortal::Nearest)
+		{
+			return;   // never near the slab of the play
+		}
+		for (int32 J = FirstRow; J <= LastRow; ++J)
+		{
+			for (int32 I = FirstColumn; I <= LastColumn; ++I)
+			{
+				float& Field = Values[(K * Rows + J) * Columns + I];
+				Field = Portal.Shape(FVector(FUghRockOutline::X(I), FUghRockOutline::Y(J), Layers[K]), Field);
+			}
+		}
+	});
 }
 
 double FUghRockField::Closing(int32 I, int32 J)

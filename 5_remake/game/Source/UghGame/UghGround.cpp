@@ -15,6 +15,14 @@ namespace
 	constexpr double Foot = 0.75;
 }
 
+bool FUghGround::AtEntrance(const FBox2D& Box) const
+{
+	return Field.GetPortals().ContainsByPredicate([&](const FUghCavePortal& Portal)
+	{
+		return Portal.Passage().Intersect(Box);
+	});
+}
+
 bool FUghGround::Solid(int32 X, int32 Y) const
 {
 	return ugh_logic_solid(Logic, X, Y) != 0;

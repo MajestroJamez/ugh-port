@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UghCavePortals.h"
 #include "UghRockOutline.h"
 #include "UghShapes.h"
 
@@ -15,11 +16,11 @@ struct ugh_logic;
  *
  * - In the slab of the play (|depth| <= SlabHalf) the field is the outline's distance: the rock is the collision mask
  *   exactly, its edge on the pixels' borders.
- * - In front of the slab the rock's face, rounded at its edges, bulging a little in its middle, in relief (layers
- *   of sandstone, joints, swellings).
+ * - In front of the slab the rock's face, rounded at its edges, bulging a little in its middle, in relief (fractured
+ *   blocks of limestone, swellings).
  * - Behind it the rock follows the blurred outline, its walls and ceilings reaching further into the cave the deeper
  *   they are (overhangs) and rough, the cave's back wall far behind (deeper where the drawing has a dark hole), the
- *   stalactites and fallen rocks of UghRockFeatures.
+ *   stalactites and fallen rocks of UghRockFeatures, the arches of its entrances with their passages (UghCavePortals).
  * - Beyond the screen's edges the rock closes in: the cliff goes on.
  */
 class FUghRockField
@@ -36,12 +37,15 @@ public:
 	static TConstArrayView<double> Depths();
 
 	/**
-	 * The rock of the level being played with its stalactites and fallen rocks (UghRockFeatures); `Art` the drawing of
-	 * the level (screen-sized, else no holes in the back). None before a level.
+	 * The rock of the level being played with its stalactites and fallen rocks (UghRockFeatures) and its cave
+	 * entrances (UghCavePortals); `Art` the drawing of the level (screen-sized, else no holes in the back), `Doors`
+	 * its doors (FUghLevelArt::Doors: an entrance each). None before a level.
 	 */
-	void Build(const ugh_logic* Logic, TConstArrayView<FColor> Art);
+	void Build(const ugh_logic* Logic, TConstArrayView<FColor> Art, TConstArrayView<FUghArtTile> Doors = {});
 	/** No level was built. */
 	bool IsEmpty() const { return Values.IsEmpty(); }
+	/** The cave's entrances. */
+	const TArray<FUghCavePortal>& GetPortals() const { return Portals; }
 
 	static constexpr int32 Columns = FUghRockOutline::Width, Rows = FUghRockOutline::Height;
 	static int32 Layers() { return Depths().Num(); }
@@ -59,8 +63,11 @@ private:
 	static double Closing(int32 I, int32 J);
 	void MakeBackWall(TConstArrayView<FColor> Art);
 	void Stamp(const FUghRockStamp& Stamp);
+	/** The arch of `Portal` added to the rock, its passage carved into it. */
+	void Carve(const FUghCavePortal& Portal);
 
 	FUghRockOutline Outline;
 	TArray<float> BackWall;   // its depth at each column and row
 	TArray<float> Values;
+	TArray<FUghCavePortal> Portals;
 };

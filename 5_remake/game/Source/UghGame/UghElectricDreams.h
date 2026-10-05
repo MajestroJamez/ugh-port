@@ -74,23 +74,30 @@ namespace UghElectricDreams
 		TEXT("Megascans/3D_Plants/Ivy/SM_Ivy_19"), TEXT("Megascans/3D_Plants/Ivy/SM_Ivy_22") };
 
 	/**
-	 * The scanned rock dressing the cave (UghRockDressing): cliffs of sandstone on its back wall (their scans face +Y,
-	 * the camera, and are open at the back), roots hanging from its ceilings (lying along +Y from the trunk's end).
+	 * The scanned rock dressing the cave (UghRockDressing): grey cliffs of fractured rock on its back wall (their scans
+	 * face +Y, the camera, and are open at the back), roots hanging from its ceilings (lying along +Y from the trunk's
+	 * end).
 	 */
 	inline const TCHAR* const Roots[] = { TEXT("Custom/RootsTest/SM_Roots_01"), TEXT("Custom/RootsTest/SM_Roots_02"),
 		TEXT("Custom/RootsTest/SM_Roots_03"), TEXT("Custom/RootsTest/SM_Roots_04"),
 		TEXT("Custom/RootsTest/SM_Roots_05") };
-	inline const TCHAR* const Cliffs[] = { TEXT("Megascans/3D_Assets/HugeSandstoneCliff/SM_HugeSandstoneCliff_01"),
-		TEXT("Megascans/3D_Assets/HugeSandstoneCliff/SM_HugeSandstoneCliff_03"),
-		TEXT("Megascans/3D_Assets/MassiveSandstoneCliff/SM_MassiveSandstoneCliff_02") };
+	inline const TCHAR* const Cliffs[] = {
+		TEXT("Megascans/3D_Assets/HugeNordicCoastalCliff/SM_HugeNordicCoastalCliff_01"),
+		TEXT("Megascans/3D_Assets/HugeNordicCoastalCliff/SM_HugeNordicCoastalCliff_02"),
+		TEXT("Megascans/3D_Assets/MassiveNordicCoastalCliff/SM_MassiveNordicCoastalCliff_01") };
+	/** The texture parameters of the cliffs' materials (the sample's Megascans master): albedo, normal, packed. */
+	inline const TCHAR* ScanAlbedo = TEXT("Albedo");
+	inline const TCHAR* ScanNormal = TEXT("Normal");
+	inline const TCHAR* ScanPacked = TEXT("DR");
 
 	/**
-	 * A layer of the cliff's material (UghMaterials::CliffLayers, the same order): its tiling textures (base colour,
-	 * normal, a packed map with roughness in green), which channels of the packed map make its relief (HeightMask)
-	 * and how many metres one texture covers.
+	 * A layer of the cliff's material from a scanned surface of the sample: its layer (of UghMaterials::CliffLayers),
+	 * its tiling textures (base colour, normal, a packed map with roughness in green), which channels of the packed map
+	 * make its relief (HeightMask) and how many metres one texture covers.
 	 */
 	struct FCliffLayer
 	{
+		const TCHAR* Layer;
 		const TCHAR* BaseColor;
 		const TCHAR* Normal;
 		const TCHAR* Packed;
@@ -98,23 +105,17 @@ namespace UghElectricDreams
 		float Size;
 	};
 	/**
-	 * The scanned sandstone of a beach cliff (layered, cracked; the cliff's material hides its tiles), a grey rock of
-	 * the sample's tileable sets (patches in the sandstone, the cave's walls, the fine relief of all the rock), mossy
-	 * grass, moss, the jungle's soil.
+	 * Mossy grass, moss, the jungle's soil. The cliff's rock and its grey stone are free texture sets
+	 * (UghAssets::CliffSets): a grey karst limestone, which the sample does not have.
 	 */
 	inline const FCliffLayer CliffLayers[] = {
-		{ TEXT("Megascans/Surfaces/BeachCliff/T_BeachCliff_01_BC"),
-		TEXT("Megascans/Surfaces/BeachCliff/T_BeachCliff_01_N"),
-			TEXT("Megascans/Surfaces/BeachCliff/T_BeachCliff_01_AoRDp"), FLinearColor(0, 0, 1, 0), 5.f },
-		{ TEXT("SmartAssets/TileableTextures/T_Rock_03_Albedo"), TEXT("SmartAssets/TileableTextures/T_Rock_03_Normal"),
-			TEXT("SmartAssets/TileableTextures/T_Rock_03_Material"), FLinearColor(1, 0, 0, 0), 2.5f },
-		{ TEXT("Megascans/Surfaces/MossyGrass/T_MossyGrass_01_BC"),
+		{ TEXT("Grass"), TEXT("Megascans/Surfaces/MossyGrass/T_MossyGrass_01_BC"),
 		TEXT("Megascans/Surfaces/MossyGrass/T_MossyGrass_01_N"),
 			TEXT("Megascans/Surfaces/MossyGrass/T_MossyGrass_01_AoRDp"), FLinearColor(0, 0, 1, 0), 1.5f },
-		{ TEXT("Megascans/Surfaces/NordicMoss/T_NordicMoss_01_BC"),
+		{ TEXT("Moss"), TEXT("Megascans/Surfaces/NordicMoss/T_NordicMoss_01_BC"),
 		TEXT("Megascans/Surfaces/NordicMoss/T_NordicMoss_01_N"),
 			TEXT("Megascans/Surfaces/NordicMoss/T_NordicMoss_01_AoRDp"), FLinearColor(0, 0, 1, 0), 1.5f },
-		{ TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_BC"),
+		{ TEXT("Soil"), TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_BC"),
 		TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_N"),
 			TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_AoRDp"), FLinearColor(0, 0, 1, 0), 2.f } };
 

@@ -138,6 +138,12 @@ FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, con
 	// open where the field outside keeps falling as on a flat surface, closed in a crevice or a hollow
 	const double Near = FMath::Clamp(-Field.Sample(Point + Outward * NearLook) / NearLook, 0.0, 1.0);
 	const double Far = FMath::Clamp(-Field.Sample(Point + Outward * FarLook) / FarLook, 0.0, 1.0);
+	// closed too in the passage of a cave's entrance, the further in the more
+	double Dark = 0;
+	for (const FUghCavePortal& Portal : Field.GetPortals())
+	{
+		Dark = FMath::Max(Dark, Portal.Darkness(Point));
+	}
 	const double Deep = FMath::Clamp((Point.Z - FUghRockField::SlabHalf) / DeepAt, 0.0, 1.0);
 	// below a top edge of the mask (air above it in the plane of the play): the grass hangs over it, further here
 	double Lip = 0;
@@ -155,6 +161,6 @@ FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, con
 	}
 	const double Patches = 0.5 + 0.5 * (0.65 * FMath::PerlinNoise3D(Point * PatchScale) +
 		0.35 * FMath::PerlinNoise3D(Point * PatchScale * 3.1));
-	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far)), uint8(255 * Deep), uint8(255 * Lip),
+	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far) * (1 - Dark)), uint8(255 * Deep), uint8(255 * Lip),
 		uint8(255 * FMath::Clamp(Patches, 0.0, 1.0)));
 }

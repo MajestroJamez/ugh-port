@@ -1,5 +1,6 @@
 #include "UghBackground.h"
 
+#include "Algo/Find.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Texture2D.h"
@@ -90,66 +91,66 @@ void AUghBackground::AddShroud()
 UMaterialInstanceDynamic* AUghBackground::MakeCliffMaterial()
 {
 	UMaterialInstanceDynamic* Cliff = UghShapes::Material(this, UghMaterials::Cliff);
-	return SetScannedLayers(Cliff) || SetImportedLayers(Cliff) ? Cliff : nullptr;
+	for (int32 Layer = 0; Layer < UE_ARRAY_COUNT(UghMaterials::CliffLayers); ++Layer)
+	{
+		if (!SetScannedLayer(Cliff, Layer) && !SetImportedLayer(Cliff, Layer))
+		{
+			return nullptr;
+		}
+	}
+	return Cliff;
 }
 
-bool AUghBackground::SetScannedLayers(UMaterialInstanceDynamic* Cliff)
+bool AUghBackground::SetScannedLayer(UMaterialInstanceDynamic* Cliff, int32 Layer)
 {
-	static_assert(UE_ARRAY_COUNT(UghMaterials::CliffLayers) == UE_ARRAY_COUNT(UghElectricDreams::CliffLayers));
-	// all of them or none: a missing one leaves the material to the imported texture sets
-	TArray<TPair<FName, UTexture*>> Textures;
-	for (int32 Layer = 0; Layer < UE_ARRAY_COUNT(UghElectricDreams::CliffLayers); ++Layer)
+	const FString Name = UghMaterials::CliffLayers[Layer];
+	const UghElectricDreams::FCliffLayer* Scanned = Algo::FindByPredicate(UghElectricDreams::CliffLayers,
+		[&](const UghElectricDreams::FCliffLayer& Each) { return Name == Each.Layer; });
+	if (!Scanned)
 	{
-		const UghElectricDreams::FCliffLayer& Scanned = UghElectricDreams::CliffLayers[Layer];
-		const FString Name = UghMaterials::CliffLayers[Layer];
-		const TPair<const TCHAR*, const TCHAR*> Maps[] = { { UghMaterials::BaseColorParameter, Scanned.BaseColor },
-			{ UghMaterials::NormalParameter, Scanned.Normal }, { UghMaterials::RoughnessParameter, Scanned.Packed },
-			{ UghMaterials::HeightParameter, Scanned.Packed } };
-		for (const TPair<const TCHAR*, const TCHAR*>& Map : Maps)
+		return false;
+	}
+	// all of its maps or none: a missing one leaves the layer to its imported texture set
+	TArray<TPair<FName, UTexture*>> Textures;
+	const TPair<const TCHAR*, const TCHAR*> Maps[] = { { UghMaterials::BaseColorParameter, Scanned->BaseColor },
+		{ UghMaterials::NormalParameter, Scanned->Normal }, { UghMaterials::RoughnessParameter, Scanned->Packed },
+		{ UghMaterials::HeightParameter, Scanned->Packed } };
+	for (const TPair<const TCHAR*, const TCHAR*>& Map : Maps)
+	{
+		UTexture* Texture = UghElectricDreams::Texture(Map.Value);
+		if (!Texture)
 		{
-			UTexture* Texture = UghElectricDreams::Texture(Map.Value);
-			if (!Texture)
-			{
-				return false;
-			}
-			Textures.Add({ FName(Name + Map.Key), Texture });
+			return false;
 		}
+		Textures.Add({ FName(Name + Map.Key), Texture });
 	}
 	for (const TPair<FName, UTexture*>& Texture : Textures)
 	{
 		Cliff->SetTextureParameterValue(Texture.Key, Texture.Value);
 	}
-	for (int32 Layer = 0; Layer < UE_ARRAY_COUNT(UghElectricDreams::CliffLayers); ++Layer)
-	{
-		const UghElectricDreams::FCliffLayer& Scanned = UghElectricDreams::CliffLayers[Layer];
-		const FString Name = UghMaterials::CliffLayers[Layer];
-		Cliff->SetScalarParameterValue(FName(Name + UghMaterials::SizeParameter), Scanned.Size);
-		Cliff->SetVectorParameterValue(FName(Name + UghMaterials::HeightMaskParameter), Scanned.HeightMask);
-	}
+	Cliff->SetScalarParameterValue(FName(Name + UghMaterials::SizeParameter), Scanned->Size);
+	Cliff->SetVectorParameterValue(FName(Name + UghMaterials::HeightMaskParameter), Scanned->HeightMask);
 	return true;
 }
 
-bool AUghBackground::SetImportedLayers(UMaterialInstanceDynamic* Cliff)
+bool AUghBackground::SetImportedLayer(UMaterialInstanceDynamic* Cliff, int32 Layer)
 {
 	static_assert(UE_ARRAY_COUNT(UghMaterials::CliffLayers) == UE_ARRAY_COUNT(UghAssets::CliffSets));
-	for (int32 Layer = 0; Layer < UE_ARRAY_COUNT(UghAssets::CliffSets); ++Layer)
+	const UMaterialInterface* Set = UghAssets::Material(UghAssets::CliffSets[Layer]);
+	if (!Set)
 	{
-		const UMaterialInterface* Set = UghAssets::Material(UghAssets::CliffSets[Layer]);
-		if (!Set)
+		return false;
+	}
+	for (const TCHAR* Map : UghMaterials::CliffMaps)
+	{
+		UTexture* Texture = nullptr;
+		if (!Set->GetTextureParameterValue(FHashedMaterialParameterInfo(Map), Texture) || !Texture)
 		{
+			UE_LOG(LogTemp, Display, TEXT("UGH no %s in %s (build.ps1 -ForceImport): the drawing's colours instead"),
+				Map, *Set->GetName());
 			return false;
 		}
-		for (const TCHAR* Map : UghMaterials::CliffMaps)
-		{
-			UTexture* Texture = nullptr;
-			if (!Set->GetTextureParameterValue(FHashedMaterialParameterInfo(Map), Texture) || !Texture)
-			{
-				UE_LOG(LogTemp, Display, TEXT("UGH no %s in %s (build.ps1 -ForceImport): the drawing's colours instead"),
-					Map, *Set->GetName());
-				return false;
-			}
-			Cliff->SetTextureParameterValue(FName(FString(UghMaterials::CliffLayers[Layer]) + Map), Texture);
-		}
+		Cliff->SetTextureParameterValue(FName(FString(UghMaterials::CliffLayers[Layer]) + Map), Texture);
 	}
 	return true;
 }

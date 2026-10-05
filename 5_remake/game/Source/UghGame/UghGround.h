@@ -35,6 +35,8 @@ public:
 	 * hangs from) it may touch the rock; its back may lean on the cave's back wall.
 	 */
 	bool Clear(const FUghDecoration& Decoration) const;
+	/** `Box` on the screen (pixels) is seen in the passage of a cave's entrance (FUghCavePortal). */
+	bool AtEntrance(const FBox2D& Box) const;
 
 	/** How far from a mask's row a floor is looked for, a ceiling, pixels. */
 	static constexpr double Reach = 3, CeilingReach = 6;

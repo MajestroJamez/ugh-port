@@ -69,7 +69,9 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   zelená a na hlubokých podlahách, jinak skála - teplá vrstevnatá `cliff_side` kde je kresba teplá (její skála),
   šedá `rock_face_03` kde je šedá a na zadní stěně (tmavší). Kde se vrstvy potkávají, vyhraje ta s vyšším reliéfem
   (výšková mapa). Kresba skálu trochu tónuje, ať má každý level své barvy; barvy vrcholů nesou otevřenost (AO
-  ve škvírách), hloubku, blízkost pod horní hranou masky (tráva a mech přes hranu) a velké skvrny (krok 18c). Bez textur (repo bez assetů) má skála barvy kresby jako dřív (`M_UghRock`).
+  ve škvírách), hloubku, blízkost pod horní hranou masky (tráva a mech přes hranu) a velké skvrny (krok 18c). Od
+  kroku 19c je skála šedý vápenec `marble_cliff_03` a šedý kámen `mossy_rock` (viz níže). Bez textur (repo bez
+  assetů) má skála barvy kresby jako dřív (`M_UghRock`).
 - `M_UghPbr` má zapojenou výškovou mapu (parallax, `BumpOffset`).
 - Plastelína: matná (drsnost 0,7), sytější barvy než originál; vrtulníky bez modelů oranžový a tyrkysový.
 - Vrtulník a jeskynní muž (krok 16): textury z kroku 14 (kůra `palm_bark` na kmeny a pařezy, `rock_face_03` na
@@ -215,7 +217,7 @@ virtuálních textur projektu černé): projekt má `r.Substrate=True` a `r.Virt
 
 | Druh | Ve vzorku (`Content/...`) | Velikost | Vybráno |
 |---|---|---|---|
-| útesy, skalní stěny (Nanite) | `Megascans/3D_Assets`: `HugeSandstoneCliff` (8 sítí), `MassiveSandstoneCliff` (6), `MossyRockFace` (3), `QuarryCliff`, `HugeMossyForestCliff`, `ForestRockFormation`, `CanyonSandstoneRidge`, `HugeNordicCoastalCliff`; `SmartAssets/AssetMeshes` `SM_Cliff_01..19`; `Meshes/_GENERATED/RockFormation` | 1,7 GB, 1,0, 0,9, 1,0, 0,09, 0,7, 0,6, 0,3; 4,1; 3,2 | `HugeSandstoneCliff_01`, `_03`, `MassiveSandstoneCliff_02` (zadní stěna) |
+| útesy, skalní stěny (Nanite) | `Megascans/3D_Assets`: `HugeSandstoneCliff` (8 sítí), `MassiveSandstoneCliff` (6), `MossyRockFace` (3), `QuarryCliff`, `HugeMossyForestCliff`, `ForestRockFormation`, `CanyonSandstoneRidge`, `HugeNordicCoastalCliff`; `SmartAssets/AssetMeshes` `SM_Cliff_01..19`; `Meshes/_GENERATED/RockFormation` | 1,7 GB, 1,0, 0,9, 1,0, 0,09, 0,7, 0,6, 0,3; 4,1; 3,2 | `HugeSandstoneCliff_01`, `_03`, `MassiveSandstoneCliff_02` (zadní stěna); od kroku 19c šedé `HugeNordicCoastalCliff_01/_02`, `MassiveNordicCoastalCliff_01` |
 | balvany, kameny | `SandstoneBoulder`, `MossyForestBoulder`, `MossyForestRock`, `LichenedForestBoulder`, `MossyRocks`, `NordicBoulder`, `SmallStonesPack`, `TundraMossyBoulder` | 0,6, 1,0, 0,4, 0,06, 0,7, 0,2, 0,3, 0,2 GB | `SmallStonesPack_01/03/05`, `MossyForestRock_01`, `LichenedForestBoulder_01` (kameny na římsách) |
 | kořeny | `Custom/RootsTest` (`SM_Roots_01..14`, `SM_ErosionRoots_01..04`), `Megascans/3D_Assets/ForestRoots`, `MossyForestRoots` | 3,3 GB (z toho 2,2 erozní kořeny), 0,6, 0,5 | `SM_Roots_01..05` (visí ze stropů jeskyně) |
 | pařezy, kmeny | `TreeStump`, `RottenTreeStump`, `BrokenStump`, `BirchTreeStump`, `FallenTreeAssembly`, `OldFallenTree`, `DeadTree` | 0,2, 0,3, 0,4, 0,3, 0,3, 0,3, 0,3 GB | `TreeStump_01`, `RottenTreeStump_02` |
@@ -224,7 +226,7 @@ virtuálních textur projektu černé): projekt má `r.Substrate=True` a `r.Virt
 | kapradiny | `Fern`, `BeechFern`, `SilverLadyFern`, `BostonFern` | 29, 195, 57, 12 MB | `Fern_01/02/05`, `BeechFern_04`, `SilverLadyFern_01`, `BostonFern_02` |
 | tráva, květiny, pokryv | `KikuyuGrass`, `GroundCover`, `CloverVarieties`, `WhiteWindflower`, `RedLachenalia`, `Amaryllis`, `Periwinkle`, `LilyOfTheValley`, `CustomMoss`, `DeadLeaves` | 3-52 MB | `KikuyuGrass_01/03/05/06`; `WhiteWindflower_01/03`, `RedLachenalia_06`, `Amaryllis_03`, `GroundCover_07` |
 | liány | `Megascans/3D_Plants/Ivy` (25 sítí), `EnglishIvy`, `Custom/IvyTest` (`SM_HangingVine_01..11`, `SM_CliffVine_01..09`) | 109, 16, 1 870 MB | `Ivy_11/13/15/17/21/23`, `HangingVine_09/10` (ze stropů), `Ivy_09/12/16/18/19/22` (závěsy po zadní stěně) |
-| povrchy (dlaždicové) | `Megascans/Surfaces`: `BeachCliff`, `JungleGround`, `MossyGrass`, `NordicMoss`, `MossyRockyGround`, `ButtressRoot`, `IcelandicQuarryRock`; `SmartAssets/TileableTextures` `T_Rock_01..03`, `T_Moss_02`, `T_Lichen_01` | 0,9 GB; 0,2 GB | vrstvy skály: `BeachCliff` (pískovec, krok 18c), `T_Rock_03` (šedá), `MossyGrass`, `NordicMoss`, `JungleGround` |
+| povrchy (dlaždicové) | `Megascans/Surfaces`: `BeachCliff`, `JungleGround`, `MossyGrass`, `NordicMoss`, `MossyRockyGround`, `ButtressRoot`, `IcelandicQuarryRock`; `SmartAssets/TileableTextures` `T_Rock_01..03`, `T_Moss_02`, `T_Lichen_01` | 0,9 GB; 0,2 GB | vrstvy skály: `BeachCliff` (pískovec, krok 18c), `T_Rock_03` (šedá), `MossyGrass`, `NordicMoss`, `JungleGround`; od kroku 19c jen poslední tři (skála je volný vápenec) |
 
 Náhledy pro výběr byly miniatury uložené v hlavičkách `.uasset` (bez spuštění editoru vzorku). Odmítnuto: textury
 naskenovaných skal (`BeachCliff`) se na velké skále zjevně opakují (krok 18c je bere znovu, ve dvou měřítkách
@@ -324,3 +326,35 @@ oba sedí a jsou stejně velcí jako při chůzi, kámen vezený v kabině sedí
   se šetří, co není vidět (`DefaultEngine.ini`): odrazy Lumenu v polovičním rozlišení, stínové mapy slunce o 2,5
   úrovně hrubší, objem osvětlení průsvitných věcí 32 buněk. Snímek GPU (team-21) 23,1 -> 19,9 ms; `levels.ps1`
   medián 25 fps.
+
+## Skály podle reference: šedý krasový vápenec, vchody do jeskyní (krok 19c)
+
+Jan: pískovec působí „lakovaně“; skály mají vypadat jako na jeho fotce vchodu do jeskyně (šedý zvětralý vápenec,
+ostré lomy a římsy, tmavé škvíry, mech a lišejník, matné, mokré jen u vody) a dveře kresby, odkud vycházejí cestující,
+mají být skutečné vchody do jeskyně, ne díra do skály.
+
+- **Čelo skály** (`M_UghCliff`, `UghCliff.hlsl`): vrstva skály je volná sada Poly Haven `marble_cliff_03` (rozpukaný
+  útes z bloků a říms, 4,5 m na dlaždici, dvě měřítka proti opakování) převedená do světle šedého, trochu teplého
+  vápence s vyšším kontrastem a tmavými stékanými pruhy zvětrání (její reliéf natažený dolů); šedý kámen
+  `mossy_rock` (šedá skála s lišejníkem) ve skvrnách vápence a na stěnách jeskyně; mech ve škvírách, na malých římsách
+  a v části velkých skvrn; tráva jen na skutečných plochách nahoru (normála nad 0,75) a přes horní hrany; hlína jen
+  ve škvírách ploch nahoru; suchá skála vždy matná (drsnost aspoň 0,75), mokrá jen do metru nad vodou; kresba už
+  netónuje barvu, jen světlost. Vrstvy trávy, mechu a hlíny dál z naskenovaných povrchů vzorku (pískovec `BeachCliff`
+  a `T_Rock_03` vypadly z kopie), skála a šedý kámen z volných sad - každá vrstva zvlášť (`AUghBackground`).
+- **Reliéf čela** (`FUghRockField::Front`, `UghRockNoise`): místo vrstev pískovce rozpukané bloky vápence - buňky
+  rozházené mřížky (asi 16 x 9 px, na nich menší po 40 %), každý blok vystupuje po svém s rovnou, trochu nakloněnou
+  plochou, škvíra jen na části hranic (jinak jen schod); pořád jen před deskou hry (`Ugh.Rock`).
+- **Útesy vzadu** (`UghRockDressing`, `AUghCliffDressing`): pískovcové útesy nahradily šedé útesy vzorku
+  `HugeNordicCoastalCliff_01/_02` a `MassiveNordicCoastalCliff_01`, položené na bok (jejich svislé sloupy leží jako
+  lavice vápence, rovná pata se neukazuje jako police) a přebarvené novým materiálem `M_UghScan` (jejich vlastní
+  textury: barva zbavená 70 % sytosti, světle šedý tón, tmavý mech na tom, co míří nahoru) - levnější než Megascans
+  master vzorku s vrstvami mechu a oxidace. `MossyRockFace_03` vyzkoušen a zahozen (jako sýr s mechem).
+- **Vchody do jeskyní** (`FUghCavePortal`, `UghCavePortals`): dveře kresby (2 x 2 dlaždice: dřevěný rám 60/61 nad
+  80/81 nebo ústí jeskyně 62/63 nad 82/83, `FUghLevelArt::Doors`; 377 dveří v 81 levelech) jsou v poli skály oblouk
+  rozpukaných bloků vystupující ze zadní stěny 18 px za rovinou hry (za dosahem rotoru a křídel), dozadu se rozšiřuje
+  a splývá se stěnou, kolem otvoru 22 x 22 px; chodba za ním vede 72 px hluboko a stáčí se ke kraji obrazovky, takže
+  její konec není vidět; podlaha je římsa masky. Stěny chodby jsou ve vrcholových barvách „zavřené“ (od 1 do 16 px za
+  obloukem stále víc) - tmavé i bez světla. Cestující vychází z tmy 21 px hluboko (`UghFigurePlace::DoorDepth`).
+  V otvoru se nic jiného neukáže: dekorace jen nízký pokryv na podlaze před obloukem, útesy a kořeny se zmenší nebo
+  vypadnou, krápníky a spadané kameny před vchodem nejsou. Test `Ugh.Portals` (u každých dveří vchod na podlaze
+  masky, otevřený od oblouku po místo, odkud vychází cestující, skála nad otvorem a vedle něj, podlaha, konec chodby).

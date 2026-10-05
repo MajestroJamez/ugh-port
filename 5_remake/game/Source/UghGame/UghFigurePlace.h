@@ -2,7 +2,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UghCavePortals.h"
 #include "UghFigureActions.h"
+#include "UghShapes.h"
 
 /**
  * Where a figure's model stands, which way it looks and how big it is for its sprite, by the origins of the Blender
@@ -22,8 +24,11 @@ namespace UghFigurePlace
 	constexpr double CavemanHeight = 115;
 	/** In the water a caveman's origin (the surface) is this many pixels below the top of his sprite. */
 	constexpr double WaterLine = 4;
-	/** A passenger coming out of a door comes from this deep behind the slab of the play (units). */
-	constexpr double DoorDepth = 60;
+	/**
+	 * A passenger coming out of a door comes from this deep behind the slab of the play (units): out of the dark of
+	 * its cave's entrance, just behind the arch's front (FUghCavePortal).
+	 */
+	constexpr double DoorDepth = (FUghCavePortal::Front + 3) * UghShapes::UnitsPerPixel;
 	/**
 	 * The flyer flies banked, its back this many degrees towards the camera (its wings stretch in depth: a plane seen
 	 * edge on), and bigger than its model by FlyerScale (its sprite is as long as its wings are wide).

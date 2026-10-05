@@ -2,8 +2,12 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Algo/BinarySearch.h"
+#include "Dom/JsonObject.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
+#include "UghJson.h"
+#include "UghLevelArt.h"
+#include "UghRockField.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghSimulation.h"
@@ -202,11 +206,14 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghRockTest, "Ugh.Rock",
 
 bool FUghRockTest::RunTest(const FString& Parameters)
 {
+	const FString Assets = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../../assets"));
 	FUghSimulation Simulation;
+	FUghLevelArt Art;
+	TSharedPtr<FJsonObject> Levels;
 	FString Error;
-	const FString Data =
-		FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("../../assets/logic/ugh-data.ugd"));
-	if (!TestTrue(TEXT("the game data: ") + Error, Simulation.Load(Data, Error)))
+	const FString LevelsPath = Assets / UghJson::LevelsFile;
+	if (!TestTrue(TEXT("the game data: ") + Error, Simulation.Load(Assets / TEXT("logic/ugh-data.ugd"), Error) &&
+		UghJson::ReadObject(LevelsPath, Levels, Error) && Art.Load(*Levels, LevelsPath, Error)))
 	{
 		return false;
 	}
@@ -225,7 +232,7 @@ bool FUghRockTest::RunTest(const FString& Parameters)
 			}
 			Done.Add(LevelId);
 			FUghRockField Field;
-			Field.Build(Logic, {});
+			Field.Build(Logic, {}, Art.Doors(LevelId));   // with its cave's entrances behind the slab
 			FUghRockMesh Mesh;
 			Mesh.Build(Field);
 			for (const double Depth : CutDepths)
