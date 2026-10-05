@@ -34,6 +34,13 @@ Copy-Item -Recurse (Join-Path $assets 'sprites') $data
 # the sounds (.\gradlew.bat :extractor:sound); without them the game is silent
 if (Test-Path (Join-Path $assets 'sound')) { Copy-Item -Recurse (Join-Path $assets 'sound') $data }
 else { Write-Host 'no sounds (.\gradlew.bat :extractor:sound): the package is silent' -ForegroundColor Yellow }
+# the fonts of the menu and the HUD with their licenses (fetch-assets.ps1); without them the engine's Roboto
+$fonts = Join-Path $assets '3d\googlefonts'
+if (Test-Path $fonts) {
+    New-Item -ItemType Directory -Force (Join-Path $data '3d') | Out-Null
+    Copy-Item -Recurse $fonts (Join-Path $data '3d')
+}
+else { Write-Host 'no fonts (fetch-assets.ps1): the package shows the engine''s Roboto' -ForegroundColor Yellow }
 
 if (-not $NoZip) {
     $zip = Join-Path $out 'UghGame-Windows.zip'

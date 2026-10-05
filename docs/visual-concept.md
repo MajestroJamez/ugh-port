@@ -542,3 +542,21 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   nejvýš 0,7.
 - `shot.ps1 -Effect all` (`-UghShotEffect`): každý efekt zastavený ve svém okamžiku u prvního vrtulníku (vedle něj
   ve vzduchu, na zemi nebo na vodě pod ním), detailní snímek `1p-01-<efekt>.png`.
+
+## Menu a HUD (krok 21)
+
+- Obrazovka ve Slate stavěná v kódu (`UghUi*`, žádné binární widget blueprinty), škálovaná DPI křivkou enginu
+  (navrženo pro 1080 řádků, čitelné i v 720). Barvy: teplá kost a jantar ohně na tmavém skle (průsvitné panely se
+  zaoblenými rohy a tenkým teplým okrajem). Písma zdarma (OFL, Google Fonts přes `Assets.json` do
+  `assets/3d/googlefonts`): Lilita One na titulky a čísla, Alegreya Sans na text; bez nich Roboto enginu.
+- Obrázky kreslí kód při startu (`UghStoneArt`): logo „UGH!“ z tlustých kamenných písmen (vzdálenostní pole tahů,
+  každé písmeno trochu nakloněné), kamenná deska popisku, kostěný vrtulník života a kost ukazatele energie - zkosená
+  hrana, zrno, křivé praskliny, mech nahoře, tmavý lem, měkký stín.
+- Titulní obrazovka: za ní kamera pomalu krouží kolem kamene v moři (`UghMenuView`, vytesaný level, který by menu
+  spustilo), vlevo ztmavení, logo, řádky menu (hráči, obtížnost, pole hesla s kurzorem a levelem, Hrát, Konec; vybraný
+  jantarově), poslední hra, klávesy v jednom řádku. Konec hry: kamenná deska „GAME OVER“ / „ALL LEVELS DONE!“, panel
+  s levelem, skóre a režimem, „Press any key“.
+- Hra: dva panely nahoře (level, životy jako kostěné vrtulníky, energie jako kost se žlábkem zelená / jantarová /
+  červená pulzující; skóre a násobitel), mizí s prolínáním hry; žádný dlouhý řádek kláves - pomoc F1 (sama v levelu 1
+  přes popisek a 6 s hry); popisek levelu jako kamenná deska s vytesaným číslem a heslem nad letem; body stoupají
+  jantarově s obrysem; hlasitost a upscaler jako krátké oznámení.

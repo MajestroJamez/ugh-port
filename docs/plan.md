@@ -1235,3 +1235,32 @@ Jan 2026-10-05: strom s obličejem, kamenný cestující a nepřátelé jsou je�
   `levels.ps1 -Quick` a arch bez vad; fps ve stejném sezení před krokem medián 24 (nejpomalejší 14), po něm 23 (17),
   tedy v šumu. Čeká na Jana: posoudit efekty ve hře (`play.ps1`) - hlavně výbuch, sílu prachu a poryvu foukače
   (`UghBursts.cpp`), zda chce stoupající body (dočasně text v HUD, krok 21 ho předělá). Další: **krok 21**.
+- 2026-10-06: krok 21 hotový - menu a HUD (`docs/visual-concept.md`, README hry: `UghUi*`, `UghStoneArt`,
+  `UghMenuView`). Místo textu `AHUD::DrawText` obrazovka ve Slate stavěná v kódu (žádné binární widget blueprinty,
+  `SUghScreen` ve viewportu, škáluje DPI křivka enginu; navrženo pro 1080 řádků, v 720 čitelné). Písma zdarma bez účtu
+  (OFL, Google Fonts na pevném commitu): Lilita One (titulky, čísla) a Alegreya Sans (text) jako nový druh assetu
+  `font` v `Assets.json` (`downloads`: soubory i s `OFL.txt`, velikost a SHA-256; `fetch-assets.ps1` je uloží do
+  `assets/3d/googlefonts`, import je přeskočí, hra čte TTF za běhu, `package.ps1` je přibalí); bez nich Roboto enginu
+  a log (ověřeno shotem). Obrázky kreslí kód při startu (`UghStoneArt`, 35 ms): logo „UGH!“ z tlustých kamenných
+  písmen (vzdálenostní pole tahů, každé trochu nakloněné), kamenná deska, kostěný vrtulník života, kost ukazatele
+  energie - zkosení, zrno, křivé praskliny, mech nahoře, lem, stín. Titulní obrazovka: kamera pomalu krouží daleko nad
+  mořem kolem kamene s vytesaným levelem, který by menu spustilo (`UghMenuView`, místo ztlumeného levelu), vlevo
+  ztmavení, logo, panel s řádky Players / Difficulty / Password (pole s kurzorem a levelem nebo „unknown“) / PLAY /
+  Quit (vybraný jantarově, šipky ke změně), poslední hra, klávesy v jednom řádku. `FUghMenu` má řádky Play a Quit
+  (Enter na Quit končí) a konec hry (`FUghGameEnd`): po hře karta „GAME OVER“ / „ALL LEVELS DONE!“ na kamenné desce
+  s levelem, skóre a režimem, dokud se nestiskne klávesa (ta nic jiného nedělá). Hra: dva skleněné panely nahoře
+  (level; životy jako kostěné vrtulníky, nad 5 „+N“; energie jako kost se žlábkem zelená / jantarová / červená
+  pulzující; skóre s násobitelem), mizí s prolínáním hry; dlouhý řádek kláves pryč - pomoc F1 (sama v levelu 1 přes
+  popisek a 6 s hry, F1 ji schová); popisek levelu jako kamenná deska s vytesaným číslem a heslem levelu nad letem
+  ke kameni, „Press any key“ pulzuje; stoupající body jantarové s obrysem, vyskočí a stoupají; hlasitost a upscaler
+  jako krátké oznámení. Hlášky enginu na obrazovce vypnuté (log je má). Snímky teď obrazovku obsahují
+  (`RequestScreenshot` s UI); `shot.ps1 -Menu` (i `menu.png`), `-End` (level vzdán, snímek karty konce hry,
+  `-UghShotEnd`), efekt s body (`-Effect shells`) ukáže stoupající skóre. Autopilot jede menu klávesami jako dřív.
+  Nové testy `Ugh.Ui.Pictures` (obrázky pokryté, průhledné kolem, stínované; pohled do `Saved\Ui`) a
+  `Ugh.Ui.MenuView` (kamera daleko, nad mořem, dívá se na vytesané čelo, plynule), `Ugh.Menu` rozšířený (Play, Quit,
+  karta konce). Snímky 1920x1080 prohlédnuté: `menu.png`, `1p-01` a `1p-23` (HUD), `1p-01-intro2.5` (popisek nad
+  letem), `1p-03-end` (konec hry), `1p-03-shells` (body), `1p-12` v 1280x720. CTest logiky, `6_verification` (163)
+  a 188 testů v UE zelené. `levels.ps1 -Quick` a arch bez vad (HUD na všech, pomoc jen v level 1), fps medián 22
+  (nejpomalejší 12; v kroku 20 23 / 17, v šumu). Čeká na Jana: posoudit menu a HUD v okně (`play.ps1`), hlavně logo
+  (`UghStoneShapes.cpp`), barvy a velikosti (`UghUiStyle.cpp`), let kamery v menu (`UghMenuView.cpp`); gamepad
+  v menu přijde s krokem 22. Další: **krok 22**.

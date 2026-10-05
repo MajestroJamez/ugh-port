@@ -33,6 +33,8 @@ class FUghPasswords;
  * level once for each burst, held by the first copter when the play begins (beside it in the air, on the ground or the
  * water under it) -UghShotEffectAge seconds into it (else its ShotAge) and framed around it, the name ending in
  * -<burst> after the others: a look at the bursts of the events (AUghEffects), which come from no event then.
+ * -UghShotEnd gives each level up instead of its shot and saves the card of the game's end in the menu (the name
+ * ending in -end after the others).
  */
 class FUghShot
 {
@@ -70,7 +72,8 @@ public:
 	static constexpr double LookAround = 16;
 
 private:
-	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 1, AfterShot = 0.5, LevelTimeLimit = 60;
+	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 4, EndShotAfter = 1, AfterShot = 0.5,
+		LevelTimeLimit = 60;
 	/** The speech bubbles are looked for among the sprites below this one. */
 	static constexpr int32 BubbleSearch = 1000;
 	/** A close-up shows this many pixels around the copters. */
@@ -114,6 +117,8 @@ private:
 	TOptional<double> IntroAt; // -UghShotIntro
 	TArray<FString> Effects;   // -UghShotEffect
 	TOptional<double> EffectAge;   // -UghShotEffectAge
+	bool bEndShot = false;     // -UghShotEnd
+	bool bEndWanted = false;   // the target was given up: its end is to be shot
 	FString Suffix;           // of the shots' names
 	TArray<FTarget> Targets;
 	int32 Next = 0;            // the target being shot

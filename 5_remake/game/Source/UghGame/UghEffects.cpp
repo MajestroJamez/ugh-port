@@ -113,7 +113,7 @@ void AUghEffects::Show(const ugh_logic_view& Previous, const ugh_logic_view& Cur
 	Flare(Seconds);
 	for (FPopup& Popup : Popups)
 	{
-		Popup.Age += Seconds;
+		Popup.Age += Popup.bHeld ? 0 : Seconds;
 	}
 	Popups.RemoveAll([](const FPopup& Popup) { return Popup.Age > PopupSeconds; });
 }
@@ -123,10 +123,20 @@ void AUghEffects::Hold(EUghBurst Burst, const FVector2D& Place, const ugh_logic_
 	FUghEffectOrder Order = Player.OrderAt(Burst, Place, View);
 	Order.bFacingLeft = true;   // as the parts' Direction is
 	Order.Action = Get(Burst).bRepeat ? EUghEffectAction::Loop : EUghEffectAction::Play;
+	const bool bPoints = FUghEffectPlayer::Cues().ContainsByPredicate([Burst](const FUghEffectCue& Cue)
+	{
+		return Cue.Burst == Burst && Cue.bPoints;
+	});
+	Order.Points = bPoints ? ShotPoints : 0;
 	if (FUghBurstShown* Held = Start(Order))
 	{
 		Held->Elapsed = Age;
 		Held->bHeld = true;
+	}
+	if (bPoints && !Popups.IsEmpty())
+	{
+		Popups.Last().Age = FMath::Min(Age, PopupSeconds / 3);
+		Popups.Last().bHeld = true;
 	}
 	for (FFlashing& Flashing : Flashes)
 	{

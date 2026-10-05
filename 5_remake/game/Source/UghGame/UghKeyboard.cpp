@@ -63,8 +63,3 @@ void FUghKeyboard::Handle(FUghSimulation& Simulation, const FKey& Key, EInputEve
 		Simulation.MenuKey(UGH_LOGIC_MENU_OTHER);
 	}
 }
-
-const TCHAR* FUghKeyboard::Help()
-{
-	return TEXT("Arrows fly, Right Ctrl / Space fire (pilot 2: W A S D, Left Ctrl), Esc gives up");
-}

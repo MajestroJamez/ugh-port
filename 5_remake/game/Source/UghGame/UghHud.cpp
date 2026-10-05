@@ -2,132 +2,140 @@
 
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
-#include "Engine/Font.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "UghEffects.h"
 #include "UghGameMode.h"
-#include "UghKeyboard.h"
+#include "UghShapes.h"
+#include "UghUi.h"
+#include "UghUiState.h"
+#include "UghUiStyle.h"
 
 namespace
 {
-	constexpr float TextScale = 1.5f;
-	constexpr int32 FullEnergy = UGH_LOGIC_FULL_ENERGY;
-	/** Behind the status line and the keys: a dark band, readable where the rock reaches the top of the screen. */
-	constexpr float StatusBandHeight = 76;
-	const FLinearColor StatusBand(0.f, 0.f, 0.f, 0.55f);
-	/** The shadow of the centred texts, pixels down and right. */
-	const FLinearColor TextShadow(0.f, 0.f, 0.f, 0.7f);
-	constexpr float ShadowOffset = 2;
-
-	/** The menu: where its rows start and how far apart they are (a part of the height). */
-	constexpr float MenuTop = 0.36f, MenuRowStep = 0.07f;
-	const FLinearColor Chosen = FLinearColor::Yellow, NotChosen = FLinearColor::White;
-	/** A score earned (AUghEffects::FPopup): its colour, how far it rises in its time (a part of the height). */
-	const FLinearColor PopupColor(1.f, 0.85f, 0.4f);
-	constexpr float PopupRise = 0.06f;
+	constexpr float FullEnergy = UGH_LOGIC_FULL_ENERGY;
+	/** How fast the help comes and goes (its share a second). */
+	constexpr double HelpRate = 4;
 }
 
 void AUghHud::DrawHUD()
 {
 	Super::DrawHUD();
 	const AUghGameMode* Mode = GetWorld()->GetAuthGameMode<AUghGameMode>();
-	if (!Mode || !Canvas)
+	if (!Mode || !Canvas || Mode->GetAssets().IsEmpty())   // before StartPlay
 	{
 		return;
 	}
-	if (!Mode->GetProblem().IsEmpty())
+	if (!Screen)
 	{
-		DrawCentred(TEXT("No game: ") + Mode->GetProblem(), Canvas->ClipY / 2, FLinearColor::Red, TextScale);
-		return;
+		Build(*Mode);
 	}
-	if (Mode->IsInMenu())
+	Update(*Mode, GetWorld()->GetDeltaSeconds());
+}
+
+void AUghHud::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (Screen && GEngine && GEngine->GameViewport)
 	{
-		DrawMenu(*Mode);
-		return;
+		GEngine->GameViewport->RemoveViewportWidgetContent(Screen.ToSharedRef());
 	}
-	DrawPopups(*Mode);
-	const ugh_logic_view& View = Mode->GetSimulation().GetCurrent();
-	DrawRect(StatusBand, 0, 0, Canvas->ClipX, StatusBandHeight);
-	DrawText(FString::Printf(TEXT("Level %d   Lives %d   Score %u   x%d   Energy %d %%"), View.level + 1, View.lives,
-		View.score, View.multiplier, FMath::RoundToInt(100.0 * View.energy / FullEnergy)),
-		FLinearColor::White, 20, 16, GEngine->GetLargeFont(), TextScale);
-	DrawText(FString::Printf(TEXT("%s, %s"), FUghKeyboard::Help(), AUghGameMode::KeysHelp()), FLinearColor::Gray, 20,
-		48, GEngine->GetSmallFont(), TextScale);
-	// the frontend's settings on the right of the status line
-	const FString Settings = FString::Printf(TEXT("%s  |  volume %d %%"), *Mode->GetUpscaler().Describe(),
-		Mode->GetVolumePercent());
-	float Width = 0, Height = 0;
-	GetTextSize(Settings, Width, Height, GEngine->GetSmallFont(), TextScale);
-	DrawText(Settings, FLinearColor::Gray, Canvas->ClipX - Width - 20, 20, GEngine->GetSmallFont(), TextScale);
-	if (View.phase == UGH_LOGIC_PHASE_CAPTION)
+	Screen.Reset();
+	Super::EndPlay(Reason);
+}
+
+void AUghHud::Build(const AUghGameMode& Mode)
+{
+	UghUiStyle::FindFonts(Mode.GetAssets());
+	State = MakeShared<FUghUiState>();
+	State->Pictures = UghUiStyle::MakePictures(this, Pictures);
+	Screen = SNew(SUghScreen).State(State);
+	if (GEngine && GEngine->GameViewport)
 	{
-		DrawCentred(FString::Printf(TEXT("Level %d"), View.level + 1), Canvas->ClipY * 0.4f, FLinearColor::Yellow,
-			2 * TextScale);
-		DrawCentred(TEXT("Press a key"), Canvas->ClipY * 0.55f, FLinearColor::White, TextScale);
+		GEngine->GameViewport->AddViewportWidgetContent(Screen.ToSharedRef());
 	}
 }
 
-/** The scores earned rising from where they were earned, fading. */
-void AUghHud::DrawPopups(const AUghGameMode& Mode)
+void AUghHud::Update(const AUghGameMode& Mode, double Seconds)
 {
+	FUghUiState& Shown = *State;
+	Shown.Time = GetWorld()->GetRealTimeSeconds();
+	Shown.Problem = Mode.GetProblem();
+	Shown.Screen = !Shown.Problem.IsEmpty() ? FUghUiState::EScreen::Problem
+		: Mode.IsInMenu() ? FUghUiState::EScreen::Menu : FUghUiState::EScreen::Play;
+	const FUghMenu& Menu = Mode.GetMenu();
+	Shown.Row = Menu.GetRow();
+	Shown.Choice = Menu.GetChoice();
+	Shown.Levels = Mode.GetPasswords().LevelCount(Shown.Choice.Players);
+	Shown.Password = Menu.GetPassword();
+	Shown.bPasswordKnown = Menu.IsPasswordKnown();
+	Shown.bShowingEnd = Menu.IsShowingEnd();
+	Shown.LastGame = Menu.GetLastGame();
+	Shown.Volume = Mode.GetVolumePercent();
+	Shown.Upscaler = Mode.GetUpscaler().Describe();
+
+	const ugh_logic_view& View = Mode.GetSimulation().GetCurrent();
+	Shown.CaptionAge = View.phase == UGH_LOGIC_PHASE_CAPTION && Shown.Phase == UGH_LOGIC_PHASE_CAPTION
+		? Shown.CaptionAge + Seconds : 0;
+	PlaySeconds = View.phase == UGH_LOGIC_PHASE_PLAY && Shown.Phase == UGH_LOGIC_PHASE_PLAY ? PlaySeconds + Seconds : 0;
+	Shown.Phase = View.phase;
+	Shown.Players = Shown.Choice.Players;
+	Shown.Level = View.level;
+	Shown.Lives = View.lives;
+	Shown.Multiplier = View.multiplier;
+	Shown.Score = View.score;
+	Shown.Energy = FMath::Clamp(float(View.energy) / FullEnergy, 0.f, 1.f);
+	Shown.Shown = View.phase == UGH_LOGIC_PHASE_PLAY ? FMath::Clamp(float(View.fade) / UghShapes::FadeShown, 0.f, 1.f) : 0;
+	const FUghPasswords& Passwords = Mode.GetPasswords();
+	Shown.LevelPassword = View.level >= 0 && View.level < Passwords.LevelCount(Shown.Players)
+		? Passwords.Get(Shown.Players, View.level) : FString();
+	UpdateHelp(Mode, Seconds);
+	UpdateNotice(Mode, Seconds);
+
+	// the scores earned, where they were earned on the view
+	Shown.Popups.Reset();
 	for (const AUghEffects::FPopup& Popup : Mode.GetEffects()->GetPopups())
 	{
 		const FVector At = Project(Popup.Where);
-		const float Part = float(Popup.Age / AUghEffects::PopupSeconds);
-		if (At.Z <= 0)
+		if (At.Z > 0 && Canvas->ClipX > 0 && Canvas->ClipY > 0)
 		{
-			continue;   // behind the camera
+			Shown.Popups.Add({ FVector2D(At.X / Canvas->ClipX, At.Y / Canvas->ClipY), Popup.Points,
+				float(Popup.Age / AUghEffects::PopupSeconds) });
 		}
-		const FString Text = FString::Printf(TEXT("+%d"), Popup.Points);
-		float Width = 0, Height = 0;
-		GetTextSize(Text, Width, Height, GEngine->GetLargeFont(), TextScale);
-		const float X = At.X - Width / 2, Y = At.Y - Height - PopupRise * Canvas->ClipY * Part;
-		const float Shown = 1 - Part * Part;
-		DrawText(Text, TextShadow * FLinearColor(1, 1, 1, Shown), X + ShadowOffset, Y + ShadowOffset,
-			GEngine->GetLargeFont(), TextScale);
-		DrawText(Text, PopupColor * FLinearColor(1, 1, 1, Shown), X, Y, GEngine->GetLargeFont(), TextScale);
 	}
 }
 
-/** The title, how the last game ended, the rows (the chosen one yellow), the keys. */
-void AUghHud::DrawMenu(const AUghGameMode& Mode)
+void AUghHud::UpdateHelp(const AUghGameMode& Mode, double Seconds)
 {
-	const FUghMenu& Menu = Mode.GetMenu();
-	const FUghGameChoice Choice = Menu.GetChoice();
-	const float Height = Canvas->ClipY;
-	DrawCentred(TEXT("UGH!"), Height * 0.14f, FLinearColor::Yellow, 3 * TextScale);
-	if (!Mode.GetLastGame().IsEmpty())
+	if (Mode.IsInMenu())
 	{
-		DrawCentred(Mode.GetLastGame(), Height * 0.26f, FLinearColor::White, TextScale);
+		bFirstHelpDone = false;   // a new game shows it again
+		State->Help = 0;
+		return;
 	}
-	const int32 Levels = Mode.GetPasswords().LevelCount(Choice.Players);
-	const FString Level = Menu.GetPassword().IsEmpty() ? TEXT("")
-		: Menu.IsPasswordKnown() ? FString::Printf(TEXT("  - level %d"), Choice.FirstLevel + 1)
-		: FString(TEXT("  - unknown"));
-	const FString Rows[FUghMenu::RowCount] = {
-		FString::Printf(TEXT("%s (%d levels)"), Choice.Players == 2 ? TEXT("Team: two copters") : TEXT("One player"), Levels),
-		FString::Printf(TEXT("Difficulty: %s"), FUghMenu::DifficultyName(Choice.Difficulty)),
-		FString::Printf(TEXT("Password: %s_%s"), *Menu.GetPassword(), *Level) };
-	for (int32 Row = 0; Row < FUghMenu::RowCount; ++Row)
-	{
-		const bool bChosen = static_cast<int32>(Menu.GetRow()) == Row;
-		DrawCentred(bChosen ? TEXT("> ") + Rows[Row] + TEXT(" <") : Rows[Row], Height * (MenuTop + Row * MenuRowStep),
-			bChosen ? Chosen : NotChosen, TextScale);
-	}
-	DrawCentred(FUghMenu::KeysHelp(), Height * (MenuTop + (FUghMenu::RowCount + 1) * MenuRowStep), FLinearColor::Gray,
-		TextScale);
-	DrawCentred(FUghKeyboard::Help(), Height * (MenuTop + (FUghMenu::RowCount + 2) * MenuRowStep), FLinearColor::Gray,
-		TextScale);
-	DrawCentred(FString::Printf(TEXT("PgUp/PgDn: volume %d %%"), Mode.GetVolumePercent()),
-		Height * (MenuTop + (FUghMenu::RowCount + 3) * MenuRowStep), FLinearColor::Gray, TextScale);
+	// at the first level (a game not started by a password): through its caption and a while into its play, unless F1
+	// hides it
+	bFirstHelpDone = bFirstHelpDone || PlaySeconds > FirstHelpSeconds || Mode.IsHelpWanted() != bLastHelpWanted;
+	bLastHelpWanted = Mode.IsHelpWanted();
+	const bool bWanted = Mode.IsHelpWanted() || (!bFirstHelpDone && State->Level == 0);
+	State->Help = FMath::Clamp(State->Help + float((bWanted ? 1 : -1) * HelpRate * Seconds), 0.f, 1.f);
 }
 
-void AUghHud::DrawCentred(const FString& Text, float Y, const FLinearColor& Color, float Scale)
+void AUghHud::UpdateNotice(const AUghGameMode& Mode, double Seconds)
 {
-	UFont* Font = GEngine->GetLargeFont();
-	float Width = 0, Height = 0;
-	GetTextSize(Text, Width, Height, Font, Scale);
-	// a shadow: readable over the scene too (a level's flight, the menu)
-	DrawText(Text, TextShadow, (Canvas->ClipX - Width) / 2 + ShadowOffset, Y + ShadowOffset, Font, Scale);
-	DrawText(Text, Color, (Canvas->ClipX - Width) / 2, Y, Font, Scale);
+	State->NoticeAge += Seconds;
+	if (LastVolume >= 0 && State->Volume != LastVolume)
+	{
+		State->Notice = FString::Printf(TEXT("Volume %d %%"), State->Volume);
+		State->NoticeLevel = State->Volume / 100.f;
+		State->NoticeAge = 0;
+	}
+	else if (!LastUpscaler.IsEmpty() && State->Upscaler != LastUpscaler)
+	{
+		State->Notice = State->Upscaler;
+		State->NoticeLevel = -1;
+		State->NoticeAge = 0;
+	}
+	LastVolume = State->Volume;
+	LastUpscaler = State->Upscaler;
 }

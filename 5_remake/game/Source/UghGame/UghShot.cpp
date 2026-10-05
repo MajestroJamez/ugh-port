@@ -100,6 +100,7 @@ bool FUghShot::Configure()
 	{
 		EffectAge = Age;
 	}
+	bEndShot = FParse::Param(CommandLine, TEXT("UghShotEnd"));
 	FString List = TEXT("1p:1");
 	FParse::Value(CommandLine, TEXT("-UghShotLevels="), List, false);
 	if (!AddTargets(List))
@@ -165,6 +166,17 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	}
 	const FTarget& Target = Targets[Next];
 	TargetTime += DeltaSeconds;
+	if (Mode.IsInMenu() && bShotTaken && bEndWanted)
+	{
+		// given up for the card of the game's end
+		PhaseTime += DeltaSeconds;
+		if (PhaseTime < EndShotAfter)
+		{
+			return EAction::None;
+		}
+		bEndWanted = false;
+		return TakeShot(NameOf(Target));
+	}
 	if (Mode.IsInMenu() && bShotTaken)
 	{
 		// given up after the shot: the next one
@@ -241,13 +253,19 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	UE_LOG(LogTemp, Display, TEXT("UGH shot: level_id %d, copter %d,%d, %.0f fps"), View.level_id, View.copters[0].x,
 		View.copters[0].y, Frames / PhaseTime);
 	bShotTaken = true;
+	if (bEndShot)
+	{
+		bEndWanted = true;   // the shot when the game was given up
+		PhaseTime = 0;
+		return EAction::None;
+	}
 	return TakeShot(NameOf(Target));
 }
 
 FString FUghShot::NameOf(const FTarget& Target) const
 {
 	const FString Effect = Target.Effect.IsEmpty() ? FString() : TEXT("-") + Target.Effect;
-	return TargetName(Target.Players, Target.Level) + Suffix + Effect;
+	return TargetName(Target.Players, Target.Level) + Suffix + Effect + (bEndShot ? TEXT("-end") : TEXT(""));
 }
 
 FUghShot::EAction FUghShot::TakeShot(const FString& Name)

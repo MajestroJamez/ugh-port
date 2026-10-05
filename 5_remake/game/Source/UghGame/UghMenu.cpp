@@ -39,9 +39,20 @@ FKey FUghMenu::KeyOf(TCHAR Char)
 	return Char >= TEXT('A') && Char <= TEXT('Z') ? FKey(FName(FString::Chr(Char))) : FKey();
 }
 
+void FUghMenu::ShowEnd(const FUghGameEnd& End)
+{
+	LastGame = End;
+	bShowingEnd = true;
+}
+
 FUghMenu::EAction FUghMenu::HandleKey(const FKey& Key)
 {
-	if (Key == EKeys::Escape)
+	if (bShowingEnd)
+	{
+		bShowingEnd = false;   // the key only closes it
+		return EAction::None;
+	}
+	if (Key == EKeys::Escape || (Key == EKeys::Enter && Row == ERow::Quit))
 	{
 		return EAction::Quit;
 	}

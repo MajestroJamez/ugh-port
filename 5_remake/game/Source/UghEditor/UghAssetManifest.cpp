@@ -43,9 +43,9 @@ bool UghAssetManifest::Read(const FString& Path, const FString& RepositoryDir, T
 			OutError = FString::Printf(TEXT("%s: an asset without id, kind or path"), *Path);
 			return false;
 		}
-		if (Asset.Kind == TEXT("local"))
+		if (Asset.Kind == TEXT("local") || Asset.Kind == TEXT("font"))
 		{
-			continue;   // only an input of a Blender script, nothing to import
+			continue;   // only an input of a Blender script, or read by the game as it is: nothing to import
 		}
 		Asset.Folder = Root / Entry->GetStringField(TEXT("path"));
 		const TSharedPtr<FJsonObject>* Maps = nullptr;

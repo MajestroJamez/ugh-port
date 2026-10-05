@@ -50,7 +50,15 @@ bool FUghMenuTest::RunTest(const FString& Parameters)
 	Menu.HandleKey(EKeys::Down);
 	TestTrue(TEXT("the third row"), Menu.GetRow() == FUghMenu::ERow::Password);
 	Menu.HandleKey(EKeys::Down);
+	TestTrue(TEXT("the row Play"), Menu.GetRow() == FUghMenu::ERow::Play);
+	TestTrue(TEXT("Enter on Play plays"), Menu.HandleKey(EKeys::Enter) == FUghMenu::EAction::Play);
+	Menu.HandleKey(EKeys::Down);
+	TestTrue(TEXT("Enter on Quit quits"), Menu.HandleKey(EKeys::Enter) == FUghMenu::EAction::Quit);
+	Menu.HandleKey(EKeys::Down);
 	TestTrue(TEXT("Down from the last row goes round"), Menu.GetRow() == FUghMenu::ERow::Players);
+	Menu.HandleKey(EKeys::Up);
+	TestTrue(TEXT("Up from the first row goes round"), Menu.GetRow() == FUghMenu::ERow::Quit);
+	Menu.HandleKey(EKeys::Down);
 
 	Type(Menu, Passwords.Get(2, 40));
 	TestEqual(TEXT("a team password"), Menu.GetChoice().FirstLevel, 40);
@@ -66,6 +74,12 @@ bool FUghMenuTest::RunTest(const FString& Parameters)
 	const int32 Digits = Passwords.Find(1, TEXT("1983"));
 	Type(Menu, TEXT("1983"));
 	TestTrue(TEXT("a password of digits"), Digits != INDEX_NONE && Menu.GetChoice().FirstLevel == Digits);
+	const FUghGameChoice Chosen = Menu.GetChoice();
+	Menu.ShowEnd({ Chosen, 3, 1200, false });
+	TestTrue(TEXT("the end of a game shown"), Menu.IsShowingEnd() && Menu.GetLastGame().IsSet());
+	TestTrue(TEXT("a key closes it and does nothing else"),
+		Menu.HandleKey(EKeys::Escape) == FUghMenu::EAction::None && !Menu.IsShowingEnd() && Menu.GetChoice() == Chosen);
+	TestEqual(TEXT("the last game stays"), Menu.GetLastGame()->Score, 1200u);
 	TestTrue(TEXT("Esc quits"), Menu.HandleKey(EKeys::Escape) == FUghMenu::EAction::Quit);
 	return true;
 }

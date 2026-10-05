@@ -2,6 +2,7 @@
 
 #include "Camera/PlayerCameraManager.h"
 #include "Dom/JsonObject.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/CommandLine.h"
@@ -22,6 +23,7 @@
 #include "UghHud.h"
 #include "UghJson.h"
 #include "UghKeyboard.h"
+#include "UghMenuView.h"
 #include "UghMood.h"
 #include "UghPlayerController.h"
 #include "UghRain.h"
@@ -70,9 +72,10 @@ void AUghGameMode::StartPlay()
 	Upscaler.ChooseBest();
 
 	bShooting = Shot.Configure();
+	GAreScreenMessagesEnabled = false;   // the engine's messages: the log has them, the screen is the game's
 	bIntro = FUghIntro::bFlies && !FParse::Param(FCommandLine::Get(), TEXT("UghNoIntro"));
 
-	const FString Assets = AssetsDir();
+	Assets = AssetsDir();
 	const FString LevelsPath = Assets / UghJson::LevelsFile;
 	TSharedPtr<FJsonObject> Levels;
 	if (!Sprites.Load(Assets, Problem) || !UghJson::ReadObject(LevelsPath, Levels, Problem) ||
@@ -145,7 +148,9 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	{
 		switch (Shot.Tick(*this, DeltaSeconds))
 		{
-		case FUghShot::EAction::TakeShot: FScreenshotRequest::RequestScreenshot(Shot.GetPath(), false, false); break;
+		case FUghShot::EAction::TakeShot:   // with the screen of AUghHud
+			FScreenshotRequest::RequestScreenshot(Shot.GetPath(), true, false);
+			break;
 		case FUghShot::EAction::Quit: Quit(); break;
 		default: break;
 		}
@@ -165,10 +170,14 @@ void AUghGameMode::ShowFrame(double Seconds)
 		BuildLevel(Current);
 	}
 	FlyIntro(Current, Seconds);
+	// behind the menu the camera swings around the stone over the open sea
+	const bool bMenuView = bInMenu && Current.level_id >= 0;
+	MenuTime = bMenuView ? MenuTime + Seconds : 0;
+	SeaStack->Show(Intro.IsFlying() || bMenuView);
 	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
 	Background->SetWater(Surface);
 	SeaStack->SetWater(Surface);
-	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface), Intro.IsFlying());
+	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface), Intro.IsFlying() || bMenuView);
 	Falls->SetWater(Surface);
 	Water->SetFalls(Falls->Feet(Surface));
 	Rain->Show(Current, Surface);
@@ -184,17 +193,17 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	Effects->Show(Previous, Current, Simulation.Alpha(), Seconds);
 
-	// the fade of the play; black around it (the HUD writes the captions) but after a level's flight; dimmed behind the
-	// menu
+	// the fade of the play; black around it (the HUD shows the captions) but after a level's flight; all of the stone
+	// behind the menu
 	double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY
 		? FMath::Clamp(double(Current.fade) / UghShapes::FadeShown, 0.0, 1.0) : 0.0;
 	if (bIntroScene)
 	{
 		Shown = FMath::Max(Shown, Intro.Shown());
 	}
-	if (bInMenu && Current.level_id >= 0)
+	if (bMenuView)
 	{
-		Shown = MenuShown;
+		Shown = 1;
 	}
 	if (APlayerController* Controller = GetWorld()->GetFirstPlayerController())
 	{
@@ -205,7 +214,9 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook, ShotAround) : TOptional<FBox2D>();
 	const FUghCameraPose Game = AUghStage::Fit(CloseUp.Get(UghShapes::Screen()), AUghStage::ViewportAspect());
-	Stage->SetCamera(Intro.IsFlying() ? Intro.Pose(Game, UghShapes::ToWorld(0, Surface, 0).Z) : Game);
+	const double SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
+	Stage->SetCamera(Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
+		: bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game);
 }
 
 void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)
@@ -229,7 +240,6 @@ void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)
 		}
 		Intro.Advance(Seconds);
 	}
-	SeaStack->Show(Intro.IsFlying());
 }
 
 /**
@@ -301,15 +311,19 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 		return true;
 	}
 	// the frontend's keys: their releases are not keys of the game either (a caption would take one)
-	if (Key == EKeys::U || Key == EKeys::G)
+	if (Key == EKeys::U || Key == EKeys::G || Key == EKeys::F1)
 	{
 		if (Event == IE_Pressed && Key == EKeys::U)
 		{
 			Upscaler.Next();
 		}
-		else if (Event == IE_Pressed)
+		else if (Event == IE_Pressed && Key == EKeys::G)
 		{
 			Upscaler.NextFrameGeneration();
+		}
+		else if (Event == IE_Pressed)
+		{
+			bHelp = !bHelp;
 		}
 		return true;
 	}
@@ -359,9 +373,7 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 void AUghGameMode::OpenMenu()
 {
 	const ugh_logic_view& View = Simulation.GetCurrent();
-	LastGame = Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE
-		? FString::Printf(TEXT("All levels done! Score %u"), View.score)
-		: FString::Printf(TEXT("Game over in level %d, score %u"), View.level + 1, View.score);
+	Menu.ShowEnd({ Menu.GetChoice(), View.level, View.score, Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE });
 	Speaker->GetPlayer().OnGameEnd(Simulation.GetResult());
 	bInMenu = true;
 	Intro.Stop();

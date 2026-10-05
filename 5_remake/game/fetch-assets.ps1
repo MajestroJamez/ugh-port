@@ -46,7 +46,8 @@ function Save-File([string]$Url, [string]$Path, [long]$Size, [string]$Algorithm,
 }
 
 # The files of an asset: url, local path, size, hash algorithm and hash. Poly Haven: its API at the asset's resolution
-# (a glTF brings the files it includes); a download: the archive or file of the manifest; a generated asset: none.
+# (a glTF brings the files it includes); a download: the archive or file of the manifest; downloads: files saved in the
+# asset's folder as they are; a generated asset: none.
 function Get-Files($Asset) {
     $folder = Join-Path $root $Asset.path
     $files = New-Object System.Collections.ArrayList
@@ -70,6 +71,12 @@ function Get-Files($Asset) {
         $name = [Uri]::UnescapeDataString((Split-Path -Leaf ([Uri]$Asset.download.url).AbsolutePath))
         if ($name -eq 'get') { $name = $Asset.download.url.Split('=')[-1] }   # ambientCG: get?file=<name>
         $null = $files.Add(@{ Url = $Asset.download.url; Path = Join-Path $archives $name; Size = [long]$Asset.download.size; Algorithm = 'SHA256'; Hash = $Asset.download.sha256; Archive = $true })
+    } elseif ($Asset.downloads) {
+        # files kept as they are (a font and its license)
+        foreach ($download in $Asset.downloads) {
+            $name = [Uri]::UnescapeDataString((Split-Path -Leaf ([Uri]$download.url).AbsolutePath))
+            $null = $files.Add(@{ Url = $download.url; Path = Join-Path $folder $name; Size = [long]$download.size; Algorithm = 'SHA256'; Hash = $download.sha256 })
+        }
     }
     return ,$files
 }

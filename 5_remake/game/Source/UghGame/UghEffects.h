@@ -46,10 +46,13 @@ public:
 		FVector Where;
 		int32 Points;
 		double Age;
+		bool bHeld = false;   // for a shot (Hold)
 	};
 	/** The bursts of a kind shown at once; how long a score shows; the lights of the flashes. */
 	static constexpr int32 MaxShown = 3, MaxFlashes = 2;
 	static constexpr double PopupSeconds = 1.2;
+	/** The score a held burst shows rising (Hold). */
+	static constexpr int32 ShotPoints = 250;
 
 	AUghEffects();
 
@@ -60,7 +63,10 @@ public:
 	 * follow their entities, nothing under the water's surface.
 	 */
 	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds);
-	/** Shows `Burst` at `Place` (pixels) of `View` held `Age` seconds into it (a shot of it), until Clear. */
+	/**
+	 * Shows `Burst` at `Place` (pixels) of `View` held `Age` seconds into it (a shot of it), until Clear; a burst of
+	 * an event earning points with ShotPoints rising.
+	 */
 	void Hold(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View, double Age);
 	bool IsHolding() const;
 	/** Every burst, flash and score gone (a game ends). */

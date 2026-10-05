@@ -22,8 +22,8 @@ struct FUghManifestAsset
 
 /**
  * Reads 5_remake/game/Assets.json (fetch-assets.ps1 downloads what it lists, the commandlet UghImportAssets imports
- * it): the assets with their folders under the repository's `folder` (assets/3d); not the local ones (only inputs of
- * the Blender scripts).
+ * it): the assets with their folders under the repository's `folder` (assets/3d); not the fonts (the game reads them
+ * as they are) nor the local ones (only inputs of the Blender scripts).
  */
 namespace UghAssetManifest
 {

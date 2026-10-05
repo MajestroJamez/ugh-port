@@ -13,10 +13,12 @@
 # at the start of the level that many seconds into it instead (4.5 and later: its end, the game's camera; the name
 # ends in -intro<seconds>, e.g. -intro0.3), -Effect <bursts>: a burst of the events (names of UghBursts.cpp separated
 # by commas, or all) held by the first copter, framed around it, one shot each (the name ends in -<burst>, e.g.
-# 1p-01-explosion), -EffectAge <seconds> into it (else its own moment). All levels at once: levels.ps1.
+# 1p-01-explosion), -EffectAge <seconds> into it (else its own moment), -End: the level given up instead and the card of
+# the game's end in the menu shot (the name ends in -end), -Menu: the title screen first too (menu.png). The shots show
+# the screen (the menu, the HUD) too. All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
-    [string]$EffectAge = '', [int]$TimeoutSeconds = 300)
+    [string]$EffectAge = '', [switch]$End, [switch]$Menu, [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -47,9 +49,12 @@ if ($Intro) {
     $Intro = $seconds.ToString('G', $invariant)
     $suffix += '-intro' + $Intro
 }
+if ($End) { $suffix += '-end' }
 $shot = Join-Path $folder ('{0}-{1:D2}{2}.png' -f $mode, $Level, $suffix)
+$menuShot = Join-Path $folder 'menu.png'
 $log = Join-Path $PSScriptRoot 'Saved\Logs\UghShot.log'
-if (Test-Path $shot) { Remove-Item -Force $shot }
+$fresh = if ($Menu) { @($shot, $menuShot) } else { @($shot) }
+foreach ($old in $fresh) { if (Test-Path $old) { Remove-Item -Force $old } }
 $arguments = "`"$Project`" -game `"-UghShot=$folder`" -UghShotLevels=${mode}:$Level -UghShotAt=$At `"-abslog=$log`""
 if ($Commands) { $arguments += " `"-ExecCmds=$Commands`"" }
 if ($Cargo -gt 0) { $arguments += " -UghShotCargo=$Cargo" }
@@ -61,12 +66,15 @@ if ($Frame) { $arguments += " -UghShotFrame=$Frame" }
 if ($Intro) { $arguments += " -UghShotIntro=$Intro" }
 if ($Effect) { $arguments += " -UghShotEffect=$Effect" }
 if ($EffectAge) { $arguments += " -UghShotEffectAge=$EffectAge" }
+if ($End) { $arguments += ' -UghShotEnd' }
+if ($Menu) { $arguments += ' -UghShotMenu' }
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
 # the shots the game says it took (one a burst), else the one
 $shots = @($shot)
 if ($Effect -and (Test-Path $log)) {
     $shots = @(Select-String -Path $log -Pattern 'UGH shot (.+\.png)$' | ForEach-Object { $_.Matches[0].Groups[1].Value })
 }
+if ($Menu) { $shots += $menuShot }
 $wanted = if ($Effect -eq 'all') { 1 } elseif ($Effect) { $Effect.Split(',').Count } else { 1 }
 $missing = @($shots | Where-Object { -not (Test-Path $_) })
 if ($code -ne 0 -or $shots.Count -lt $wanted -or $missing.Count -gt 0) {

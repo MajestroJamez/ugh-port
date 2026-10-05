@@ -1,12 +1,13 @@
 {
-  "about": "The 3D assets of the remake: free (CC0) and downloadable without an account, and a few local ones (Jan's models, scans of Epic's samples) the scripts never download. fetch-assets.ps1 downloads them to <folder> (never committed), the commandlet UghImportAssets (build.ps1) imports them to Content/Imported/<id>. kind: texture (a PBR set: maps by role -> a material instance of M_UghPbr), model (the files of import, glTF or FBX), hdri (a sky), generated (made by a Blender script alone, imported like a model: static meshes, or a skeletal mesh with its animations), local (its files put there by hand or by electric-dreams.ps1, only an input of a generated asset; without them it and what is made of it are absent and the game shows the older model). Source: polyhaven (the files of its API, https://api.polyhaven.com/files/<id>: <map>.<format> at a resolution, checked by its MD5) or download (a file or an archive, checked by size and SHA-256; an archive is extracted to path), none for a generated asset. blender: a script of Blender/ run on the asset's folder (and the folders of its inputs, ids of assets) that makes outputs.",
+  "about": "The 3D assets and fonts of the remake: free (CC0, the fonts OFL) and downloadable without an account, and a few local ones (Jan's models, scans of Epic's samples) the scripts never download. fetch-assets.ps1 downloads them to <folder> (never committed), the commandlet UghImportAssets (build.ps1) imports them to Content/Imported/<id>. kind: texture (a PBR set: maps by role -> a material instance of M_UghPbr), model (the files of import, glTF or FBX), hdri (a sky), generated (made by a Blender script alone, imported like a model: static meshes, or a skeletal mesh with its animations), local (its files put there by hand or by electric-dreams.ps1, only an input of a generated asset; without them it and what is made of it are absent and the game shows the older model), font (TTF files the game reads at run time, not imported; without them the engine's Roboto). Source: polyhaven (the files of its API, https://api.polyhaven.com/files/<id>: <map>.<format> at a resolution, checked by its MD5) or download (a file or an archive, checked by size and SHA-256; an archive is extracted to path) or downloads (files saved to path as they are, each checked so), none for a generated asset. blender: a script of Blender/ run on the asset's folder (and the folders of its inputs, ids of assets) that makes outputs.",
   "folder": "assets/3d",
   "budgetGB": 100,
   "licenses": {
     "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
     "Fab-Standard": "https://www.fab.com/eula (Fab's standard license: Jan's copy, local only, never in git)",
     "Sketchfab-Download": "https://sketchfab.com/licenses (a model Jan downloaded from Sketchfab: local only, never in git)",
-    "Epic-Sample": "Epic's sample content, for Unreal Engine projects only (local only, never in git)"
+    "Epic-Sample": "Epic's sample content, for Unreal Engine projects only (local only, never in git)",
+    "OFL-1.1": "https://openfontlicense.org (SIL Open Font License 1.1: free to use and to bundle with the game, its OFL.txt goes with the font)"
   },
   "assets": [
     {
@@ -398,6 +399,27 @@
       "path": "generated/tree_hornbeam",
       "blender": { "script": "Blender/tree_hornbeam.py", "inputs": ["electricdreams_scans"], "outputs": ["tree_hornbeam.glb"] },
       "import": ["tree_hornbeam.glb"]
+      },
+    {
+      "id": "font_lilita_one", "kind": "font", "use": "font: the titles and numbers of the menu and the HUD (UghUiStyle)",
+      "page": "https://fonts.google.com/specimen/Lilita+One", "license": "OFL-1.1", "author": "Juan Montoreano (Google Fonts)",
+      "path": "googlefonts/lilitaone",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/google/fonts/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/lilitaone/LilitaOne-Regular.ttf", "size": 28092, "sha256": "f5b641c45c69d772ee4eda687bc9fda411d5cad6b0b45371491da4580cbc8d59" },
+        { "url": "https://raw.githubusercontent.com/google/fonts/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/lilitaone/OFL.txt", "size": 4392, "sha256": "255d5debbb80eb2ea762644311f266a279e8778f00156655a516e2b7781a63e1" }
+      ],
+      "files": ["LilitaOne-Regular.ttf", "OFL.txt"]
+    },
+    {
+      "id": "font_alegreya_sans", "kind": "font", "use": "font: the text of the menu and the HUD (UghUiStyle)",
+      "page": "https://fonts.google.com/specimen/Alegreya+Sans", "license": "OFL-1.1", "author": "Juan Pablo del Peral, Huerta Tipografica (Google Fonts)",
+      "path": "googlefonts/alegreyasans",
+      "downloads": [
+        { "url": "https://raw.githubusercontent.com/google/fonts/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/alegreyasans/AlegreyaSans-Regular.ttf", "size": 263804, "sha256": "8fab634196007afca839f1e5a6fb300976daff55d8528b590ef032f01b14ea10" },
+        { "url": "https://raw.githubusercontent.com/google/fonts/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/alegreyasans/AlegreyaSans-Bold.ttf", "size": 266856, "sha256": "a3055a1893759bdbd7504bb22abc583769e7974c49353176eac0b03792c9fb8e" },
+        { "url": "https://raw.githubusercontent.com/google/fonts/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/alegreyasans/OFL.txt", "size": 4405, "sha256": "0677891e6a143f297350d260ad766ad33bfc18ed5fa4f213acf648d6b597ec1a" }
+      ],
+      "files": ["AlegreyaSans-Regular.ttf", "AlegreyaSans-Bold.ttf", "OFL.txt"]
     }
   ]
 }
