@@ -26,9 +26,13 @@ private:
 	static bool MakeClay(UMaterial* Material);
 	static bool MakeRock(UMaterial* Material);
 	static bool MakeCliff(UMaterial* Material);
-	static bool MakeWater(UMaterial* Material);
 	static bool MakeFire(UMaterial* Material);
 	static bool MakeSprite(UMaterial* Material);
 	static bool MakePbr(UMaterial* Material);
 	static bool MakeSky(UMaterial* Material);
+	/** The water and the weather (UghMakeWeather.cpp): the water, the rain's streaks, its splashes, a raindrop. */
+	static bool MakeWater(UMaterial* Material);
+	static bool MakeRain(UMaterial* Material);
+	static bool MakeSplash(UMaterial* Material);
+	static bool MakeRaindrop(UMaterial* Material);
 };

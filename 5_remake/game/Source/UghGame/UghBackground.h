@@ -9,7 +9,6 @@
 
 class FUghRockMesh;
 class FUghSprites;
-class UInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
 class UStaticMeshComponent;
 class UTexture2D;
@@ -17,8 +16,8 @@ class UTexture2D;
 /**
  * The diorama of the level being played: the cliff with its cave (FUghRockMesh) in the cliff's material (the imported
  * rock, grass, moss and soil steered by the original's drawing; without them the drawing's colours), the boards with
- * the pads' numbers as the original draws them, and the water, which goes on beyond the screen like the cliff (and the
- * cliff's shadow beyond its mesh).
+ * the pads' numbers as the original draws them, the cliff going on beyond the screen (its shadow beyond its mesh); the
+ * rock is wet at the water (AUghWater) and under it.
  */
 UCLASS()
 class AUghBackground : public AActor
@@ -34,7 +33,7 @@ public:
 	/** Shows the rock of a level (empty: none), `Art` its drawing (FUghLevelArt), its `Signs` (sprites of `Sprites`). */
 	void Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, const TArray<FUghArtTile>& Signs,
 		const FUghSprites& Sprites);
-	/** The water surface, pixels from the top of the screen. */
+	/** The water's surface, pixels from the top of the screen: the rock is wet there and under it. */
 	void SetWater(double Surface);
 
 protected:
@@ -56,7 +55,6 @@ private:
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Rock;   // of the level shown, none before one
 	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> RockMaterial;
 	UPROPERTY() TObjectPtr<UTexture2D> RockArt;
-	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Water;
 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> SignCards;   // made as many as needed, hidden when unused
 	UPROPERTY() TMap<int32, TObjectPtr<UTexture2D>> SignTextures;
 	bool bCliff = false;   // RockMaterial is the cliff's (else the drawing's colours)

@@ -17,7 +17,6 @@ namespace
 	const FLinearColor PassengerColor(0.75f, 0.45f, 0.3f);
 	const FLinearColor EnemyColor(0.45f, 0.5f, 0.12f);
 	const FLinearColor BonusColor(0.9f, 0.75f, 0.1f);
-	const FLinearColor RainColor(0.55f, 0.65f, 0.85f);
 
 	/** The figures fill the slab of the play; a bubble is a card in front of it and of the rock's face. */
 	constexpr double FigureDepth = 0, FigureThickness = UghShapes::PlaneThickness;
@@ -25,8 +24,6 @@ namespace
 
 	/** A bubble's card stands this far above its passenger, pixels. */
 	constexpr double BubbleGap = 2;
-	/** A raindrop: a stroke of clay this long and thick (pixels) trailing behind it, along its way (with the wind). */
-	constexpr double DropLength = 4, DropWidth = 1;
 
 	const ugh_logic_entity* FindEntity(const ugh_logic_view& View, int32 Kind, int32 Index)
 	{
@@ -57,7 +54,6 @@ void AUghFigures::BeginPlay()
 	Passengers = Clay(EShape::Cylinder, PassengerColor);
 	Enemies = Clay(EShape::Sphere, EnemyColor);
 	BonusItems = Clay(EShape::Cone, BonusColor);
-	Raindrops = Clay(EShape::Cylinder, RainColor);
 }
 
 void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
@@ -69,7 +65,6 @@ void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Cur
 		return;
 	}
 	ShowEntities(UghBetween::From(Previous, Current), Current, Alpha, Seconds, Sprites, Actions, ClayRiders);
-	ShowRain(Current);
 }
 
 void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
@@ -141,29 +136,11 @@ void AUghFigures::ShowBubbles(const TArray<FBubble>& Bubbles, const FUghSprites&
 	}
 }
 
-void AUghFigures::ShowRain(const ugh_logic_view& Current)
-{
-	// a drop falls as many pixels down as with the wind each step (45 degrees): a cylinder (along Z) laid that way
-	const FVector2D Way = FVector2D(Current.wind, 1).GetSafeNormal();
-	const FVector Along = (UghShapes::ToWorld(Way.X, Way.Y, 0) - UghShapes::ToWorld(0, 0, 0)).GetSafeNormal();
-	const FQuat Turn = FRotationMatrix::MakeFromZY(Along, FVector::YAxisVector).ToQuat();
-	const double Across = DropWidth * UghShapes::UnitsPerPixel / UghShapes::ShapeSize;
-	const FVector Scale(Across, Across, DropLength * UghShapes::UnitsPerPixel / UghShapes::ShapeSize);
-	TArray<FTransform> Drops;
-	for (int32 I = 0; I < Current.raindrop_count; ++I)
-	{
-		const FVector2D Middle = FVector2D(Current.raindrops[I][0] + 0.5, Current.raindrops[I][1] + 0.5) -
-			Way * DropLength / 2;
-		Drops.Add(FTransform(Turn, UghShapes::ToWorld(Middle.X, Middle.Y, FigureDepth), Scale));
-	}
-	UghShapes::SetShapes(Raindrops, Drops);
-}
-
 void AUghFigures::Clear()
 {
 	Models.Begin();
 	Models.End();
-	for (UInstancedStaticMeshComponent* Shapes : { Passengers, Enemies, BonusItems, Raindrops })
+	for (UInstancedStaticMeshComponent* Shapes : { Passengers, Enemies, BonusItems })
 	{
 		UghShapes::SetShapes(Shapes, {});
 	}

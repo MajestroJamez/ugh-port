@@ -48,9 +48,12 @@ namespace UghAssets
 	 */
 	inline const TCHAR* const CliffSets[] = { TEXT("cliff_side"), TEXT("rock_face_03"), TEXT("grass004"),
 		TEXT("moss002"), TEXT("red_laterite_soil_stones") };
-	/** The skies: a calm evening with clouds, a cloudy day (darkened for a storm). */
-	inline const TCHAR* SkyCalm = TEXT("sky_belfast_sunset");
-	inline const TCHAR* SkyStorm = TEXT("sky_kloofendal_cloudy");
+	/** The skies of the moods (UghMood): a day with clouds, a golden evening, a dusk, a night, an overcast storm. */
+	inline const TCHAR* SkyDay = TEXT("sky_kloofendal_cloudy");
+	inline const TCHAR* SkyEvening = TEXT("sky_belfast_sunset");
+	inline const TCHAR* SkyDusk = TEXT("sky_qwantani_dusk");
+	inline const TCHAR* SkyNight = TEXT("sky_qwantani_night");
+	inline const TCHAR* SkyStorm = TEXT("sky_kloofendal_overcast");
 	/** Made by the scripts of Blender/: the copters' parts, the caveman (rigged, with actions), the stone passenger. */
 	inline const TCHAR* Copter = TEXT("copter");
 	inline const TCHAR* Caveman = TEXT("caveman");

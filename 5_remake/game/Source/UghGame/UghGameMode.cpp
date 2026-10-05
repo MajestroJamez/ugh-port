@@ -16,7 +16,9 @@
 #include "UghHud.h"
 #include "UghJson.h"
 #include "UghKeyboard.h"
+#include "UghMood.h"
 #include "UghPlayerController.h"
+#include "UghRain.h"
 #include "UghRockField.h"
 #include "UghRockMesh.h"
 #include "UghScenery.h"
@@ -24,6 +26,7 @@
 #include "UghShot.h"
 #include "UghSpeaker.h"
 #include "UghStage.h"
+#include "UghWater.h"
 #include "UnrealClient.h"
 
 namespace
@@ -83,14 +86,16 @@ void AUghGameMode::StartPlay()
 }
 
 /**
- * The stage (light, air, camera), the level's background, the copters, the figures, the campfire, the decorations,
- * the rock dressing, the speaker.
+ * The stage (light, air, camera), the level's background, the water, the rain, the copters, the figures, the campfire,
+ * the decorations, the rock dressing, the speaker.
  */
 void AUghGameMode::BuildStage()
 {
 	UWorld* World = GetWorld();
 	Stage = World->SpawnActor<AUghStage>();
 	Background = World->SpawnActor<AUghBackground>();
+	Water = World->SpawnActor<AUghWater>();
+	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
 	Figures = World->SpawnActor<AUghFigures>();
 	Campfire = World->SpawnActor<AUghCampfire>();
@@ -136,13 +141,16 @@ void AUghGameMode::ShowFrame(double Seconds)
 		Shot.Dress(Previous);
 		Shot.Dress(Current);
 	}
-	if (Current.level_id != BackgroundLevel)
+	if (Current.level_id != BackgroundLevel || Current.level != MoodLevel)
 	{
 		BuildLevel(Current);
 	}
-	const double Water = FMath::Lerp(double(Previous.water_level), double(Current.water_level), Simulation.Alpha());
-	Background->SetWater(Water / UghShapes::Subpixels);
-	Campfire->SetWater(Water / UghShapes::Subpixels);
+	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
+	Background->SetWater(Surface);
+	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface));
+	Rain->Show(Current, Surface);
+	Stage->SetWater(Surface);
+	Campfire->SetWater(Surface);
 	TArray<FTransform> ClayRiders;
 	Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
 	Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
@@ -166,12 +174,13 @@ void AUghGameMode::ShowFrame(double Seconds)
 }
 
 /**
- * The diorama of the level the view shows: the rock coloured by its drawing, the campfires, the decorations and the
- * scanned rock dressing the cliff.
+ * The diorama of the level the view shows: the rock coloured by its drawing, the campfires, the decorations, the
+ * scanned rock dressing the cliff; the light and the air of its mood (UghMood), its rain.
  */
 void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
 	BackgroundLevel = View.level_id;
+	MoodLevel = View.level;
 	const ugh_logic* Logic = Simulation.GetLogic();
 	const TArray<FColor> Art = LevelArt.Draw(View.level_id, Sprites);
 	FUghRockField Field;
@@ -192,7 +201,11 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 		Pieces.FilterByPredicate([](const FUghRockPiece& Piece) { return Piece.Kind == FUghRockPiece::EKind::Root; }).Num();
 	UE_LOG(LogTemp, Display, TEXT("UGH rock dressing: %d cliffs, %d roots"), Pieces.Num() - Roots, Roots);
 	Dressing->Show(Pieces);
-	Stage->SetWind(View.wind);
+	const FUghMood& Mood = UghMood::Of(View.level, View.wind);
+	UE_LOG(LogTemp, Display, TEXT("UGH mood: %s"), Mood.Name);
+	Stage->SetMood(Mood, View.wind);
+	Water->SetWeather(View.wind, Stage->SunDirection(), Mood.Caustics);
+	Rain->Build(View.level_id < 0 ? nullptr : Logic, View.level_id, View.wind);
 }
 
 bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)

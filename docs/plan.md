@@ -397,6 +397,43 @@ Jan: postavy z Blenderu jsou špatné, chce fotorealistické lidi. Stáhl Epiců
   déšť a mlha jako Niagara podle větru, mraky a obloha, nálada levelu (den, soumrak, noc) podle čísla levelu, Lumen.
 - Hotovo když: archy bez vad, ve větrných levelech déšť ve směru větru, voda přesně na `water_level`.
 
+## Krok 19b - Lidé: listy, vlasy, sezení
+
+Jan 2026-10-05: místo leopardích triček zakrytí intimních partií velkými listy (Electric Dreams), skutečné vlasy
+a vousy (karty, ne zapečené čepice), pilot i cestující v kabině oba sedí a jsou stejně velcí jako při chůzi; veze-li
+vrtulník kámen (look 4) a nikdo jiný nesedí, sedí na sedadle zmenšený kámen.
+- Hotovo když: detaily (`shot.ps1 -Cargo 1/2/3/4 -CloseUp`) i archy bez vad, testy zelené, fps medián >= 25.
+
+## Krok 19c - Skály podle reference: šedý krasový vápenec, vchody do jeskyní
+
+Jan 2026-10-05: pískovec působí „lakovaně“; skály mají vypadat jako na jeho fotce vchodu do jeskyně
+(`C:\Users\Ja079591\.claude\ugh-cave-reference.jpg`: šedý zvětralý vápenec, ostré lomy, mech a lišejník, tmavý
+vchod). Naskenované materiály a kameny (Electric Dreams, Poly Haven, ambientCG). Vchody do jeskyní (sprite dveří, odkud
+vycházejí cestující) jako skutečné skalní portály s tmou uvnitř, ne díra do skály.
+- Hotovo když: snímky srovnané s referencí, `Ugh.Rock` zelený, archy bez vad.
+
+## Krok 19d - Cedule s čísly a bubliny
+
+- Cedule s čísly plošin jako 3D (vyřezané do dřeva nebo kamene) místo pixelového spritu; bubliny cestujících ostré
+  (vektorové / UI s číslem plošiny nebo otazníkem), ne kostičkované.
+- Hotovo když: každá cedule a bublina čitelná v archu, test, že každá plošina má cedulku se správným číslem.
+
+## Krok 19e - Úvod levelu: let nad mořem ke kameni
+
+- Při popisku levelu kamera jako dron přiletí nad mořem s vlnami k velkému kameni; level je do kamene vytesaný;
+  kamera zabrzdí tak, že je vidět level i kus kamene kolem, a pak začne hra (do kamene nevlétá). Herní rovina, kamera
+  hry a logika beze změny.
+- Hotovo když: snímky z průletu (začátek, střed, konec), autopilot `shot.ps1` / `levels.ps1` dál funguje.
+
+## Krok 19f - Pramen, potok, můstek a vodopád
+
+Jan 2026-10-05: v některých levelech ze skály z díry vyvěrá voda, teče přes cestu (římsu), přes ni vede můstek, a do
+popředí padá jako vodopád do vody dole, kde dělá vlny - jen vizuálně, bez vlivu na fyziku a logiku. Vybrat levely, kde
+na to je místo (deterministicky), nic nesmí zakrýt postavy, plošiny ani cedule; můstek nesmí měnit herní rovinu (je
+dekorace na místě, kde je v masce pevná římsa).
+- Hotovo když: aspoň v několika levelech pramen, potok, můstek a vodopád s pěnou a vlnami dole, `Ugh.Scenery`
+  a `Ugh.Rock` zelené, archy bez vad.
+
 ## Krok 20 - Efekty událostí
 
 - Niagara: šplouchnutí cestujícího a vrtulníku, výbuch a kouř při havárii, prach při přistání, jiskry bonusu, peníze
@@ -909,3 +946,37 @@ Jan: postavy z Blenderu jsou špatné, chce fotorealistické lidi. Stáhl Epiců
   leopardí tunika vs. obyčejná kůže (barvy `HIDE`/`FUR` v `metahumans.py`), postavy jsou v kabině menší než kreslený
   jeskynní muž (výška 115 cm), vousy jen jako helma (karty by chtěly sestavení `Medium`); vzorek
   `..\Unreal Projects\MetaHumans` se nepoužil. Další: **krok 19**.
+- 2026-10-05: krok 19 hotový - voda, déšť, obloha, světlo (`docs/visual-concept.md`). Voda je moře kolem útesu
+  (`AUghWater`, `UghWater`; Jan chtěl místo tyrkysové desky fotorealistické moře): materiál Single Layer Water
+  `M_UghWater` (`Shaders/UghWater.hlsl`, `UghMakeWeather.cpp`) - engine kreslí, co je pod hladinou, skrz tolik vody,
+  kolik pohled projde (lom, pohlcování červené, rozptyl do modrozelena), odrazy útesu a oblohy Lumenem; hladina je
+  plochá přesně ve `water_level` (mezi dvěma kroky interpolovaná, nový level či pokus bez interpolace), vlny jsou
+  v normálách (příboj valící se k útesu, čeřiny po větru), kroužky kolem plavců a vrtulníku na vodě
+  (`UghWater::Rings`), kroužky kapek v dešti, pěna u skály (dýchající pruh rozbitý šumem), kaustiky na tom, co leží
+  pod hladinou (podle místa, kudy tam vniklo slunce), hlouběji tmavší a modřejší. Moře sahá od 50 m před rovinou hry
+  (kamera je 64 m) přes zadní stěnu jeskyně a 200 m do stran (`UghWater::Front`, `Reach`), nikde šev; jeho řez je
+  vidět, jen když voda přeroste kameru. Vyzkoušeno a zahozeno: řez vody těsně a 2-20 px před čelem skály (vitrína:
+  dvoubarevný pruh u hladiny). Déšť (`AUghRain`, `UghRain`): 6000 čar v krabici mezi kamerou a útesem, které posouvá
+  materiál `M_UghRain` (`UghRain.hlsl`: síť drobných čtverců, GPU, nic za snímek), šplouchnutí na římsách a na moři
+  (`M_UghSplash`, `UghSplash.hlsl`), kapky logiky (originál je kreslí, s ničím nekolidují) jako světlé čáry na
+  kartičkách (`M_UghRaindrop`) místo plastelíny z `AUghFigures`; vše padá jako kapky logiky, stejně daleko po větru
+  jako dolů. Niagara ne: její systémy jsou binární assety z editoru, ne kód; stejný výsledek dává materiál. Nálada
+  levelu (`UghMood`, `AUghStage::SetMood`): klidné levely podle čísla v pořadí režimu (den, den, večer, večer,
+  soumrak, noc), větrné bouřka; slunce (v noci měsíc) zepředu zleva, k večeru níž a tepleji, obloha HDRI nálady (nové
+  `sky_qwantani_dusk`, `sky_qwantani_night`, `sky_kloofendal_overcast` v `Assets.json`), sky light, mlha, pevná
+  expozice každé nálady (noc temná, hlavní světlo ohně, postavy čitelné); v bouřce mlžný opar nad hladinou (druhá
+  mlha, stoupá s vodou) a rostliny vzorku Electric Dreams se klátí silněji a po větru (`MPC_GlobalFoliageActor`).
+  Objemová mlha dřív končila 60 m od kamery, před útesem (stála výkon a nic nedělala); teď sahá k útesu v hrubší
+  mřížce, paprsky slunce v jeskyni jsou jen jemné. Opraveno: `DeleteAllMaterialExpressions` enginu maže z pole,
+  které prochází (v generovaných materiálech zůstávala polovina uzlů) - commandlet maže po kopii. Testy
+  `Ugh.Water.Level` (level 3 se stoupající vodou: hladina `AUghWater` v každém snímku 20 s hry přesně na
+  interpolované `water_level`, moře přes okraje obrazovky a ke kameře), `Ugh.Rain.Wind` (levely 43 a 64, vítr vlevo
+  a vpravo: kapky logiky, kartičky i čáry deště jdou stejným směrem) a `Ugh.Mood`. Snímky 1p-03, 1p-08 (stoupající
+  voda po 30 s), 1p-43 (bouřka se stoupající vodou), team-21, noc 1p-06 / 1p-36, soumrak 1p-05 / 1p-11, detaily vody
+  (`-Frame`). `levels.ps1` (28 min) a archy bez vad. Výkon (Radeon 890M): jednotlivé snímky 37-44 fps, ale v dlouhém
+  `levels.ps1` přejde GPU po pár minutách do úsporného stavu (~25 místo ~40 fps) - medián 24, proto hrubší mřížka
+  objemové mlhy a odrazy moře v polovičním rozlišení (`DefaultEngine.ini`, vypadá stejně): medián 26, nejpomalejší
+  21. CTest logiky, `6_verification` (163) a 177 testů v UE zelené. Čeká na Jana: posoudit moře, déšť a nálady
+  v okně (`play.ps1`) - hlavně jak tmavá smí být noc a jak oranžový soumrak (`UghMood.cpp`). Pro krok 19e: moře je
+  jeden box `UghWater::Box` (krychle), pro průlet stačí zvětšit `Reach` a `Front` (řez před kamerou pak schovat), vlny
+  jsou jen v normálách (hladina plochá kvůli testu výšky). Další: **krok 19b**.

@@ -21,7 +21,7 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   (30-78 px, v průměru 46), hlubší za tmavými dírami kresby. Krápníky pod rovnými stropy s místem pod sebou a
   spadané kameny u paty stěn a občas na podlaze (ne na plošinách) - vše až za deskou, nikdy v ní (`UghRockFeatures`).
 - **Za okraji obrazovky** útes pokračuje (48 px do stran, 24 nahoru a dolů): pixely okraje pokračují ven a skála se
-  postupně zavírá (s šumem), na okraji mřížky úplně; voda pokračuje přes celou šířku. Neviditelný „plášť“ kolem
+  postupně zavírá (s šumem), na okraji mřížky úplně; kolem útesu je moře (krok 19). Neviditelný „plášť“ kolem
   mřížky jen vrhá stín útesu, který pokračuje dál (jinak by slunce svítilo přes okraj mřížky pruhy na zadní stěnu).
   Dřevěná krabice zmizela.
 - **Cedule s čísly plošin** (dlaždice 85-90 kresby) jsou kartičky s původním spritem těsně za deskou: číslo cílové
@@ -76,13 +76,24 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   kámen) a procedurální textury spočítané skriptem (bambus s kolénky, proutí s průhlednými dírami, kůže, kost,
   provaz, list s žilkami; kůže člověka, vlasy, leopardí kožešina). Barvy, které hra mění (kůže vrtulníku, listy,
   vlasy, kožešina), jsou faktory základní barvy glTF nad světlou texturou.
-- Voda: průsvitná, tmavě modrozelená.
+- Voda (krok 19): moře kolem útesu, materiál Single Layer Water `M_UghWater` (`Shaders/UghWater.hlsl`): engine
+  kreslí, co je pod hladinou, skrz tolik vody, kolik pohled projde (lom, pohlcování červené, rozptyl do modrozelena),
+  a odrazy hladiny Lumenem; hladina je plochá přesně ve výšce `water_level` (mezi dvěma kroky interpolovaná), vlny
+  jsou v normálách: příboj valící se k útesu a čeřiny po větru, kroužky kolem plavců a vrtulníku na vodě, kroužky
+  kapek v dešti, pěna u skály (dýchající pruh, rozbitý šumem) a kolem plovoucích, kaustiky na tom, co leží pod
+  hladinou (podle místa, kudy tam vniklo slunce); co je hlouběji, je tmavší a modřejší, zatopená jeskyně netemní jen
+  rozptylem. Moře sahá od kamery (jeho řez je vidět, jen když stoupající voda přeroste kameru) přes zadní stěnu
+  jeskyně a 200 m do stran - pro průlet nad mořem kroku 19e stačí zvětšit `UghWater::Reach`.
 
 ## Světlo a atmosféra
 
-- Večer: teplé slunce zepředu shora zleva (45°, 8 lux; stíny skal padají na zadní stěnu, takže je hloubka čitelná),
-  obloha HDRI `sky_belfast_sunset` na kopuli kolem světa, kterou snímá sky light (osvětlení i odrazy), Lumen GI
-  s hardwarovým ray tracingem, pevná expozice (EV100 2) - všechny levely stejně světlé. Bez HDRI atmosféra enginu.
+- Nálada levelu (krok 19, `UghMood`): klidné levely jdou dnem podle čísla v pořadí režimu (6 levelů: den, den,
+  zlatý večer, večer, soumrak, noc), level s větrem je bouřka. Slunce vždy zepředu shora zleva (stíny skal padají na
+  zadní stěnu, hloubka je čitelná), k večeru níž a tepleji (den 55° 10 lux, večer 32° 8 lux, soumrak 12° 3,5 lux
+  oranžové), v noci chladný měsíc 0,6 lux a hlavní světlo dávají ohně; obloha HDRI nálady na kopuli kolem světa, kterou
+  snímá sky light (osvětlení i odrazy ve vodě), Lumen GI s hardwarovým ray tracingem, pevná expozice pro každou náladu
+  (den EV100 1,9, večer 1,4, soumrak 1,3, noc 0,6 - noc je tmavá, ale postavy čitelné). Objemová mlha sahá až
+  k útesu (od 40 do 120 m od kamery), slunce v ní svítí do jeskyně (paprsky, slabé). Bez HDRI atmosféra enginu.
 - Palmy byly šedé, protože materiály modelů (instance glTF materiálů enginu) nepovolují Nanite a hra kreslí místo
   nich výchozí materiál: import je teď přepojí na kopie v `Content/Imported/_Masters`, které Nanite povolují.
 - Ohně (krok 18): až tři na nejdelších suchých římsách (napřed bez plošiny), za deskou hry: kamenný kruh a polena
@@ -90,9 +101,13 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   olizují vzhůru stoupajícím šumem, jiskry, každá kartička jinak) a blikající oranžové bodové světlo každého (Lumen),
   každý oheň jinak; zhasne, když voda vystoupí nad jeho římsu.
 - Mlha: nízká přízemní (exponential height fog) s objemovou mlhou, ať je hloubka čitelná.
-- Vítr (krok 12): level s větrem je bouřka - slabší chladné slunce, tmavá zamračená obloha (`sky_kloofendal_cloudy`
-  ztmavená), hustá šedá mlha; plameny ohňů se kloní po větru a víc blikají. Kapky deště jsou plastelínové čárky
-  (4 x 1 px) šikmo po větru, na pozicích z logiky.
+- Vítr (krok 12, 19): level s větrem je bouřka - slabší chladné světlo, zatažená obloha (`sky_kloofendal_overcast`
+  ztmavená), hustá šedá mlha a mlžný opar nad vodou, rostliny vzorku Electric Dreams se klátí silněji a po větru
+  (jejich `MPC_GlobalFoliageActor`), plameny ohňů se kloní po větru a víc blikají. Déšť (`AUghRain`) padá jako kapky
+  logiky, stejně daleko po větru jako dolů: 6000 čar mezi kamerou a útesem (síť drobných čtverců, které posouvá
+  materiál `M_UghRain`, `UghRain.hlsl` - GPU, nic za snímek), šplouchnutí na římsách a na vodě (`M_UghSplash`)
+  a kroužky kapek na hladině; kapky logiky (originál je kreslí) jsou světlé čáry na kartičkách v rovině hry. Niagara
+  ne: její systémy jsou binární assety z editoru, ne kód - stejný výsledek dává materiál.
 - Menu: za ním ztlumené dioráma levelu, který by menu spustilo (po heslu ten level).
 
 ## Kamera
@@ -114,6 +129,9 @@ Pevná, úzký objektiv (30°), celý řez v záběru, mírně shora (-4°), aby
   běhu, pak zase 40+); tráva a květiny bez stínů, maskované listy bez ray tracingu, instancované (Nanite).
   Krok 18b (Electric Dreams, Substrate, 40-60 naskenovaných útesů a kořenů na level): jednotlivé snímky 42-46 fps,
   `levels.ps1` medián 43, nejpomalejší 27; první spuštění po kopii staví textury vzorku (~1 min) a shadery Substrate.
+  Krok 19 (moře Single Layer Water, objemová mlha až k útesu, déšť): jednotlivé snímky 37-44 fps; v dlouhém
+  `levels.ps1` notebook po pár minutách přejde do úsporného stavu GPU (snímky ~25 místo ~40) - medián 24, s hrubší
+  mřížkou objemové mlhy a odrazy moře v polovičním rozlišení (`DefaultEngine.ini`) 26, nejpomalejší 21.
 - Balení: `package.ps1` (UAT, `NO_PROXY += ::1`, data z `assets/` vedle hry), PSO cache nahraná autopilotem
   `-UghShot` v zabalené hře (`pso.ps1`), aby se při startu netrhalo.
 - Kontrola všech levelů: `levels.ps1` - autopilot spustí každý level obou režimů z menu (heslem), nafotí ho bez okna
@@ -140,7 +158,8 @@ První várka (útes v džungli doby kamenné):
 - **textury** (instance `MI_<id>` materiálu `M_UghPbr`): skály `cliff_side` (vrstevnatý útes, teplý), `rock_face_03`
   (šedá skalní stěna), `rock_wall_02` (rozpukaná), `mossy_rock` (mech na skále), `lichen_rock` (lišejník); hlína
   `red_laterite_soil_stones` (tropická červená hlína); kůra `palm_bark`; tráva `grass004`, mech `moss002`,
-- **oblohy**: `sky_belfast_sunset` (večer s mraky - nálada diorámatu), `sky_kloofendal_cloudy` (den s mraky),
+- **oblohy**: `sky_belfast_sunset` (zlatý večer), `sky_kloofendal_cloudy` (den s mraky), `sky_qwantani_dusk` (soumrak),
+  `sky_qwantani_night` (noc s Mléčnou drahou), `sky_kloofendal_overcast` (zataženo - bouřka; krok 19),
 - **modely** (Nanite): balvany `boulder_01`, `namaqualand_boulder_02`, kameny `rock_moss_set_01`, `stone_01`, palmy
   `palm`, strom džungle `island_tree_02`, kapradina `fern_02`, keř `shrub_02`, rostliny džungle `pachira_aquatica_01`,
   `calathea_orbifolia_01`, tráva `grass_medium_01`, kmen `dead_tree_trunk`, ohniště `campfire`.

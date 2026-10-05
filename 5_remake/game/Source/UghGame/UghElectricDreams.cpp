@@ -2,6 +2,7 @@
 
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture.h"
+#include "Materials/MaterialParameterCollection.h"
 #include "Misc/PackageName.h"
 
 namespace
@@ -72,4 +73,9 @@ TArray<UStaticMesh*> UghElectricDreams::Meshes(TConstArrayView<const TCHAR*> Pat
 UTexture* UghElectricDreams::Texture(const TCHAR* Path)
 {
 	return Find<UTexture>(Path);
+}
+
+UMaterialParameterCollection* UghElectricDreams::Collection(const TCHAR* Path)
+{
+	return Find<UMaterialParameterCollection>(Path);
 }

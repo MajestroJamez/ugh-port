@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 
+class UMaterialParameterCollection;
 class UStaticMesh;
 class UTexture;
 
@@ -116,6 +117,10 @@ namespace UghElectricDreams
 		TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_N"),
 			TEXT("Megascans/Surfaces/JungleGround/T_JungleGround_01_AoRDp"), FLinearColor(0, 0, 1, 0), 2.f } };
 
+	/** The parameters of the wind in the sample's plants (its scalars and vectors: 'Wind Strength Plants' ...). */
+	inline const TCHAR* FoliageWind =
+		TEXT("MSPresets/MS_Foliage_Material_LATEST/MaterialParameterCollection/MPC_GlobalFoliageActor");
+
 	/** The copy is there (its first asset is; the log says it once when not). */
 	bool IsCopied();
 	/** Every asset of the lists above (what the commandlet copies, with what they need). */
@@ -126,4 +131,6 @@ namespace UghElectricDreams
 	TArray<UStaticMesh*> Meshes(TConstArrayView<const TCHAR*> Paths);
 	/** The texture at `Path`; none (and a log line) when it was not copied. */
 	UTexture* Texture(const TCHAR* Path);
+	/** The material parameter collection at `Path`; none (and a log line) when it was not copied. */
+	UMaterialParameterCollection* Collection(const TCHAR* Path);
 }

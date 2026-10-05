@@ -2,6 +2,7 @@
 
 #include "Engine/Texture2D.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialExpressionAppendVector.h"
 #include "Materials/MaterialExpressionConstant.h"
 #include "Materials/MaterialExpressionMultiply.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
@@ -51,6 +52,15 @@ UMaterialExpression* UghMaterialNodes::Times(UMaterial* Material, UMaterialExpre
 	UMaterialEditingLibrary::ConnectMaterialExpressions(A, TEXT(""), Multiply, TEXT("A"));
 	UMaterialEditingLibrary::ConnectMaterialExpressions(B, TEXT(""), Multiply, TEXT("B"));
 	return Multiply;
+}
+
+UMaterialExpression* UghMaterialNodes::WithAlpha(UMaterial* Material, UMaterialExpression* Expression)
+{
+	constexpr int32 AlphaOutput = 4;
+	UMaterialExpressionAppendVector* Append = Add<UMaterialExpressionAppendVector>(Material);
+	Append->A.Connect(0, Expression);
+	Append->B.Connect(AlphaOutput, Expression);
+	return Append;
 }
 
 FString UghMaterialNodes::ShaderCode(const TCHAR* File)

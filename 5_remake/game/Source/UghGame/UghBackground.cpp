@@ -16,8 +16,6 @@ namespace
 {
 	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
 
-	/** The water reaches from just in front of the rock's face to its back wall, units. */
-	constexpr double WaterFront = FUghRockMesh::FrontDepth - 1;
 	/** The cliff takes the colours of the drawing blurred this much (pixels): its areas, not its pixels. */
 	constexpr int32 ArtBlur = 8;
 	/**
@@ -69,7 +67,6 @@ void AUghBackground::BeginPlay()
 	{
 		RockMaterial = UghShapes::Material(this, UghMaterials::Rock);
 	}
-	Water = UghShapes::AddShapes(this, UghShapes::EShape::Cube, UghShapes::Material(this, UghMaterials::Water));
 	AddShroud();
 }
 
@@ -214,14 +211,4 @@ void AUghBackground::SetWater(double Surface)
 	{
 		RockMaterial->SetScalarParameterValue(UghMaterials::WaterLevelParameter, UghShapes::ToWorld(0, Surface, 0).Z);
 	}
-	TArray<FTransform> Boxes;
-	if (Surface < Height)
-	{
-		// across the whole cliff, beyond the screen too
-		const double Top = FMath::Max(Surface, double(-FUghRockMesh::MarginY));
-		constexpr double Depth = FUghRockMesh::BackDepth - WaterFront;
-		Boxes.Add(UghShapes::Box(-FUghRockMesh::MarginX, Top, Width + 2 * FUghRockMesh::MarginX,
-			Height + FUghRockMesh::MarginY - Top, (FUghRockMesh::BackDepth + WaterFront) / 2, Depth));
-	}
-	UghShapes::SetShapes(Water, Boxes);
 }

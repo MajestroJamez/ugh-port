@@ -24,6 +24,18 @@ namespace UghMaterials
 	inline const TCHAR* SizeParameter = TEXT("Size");
 	inline const TCHAR* HeightMaskParameter = TEXT("HeightMask");
 	inline const TCHAR* WaterLevelParameter = TEXT("WaterLevel");
+	inline const TCHAR* RainParameter = TEXT("Rain");
+	inline const TCHAR* CausticsParameter = TEXT("Caustics");
+	inline const TCHAR* SunParameter = TEXT("Sun");
+	inline const TCHAR* const RingParameters[] = { TEXT("Ring0"), TEXT("Ring1"), TEXT("Ring2"), TEXT("Ring3"),
+		TEXT("Ring4"), TEXT("Ring5") };
+	inline const TCHAR* TopParameter = TEXT("Top");
+	inline const TCHAR* BottomParameter = TEXT("Bottom");
+	inline const TCHAR* LeftParameter = TEXT("Left");
+	inline const TCHAR* RightParameter = TEXT("Right");
+	inline const TCHAR* SpeedParameter = TEXT("Speed");
+	inline const TCHAR* LengthParameter = TEXT("Length");
+	inline const TCHAR* WidthParameter = TEXT("Width");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -46,8 +58,32 @@ namespace UghMaterials
 	inline const TCHAR* Cliff = TEXT("/Game/Generated/M_UghCliff");
 	inline const TCHAR* const CliffLayers[] = { TEXT("Rock"), TEXT("Stone"), TEXT("Grass"), TEXT("Moss"), TEXT("Soil") };
 	inline const TCHAR* const CliffMaps[] = { BaseColorParameter, NormalParameter, RoughnessParameter, HeightParameter };
-	/** Translucent water. Parameters Color, Opacity. */
+	/**
+	 * The water (Single Layer Water: the engine draws what is behind it through as much water as the view crosses,
+	 * refracted, and the surface's reflections with Lumen): on its surface (what faces up) swells and chop drifting
+	 * with the wind, the rings of what floats (vector parameters RingParameters: xyz its place on the surface, w how
+	 * much it stirs it), of raindrops (scalar Rain 0 .. 1) and foam where it meets the rock and around what floats; its
+	 * cut (what faces the camera, seen from under the surface) only lets the water be seen through. Scalars
+	 * WaterLevel (the world's z of the surface: what lies deeper is bluer and darker), Wind (-1 .. 1), Caustics (how
+	 * bright the caustics on what lies below the surface are), vector Sun (where the sunlight goes). The shader code
+	 * is Source/UghEditor/Shaders/UghWater.hlsl.
+	 */
 	inline const TCHAR* Water = TEXT("/Game/Generated/M_UghWater");
+	/**
+	 * The rain's streaks: a mesh of tiny quads (AUghRain) moved by the material, each a drop falling through the box
+	 * Left .. Right, Bottom .. Top (the world's x and z) at Speed (cm/s) along its way (down and with the Wind as far)
+	 * as a streak Length x Width turned to the camera, gone under the WaterLevel; translucent, unlit: Color, Opacity.
+	 * The shader code is Source/UghEditor/Shaders/UghRain.hlsl.
+	 */
+	inline const TCHAR* Rain = TEXT("/Game/Generated/M_UghRain");
+	/**
+	 * Raindrops' splashes on quads (AUghRain): now and then a flat ring and droplets flying up; a quad whose second
+	 * UV's y is 1 stands on the water (moved up by WaterLevel). Translucent, unlit: Color, Opacity. The shader code is
+	 * Source/UghEditor/Shaders/UghSplash.hlsl.
+	 */
+	inline const TCHAR* Splash = TEXT("/Game/Generated/M_UghSplash");
+	/** A raindrop of the logic as a streak on a card (u along its way, its head at 1): translucent, Color, Opacity. */
+	inline const TCHAR* Raindrop = TEXT("/Game/Generated/M_UghRaindrop");
 	/**
 	 * A campfire's flame on a card (unlit, additive, seen from both sides; card UVs: u across, v down): tongues of fire
 	 * licking upwards, sparks above them, each card of instanced ones flickering its own way. Parameters Intensity and

@@ -10,42 +10,37 @@
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 #include "UghAssets.h"
+#include "UghElectricDreams.h"
 #include "UghMaterials.h"
+#include "UghMood.h"
 #include "UghShapes.h"
 
 namespace
 {
-	/** The sun from the front above and a little from the left (degrees). */
-	const FRotator SunDirection(-45, -65, 0);
-	/** A fog low over the water (the volumetric fog lets the campfire's light glow): how fast it thins upwards. */
-	constexpr float FogFalloff = 0.3f;
+	/** A fog low over the water: how fast it thins upwards; the mist of a storm, much faster. */
+	constexpr float FogFalloff = 0.3f, MistFalloff = 2.5f;
+	/**
+	 * The volumetric fog (the shafts of sunlight, the campfires' glow) reaches the cliff far from the camera (its
+	 * cells start there); it scatters the light a little back towards the camera (the sun is behind it).
+	 */
+	constexpr float VolumetricStart = 4000.f, VolumetricDistance = 12000.f, VolumetricScattering = -0.15f;
 	/** The sky's dome: this far around the middle of the screen, units. */
 	constexpr double SkyRadius = 100000;
-
-	/** The light and the air of a weather: the sun (colour, lux), the sky (light, tint of its picture), the fog. */
-	struct FWeather
-	{
-		FLinearColor SunColor;
-		float SunLux, SkyLight;
-		FLinearColor SkyTint;
-		float FogDensity;
-		FLinearColor FogColor;
-	};
-	/** Calm: a warm evening sun, the evening sky, a thin fog. */
-	const FWeather Calm{ FLinearColor(1.f, 0.85f, 0.68f), 8.f, 1.5f, FLinearColor(1.f, 1.f, 1.f), 0.01f,
-		FLinearColor(0.45f, 0.5f, 0.6f) };
-	/** The wind of a level brings a storm: a dim cool sun, a dark cloudy sky, a dense grey fog. */
-	const FWeather Storm{ FLinearColor(0.7f, 0.8f, 1.f), 3.5f, 1.6f, FLinearColor(0.25f, 0.28f, 0.33f), 0.05f,
-		FLinearColor(0.3f, 0.33f, 0.38f) };
 
 	/** The camera's horizontal field of view and how much it looks down (degrees); room around the screen. */
 	constexpr float FieldOfView = 30.f, LookDown = 4.f;
 	constexpr double ScreenMargin = 1.08;
 
-	/** The exposure, EV100: fixed, so that every level and weather is as bright as its light. */
-	constexpr float Exposure = 1.5f;
+	/** The plants of the Electric Dreams sample in a storm: how much harder and faster they sway. */
+	constexpr float StormStrength = 3.f, StormSpeed = 2.5f;
+	const FName WindStrengths[] = { TEXT("Wind Strength"), TEXT("Wind Strength Plants") };
+	const FName WindSpeeds[] = { TEXT("Wind Speed"), TEXT("Wind Speed Plants") };
+	const FName WindDirection = TEXT("Wind Direction");
 
 	/**
 	 * The film look: a gentle bloom around the bright, a warm white balance, colours a little richer and more contrasted
@@ -54,7 +49,6 @@ namespace
 	void SetLook(FPostProcessSettings& Settings)
 	{
 		Settings.bOverride_AutoExposureMinBrightness = Settings.bOverride_AutoExposureMaxBrightness = true;
-		Settings.AutoExposureMinBrightness = Settings.AutoExposureMaxBrightness = Exposure;
 		Settings.bOverride_BloomIntensity = true;
 		Settings.BloomIntensity = 0.35f;
 		Settings.bOverride_WhiteTemp = true;
@@ -74,7 +68,6 @@ AUghStage::AUghStage()
 	Sun = CreateDefaultSubobject<UDirectionalLightComponent>(TEXT("Sun"));
 	Sun->SetupAttachment(RootComponent);
 	Sun->SetMobility(EComponentMobility::Movable);
-	Sun->SetRelativeRotation(SunDirection);
 	Sun->SetAtmosphereSunLight(false);   // the atmosphere would tint it orange at this low angle: the cave keeps its colours
 
 	Atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>(TEXT("Atmosphere"));
@@ -87,9 +80,13 @@ AUghStage::AUghStage()
 	Fog = CreateDefaultSubobject<UExponentialHeightFogComponent>(TEXT("Fog"));
 	Fog->SetupAttachment(RootComponent);
 	Fog->SetFogHeightFalloff(FogFalloff);
+	Fog->SetSecondFogHeightFalloff(MistFalloff);
 	Fog->SetVolumetricFog(true);
+	Fog->SetVolumetricFogStartDistance(VolumetricStart);
+	Fog->SetVolumetricFogDistance(VolumetricDistance);
+	Fog->SetVolumetricFogScatteringDistribution(VolumetricScattering);
 
-	UPostProcessComponent* Look = CreateDefaultSubobject<UPostProcessComponent>(TEXT("Look"));
+	Look = CreateDefaultSubobject<UPostProcessComponent>(TEXT("Look"));
 	Look->SetupAttachment(RootComponent);
 	Look->bUnbound = true;
 	SetLook(Look->Settings);
@@ -104,9 +101,7 @@ AUghStage::AUghStage()
 void AUghStage::BeginPlay()
 {
 	Super::BeginPlay();
-	CalmSky = UghAssets::Texture(UghAssets::SkyCalm);
-	StormSky = UghAssets::Texture(UghAssets::SkyStorm);
-	if (CalmSky && StormSky)
+	if (UghAssets::Texture(UghAssets::SkyDay))
 	{
 		// a sphere far around, seen from inside (the material is two-sided); the atmosphere behind it is not needed
 		SkyDome = NewObject<UStaticMeshComponent>(this);
@@ -122,9 +117,8 @@ void AUghStage::BeginPlay()
 		SkyDome->SetupAttachment(RootComponent);
 		SkyDome->RegisterComponent();
 		AddInstanceComponent(SkyDome);
-		Atmosphere->SetVisibility(false);
 	}
-	SetWind(0);
+	SetMood(UghMood::Of(0, 0), 0);
 }
 
 void AUghStage::FitCamera(const FBox2D& Pixels)
@@ -145,17 +139,72 @@ void AUghStage::FitCamera(const FBox2D& Pixels)
 	Camera->SetWorldLocation(UghShapes::ToWorld(Middle.X, Middle.Y - Above, -Distance));
 }
 
-void AUghStage::SetWind(int32 Wind)
+void AUghStage::SetMood(const FUghMood& Mood, int32 Wind)
 {
-	const FWeather& Weather = Wind == 0 ? Calm : Storm;
-	Sun->SetLightColor(Weather.SunColor);
-	Sun->SetIntensity(Weather.SunLux);
-	SkyLight->SetIntensity(Weather.SkyLight);
-	Fog->SetFogDensity(Weather.FogDensity);
-	Fog->SetFogInscatteringColor(Weather.FogColor);
-	if (SkyMaterial)
+	Sun->SetRelativeRotation(FRotator(Mood.SunPitch, Mood.SunYaw, 0));
+	Sun->SetLightColor(Mood.SunColor);
+	Sun->SetIntensity(Mood.SunLux);
+	Sun->SetVolumetricScatteringIntensity(Mood.Shafts);
+	SkyLight->SetIntensity(Mood.SkyLight);
+	Fog->SetFogDensity(Mood.FogDensity);
+	Fog->SetFogInscatteringColor(Mood.FogColor);
+	Fog->SetSecondFogDensity(Mood.Mist);
+	Look->Settings.AutoExposureMinBrightness = Look->Settings.AutoExposureMaxBrightness = Mood.Exposure;
+	UTexture* Sky = SkyMaterial ? UghAssets::Texture(Mood.Sky) : nullptr;
+	if (Sky)
 	{
-		SkyMaterial->SetTextureParameterValue(UghMaterials::SkyParameter, Wind == 0 ? CalmSky : StormSky);
-		SkyMaterial->SetVectorParameterValue(UghMaterials::ColorParameter, Weather.SkyTint);
+		SkyMaterial->SetTextureParameterValue(UghMaterials::SkyParameter, Sky);
+		SkyMaterial->SetVectorParameterValue(UghMaterials::ColorParameter, Mood.SkyTint);
+	}
+	if (SkyDome)
+	{
+		SkyDome->SetVisibility(Sky != nullptr);
+	}
+	Atmosphere->SetVisibility(Sky == nullptr);
+	SetFoliageWind(Wind);
+}
+
+void AUghStage::SetWater(double Surface)
+{
+	Fog->SetSecondFogHeightOffset(UghShapes::ToWorld(0, Surface, 0).Z - Fog->GetComponentLocation().Z);
+}
+
+FVector AUghStage::SunDirection() const
+{
+	return Sun->GetForwardVector();
+}
+
+void AUghStage::SetFoliageWind(int32 Wind)
+{
+	UMaterialParameterCollection* Collection = UghElectricDreams::IsCopied()
+		? UghElectricDreams::Collection(UghElectricDreams::FoliageWind) : nullptr;
+	UMaterialParameterCollectionInstance* Instance =
+		Collection ? GetWorld()->GetParameterCollectionInstance(Collection) : nullptr;
+	if (!Instance)
+	{
+		return;
+	}
+	auto Scale = [&](const FName& Name, float Factor)
+	{
+		if (const FCollectionScalarParameter* Parameter = Collection->GetScalarParameterByName(Name))
+		{
+			Instance->SetScalarParameterValue(Name, Parameter->DefaultValue * (Wind == 0 ? 1.f : Factor));
+		}
+	};
+	for (const FName& Name : WindStrengths)
+	{
+		Scale(Name, StormStrength);
+	}
+	for (const FName& Name : WindSpeeds)
+	{
+		Scale(Name, StormSpeed);
+	}
+	if (const FCollectionVectorParameter* Parameter = Collection->GetVectorParameterByName(WindDirection))
+	{
+		// the sample's own way in a calm, along the storm's wind in a storm
+		const FLinearColor Way = Wind == 0 ? Parameter->DefaultValue : FLinearColor(Wind, 0, 0, Parameter->DefaultValue.A);
+		Instance->SetVectorParameterValue(WindDirection, Way);
+		UE_LOG(LogTemp, Display, TEXT("UGH wind in the plants: %s, its way %s (the sample's %s)"),
+			Wind == 0 ? TEXT("calm") : TEXT("a storm"), *Way.ToString(), *Parameter->DefaultValue.ToString());
 	}
 }

@@ -3,7 +3,6 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/Texture2D.h"
 #include "Materials/Material.h"
-#include "Materials/MaterialExpressionAppendVector.h"
 #include "Materials/MaterialExpressionBumpOffset.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
 #include "Materials/MaterialExpressionNoise.h"
@@ -64,7 +63,12 @@ namespace
 		}
 		if (Material)
 		{
-			UMaterialEditingLibrary::DeleteAllMaterialExpressions(Material);
+			// each of a copy: the engine's DeleteAllMaterialExpressions removes from the list it walks (half are left)
+			const TArray<UMaterialExpression*> Expressions(Material->GetExpressions());
+			for (UMaterialExpression* Expression : Expressions)
+			{
+				UMaterialEditingLibrary::DeleteMaterialExpression(Material, Expression);
+			}
 		}
 		else
 		{
@@ -108,7 +112,8 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
 		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Fire, &MakeFire }, { UghMaterials::Sprite, &MakeSprite },
-		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Sky, &MakeSky } };
+		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Sky, &MakeSky }, { UghMaterials::Rain, &MakeRain },
+		{ UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop } };
 	bool bAllMade = true;
 	for (const FRecipe& Recipe : Recipes)
 	{
@@ -137,11 +142,7 @@ bool UUghMakeAssetsCommandlet::MakeRock(UMaterial* Material)
 bool UUghMakeAssetsCommandlet::MakeCliff(UMaterial* Material)
 {
 	Material->bTangentSpaceNormal = false;   // the code's normal is the world's
-	// the vertex colour with its alpha (its first output is only red, green and blue)
-	UMaterialExpressionVertexColor* VertexColor = Add<UMaterialExpressionVertexColor>(Material);
-	UMaterialExpressionAppendVector* Shade = Add<UMaterialExpressionAppendVector>(Material);
-	Shade->A.Connect(0, VertexColor);
-	Shade->B.Connect(4, VertexColor);
+	UMaterialExpression* Shade = WithAlpha(Material, Add<UMaterialExpressionVertexColor>(Material));
 	TArray<TPair<FName, UMaterialExpression*>> Inputs = {
 		{ TEXT("Position"), Add<UMaterialExpressionWorldPosition>(Material) },
 		{ TEXT("VertexNormal"), Add<UMaterialExpressionVertexNormalWS>(Material) },
@@ -177,18 +178,6 @@ bool UUghMakeAssetsCommandlet::MakeCliff(UMaterial* Material)
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffNormal"), MP_Normal);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffRough"), MP_Roughness);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffOcclusion"), MP_AmbientOcclusion);
-	return true;
-}
-
-bool UUghMakeAssetsCommandlet::MakeWater(UMaterial* Material)
-{
-	Material->BlendMode = BLEND_Translucent;
-	Material->TranslucencyLightingMode = TLM_SurfacePerPixelLighting;
-	UMaterialEditingLibrary::ConnectMaterialProperty(
-		Vector(Material, UghMaterials::ColorParameter, FLinearColor(0.01f, 0.07f, 0.09f)), TEXT(""), MP_BaseColor);
-	UMaterialEditingLibrary::ConnectMaterialProperty(
-		Scalar(Material, UghMaterials::OpacityParameter, 0.7f), TEXT(""), MP_Opacity);
-	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.2f), TEXT(""), MP_Roughness);
 	return true;
 }
 

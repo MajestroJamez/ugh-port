@@ -26,6 +26,9 @@ namespace UghMaterialNodes
 	UMaterialExpressionTextureObjectParameter* TextureObject(UMaterial* Material, const FString& Name,
 		EMaterialSamplerType Sampler, const TCHAR* Default);
 	UMaterialExpression* Times(UMaterial* Material, UMaterialExpression* A, UMaterialExpression* B);
+	/** The red, green, blue and alpha of `Expression` as one (its first output has only the colour: vertex colours, vector
+	 * parameters). */
+	UMaterialExpression* WithAlpha(UMaterial* Material, UMaterialExpression* Expression);
 
 	/** The HLSL of Source/UghEditor/Shaders/<File>; empty (and an error in the log) when it cannot be read. */
 	FString ShaderCode(const TCHAR* File);

@@ -84,6 +84,27 @@
       "import": ["kloofendal_48d_partly_cloudy_puresky_4k.hdr"]
     },
     {
+      "id": "sky_qwantani_dusk", "kind": "hdri", "use": "sky: a dusk",
+      "page": "https://polyhaven.com/a/qwantani_dusk_2_puresky", "license": "CC0-1.0", "author": "Greg Zaal, Jarod Guest (Poly Haven)",
+      "path": "polyhaven/qwantani_dusk_2_puresky",
+      "polyhaven": { "id": "qwantani_dusk_2_puresky", "resolution": "4k", "files": ["hdri.hdr"] },
+      "import": ["qwantani_dusk_2_puresky_4k.hdr"]
+    },
+    {
+      "id": "sky_qwantani_night", "kind": "hdri", "use": "sky: a night with the Milky Way",
+      "page": "https://polyhaven.com/a/qwantani_night_puresky", "license": "CC0-1.0", "author": "Greg Zaal, Jarod Guest (Poly Haven)",
+      "path": "polyhaven/qwantani_night_puresky",
+      "polyhaven": { "id": "qwantani_night_puresky", "resolution": "4k", "files": ["hdri.hdr"] },
+      "import": ["qwantani_night_puresky_4k.hdr"]
+    },
+    {
+      "id": "sky_kloofendal_overcast", "kind": "hdri", "use": "sky: an overcast storm",
+      "page": "https://polyhaven.com/a/kloofendal_overcast_puresky", "license": "CC0-1.0", "author": "Greg Zaal (Poly Haven)",
+      "path": "polyhaven/kloofendal_overcast_puresky",
+      "polyhaven": { "id": "kloofendal_overcast_puresky", "resolution": "4k", "files": ["hdri.hdr"] },
+      "import": ["kloofendal_overcast_puresky_4k.hdr"]
+    },
+    {
       "id": "boulder_01", "kind": "model", "use": "a big boulder",
       "page": "https://polyhaven.com/a/boulder_01", "license": "CC0-1.0", "author": "Rico Cilliers (Poly Haven)",
       "path": "polyhaven/boulder_01",
