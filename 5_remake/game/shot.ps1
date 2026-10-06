@@ -11,19 +11,23 @@
 # level (the name ends in -campfire / -torch), -Frame <left>,<top>,<width>,<height>: framing that part of the screen in
 # pixels (a look at the figures; with -CloseUp from the first copter's corner: a look into its cabin, with -Look from
 # the middle of the campfire or torch; the name ends in -frame<left>_<top>), -Intro <seconds>: the flight to the stone
-# at the start of the level that many seconds into it instead (4.5 and later: its end, the game's camera; the name
-# ends in -intro<seconds>, e.g. -intro0.3), -Effect <bursts>: a burst of the events (names of UghBursts.cpp separated
-# by commas, or all) held by the first copter, framed around it, one shot each (the name ends in -<burst>, e.g.
-# 1p-01-explosion), -EffectAge <seconds> into it (else its own moment), -End: the level given up instead and the card of
-# the game's end in the menu shot (the name ends in -end; -Score <points>: the game ended with so many points, a high
-# score shows its name being typed), -Menu: the title screen first too (menu.png), -Screens settings,controls,scores:
-# those screens of the menu first too (<screen>.png). The game's profile is the defaults, or -Profile <file> (a JSON of
-# FUghProfile); with -Screens scores or -Score and without -Profile a sample one with high scores
-# (Saved\Shots\profile-sample.json). The shots show the screen (the menu, the HUD) too. All levels at once: levels.ps1.
+# at the start of the level that many seconds into it instead (4.5: its end, the game's camera; later: that much after
+# its end, the caption still shown; the name ends in -intro<seconds>, e.g. -intro0.3), -Effect <bursts>: a burst of the
+# events (names of UghBursts.cpp separated by commas, or all) held by the first copter, framed around it, one shot each
+# (the name ends in -<burst>, e.g. 1p-01-explosion), -EffectAge <seconds> into it (else its own moment), -Edge
+# left|right|top: the first copter flies into that edge of the screen (beside it at the height -EdgeY pixels, 20 without
+# it; the top pedalling up) and the shot is taken -EdgeAfter seconds (0.25) after it got there: the plants of the soft
+# edges bent (the name ends in -edge<edge> after -frame...), -End: the level given up instead and the card of the game's
+# end in the menu shot (the name ends in -end; -Score <points>: the game ended with so many points, a high score shows
+# its name being typed), -Menu: the title screen first too (menu.png), -Screens settings,controls,scores: those screens
+# of the menu first too (<screen>.png). The game's profile is the defaults, or -Profile <file> (a JSON of FUghProfile);
+# with -Screens scores or -Score and without -Profile a sample one with high scores (Saved\Shots\profile-sample.json).
+# The shots show the screen (the menu, the HUD) too. All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$Land,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
-    [string]$EffectAge = '', [switch]$End, [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '',
+    [string]$EffectAge = '', [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
+    [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '',
     [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
@@ -45,6 +49,10 @@ if ($Frame) {
     $corner = $Frame.Split(',')
     if ($corner.Count -ne 4) { Write-Host "-Frame wants <left>,<top>,<width>,<height>" -ForegroundColor Red; exit 1 }
     $suffix += '-frame{0}_{1}' -f $corner[0], $corner[1]
+}
+if ($Edge) {
+    if (@('left', 'right', 'top') -notcontains $Edge) { Write-Host "-Edge wants left, right or top" -ForegroundColor Red; exit 1 }
+    $suffix += '-edge' + $Edge
 }
 if ($Intro) {
     # the seconds as the game writes them (invariant: a dot, no trailing zeros)
@@ -111,6 +119,9 @@ if ($Bubbles) { $arguments += ' -UghShotBubbles' }
 if ($CloseUp) { $arguments += ' -UghShotCloseUp' }
 if ($Look) { $arguments += " -UghShotLook=$Look" }
 if ($Frame) { $arguments += " -UghShotFrame=$Frame" }
+if ($Edge) { $arguments += " -UghShotEdge=$Edge" }
+if ($EdgeAfter -ge 0) { $arguments += " -UghShotEdgeAfter=" + $EdgeAfter.ToString([Globalization.CultureInfo]::InvariantCulture) }
+if ($EdgeY -ge 0) { $arguments += " -UghShotEdgeY=$EdgeY" }
 if ($Intro) { $arguments += " -UghShotIntro=$Intro" }
 if ($Effect) { $arguments += " -UghShotEffect=$Effect" }
 if ($EffectAge) { $arguments += " -UghShotEffectAge=$EffectAge" }

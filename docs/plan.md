@@ -1456,3 +1456,30 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   herní kamera, tým, noc): stíny bez kostiček. CTest logiky, `6_verification` (163) a 195 testů v UE zelené.
   `levels.ps1 -Quick` 0 chyb v logu, fps medián 23, opakovaně 25 (nejpomalejší 18 / 14; po 24c 27) - spíš zahřátý
   notebook po sérii běhů, A/B neměřeno. Čeká na Jana: posoudit v okně (`play.ps1`). Další: **krok 24d**.
+- 2026-10-06: krok 24d hotový - let ke kameni plynulý, okraje kamene, měkké okraje (`docs/visual-concept.md`). Měření
+  kamery po snímcích (`-UghCameraLog=<soubor>`, `FUghCameraLog`: CSV s časy snímků, hodinami letu, kamerou, rychlostí,
+  GC a kompilací shaderů) našlo obě škubnutí v pohybu kamery, ne v hitchích: kolem 1-1,5 s skákalo zrychlení
+  v bodech křivky Catmull-Rom (zakřivení nespojité, ~10 000 jednotek/s² mezi snímky) a kolem 2 s se náklon překlopil
+  z -10° na +10° (změna rychlosti náklonu ~400 °/s za snímek; náklon z bočního zrychlení vůči pohledu kamery, nasycený,
+  k tomu náhlý začátek brzdění v půlce letu). Na konci letu se kámen s džunglí odregistroval (hitch, změna světla)
+  a moře přepnulo; klávesa zrychlila hodiny skokem (rychlost ×5 naráz). Teď (`FUghIntro`): přirozený kubický spline,
+  rychlost 35 % letu plná, pak 1 - smootherstep (na konci rychlost i zpomalení k nule), náklon jako dron vůči dráze
+  přes 0,25 s, klávesa dojede zbytek za 0,9 s po kvintice z aktuální rychlosti do zastavení (v černé začne let 1,6 s
+  před koncem), kámen zůstává, moře otevřené stále. Log po: změna zrychlení mezi snímky nejvýš ~1 450 (pozvolná),
+  náklon nejvýš ~9 °/s za snímek, poslední snímky 41 -> 0 jednotek/s, zrychlení na konci 11, konec přesně kamera hry;
+  s klávesou 5 400 -> 0 bez skoku, konec před hrou. Okraje kamene (`AUghStage::Play`): kamera hry ukáže aspoň 30 px
+  nad a pod obrazovkou a 60 px vedle - rám kamene vlevo, vpravo i nahoře, HUD leží na kameni (level asi o 18 %
+  menší, všech 12 levelů rychlé sady se vejde); džungle kamene se ve hře schová (od 3,85 s letu po 4 druzích za
+  snímek, kamera ji tam už nevidí: stála ~25 % fps). Měkké okraje (`AUghFringe`, `UghFringe::Plan`, asi 600 rostlin
+  Electric Dreams): po stranách závěsy lián a břečťanu od horního okraje dutiny k moři, keře a kapradí na čele kamene;
+  nahoře převis (keře, závoj břečťanu, liány, kapradí, kořeny) před horní hranicí vrtulníku, kde vrtulník zmizí.
+  Hranice z logiky a replayů: levý horní roh -16 / 304 px, nahoru -608/32 = -19 px (zlaté replaye ji dosahují až
+  2,4 px za snímek, jen vynuluje rychlost). Vrtulník rostliny odtlačí (pružina každé rostliny kolem úchytu, natočení
+  instancí), náraz do okraje jimi zatřese a spadne pár listů (nový výbuch `rustle`); logika beze změny, nic přes
+  obrazovku originálu. `shot.ps1 -Edge left|right|top` (+ `-EdgeAfter`, `-EdgeY`), `-Intro` > 4,5 s po konci letu.
+  Testy: `Ugh.Intro` (bez trhnutí zrychlení a náklonu, měkký konec, plynulé zrychlení klávesou), `Ugh.Stack` (okraje
+  vidět, nic přes obrazovku, džungle mimo záběr od 3,85 s), nový `Ugh.Fringe`. Snímky a logy
+  `Saved\Shots\24d-after` (konec letu, okraje vlevo/vpravo/nahoře, převis, CSV), před `Saved\Shots\24d`
+  (`before-1p01.csv`). CTest logiky, `6_verification` (163) a 196 testů v UE zelené (4 s varováním enginu o timeoutu
+  HTTP). `levels.ps1 -Quick` 0 chyb, fps medián 20 a 18 (stejný stav bez převisu a se schovaným kamenem ve stejném
+  sezení 17; notebook teď pomalejší než po 24b2). Čeká na Jana: posoudit v okně (`play.ps1`). Další: **krok 24e**.

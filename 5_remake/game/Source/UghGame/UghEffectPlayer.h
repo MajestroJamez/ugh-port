@@ -83,6 +83,8 @@ public:
 	void OnEvent(const ugh_logic_event& Event, const ugh_logic_view& View);
 	/** The views of the last step of a frame (after its events): the landings, where the figures were last seen. */
 	void OnView(const ugh_logic_view& Previous, const ugh_logic_view& Current);
+	/** A burst of the frontend's own (no event of the logic): `Burst` at `Place` (pixels) in `View`, `Scale` its size. */
+	void Order(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View, double Scale = 1);
 	/** The bursts since the last call. */
 	TArray<FUghEffectOrder> TakeOrders();
 

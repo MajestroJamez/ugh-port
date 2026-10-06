@@ -164,8 +164,8 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
 
 ## Kamera
 
-Pevná, úzký objektiv (30°), celý řez v záběru, mírně shora (-4°), aby byly vidět horní plochy plošin. Na začátku
-levelu k ní kamera přiletí nad mořem (krok 19e, níže).
+Pevná, úzký objektiv (30°), celý řez v záběru a kolem něj okraje kamene (krok 24d), mírně shora (-4°), aby byly vidět
+horní plochy plošin. Na začátku levelu k ní kamera přiletí nad mořem (krok 19e, níže).
 
 ## Technika
 
@@ -627,3 +627,30 @@ v rovině hry: postavy > plošiny > skála, v každé náladě a předvolbě.
   0,5-0,6 = nejvýš o polovinu), ne kde je pozadí tmavé už samo (jeskyně). Až za upscalerem (`BL_SceneColorBeforeBloom`):
   před ním ležela svatozář pohybující se postavy na nehybném pozadí, jehož historii TSR/FSR drží - rozmazala se do
   ztracena. Piloti a cestující ve vrtulníku svatozář nemají (vrtulník je vidět sám, šmouha by ho zašpinila).
+
+## Let ke kameni plynulý, okraje kamene, měkké okraje (krok 24d)
+
+- **Plynulý let** (`FUghIntro`): měření kamery po snímcích (`-UghCameraLog=<soubor>`, CSV: časy snímků, hodiny letu,
+  poloha, natočení, rychlost, GC a kompilace shaderů) ukázalo dvě škubnutí v pohybu, ne hitche: kolem 1-1,5 s skákalo
+  zrychlení kamery v bodech křivky Catmull-Rom (zakřivení není spojité, boční zrychlení skáče o ~100 m/s² mezi
+  snímky) a kolem 2 s se náklon překlopil z -10° na +10° za ~0,15 s (náklon z bočního zrychlení vůči pohledu kamery,
+  ne vůči dráze, nasycený, a k tomu náhlý začátek brzdění v půlce letu). Teď: přirozený kubický spline (spojité
+  zakřivení), rychlost plná 35 % letu, pak klesá jako 1 - smootherstep (bez trhnutí na začátku brzdy, na konci rychlost
+  i zpomalení k nule), náklon jako dron z bočního zrychlení vůči dráze, průměrovaný přes 0,25 s. Klávesa už nezrychlí
+  hodiny skokem (rychlost ×5 naráz), ale zbytek cesty projede za 0,9 s po nejhladší dráze (kvintika podílu cesty
+  z rychlosti, kterou měl, do zastavení); klávesa ještě v černé začne let 1,6 s před koncem. Na konci letu se kámen
+  už neschovává (odregistrování kamene s džunglí byl hitch a změnilo světlo) a moře zůstává otevřené (žádná výměna).
+  Test `Ugh.Intro` hlídá zrychlení a rychlost náklonu po snímcích i zrychlení na konci.
+- **Okraje kamene** (`AUghStage::Play`): kamera hry ukáže kolem obrazovky aspoň 30 px nahoře a dole a 60 px po
+  stranách - rám kamene je vidět vlevo, vpravo i nahoře, HUD leží na kameni nad levelem. Level je asi o 18 % menší.
+  Kámen je ve hře vidět stále, jeho džungle ne (hře ji kamera nevidí; od 3,85 s letu se schová po pár druzích za
+  snímek, v černé naráz) - tisíce houpajících se rostlin by stály ~25 % fps.
+- **Měkké okraje** (`AUghFringe`, `UghFringe::Plan`): po stranách závěsy lián a břečťanu od horního okraje dutiny
+  kamene až k moři (kusy na sobě zavěšené, některé před vrtulníkem, některé za ním), keře, kapradí a břečťan na čele
+  kamene vedle; nahoře převis - keře a břečťan na čele, závoj břečťanu, liány, kapradí a kořeny visící před horní
+  hranicí vrtulníku (logika: levý horní roh -16 / 304 px do stran, -19 px nahoru = -608/32, zlaté replaye originálu ji
+  dosahují až 2,4 px za snímek a vrtulník jen zastaví), takže vrtulník v něm zmizí. Nic z toho nezasahuje do
+  obrazovky originálu (test `Ugh.Fringe`). Vrtulník poblíž rostliny odtlačí (tlumená pružina každé rostliny kolem
+  jejího úchytu, natočení instancí, materiály vzorku beze změny; převis se přes vrtulník přehne k
+  kameře), náraz do okraje jimi zatřese a spadne pár listů (výbuch `rustle`); zašustí jen vizuálně (zvuky jsou
+  originálu). `shot.ps1 -Edge left|right|top` nalétne do okraje a vyfotí.

@@ -1,6 +1,6 @@
 // The start of a level as automation tests of the editor: the flight over the sea ends in the game's camera, low over
-// the water and never into the stone (Ugh.Intro); the stone holds the level's rock and stays out of the game's view
-// (Ugh.Stack).
+// the water and never into the stone, smoothly (Ugh.Intro); the stone holds the level's rock, its edges are seen
+// around the screen and its jungle not (Ugh.Stack).
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Algo/Count.h"
@@ -8,6 +8,7 @@
 #include "UghBackground.h"
 #include "UghIntro.h"
 #include "UghRockMesh.h"
+#include "UghSeaStack.h"
 #include "UghStackField.h"
 #include "UghStage.h"
 
@@ -26,10 +27,20 @@ namespace
 	constexpr double FarAway = 15000, StartHigh = 600, AboveSea = 100, FromStone = 20, MaxSpeed = 12000, MaxTurn = 2,
 		StopSpeed = 200;
 	/**
+	 * No jolt (a frame of 1/120 s): its acceleration changes at most by MaxJolt (units/s2; the old curve's turns jumped by
+	 * 10000 at its points), its roll turns at most MaxRollRate degrees a second and that changes by MaxRollJolt a frame at
+	 * most, it ends with hardly any deceleration (MaxEndAccel units/s2 in its last 0.03 s).
+	 */
+	constexpr double MaxJolt = 400, MaxRollRate = 50, MaxRollJolt = 2.5, MaxEndAccel = 30;
+	/** Hurried: its speed changes by at most this share of its speed when the key came a frame (1/60 s), at most so fast. */
+	constexpr double HurryJump = 0.25, HurriedSpeed = 40000;
+	/**
 	 * Pixels: the way to a point of the stone is looked along in these steps up to this near it; a plant's foot is
 	 * at most this far from its surface.
 	 */
 	constexpr double RayStep = 2, RayEnd = 4, OnStone = 4;
+	/** Pixels: the stone may be seen this far over the screen's edge (its mesh is coarse: 6 px). */
+	constexpr double ScreenEdge = 0.5;
 	/** The caption's fade-out and the black before the play: 65 + 8 frames of the logic (its phases). */
 	constexpr double CaptionToPlay = (65 + 8) / 70.086;
 
@@ -93,7 +104,7 @@ bool FUghIntroTest::RunTest(const FString& Parameters)
 	{
 		for (const double Surface : Surfaces)
 		{
-			const FUghCameraPose End = AUghStage::Fit(UghShapes::Screen(), Aspect);
+			const FUghCameraPose End = AUghStage::Play(Aspect);
 			const double SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
 			const FString Case = FString::Printf(TEXT("aspect %.2f, water at %.0f px: "), Aspect, Surface);
 			const FUghCameraPose Last = FUghIntro::At(End, SeaZ, FUghIntro::Duration);
@@ -106,9 +117,11 @@ bool FUghIntroTest::RunTest(const FString& Parameters)
 			TestEqual(Case + TEXT("with a wide lens"), First.FieldOfView, FUghIntro::StartFieldOfView);
 
 			double Lowest = UE_BIG_NUMBER, Nearest = UE_BIG_NUMBER, Past = -UE_BIG_NUMBER, Fastest = 0, Turn = 0, Roll = 0,
-				Stop = 0;
+				Stop = 0, Jolt = 0, RollRate = 0, RollJolt = 0, EndAccel = 0, RollAt = 0, RollJoltAt = 0;
 			bool bLens = true;
-			FUghCameraPose Previous = First;
+			FUghCameraPose Previous = First, Before = First;
+			TOptional<FVector> LastAccel;
+			TOptional<double> LastRollRate;
 			for (double Time = Frame; Time <= FUghIntro::Duration + Frame / 2; Time += Frame)
 			{
 				const FUghCameraPose Pose = FUghIntro::At(End, SeaZ, Time);
@@ -122,6 +135,22 @@ bool FUghIntroTest::RunTest(const FString& Parameters)
 					Pose.Rotation.Vector() | Previous.Rotation.Vector(), -1.0, 1.0))));
 				Roll = FMath::Max(Roll, FMath::Abs(Pose.Rotation.Roll));
 				bLens &= Pose.FieldOfView <= Previous.FieldOfView + 1e-4f && Pose.FieldOfView >= End.FieldOfView;
+				// no jolt: the acceleration and the roll's rate change little from a frame to the next
+				if (Time > 1.5 * Frame)
+				{
+					const FVector Accel = (Pose.Location - 2 * Previous.Location + Before.Location) / (Frame * Frame);
+					Jolt = LastAccel ? FMath::Max(Jolt, FVector::Dist(Accel, *LastAccel)) : Jolt;
+					LastAccel = Accel;
+					EndAccel = Time > FUghIntro::Duration - 0.03 ? FMath::Max(EndAccel, Accel.Size()) : EndAccel;
+				}
+				const double Rate = (Pose.Rotation.Roll - Previous.Rotation.Roll) / Frame;
+				RollAt = FMath::Abs(Rate) > RollRate ? Time : RollAt;
+				RollRate = FMath::Max(RollRate, FMath::Abs(Rate));
+				const double RollChange = LastRollRate ? FMath::Abs(Rate - *LastRollRate) : 0;
+				RollJoltAt = RollChange > RollJolt ? Time : RollJoltAt;
+				RollJolt = FMath::Max(RollJolt, RollChange);
+				LastRollRate = Rate;
+				Before = Previous;
 				Previous = Pose;
 			}
 			TestTrue(Case + FString::Printf(TEXT("above the sea (%.0f units at the lowest)"), Lowest), Lowest >= AboveSea);
@@ -132,6 +161,11 @@ bool FUghIntroTest::RunTest(const FString& Parameters)
 			TestTrue(Case + FString::Printf(TEXT("banking %.1f degrees at most"), Roll), Roll <= FUghIntro::MaxRoll + 1e-3);
 			TestTrue(Case + FString::Printf(TEXT("a soft stop (%.0f units/s)"), Stop), Stop < StopSpeed);
 			TestTrue(Case + TEXT("the lens narrows to the game's"), bLens);
+			TestTrue(Case + FString::Printf(TEXT("no jolt: the acceleration changes by %.0f units/s2 a frame at most"), Jolt),
+				Jolt < MaxJolt);
+			TestTrue(Case + FString::Printf(TEXT("banking smoothly: %.1f degrees/s at most (at %.2f s), changing by %.2f a frame (at %.2f s)"),
+				RollRate, RollAt, RollJolt, RollJoltAt), RollRate < MaxRollRate && RollJolt < MaxRollJolt);
+			TestTrue(Case + FString::Printf(TEXT("no jolt at the end: %.0f units/s2"), EndAccel), EndAccel < MaxEndAccel);
 		}
 	}
 
@@ -151,16 +185,50 @@ bool FUghIntroTest::RunTest(const FString& Parameters)
 		Intro.Advance(1.0 / 60);
 	}
 	TestEqual(TEXT("shown"), Intro.Shown(), 1.0);
+	// hurried: its speed changes smoothly when the key comes and on (no jump), and it stops softly
+	const FUghCameraPose End = AUghStage::Play(16.0 / 9);
+	const double SeaZ = UghShapes::ToWorld(0, Surfaces[0], 0).Z;
+	constexpr double Step = 1.0 / 60;
+	FVector Last = FUghIntro::At(End, SeaZ, Intro.GetTime()).Location;
+	Intro.Advance(Step);
+	FVector Now = FUghIntro::At(End, SeaZ, Intro.GetTime()).Location;
+	double Speed = FVector::Dist(Now, Last) / Step, Fastest = Speed, Jump = 0;
+	const double KeySpeed = Speed;
 	Intro.Hurry();
 	double Hurried = 0;
 	while (Intro.IsFlying() && Hurried < 10)
 	{
-		Intro.Advance(1.0 / 60);
-		Hurried += 1.0 / 60;
+		Last = Now;
+		Intro.Advance(Step);
+		Hurried += Step;
+		Now = FUghIntro::At(End, SeaZ, Intro.GetTime()).Location;
+		const double Next = FVector::Dist(Now, Last) / Step;
+		Jump = FMath::Max(Jump, FMath::Abs(Next - Speed));
+		Fastest = FMath::Max(Fastest, Next);
+		Speed = Next;
 	}
 	TestTrue(FString::Printf(TEXT("hurried to its end in %.2f s"), Hurried), Hurried <= FUghIntro::HurrySeconds + 0.02);
 	TestEqual(TEXT("at its end"), Intro.GetTime(), FUghIntro::Duration);
 	TestTrue(TEXT("before the play can begin"), FUghIntro::HurrySeconds < CaptionToPlay);
+	TestTrue(FString::Printf(TEXT("hurried smoothly: %.0f units/s at the key, its speed changing by %.0f a frame at most"),
+		KeySpeed, Jump), Jump < HurryJump * KeySpeed);
+	TestTrue(FString::Printf(TEXT("hurried at most %.0f units/s"), Fastest), Fastest < HurriedSpeed);
+	TestTrue(FString::Printf(TEXT("hurried to a soft stop (%.0f units/s)"), Speed), Speed < StopSpeed);
+
+	// a key before anything is seen: the flight goes on from nearer, fading in, and ends in time
+	FUghIntro Early;
+	Early.Start();
+	Early.Advance(Step);
+	Early.Hurry();
+	double Rest = 0;
+	while (Early.IsFlying() && Rest < 10)
+	{
+		Early.Advance(Step);
+		Rest += Step;
+	}
+	const double Flown = Rest - (FUghIntro::SettleFrames - 1) * Step;
+	TestTrue(FString::Printf(TEXT("a key at once: at its end %.2f s after it settled"), Flown),
+		Flown <= FUghIntro::HurrySeconds + 0.02);
 	return true;
 }
 
@@ -214,25 +282,59 @@ bool FUghStackTest::RunTest(const FString& Parameters)
 	}
 	TestEqual(TEXT("the shroud in the stone"), Outside, 0);
 
-	// out of the game's view, its jungle too
+	// its edges in the play's view around the screen, but nothing of it over the screen (where the play is); its jungle
+	// out of the view
 	const TArray<FUghDecoration> Plants = Field.Plants(Points);
 	for (const double Aspect : Aspects)
 	{
-		const FUghCameraPose Game = AUghStage::Fit(UghShapes::Screen(), Aspect);
-		int32 Seen = 0;
+		const FUghCameraPose Game = AUghStage::Play(Aspect);
+		const FVector Camera = Pixels(Game.Location);
+		int32 Over = 0, Left = 0, Right = 0, Above = 0, Below = 0;
 		for (const FVector& Vertex : Mesh.Vertices)
 		{
-			if (SeesOfStone(Field, Game, Aspect, Vertex) && Seen++ < 5)
+			if (!SeesOfStone(Field, Game, Aspect, Vertex))
 			{
-				AddInfo(FString::Printf(TEXT("seen at %s"), *Pixels(Vertex).ToString()));
+				continue;
+			}
+			// where it is seen on the plane of the play
+			const FVector At = Pixels(Vertex);
+			const FVector OnPlane = Camera + (At - Camera) * (-Camera.Z / (At.Z - Camera.Z));
+			Left += OnPlane.X < 0;
+			Right += OnPlane.X > UghShapes::ScreenWidth;
+			Above += OnPlane.Y < 0;
+			Below += OnPlane.Y > UghShapes::ScreenHeight;
+			const bool bOver = OnPlane.X > ScreenEdge && OnPlane.X < UghShapes::ScreenWidth - ScreenEdge &&
+				OnPlane.Y > ScreenEdge && OnPlane.Y < UghShapes::ScreenHeight - ScreenEdge;
+			if (bOver && Over++ < 5)
+			{
+				AddInfo(FString::Printf(TEXT("seen over the screen at %s"), *OnPlane.ToString()));
 			}
 		}
-		TestEqual(FString::Printf(TEXT("aspect %.2f: none of the stone seen"), Aspect), Seen, 0);
+		TestEqual(FString::Printf(TEXT("aspect %.2f: none of the stone over the screen"), Aspect), Over, 0);
+		TestTrue(FString::Printf(TEXT("aspect %.2f: its edges seen (left %d, right %d, above %d, below %d)"), Aspect, Left,
+			Right, Above, Below), Left > 0 && Right > 0 && Above > 0);
 		const int32 PlantsSeen = Algo::CountIf(Plants, [&](const FUghDecoration& Plant)
 		{
 			return SeesOfStone(Field, Game, Aspect, UghShapes::ToWorld(Plant.X, Plant.Top(), Plant.Depth));
 		});
 		TestEqual(FString::Printf(TEXT("aspect %.2f: none of its plants seen"), Aspect), PlantsSeen, 0);
+		// nor in the flight's view near its end (the jungle hides then)
+		int32 PlantsFlownBy = 0;
+		double LastSeen = 0;
+		const double SeaZ = UghShapes::ToWorld(0, 182, 0).Z;
+		for (double Time = AUghSeaStack::JungleOutOfView - 1.4; Time <= FUghIntro::Duration; Time += 0.05)
+		{
+			const FUghCameraPose Pose = FUghIntro::At(Game, SeaZ, Time);
+			const int32 Before = PlantsFlownBy;
+			PlantsFlownBy += Algo::CountIf(Plants, [&](const FUghDecoration& Plant)
+			{
+				return SeesOfStone(Field, Pose, Aspect, UghShapes::ToWorld(Plant.X, Plant.Top(), Plant.Depth)) ||
+					SeesOfStone(Field, Pose, Aspect, UghShapes::ToWorld(Plant.X, Plant.Bottom(), Plant.Depth));
+			});
+			LastSeen = PlantsFlownBy > Before ? Time : LastSeen;
+		}
+		TestTrue(FString::Printf(TEXT("aspect %.2f: none of its plants seen in the flight from %.1f s (the last at %.2f s)"),
+			Aspect, AUghSeaStack::JungleOutOfView, LastSeen), LastSeen < AUghSeaStack::JungleOutOfView);
 	}
 
 	// a jungle on it, the same every time

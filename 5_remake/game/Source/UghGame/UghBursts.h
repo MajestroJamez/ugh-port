@@ -18,6 +18,7 @@ enum class EUghBurst : uint8
 	Thud,         // an enemy knocked out: dust and pebbles
 	Leaves,       // falling from the tree's crown as it drops its fruit
 	Celebration,  // the level done: petals and glints, a flash
+	Rustle,       // a few leaves off the plants at the stone's edges a copter bumps into (AUghFringe; no event)
 	Count
 };
 

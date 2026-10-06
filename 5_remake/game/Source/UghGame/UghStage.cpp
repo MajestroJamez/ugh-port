@@ -170,6 +170,15 @@ FUghCameraPose AUghStage::Fit(const FBox2D& Pixels, double Aspect)
 	return Pose;
 }
 
+FUghCameraPose AUghStage::Play(double Aspect)
+{
+	// (Fit adds its margin around the box)
+	const FVector2D Around = FVector2D(StoneBeside, StoneAbove) / ScreenMargin;
+	const FBox2D Screen = UghShapes::Screen();
+	const FVector2D Middle = Screen.GetCenter(), Half = Screen.GetExtent() / ScreenMargin + Around;
+	return Fit(FBox2D(Middle - Half, Middle + Half), Aspect);
+}
+
 double AUghStage::ViewportAspect()
 {
 	FVector2D Viewport(16, 9);

@@ -78,7 +78,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghUiMenuViewTest, "Ugh.Ui.MenuView",
 
 bool FUghUiMenuViewTest::RunTest(const FString& Parameters)
 {
-	const FUghCameraPose Game = AUghStage::Fit(UghShapes::Screen(), 16.0 / 9);
+	const FUghCameraPose Game = AUghStage::Play(16.0 / 9);
 	const double SeaZ = UghShapes::ToWorld(0, 182, 0).Z;
 	const FVector Stone = UghMenuView::StoneMiddle();
 	const FVector Face = -Game.Rotation.Vector().GetSafeNormal2D();   // the way the stone's face looks

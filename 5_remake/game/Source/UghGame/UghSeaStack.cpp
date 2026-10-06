@@ -1,5 +1,6 @@
 #include "UghSeaStack.h"
 
+#include "Algo/AllOf.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -24,6 +25,8 @@ namespace
 	 */
 	constexpr int32 RockLayers = 2;
 	constexpr float RockScale = 2.5f;
+	/** Its jungle hides (or shows) this many of its kinds a frame (AUghSeaStack::ShowJungle). */
+	constexpr int32 KindsAFrame = 4;
 }
 
 AUghSeaStack::AUghSeaStack()
@@ -114,4 +117,23 @@ void AUghSeaStack::Make()
 	Jungle->Show(Plants);
 	UE_LOG(LogTemp, Display, TEXT("UGH sea stack: %d vertices, %d triangles, %d plants in %.0f ms"), Mesh.Vertices.Num(),
 		Mesh.Triangles.Num() / 3, Plants.Num(), (FPlatformTime::Seconds() - Started) * 1000);
+}
+
+void AUghSeaStack::ShowJungle(bool bShow, bool bAtOnce)
+{
+	if (!Jungle || !bShown || bShow == bJungle)
+	{
+		return;
+	}
+	TInlineComponentArray<UPrimitiveComponent*> Kinds(Jungle.Get());
+	int32 Changed = 0;
+	for (UPrimitiveComponent* Kind : Kinds)
+	{
+		if (Kind->IsVisible() != bShow && (bAtOnce || Changed++ < KindsAFrame))
+		{
+			Kind->SetVisibility(bShow);
+		}
+	}
+	bJungle = Algo::AllOf(Kinds, [bShow](const UPrimitiveComponent* Kind) { return Kind->IsVisible() == bShow; }) ? bShow
+		: bJungle;
 }

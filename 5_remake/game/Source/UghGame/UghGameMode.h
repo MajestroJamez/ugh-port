@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "UghCameraLog.h"
 #include "UghControls.h"
 #include "UghFigureActions.h"
 #include "UghIntro.h"
@@ -24,6 +25,7 @@ class AUghCopters;
 class AUghEffects;
 class AUghFalls;
 class AUghFigures;
+class AUghFringe;
 class AUghRain;
 class AUghScenery;
 class AUghSigns;
@@ -35,8 +37,8 @@ class AUghWater;
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys and the
  * gamepads (FUghControls), each frame is shown between two of its steps in the diorama (AUghStage, AUghBackground,
- * AUghSeaStack, AUghSigns, AUghWater, AUghFalls, AUghRain, AUghCopters, AUghFigures, AUghCampfire, AUghTorches,
- * AUghScenery, AUghCliffDressing, the screen of AUghHud), heard (AUghSpeaker) and its events seen as bursts
+ * AUghSeaStack, AUghFringe, AUghSigns, AUghWater, AUghFalls, AUghRain, AUghCopters, AUghFigures, AUghCampfire,
+ * AUghTorches, AUghScenery, AUghCliffDressing, the screen of AUghHud), heard (AUghSpeaker) and its events seen as bursts
  * (AUghEffects); the end of a game goes back to the menu, which shows how it ended (and takes a high score's name).
  * Each level has its mood (UghMood); its first caption shows the camera flying over the sea to the stone the level is
  * carved into (FUghIntro). Behind the menu the camera swings slowly around that stone (UghMenuView), the level the menu
@@ -60,6 +62,7 @@ public:
 	AUghGameMode();
 	virtual void StartPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
 	/**
 	 * A key event from the player controller (a key of the keyboard or a gamepad's button from `Device`) or the
@@ -134,6 +137,7 @@ private:
 	FUghGameChoice Playing;    // what the game being played started with
 	FUghUpscaler Upscaler;
 	FUghShot Shot;
+	FUghCameraLog CameraLog;   // -UghCameraLog
 	bool bShooting = false;   // -UghShot
 	TOptional<FVector2D> ShotLook;   // the middle of what the shot looks at (FUghShot::GetLook, GetEffect), pixels
 	double ShotAround = FUghShot::LookAround;   // and how far around it
@@ -155,6 +159,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghWater> Water;
 	UPROPERTY() TObjectPtr<AUghFalls> Falls;
 	UPROPERTY() TObjectPtr<AUghSeaStack> SeaStack;
+	UPROPERTY() TObjectPtr<AUghFringe> Fringe;
 	UPROPERTY() TObjectPtr<AUghRain> Rain;
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;

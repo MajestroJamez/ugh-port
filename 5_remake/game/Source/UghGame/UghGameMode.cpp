@@ -19,6 +19,7 @@
 #include "UghEvents.h"
 #include "UghFalls.h"
 #include "UghFigures.h"
+#include "UghFringe.h"
 #include "UghGraphics.h"
 #include "UghGround.h"
 #include "UghHud.h"
@@ -70,6 +71,7 @@ void AUghGameMode::StartPlay()
 	Super::StartPlay();
 	BuildStage();
 	bShooting = Shot.Configure();
+	CameraLog.Configure();
 	LoadProfile();
 	ApplySettings();
 	GAreScreenMessagesEnabled = false;   // the engine's messages: the log has them, the screen is the game's
@@ -115,6 +117,7 @@ void AUghGameMode::BuildStage()
 	Water = World->SpawnActor<AUghWater>();
 	Falls = World->SpawnActor<AUghFalls>();
 	SeaStack = World->SpawnActor<AUghSeaStack>();
+	Fringe = World->SpawnActor<AUghFringe>();
 	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
 	Figures = World->SpawnActor<AUghFigures>();
@@ -128,7 +131,7 @@ void AUghGameMode::BuildStage()
 	{
 		Controller->SetViewTarget(Stage);
 	}
-	Stage->SetCamera(AUghStage::Fit(UghShapes::Screen(), AUghStage::ViewportAspect()));
+	Stage->SetCamera(AUghStage::Play(AUghStage::ViewportAspect()));
 }
 
 void AUghGameMode::Tick(float DeltaSeconds)
@@ -158,6 +161,12 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	}
 }
 
+void AUghGameMode::EndPlay(const EEndPlayReason::Type Reason)
+{
+	CameraLog.Flush();
+	Super::EndPlay(Reason);
+}
+
 void AUghGameMode::ShowFrame(double Seconds)
 {
 	ugh_logic_view Previous = Simulation.GetPrevious(), Current = Simulation.GetCurrent();
@@ -169,16 +178,24 @@ void AUghGameMode::ShowFrame(double Seconds)
 	if (Current.level_id != BackgroundLevel || Current.level != MoodLevel)
 	{
 		BuildLevel(Current);
+		CameraLog.Note(TEXT("level built"));
 	}
 	FlyIntro(Current, Seconds);
 	// behind the menu the camera swings around the stone over the open sea
 	const bool bMenuView = bInMenu && Current.level_id >= 0;
 	MenuTime = bMenuView ? MenuTime + Seconds : 0;
-	SeaStack->Show(Intro.IsFlying() || bMenuView);
+	// the stone the level is carved into: flown to, seen around the level in the play (its edges), behind the menu;
+	// shown all along from the first level on - hiding it at the end of the flight was a hitch and the light changed
+	const bool bStone = SeaStack->IsShown() || Current.level_id >= 0;
+	if (CameraLog.IsOn() && SeaStack->IsShown() != bStone)
+	{
+		CameraLog.Note(bStone ? TEXT("stone shown") : TEXT("stone hidden"));
+	}
+	SeaStack->Show(bStone);
 	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
 	Background->SetWater(Surface);
 	SeaStack->SetWater(Surface);
-	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface), Intro.IsFlying() || bMenuView);
+	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface), true);   // the open sea all along (no switch)
 	Falls->SetWater(Surface);
 	Water->SetFalls(Falls->Feet(Surface));
 	Rain->Show(Current, Surface);
@@ -192,6 +209,8 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		HoldShotEffect(Current);
 	}
+	// the plants at the stone's edges bend away from the copters, a bump orders leaves
+	Fringe->Show(Previous, Current, Simulation.Alpha(), Seconds, Effects->GetPlayer());
 	Effects->Show(Previous, Current, Simulation.Alpha(), Seconds);
 
 	// the fade of the play; black around it (the HUD shows the captions) but after a level's flight; all of the stone
@@ -206,6 +225,9 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		Shown = 1;
 	}
+	// the stone's jungle: in the flight until it is out of its view, behind the menu; not in the play, which does not see
+	// it (thousands of swaying plants) - in black at once, else a few kinds a frame
+	SeaStack->ShowJungle(bMenuView || (Intro.IsFlying() && Intro.GetTime() < AUghSeaStack::JungleOutOfView), Shown <= 0);
 	if (APlayerController* Controller = GetWorld()->GetFirstPlayerController())
 	{
 		if (Controller->PlayerCameraManager)
@@ -214,10 +236,13 @@ void AUghGameMode::ShowFrame(double Seconds)
 		}
 	}
 	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook, ShotAround) : TOptional<FBox2D>();
-	const FUghCameraPose Game = AUghStage::Fit(CloseUp.Get(UghShapes::Screen()), AUghStage::ViewportAspect());
+	const FUghCameraPose Game = CloseUp ? AUghStage::Fit(*CloseUp, AUghStage::ViewportAspect())
+		: AUghStage::Play(AUghStage::ViewportAspect());
 	const double SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
-	Stage->SetCamera(Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
-		: bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game);
+	const FUghCameraPose Pose = Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
+		: bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game;
+	Stage->SetCamera(Pose);
+	CameraLog.Record(Seconds, Pose, Current.phase, Intro);
 }
 
 void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)

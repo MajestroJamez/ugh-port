@@ -87,6 +87,10 @@ namespace
 		{ .Blend = EBlend::Bits, .Shape = EShape::Leaf, .Mode = EMode::Tumbling, .Count = 22, .Life = 3.2f,
 			.Stagger = 0.6f, .Speed = 120, .Spread = 2, .Gravity = 220, .Drag = 2.5f, .Size = 18, .Flutter = 30,
 			.Spin = 6, .Box = { 60, 20, 30 } } };
+	const FPart RustleParts[] = {
+		{ .Blend = EBlend::Bits, .Shape = EShape::Leaf, .Mode = EMode::Tumbling, .Count = 7, .Life = 2.6f,
+			.Stagger = 0.5f, .Speed = 70, .Spread = 1.5f, .Gravity = 200, .Drag = 2.5f, .Size = 15, .Flutter = 30,
+			.Spin = 6, .Box = { 30, 15, 15 } } };
 	const FPart CelebrationParts[] = {
 		{ .Blend = EBlend::Bits, .Shape = EShape::Petal, .Mode = EMode::Tumbling, .Count = 36, .Life = 3,
 			.Stagger = 0.3f, .Speed = 750, .Spread = 0.6f, .Gravity = 450, .Drag = 1.6f, .Size = 14, .Flutter = 25,
@@ -108,7 +112,8 @@ namespace
 		{ TEXT("gust"), GustParts, false, {}, 40, 0.5, ERest::Air },
 		{ TEXT("thud"), ThudParts, false, {}, 16, 0.3, ERest::Ground },
 		{ TEXT("leaves"), LeafParts, false, {}, 20, 1.2, ERest::Air },
-		{ TEXT("celebration"), CelebrationParts, false, { Gold, 10, 1.f }, 30, 0.6, ERest::Air } };
+		{ TEXT("celebration"), CelebrationParts, false, { Gold, 10, 1.f }, 30, 0.6, ERest::Air },
+		{ TEXT("rustle"), RustleParts, false, {}, 20, 0.8, ERest::Air, -150 } };
 	static_assert(UE_ARRAY_COUNT(Bursts) == int32(EUghBurst::Count));
 }
 

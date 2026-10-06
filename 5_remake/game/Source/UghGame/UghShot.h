@@ -30,11 +30,14 @@ struct FUghGameEnd;
  * campfire (torch) of the level, with -UghShotFrame that part from its middle. Such a shot's name ends in
  * -cargo<look>, -hanging<look>, -landed, -bubbles, -closeup, -campfire / -torch, -frame<left>_<top> (in this order).
  * -UghShotIntro=<seconds> saves the flight to the stone at the start of the level that many seconds into it instead
- * (FUghIntro; FUghIntro::Duration and later: its end, the game's camera), its name ending in -intro<seconds> after
- * those, and gives the game up. -UghShotEffect=<bursts> (names of UghBursts separated by commas, or all) shoots each
- * level once for each burst, held by the first copter when the play begins (beside it in the air, on the ground or the
- * water under it) -UghShotEffectAge seconds into it (else its ShotAge) and framed around it, the name ending in
- * -<burst> after the others: a look at the bursts of the events (AUghEffects), which come from no event then.
+ * (FUghIntro; FUghIntro::Duration: its end, the game's camera; later: that much after its end, the caption still
+ * shown), its name ending in -intro<seconds> after those, and gives the game up. -UghShotEdge=left|right|top flies the
+ * first copter into that edge of the screen (beside it at the height -UghShotEdgeY pixels, else 20; the top pedalling
+ * up) and takes the shot -UghShotEdgeAfter seconds (else 0.25) after it got there, its name ending in -edge<edge> after
+ * -frame...: a look at the soft edges (AUghFringe). -UghShotEffect=<bursts> (names of UghBursts separated by commas, or
+ * all) shoots each level once for each burst, held by the first copter when the play begins (beside it in the air, on
+ * the ground or the water under it) -UghShotEffectAge seconds into it (else its ShotAge) and framed around it, the name
+ * ending in -<burst> after the others: a look at the bursts of the events (AUghEffects), which come from no event then.
  * -UghShotEnd gives each level up instead of its shot and saves the card of the game's end in the menu (the name
  * ending in -end after the others); -UghShotScore=<points> makes that game end with so many points (only the picture: a
  * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores
@@ -111,6 +114,11 @@ private:
 	FKey MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FTarget& Target) const;
 	/** The copters hover: pedal while below the height they had when the level was fully shown. */
 	void Hover(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds);
+	/**
+	 * -UghShotEdge: the first copter flies into the edge (left, right: at the height EdgeY, steering that way; top:
+	 * pedalling up); true EdgeAfter seconds after it got there (the shot).
+	 */
+	bool FlyToEdge(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds);
 	void ReleasePedals(AUghGameMode& Mode);
 	static void Tap(AUghGameMode& Mode, const FKey& Key);
 
@@ -127,6 +135,10 @@ private:
 	FString Look;             // -UghShotLook
 	TOptional<FBox2D> Frame;  // -UghShotFrame
 	TOptional<double> IntroAt; // -UghShotIntro
+	FString Edge;              // -UghShotEdge: left, right, top
+	double EdgeAfter = 0.25, EdgeY = 20;   // -UghShotEdgeAfter, -UghShotEdgeY
+	double AtEdge = -1;        // seconds the copter has been at the edge, -1 not there
+	FKey Steering;             // the key it holds to fly there
 	TArray<FString> Effects;   // -UghShotEffect
 	TOptional<double> EffectAge;   // -UghShotEffectAge
 	bool bEndShot = false;     // -UghShotEnd

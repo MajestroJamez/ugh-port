@@ -8,6 +8,7 @@
 #include "UghPasswords.h"
 #include "UghProfile.h"
 #include "UghBursts.h"
+#include "UghFringe.h"
 #include "UghShapes.h"
 
 namespace
@@ -71,6 +72,12 @@ bool FUghShot::Configure()
 	if (Frame)
 	{
 		Suffix += FString::Printf(TEXT("-frame%.0f_%.0f"), Frame->Min.X, Frame->Min.Y);
+	}
+	if (FParse::Value(CommandLine, TEXT("-UghShotEdge="), Edge))
+	{
+		FParse::Value(CommandLine, TEXT("-UghShotEdgeAfter="), EdgeAfter);
+		FParse::Value(CommandLine, TEXT("-UghShotEdgeY="), EdgeY);
+		Suffix += TEXT("-edge") + Edge;
 	}
 	double Intro = 0;
 	if (FParse::Value(CommandLine, TEXT("-UghShotIntro="), Intro))
@@ -257,12 +264,19 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		Frames = 0;
 		ReleasePedals(Mode);
 		HoverY[0] = HoverY[1] = -1;
+		AtEdge = -1;
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION && IntroAt)
 	{
 		// no key: the flight goes on to the moment of the shot (its end at the latest; not while it settles in black)
 		const FUghIntro& Intro = Mode.GetIntro();
 		if (Intro.GetTime() < FMath::Clamp(*IntroAt, UE_KINDA_SMALL_NUMBER, FUghIntro::Duration))
+		{
+			return EAction::None;
+		}
+		// later than its end: that much after it
+		PhaseTime = Intro.IsFlying() ? 0 : PhaseTime + DeltaSeconds;
+		if (*IntroAt > FUghIntro::Duration && PhaseTime < *IntroAt - FUghIntro::Duration)
 		{
 			return EAction::None;
 		}
@@ -284,10 +298,14 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	{
 		return EAction::None;
 	}
-	Hover(Mode, View, DeltaSeconds);
+	const bool bAtEdge = !Edge.IsEmpty() && FlyToEdge(Mode, View, DeltaSeconds);
+	if (Edge.IsEmpty())
+	{
+		Hover(Mode, View, DeltaSeconds);
+	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
-	if (PhaseTime <= At)
+	if (Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
 	}
@@ -450,6 +468,11 @@ void FUghShot::Hover(AUghGameMode& Mode, const ugh_logic_view& View, double Seco
 
 void FUghShot::ReleasePedals(AUghGameMode& Mode)
 {
+	if (Steering.IsValid())
+	{
+		Mode.HandleKey(Steering, IE_Released);
+		Steering = FKey();
+	}
 	for (int32 Player = 0; Player < UE_ARRAY_COUNT(bPedalling); ++Player)
 	{
 		if (bPedalling[Player])
@@ -464,4 +487,32 @@ void FUghShot::Tap(AUghGameMode& Mode, const FKey& Key)
 {
 	Mode.HandleKey(Key, IE_Pressed);
 	Mode.HandleKey(Key, IE_Released);
+}
+
+bool FUghShot::FlyToEdge(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds)
+{
+	if (View.copter_count == 0)
+	{
+		return false;
+	}
+	const ugh_logic_copter& Copter = View.copters[0];
+	const bool bTop = Edge == TEXT("top"), bLeft = Edge == TEXT("left");
+	// up all the way to the top; beside it at its height
+	const bool bPedal = bTop || Copter.y > EdgeY * UghShapes::Subpixels;
+	if (bPedal != bPedalling[0])
+	{
+		Mode.HandleKey(PedalKey(Mode, 0), bPedal ? IE_Pressed : IE_Released);
+		bPedalling[0] = bPedal;
+	}
+	// (steering once it is up there: on the way up it might hit the rock)
+	if (!bTop && !Steering.IsValid() && Copter.y <= (EdgeY + 3) * UghShapes::Subpixels)
+	{
+		Steering = Mode.GetProfile().Settings.Keys.KeyOf(0, bLeft ? UGH_LOGIC_KEY_LEFT : UGH_LOGIC_KEY_RIGHT);
+		Mode.HandleKey(Steering, IE_Pressed);
+	}
+	const bool bThere = bTop ? Copter.y <= UghFringe::TopEdge * UghShapes::Subpixels
+		: bLeft ? Copter.x <= UghFringe::LeftEdge * UghShapes::Subpixels
+		: Copter.x >= UghFringe::RightEdge * UghShapes::Subpixels;
+	AtEdge = bThere ? FMath::Max(AtEdge, 0.0) + Seconds : -1;
+	return AtEdge >= EdgeAfter;
 }

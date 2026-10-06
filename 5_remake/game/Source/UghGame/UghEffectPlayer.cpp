@@ -338,3 +338,10 @@ void FUghEffectPlayer::Forget()
 	Falling.Reset();
 	bAirborne[0] = bAirborne[1] = false;
 }
+
+void FUghEffectPlayer::Order(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View, double Scale)
+{
+	FUghEffectOrder Order = OrderAt(Burst, Place, View);
+	Order.Scale = Scale;
+	Orders.Add(Order);
+}

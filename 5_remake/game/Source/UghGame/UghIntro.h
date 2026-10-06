@@ -17,10 +17,13 @@ struct FUghCameraPose
 
 /**
  * The start of a level (while its caption shows): the camera flies like a drone low over the open sea towards the
- * stone the level is carved into (AUghSeaStack) - along a curve, banking into its turns, up and down a little, its lens
- * wide, then narrowing - and brakes to a stop in the game's camera (AUghStage::Fit), never into the stone. A key
- * hurries it to its end (HurrySeconds: before the play can begin). Only the frontend's: the logic and its timing do not
- * change (the caption waits for its key meanwhile). -UghNoIntro (or bFlies false): no flight.
+ * stone the level is carved into (AUghSeaStack) - along a smooth curve, banking into its turns, up and down a little,
+ * its lens wide, then narrowing - and brakes softly to a stop in the game's camera (AUghStage::Fit), never into the
+ * stone: no jolt on the way (its curve bends smoothly, its speed and deceleration change smoothly) and none at the end
+ * (speed and deceleration fade to 0). A key hurries it to its end (HurrySeconds: before the play can begin) on a clock
+ * that speeds up smoothly from its pace; before anything is seen it starts nearer instead (SkipTo). Only the
+ * frontend's: the logic and its timing do not change (the caption waits for its key meanwhile).
+ * -UghNoIntro (or bFlies false): no flight.
  */
 class FUghIntro
 {
@@ -28,7 +31,9 @@ public:
 	/** Whether a level starts with the flight. */
 	static constexpr bool bFlies = true;
 	/** Seconds: the flight; its rest when a key hurries it; the scene showing from black as it starts. */
-	static constexpr double Duration = 4.5, HurrySeconds = 0.6, FadeIn = 0.3;
+	static constexpr double Duration = 4.5, HurrySeconds = 0.9, FadeIn = 0.3;
+	/** Hurried before anything is seen: the flight goes on from this many seconds before its end. */
+	static constexpr double SkipTo = 1.6;
 	/** A frame longer than this (the level being built) moves the flight only this far, seconds. */
 	static constexpr double MaxStep = 1.0 / 20;
 	/** The lens at the start (degrees across), how far the camera banks at most (degrees). */
@@ -41,9 +46,14 @@ public:
 
 	/** From the start. */
 	void Start();
-	/** Flies on `Seconds` (at most MaxStep; nothing the first SettleFrames frames); it ends at its end. */
+	/**
+	 * Flies on `Seconds` (at most MaxStep, but hurried; nothing the first SettleFrames frames); it ends at its end.
+	 */
 	void Advance(double Seconds);
-	/** The rest of the flight in HurrySeconds (or less). */
+	/**
+	 * The rest of the flight in HurrySeconds, its clock speeding up smoothly (from SkipTo before its end when nothing is
+	 * seen yet).
+	 */
 	void Hurry();
 	/** No flight (back to the menu). */
 	void Stop() { bFlying = false; }
@@ -51,7 +61,7 @@ public:
 	/** Seconds of the flight so far (Duration at its end). */
 	double GetTime() const { return Time; }
 	/** How much of the scene shows, 0 .. 1: from black as it starts. */
-	double Shown() const { return FMath::Clamp(Time / FadeIn, 0.0, 1.0); }
+	double Shown() const { return FMath::Clamp(Faded / FadeIn, 0.0, 1.0); }
 
 	/** The camera now on the way to `End` (the game's camera) over the sea's surface at the world's `SeaZ`. */
 	FUghCameraPose Pose(const FUghCameraPose& End, double SeaZ) const { return At(End, SeaZ, Time); }
@@ -60,7 +70,12 @@ public:
 
 private:
 	double Time = 0;
-	double Rate = 1;   // of the clock: faster when hurried
+	double Faded = 0;   // seconds since it began to show
+	bool bHurried = false;
+	double Hurried = 0, HurryFrom = 0;   // seconds since the key, the flight's time then
+	/** The rest of the way after the key: the coefficients of its quintic (bHurryAlong), else of its clock (Hurry). */
+	double Hurry0 = 0, Hurry1 = 0, Hurry2 = 0, Hurry3 = 0, Hurry4 = 0, Hurry5 = 0;
+	bool bHurryAlong = false;
 	int32 Settled = 0;   // frames held still so far
 	bool bFlying = false;
 };
