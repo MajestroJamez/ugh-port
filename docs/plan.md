@@ -491,6 +491,47 @@ Jan 2026-10-05: strom s obličejem, kamenný cestující a nepřátelé jsou je�
   (jen pro vlastní použití), test doma na RTX 5060 Ti (Jan).
 - Hotovo když: zabalená hra projde `levels.ps1` z balíčku, fps v logu nad cílem.
 
+## Krok 24 - Janovy připomínky po prvním hraní (2026-10-06)
+
+Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), každý svým agentem, snímky jen offscreen.
+
+### Krok 24a - Zadní strana vrtulníku kostičkovaná (priorita)
+
+- Zadní část vrtulníku se kreslí „kostičkovaně“ (bloky, schody). Najít příčinu (rozlišení/TSR na průsvitném nebo
+  tenkém materiálu, chybějící velocity/depth u průsvitných, Nanite/LOD, maskovaný materiál s ditherem, stín
+  s nízkým rozlišením, normály) a opravit u zdroje, ne zamaskovat.
+- Hotovo když: snímek zblízka zezadu i z herní kamery v pohybu bez kostiček, ostatní snímky beze změny.
+
+### Krok 24b - Vrtulník: šlapání a sezení
+
+- Nový design: musí být na první pohled vidět, že pilot **šlape** (pedály, kliky, řetěz/převod na vrtuli, nohy se
+  točí s vrtulí). Pilot nesedí na sudu, ale na sedátku; pasažér má **vlastní židli** (kamenná/dřevěná, pravěká).
+- Hotovo když: snímky letu a přistání ukážou šlapání a obě sedátka, animace nohou svázaná s otáčkami vrtule.
+
+### Krok 24c - Čitelnost: méně přesvětlené, postavy vyniknou
+
+- Scéna je přesvětlená a postavy (čekající cestující, piloti, nepřátelé) splývají s pozadím; v pozdějších levelech
+  s víc postavami si hráč čekajícího nevšimne. Snížit expozici/kontrast pozadí a postavy oddělit: rim/fill světlo
+  jen na postavách, jemný obrys nebo stín za postavou, sytější barvy oblečení proti šedé skále, čekající cestující
+  výrazněji (např. jemná záře/kužel světla nad plošinou, ukazování rukou). Gameplay rovina má mít jasnou hierarchii:
+  postavy > plošiny > skála.
+- Hotovo když: na archu rychlé sady jsou všechny postavy vidět na první pohled ve všech náladách (den, noc, déšť).
+
+### Krok 24d - Let ke kameni plynulý, okraje kamene, měkký náraz do okraje
+
+- Let má na dvou místech škubnutí: najít (změna spline/rychlosti, přepnutí kamery, načtení assetu, hitch kompilace
+  shaderu) a odstranit; dojezd ke startu levelu velmi plynulý (ease-out bez skoku na konci).
+- Koncová kamera ukáže kolem levelu i okraje okolního kamene (hráč vidí stěny), ne jen samotný level.
+- Okraj obrazovky: v originále vrtulník na kraji obrazovky jen zastaví, bez nárazu a ztráty života. Ve 3D to má
+  vypadat jako měkký kraj: po stranách levelu závěsy lián/mechu/keřů na kameni; když vrtulník narazí na okraj, porost
+  se prohne a zašustí (pár listů opadá), vrtulník se zastaví jako v originále. Logika beze změny.
+- Horní okraj (Jan): v originále mohl vrtulník vyletět úplně mimo obrazovku nahoru a náraz do stropu ani v plné
+  rychlosti nebral život. Teď bude kámen nad levelem vidět, takže vrtulník nad levelem nesmí vypadat, že vletěl do
+  skály: nahoře hustý převis porostu (liány, kapradí, kořeny visící z převisu), do kterého vrtulník zajede a zmizí,
+  porost se rozhrne a zašustí; náraz do stropu vypadá měkce. Logika beze změny.
+- Hotovo když: záznam letu (snímky po krocích nebo měření kamery po snímcích) bez skoků, koncový snímek s okraji
+  kamene, snímek vrtulníku u okraje s prohnutým porostem.
+
 ## Průběžně
 
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
@@ -1331,3 +1372,14 @@ Jan 2026-10-05: strom s obličejem, kamenný cestující a nepřátelé jsou je�
   logiky, `6_verification` (163) a 193 testů v UE zelené. Čeká na Jana: spustit zip doma na RTX 5060 Ti (automatická
   volba Epic + DLSS, frame generation 2x-4x, plynulost prvního letu), posoudit vzhled Low a Medium, a seznam z kroků
   13-22 v `docs/doma.md`. Další: hotovo (plán 23 kroků vyčerpán).
+- 2026-10-06: krok 24a hotový - kostičkovaná zadní stěna vrtulníku. Příčina: proutí (`Blender/copter_materials.py`)
+  byl jeden oboustranný čtverec s maskovaným materiálem (díry vyříznuté alfou, glTF MASK). Díry jsou jemnější než
+  texel virtuální stínové mapy slunce, hloubka stínové mapy tak skáče mezi stěnou a skálou za ní a paprsky SMRT berou
+  ty skoky za stínící hranu - stěna stínila sama sebe v blocích se schody (zblízka i z herní kamery velké tmavé
+  skvrny). Ověřeno A/B cvarů na snímku zblízka: bez VSM (`r.Shadow.Virtual.Enable 0`) stín hladký, bez GI Lumenu
+  kostičky dál, jemnější VSM jen menší kostičky. Oprava u zdroje: proutí neprůhledné, mezery mezi pásky tmavé
+  v barvě (normálová mapa beze změny), materiál bez alfy - stínová mapa vidí souvislou plochu, odpadá i maskovaný
+  Nanite a blikání děr pod TSR/FSR. Snímky `1p-01` a `-CloseUp` před a po: stíny na proutí měkké jako s klasickými
+  stíny, bez bloků (vrtulník při snímku stoupá a klesá). CTest logiky, `6_verification` (163) a 193 testů v UE zelené.
+  `levels.ps1 -Quick` a arch bez vad, 0 chyb v logu; fps medián 12 (nejpomalejší 8; krok 22: 21 / 11) - nejspíš
+  zahřátý notebook po sérii běhů (neprůhledný materiál je levnější než maskovaný), A/B neměřeno. Další: **krok 24b**.

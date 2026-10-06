@@ -26,20 +26,23 @@ def make(folder, wood_folder, stone_folder):
         kit.save_image(folder, "copter_bamboo_normal", kit.normals_from_height(fibres * 0.3 + node, 6), colour=False),
         roughness=0.5)
 
-    # wicker: two layers of strips crossing diagonally, over and under, the holes cut out
+    # wicker: two layers of strips crossing diagonally, over and under, the gaps between them dark. Not cut out: holes
+    # finer than a texel of the sun's virtual shadow map make its depth jump between the wall and the rock behind it,
+    # and the shadow's rays (SMRT) take those jumps for occluders - the wall shadowed itself in blocks (step 24a)
     u = (numpy.arange(size)[None, :] + 0.5) / size
     a, b = (u + v) * 4, (u - v) * 4
     strip_a = numpy.clip(1 - numpy.abs((a % 1) - 0.5) / 0.32, 0, 1)
     strip_b = numpy.clip(1 - numpy.abs((b % 1) - 0.5) / 0.32, 0, 1)
     a_on_top = ((numpy.floor(a) + numpy.floor(b)) % 2) == 0
     height = numpy.where(a_on_top, numpy.maximum(strip_a + 0.3, strip_b), numpy.maximum(strip_a, strip_b + 0.3))
-    solid = (numpy.maximum(strip_a, strip_b) > 0.05).astype(numpy.float32)
+    gap = 1 - numpy.clip(numpy.maximum(strip_a, strip_b) / 0.25, 0, 1)   # 1 in a gap, 0 on a strip
     grain = kit.noise(size, 1.5, seed=22, stretch=(6, 6))
     colour = kit.colour_ramp(grain, (0.5, 0.38, 0.18), (0.75, 0.6, 0.32)) * (0.55 + 0.45 * height[..., None] / 1.3)
+    colour = colour * (1 - 0.85 * gap[..., None])
     made["wicker"] = kit.material(
-        "wicker", kit.save_image(folder, "copter_wicker", numpy.dstack((colour, solid))),
+        "wicker", kit.save_image(folder, "copter_wicker", colour),
         kit.save_image(folder, "copter_wicker_normal", kit.normals_from_height(height, 4), colour=False),
-        roughness=0.75, alpha_cutoff=0.5, double_sided=True)
+        roughness=0.75, double_sided=True)
 
     # leather: fine grain and creases, light so that its tint is the player's colour
     grain = kit.noise(size, 1.0, seed=23)

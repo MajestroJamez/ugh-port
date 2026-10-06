@@ -104,8 +104,9 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
 - `M_UghPbr` má zapojenou výškovou mapu (parallax, `BumpOffset`).
 - Plastelína: matná (drsnost 0,7), sytější barvy než originál; vrtulníky bez modelů oranžový a tyrkysový.
 - Vrtulník a jeskynní muž (krok 16): textury z kroku 14 (kůra `palm_bark` na kmeny a pařezy, `rock_face_03` na
-  kámen) a procedurální textury spočítané skriptem (bambus s kolénky, proutí s průhlednými dírami, kůže, kost,
-  provaz, list s žilkami; kůže člověka, vlasy, leopardí kožešina). Barvy, které hra mění (kůže vrtulníku, listy,
+  kámen) a procedurální textury spočítané skriptem (bambus s kolénky, proutí s tmavými mezerami - od kroku 24a ne
+  vyříznutými, díry jemnější než texel stínové mapy slunce dělaly na stěně kostičkovaný stín -, kůže, kost, provaz,
+  list s žilkami; kůže člověka, vlasy, leopardí kožešina). Barvy, které hra mění (kůže vrtulníku, listy,
   vlasy, kožešina), jsou faktory základní barvy glTF nad světlou texturou.
 - Voda (krok 19): moře kolem útesu, materiál Single Layer Water `M_UghWater` (`Shaders/UghWater.hlsl`): engine
   kreslí, co je pod hladinou, skrz tolik vody, kolik pohled projde (lom, pohlcování červené, rozptyl do modrozelena),
