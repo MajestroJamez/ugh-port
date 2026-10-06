@@ -135,8 +135,9 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   zadní stěnu, hloubka je čitelná), k večeru níž a tepleji (den 55° 10 lux, večer 32° 8 lux, soumrak 12° 3,5 lux
   oranžové), v noci chladný měsíc 0,6 lux a hlavní světlo dávají ohně; obloha HDRI nálady na kopuli kolem světa, kterou
   snímá sky light (osvětlení i odrazy ve vodě), Lumen GI s hardwarovým ray tracingem, pevná expozice pro každou náladu
-  (den EV100 1,9, večer 1,4, soumrak 1,3, noc 0,6 - noc je tmavá, ale postavy čitelné). Objemová mlha sahá až
-  k útesu (od 40 do 120 m od kamery), slunce v ní svítí do jeskyně (paprsky, slabé). Bez HDRI atmosféra enginu.
+  (den EV100 1,9, večer 1,4, soumrak 1,3, noc 0,6 - noc je tmavá, ale postavy čitelné; od kroku 24c den 2,1, večer
+  1,6, soumrak 1,4). Objemová mlha sahá až k útesu (od 40 do 120 m od kamery), slunce v ní svítí do jeskyně (paprsky,
+  slabé). Bez HDRI atmosféra enginu.
 - Palmy byly šedé, protože materiály modelů (instance glTF materiálů enginu) nepovolují Nanite a hra kreslí místo
   nich výchozí materiál: import je teď přepojí na kopie v `Content/Imported/_Masters`, které Nanite povolují.
 - Ohně (krok 18): až tři na nejdelších suchých římsách (napřed bez plošiny), za deskou hry: kamenný kruh a polena
@@ -599,3 +600,22 @@ Krok 23: na Radeonu 890M byly stíny ohňů (bodová světla: krychle šesti st�
 bez nich je nízká dvakrát rychlejší; světlo, které se hýbe, kreslí své stínové mapy každý snímek znovu (virtuální
 stínové mapy nehybného světla drží stránky), proto se pod Epic nehýbe. Hra bez profilu začne na předvolbě podle GPU:
 RTX (DLSS) Epic, integrovaná Low, jinak High.
+
+## Čitelnost: postavy nad skálou (krok 24c)
+
+Jan po prvním hraní: scéna přesvětlená, postavy (čekající cestující, piloti, nepřátelé) splývají se skálou. Hierarchie
+v rovině hry: postavy > plošiny > skála, v každé náladě a předvolbě.
+
+- **Skála a expozice**: vápenec čela skály tmavší (`UghCliff.hlsl`: šedá 0,16 místo 0,22, tedy střední, ne světle
+  šedá), expozice světlejších nálad o kus níž (EV100 den 2,1, večer 1,6, soumrak 1,4, bouřka 1,15; noc 0,6 beze změny).
+- **Světla jen na postavách** (`UghFigureLook`, `AUghStage`): postavy (lidé, nepřátelé, bonusy, kámen s očima,
+  piloti a cestující ve vrtulníku) jsou navíc ve světelném kanálu 1; dvě směrová světla jen v něm - výplň zepředu
+  zprava shora a kontra zezadu shora (2x výplně, rozsvítí hlavy, ramena a ruce proti skále), barva slunce napůl
+  k bílé, bez stínů, Lumen je neodráží (nepřidají světlo skále), nesvítí do mlhy ani deště. Jas
+  `FUghMood::FigureFill` krát světlo, které expozice dělá střední šedí (2^EV), takže postavy svítí stejně ve dne i
+  v noci (noc 0,9, jinak 1,2, bouřka 1,3). Funguje i na Low (přímé světlo, ne GI).
+- **Tmavá svatozář** (`M_UghFigureHalo`, `UghFigureHalo.hlsl`): postavy se kreslí do custom depth, post-process
+  kolem nich (2,4 % výšky obrazu, tři prstence po 8 vzorcích) jemně ztmaví pozadí, nejvíc u postavy (`FUghMood::Halo`
+  0,5-0,6 = nejvýš o polovinu), ne kde je pozadí tmavé už samo (jeskyně). Až za upscalerem (`BL_SceneColorBeforeBloom`):
+  před ním ležela svatozář pohybující se postavy na nehybném pozadí, jehož historii TSR/FSR drží - rozmazala se do
+  ztracena. Piloti a cestující ve vrtulníku svatozář nemají (vrtulník je vidět sám, šmouha by ho zašpinila).

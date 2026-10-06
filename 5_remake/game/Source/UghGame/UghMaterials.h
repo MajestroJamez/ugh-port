@@ -210,4 +210,12 @@ namespace UghMaterials
 	 * camera sees it times SkySeen (its picture is far brighter than the exposure of the scene wants).
 	 */
 	inline const TCHAR* Sky = TEXT("/Game/Generated/M_UghSky");
+	/**
+	 * The figures' halo (UghFigureLook), a post-process after the upscaler: around what is drawn into the custom depth
+	 * (the figures), Radius (of the view's height) far, the background darkens by up to Darken (0 .. 1) unless it is
+	 * dark already (a cave stays as it is). The shader code is Source/UghEditor/Shaders/UghFigureHalo.hlsl.
+	 */
+	inline const TCHAR* FigureHalo = TEXT("/Game/Generated/M_UghFigureHalo");
+	inline const TCHAR* RadiusParameter = TEXT("Radius");
+	inline const TCHAR* DarkenParameter = TEXT("Darken");
 }

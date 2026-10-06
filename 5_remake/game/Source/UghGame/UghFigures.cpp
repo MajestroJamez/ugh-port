@@ -6,6 +6,7 @@
 #include "UghBetween.h"
 #include "UghBubbles.h"
 #include "UghFigureActions.h"
+#include "UghFigureLook.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
@@ -52,6 +53,10 @@ void AUghFigures::BeginPlay()
 	Passengers = Clay(EShape::Cylinder, PassengerColor);
 	Enemies = Clay(EShape::Sphere, EnemyColor);
 	BonusItems = Clay(EShape::Cone, BonusColor);
+	for (USceneComponent* Shapes : { Passengers, Enemies, BonusItems })
+	{
+		UghFigureLook::Mark(Shapes);
+	}
 }
 
 void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,

@@ -6,6 +6,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "UghAssets.h"
+#include "UghFigureLook.h"
 #include "UghFigurePlace.h"
 
 namespace
@@ -118,6 +119,7 @@ USceneComponent* FUghCaveman::Add(AActor* Owner, int32 Look) const
 		Model->SetRelativeScale3D(FVector(UghFigurePlace::PersonHeight / UghFigurePlace::CavemanHeight));
 		Dress(Model, CaveLooks[Index]);
 	}
+	UghFigureLook::Mark(Person);
 	Person->SetVisibility(false, true);
 	return Person;
 }

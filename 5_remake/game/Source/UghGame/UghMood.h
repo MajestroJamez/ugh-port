@@ -39,6 +39,13 @@ struct FUghMood
 	float SkySeen;
 	/** How bright the campfires' and torches' lights are, times their brightness by day: the main light in the dark. */
 	float FireLight;
+	/**
+	 * The figures stand out (UghFigureLook): a soft light on them alone from the front right (and a rim from behind them,
+	 * AUghStage), this times the light the exposure makes mid grey (2^Exposure lux); how much the background around them
+	 * darkens unless it is dark already (their halo, 0 .. 1).
+	 */
+	float FigureFill;
+	float Halo;
 };
 
 namespace UghMood

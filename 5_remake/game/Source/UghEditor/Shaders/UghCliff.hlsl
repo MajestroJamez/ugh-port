@@ -15,7 +15,7 @@
 // lichen, that stone where the drawing is grey (its cave walls) and deep in the cave; where two meet, the higher
 // relief of the two wins (height blend). The limestone is sampled at two scales, the large patches choosing between
 // them, so that its tiles do not repeat visibly; the grey stone's relief, finer, lies on all the rock. The limestone
-// is greyed (weathered karst: light grey, a little warm, dark streaks down it), the rock matte; crevices and the
+// is greyed (weathered karst: mid grey, a little warm, dark streaks down it), the rock matte; crevices and the
 // hollows of the relief are darker, the large patches lighter and darker, warmer and greyer, the rock just at the
 // water and under it wet; the drawing shades it a little, so that each level keeps its light and dark areas.
 
@@ -132,10 +132,10 @@ base /= sum;
 bump /= sum;
 rough /= sum;
 
-// weathered karst limestone: the blocks greyed to a light, a little warm grey (more contrast: darker cracks and
-// weathering), the stone with lichen a little greyer too
+// weathered karst limestone: the blocks greyed to a mid, a little warm grey (darker than the figures, so that they
+// stand out of it; more contrast: darker cracks and weathering), the stone with lichen a little greyer too
 float grey = dot(base, float3(0.3, 0.59, 0.11));
-float3 limestone = 0.22 * pow(max(grey / 0.25, 0), 1.4) * float3(1.04, 1.0, 0.92);
+float3 limestone = 0.16 * pow(max(grey / 0.25, 0), 1.4) * float3(1.04, 1.0, 0.92);
 base = lerp(base, limestone, (W[0] + 0.3 * W[1]) / sum);
 // large patches lighter and darker, warmer and greyer
 base *= lerp(0.8, 1.2, patches) * lerp(float3(0.97, 0.99, 1.02), float3(1.03, 1.0, 0.96), patches);

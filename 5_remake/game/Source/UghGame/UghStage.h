@@ -22,8 +22,9 @@ struct FUghMood;
  * a storm) - the sun (or the moon) from the front left, the sky (an HDR picture of it on a dome far around, UghAssets;
  * without it the engine's atmosphere) and the sky light that captures it (for Lumen), a low fog with volumetric fog
  * in which the sunlight falls into the cave in shafts, a mist over the water in a storm, a fixed exposure for each
- * mood with a film look; the wind in the scanned plants (the Electric Dreams sample's foliage sways harder and with
- * the wind in a storm); and the camera: fixed, a narrow lens, a little from above, the whole screen of the original in
+ * mood with a film look; the figures standing out (UghFigureLook: a light on them alone, a halo around them); the
+ * wind in the scanned plants (the Electric Dreams sample's foliage sways harder and with the wind in a storm); and the
+ * camera: fixed, a narrow lens, a little from above, the whole screen of the original in
  * view whatever the window's aspect (Fit), flying there at the start of a level (FUghIntro). The game mode makes it
  * the view target.
  */
@@ -60,10 +61,13 @@ private:
 
 	UPROPERTY() TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY() TObjectPtr<UDirectionalLightComponent> Sun;
+	UPROPERTY() TObjectPtr<UDirectionalLightComponent> FigureFill;   // the figures' alone (UghFigureLook)
+	UPROPERTY() TObjectPtr<UDirectionalLightComponent> FigureRim;
 	UPROPERTY() TObjectPtr<USkyAtmosphereComponent> Atmosphere;
 	UPROPERTY() TObjectPtr<USkyLightComponent> SkyLight;
 	UPROPERTY() TObjectPtr<UExponentialHeightFogComponent> Fog;
 	UPROPERTY() TObjectPtr<UPostProcessComponent> Look;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> SkyDome;   // none without the skies
 	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> SkyMaterial;
+	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> Halo;   // the figures' (UghMaterials::FigureHalo)
 };

@@ -1,8 +1,10 @@
-// The materials of the figures, made by the commandlet UghMakeAssets: the blower's snort of dust, the flyer's wings.
+// The materials of the figures, made by the commandlet UghMakeAssets: the blower's snort of dust, the flyer's wings,
+// the figures' halo.
 #include "UghMakeAssetsCommandlet.h"
 
 #include "Materials/Material.h"
 #include "Materials/MaterialExpressionCameraPositionWS.h"
+#include "Materials/MaterialExpressionSceneTexture.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
 #include "UghMaterialNodes.h"
@@ -18,6 +20,8 @@ namespace
 	/** The wings: how the light coming through them is tinted (warm: blood in the thin skin), how rough they are. */
 	const FLinearColor Shine(1.5f, 0.8f, 0.5f);
 	constexpr float MembraneRoughness = 0.6f;
+	/** The figures' halo: how far it reaches, of the view's height (a figure is about 5 % of it). */
+	constexpr float HaloRadius = 0.024f;
 }
 
 bool UUghMakeAssetsCommandlet::MakePuff(UMaterial* Material)
@@ -69,5 +73,30 @@ bool UUghMakeAssetsCommandlet::MakeMembrane(UMaterial* Material)
 	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, MembraneRoughness), TEXT(""), MP_Roughness);
 	UMaterialEditingLibrary::ConnectMaterialProperty(
 		Times(Material, Color, Vector(Material, UghMaterials::ColorParameter, Shine)), TEXT(""), MP_SubsurfaceColor);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeFigureHalo(UMaterial* Material)
+{
+	Material->MaterialDomain = MD_PostProcess;
+	// after the upscaler: before it, the halo around a moving figure lies on the still background, whose history the
+	// upscaler keeps - it would smear the halo out
+	Material->BlendableLocation = BL_SceneColorBeforeBloom;
+	auto Scene = [Material](ESceneTextureId Id)
+	{
+		UMaterialExpressionSceneTexture* Texture = Add<UMaterialExpressionSceneTexture>(Material);
+		Texture->SceneTextureId = Id;
+		return Texture;
+	};
+	UMaterialExpression* Halo = Custom(Material, ShaderCode(TEXT("UghFigureHalo.hlsl")), CMOT_Float3, {
+		{ UghMaterials::RadiusParameter, Scalar(Material, UghMaterials::RadiusParameter, HaloRadius) },
+		{ UghMaterials::DarkenParameter, Scalar(Material, UghMaterials::DarkenParameter, 0.5f) },
+		{ TEXT("Color"), Scene(PPI_PostProcessInput0) },
+		{ TEXT("Figures"), Scene(PPI_CustomDepth) } });
+	if (!Halo)
+	{
+		return false;
+	}
+	UMaterialEditingLibrary::ConnectMaterialProperty(Halo, TEXT(""), MP_EmissiveColor);
 	return true;
 }

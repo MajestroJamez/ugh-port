@@ -16,6 +16,7 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "UghAssets.h"
 #include "UghElectricDreams.h"
+#include "UghFigureLook.h"
 #include "UghMaterials.h"
 #include "UghMood.h"
 #include "UghShapes.h"
@@ -40,6 +41,14 @@ namespace
 	/** The camera's horizontal field of view and how much it looks down (degrees); room around the screen. */
 	constexpr float FieldOfView = 30.f, LookDown = 4.f;
 	constexpr double ScreenMargin = 1.08;
+
+	/**
+	 * The figures' lights (UghFigureLook), the sun's colour half-way to white: a fill from the front right, a little from
+	 * above (the sun comes from the front left), and a rim from behind them above, which lights their edges - their
+	 * heads, shoulders and arms - against the rock, RimTimesFill times as bright as the fill.
+	 */
+	const FRotator FillFrom(-35, -115, 0), RimFrom(-40, 65, 0);
+	constexpr float FigureLightTint = 0.5f, RimTimesFill = 2.f;
 
 	/** The plants of the Electric Dreams sample in a storm: how much harder and faster they sway. */
 	constexpr float StormStrength = 3.f, StormSpeed = 2.5f;
@@ -82,6 +91,24 @@ AUghStage::AUghStage()
 	SkyLight->SetMobility(EComponentMobility::Movable);
 	SkyLight->bRealTimeCapture = true;
 
+	// the figures' lights: on the figures alone, no shadows, nothing bounced by Lumen, not in the fog or the rain
+	auto FigureLight = [this](const TCHAR* Name, const FRotator& From)
+	{
+		UDirectionalLightComponent* Light = CreateDefaultSubobject<UDirectionalLightComponent>(Name);
+		Light->SetupAttachment(RootComponent);
+		Light->SetMobility(EComponentMobility::Movable);
+		Light->SetRelativeRotation(From);
+		Light->SetLightingChannels(false, true, false);
+		Light->SetCastShadows(false);
+		Light->SetIndirectLightingIntensity(0);
+		Light->SetVolumetricScatteringIntensity(0);
+		Light->SetAffectTranslucentLighting(false);
+		Light->SetAtmosphereSunLight(false);
+		return Light;
+	};
+	FigureFill = FigureLight(TEXT("FigureFill"), FillFrom);
+	FigureRim = FigureLight(TEXT("FigureRim"), RimFrom);
+
 	Fog = CreateDefaultSubobject<UExponentialHeightFogComponent>(TEXT("Fog"));
 	Fog->SetupAttachment(RootComponent);
 	Fog->SetFogHeightFalloff(FogFalloff);
@@ -122,6 +149,8 @@ void AUghStage::BeginPlay()
 		SkyDome->RegisterComponent();
 		AddInstanceComponent(SkyDome);
 	}
+	Halo = UghShapes::Material(this, UghMaterials::FigureHalo);
+	Look->Settings.WeightedBlendables.Array.Add(FWeightedBlendable(1, Halo));
 	SetMood(UghMood::Of(0, 0), 0);
 }
 
@@ -172,6 +201,16 @@ void AUghStage::SetMood(const FUghMood& Mood, int32 Wind)
 	Fog->SetFogInscatteringColor(Mood.FogColor);
 	Fog->SetSecondFogDensity(Mood.Mist);
 	Look->Settings.AutoExposureMinBrightness = Look->Settings.AutoExposureMaxBrightness = Mood.Exposure;
+	const float Fill = Mood.FigureFill * FMath::Pow(2.f, Mood.Exposure);
+	const FLinearColor FigureColor = FMath::Lerp(Mood.SunColor, FLinearColor::White, FigureLightTint);
+	FigureFill->SetIntensity(Fill);
+	FigureRim->SetIntensity(Fill * RimTimesFill);
+	FigureFill->SetLightColor(FigureColor);
+	FigureRim->SetLightColor(FigureColor);
+	if (Halo)
+	{
+		Halo->SetScalarParameterValue(UghMaterials::DarkenParameter, Mood.Halo);
+	}
 	UTexture* Sky = SkyMaterial ? UghAssets::Texture(Mood.Sky) : nullptr;
 	if (Sky)
 	{

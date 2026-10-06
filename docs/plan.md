@@ -508,6 +508,14 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   točí s vrtulí). Pilot nesedí na sudu, ale na sedátku; pasažér má **vlastní židli** (kamenná/dřevěná, pravěká).
 - Hotovo když: snímky letu a přistání ukážou šlapání a obě sedátka, animace nohou svázaná s otáčkami vrtule.
 
+### Krok 24b2 - Vrtulník průhlednější a zelenější (Jan po 24b)
+
+- Zadní stěna: místo proutěné stěny jen dva bambusy křížem omotané břečťanem, jinak průhledné (vidět, co je za
+  vrtulníkem). Pozor na 24a: žádné maskované díry v jedné ploše (rozbíjely VSM stíny) - průhlednost geometrií.
+- Bambusové sloupky po stranách omotat břečťanem; viditelné liány visící z rámu; celé zelenější. Kožené lemy
+  v barvě hráče (rozlišení vrtulníků v týmu) mohou zůstat, ale ne tak dominantní.
+- Hotovo když: snímky zblízka a z herní kamery, v týmu oba vrtulníky rozlišitelné, stíny bez kostiček.
+
 ### Krok 24c - Čitelnost: méně přesvětlené, postavy vyniknou
 
 - Scéna je přesvětlená a postavy (čekající cestující, piloti, nepřátelé) splývají s pozadím; v pozdějších levelech
@@ -1398,3 +1406,21 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   `6_verification` (163) a 192 testů v UE zelené. `levels.ps1 -Quick` a arch bez vad, 0 chyb v logu, fps medián 27
   (nejpomalejší 18; po 24a 12 / 8 byl zahřátý notebook, A/B netřeba). Čeká na Jana: posoudit nový vrtulník v okně
   (`play.ps1`). Další: **krok 24c**.
+- 2026-10-06: krok 24c hotový - čitelnost: postavy vyniknou nad skálou (`docs/visual-concept.md`, Čitelnost). Skála
+  tmavší (vápenec `UghCliff.hlsl` 0,16 místo 0,22), expozice světlejších nálad níž (EV100 den 2,1, večer 1,6, soumrak
+  1,4, bouřka 1,15; noc beze změny): střední jas snímků o 13-22 % níž. Postavy (lidé, piloti, cestující, nepřátelé,
+  bonusy, kámen s očima; `UghFigureLook::Mark`) ve světelném kanálu 1, v něm jen dvě směrová světla `AUghStage` -
+  výplň zepředu zprava a kontra zezadu (bez stínů, bez GI Lumenu, jas `FUghMood::FigureFill` x 2^EV, takže stejně
+  v každé náladě i na Low). Jemná tmavá svatozář kolem postav: post-process `M_UghFigureHalo` (`UghFigureHalo.hlsl`)
+  z custom depth, tři prstence vzorků, ne na tmavém pozadí, ne u lidí ve vrtulníku (`FUghMood::Halo`). Nejdřív byla
+  před upscalerem (`AfterDOF`) a skoro nebyla vidět: TSR/FSR drží historii nehybného pozadí a svatozář pohybující se
+  postavy rozmaže - teď `BeforeBloom` (za upscalerem). Kužel světla nad čekajícími netřeba: s výplní a svatozáří je
+  čekající vidět i v bouřce a v noci (v noci dřív pilot ani nebyl vidět). Nový test `Ugh.Figures.Look` (osoba ve
+  světle i custom depth, ve vrtulníku bez svatozáře; světla scény kromě slunce jen na postavách), `Ugh.Mood` hlídá
+  čísla postav. Archy před a po: `Saved\Shots\Levels-24c-before`, `Levels-24c-after`, Low `Levels-24c-low`, později
+  v levelu (víc cestujících) `Saved\Shots\24c-after`. Low má bílé moře (odrazy jen obloha) už od kroku 23 - beze
+  změny. Replaye: UE pouští 161 replayů = 161 souborů `.ugr` na disku; 163 v `6_verification` je 161 replayů,
+  `keyboard` a `unit` logiky, žádná mezera. CTest logiky, `6_verification` (163) a 195 testů v UE zelené (161
+  replayů a 34 dalších). `levels.ps1 -Quick` 0 chyb v logu, fps medián 27 (nejpomalejší 16; před 26 / 15), Low 67 / 38.
+  Čeká na Jana: posoudit v okně (`play.ps1`), zda je svatozář dost jemná a den ne moc tmavý. Další: **krok 24b2**
+  (pak 24d).

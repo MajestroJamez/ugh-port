@@ -7,6 +7,7 @@
 #include "UghAssets.h"
 #include "UghBetween.h"
 #include "UghCopterModel.h"
+#include "UghFigureLook.h"
 #include "UghShapes.h"
 
 namespace
@@ -106,9 +107,12 @@ bool AUghCopters::LoadModels()
 		Parts.Stone = AddPart(this, StoneMesh, Parts.Sling, Hanging);
 		Parts.SeatedStone = AddPart(this, StoneMesh, Parts.Body, PassengerSeat);
 		Parts.SeatedStone->SetRelativeScale3D(FVector(SeatedStone));
+		UghFigureLook::Mark(Parts.Stone);
+		UghFigureLook::Mark(Parts.SeatedStone, false);
 		Parts.Pilot = Caveman.Add(this, FUghCaveman::PilotLook);
 		Parts.Pilot->AttachToComponent(Parts.Body, FAttachmentTransformRules::KeepRelativeTransform);
 		Parts.Pilot->SetRelativeLocationAndRotation(PilotSeat, FRotator(0, PilotYaw, 0));
+		UghFigureLook::Mark(Parts.Pilot, false);
 	}
 	return true;
 }
@@ -184,6 +188,7 @@ void AUghCopters::ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copt
 		Parts.Rider->AttachToComponent(Parts.Body, FAttachmentTransformRules::KeepRelativeTransform);
 		Parts.Rider->SetRelativeLocationAndRotation(UghCopterModel::PassengerSeat,
 			FRotator(0, UghCopterModel::PassengerYaw, 0));
+		UghFigureLook::Mark(Parts.Rider, false);
 		Parts.RiderLook = Copter.cargo_look;
 	}
 	if (Parts.Rider)

@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UghAssets.h"
+#include "UghFigureLook.h"
 #include "UghFigurePlace.h"
 #include "UghMaterials.h"
 #include "UghShapes.h"
@@ -121,6 +122,7 @@ bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const
 		if (!Slot.Rigged)
 		{
 			Slot.Rigged = RigOf(Action.Model)->Add(Owner);
+			UghFigureLook::Mark(Slot.Rigged);
 			if (Action.Model == EUghModel::Flyer && Wings)
 			{
 				Slot.Rigged->SetMaterialByName(WingSlot, Wings);
@@ -137,6 +139,7 @@ bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const
 		if (!Slot.Mesh)
 		{
 			Slot.Mesh = AddMesh(Owner);
+			UghFigureLook::Mark(Slot.Mesh);
 		}
 		Slot.Mesh->SetStaticMesh(Mesh);
 		Shown = Slot.Mesh;

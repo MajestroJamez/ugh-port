@@ -1,18 +1,22 @@
 // The water, the rain and the moods as automation tests of the editor: the water's surface is the logic's water level
 // while it rises (Ugh.Water.Level), the rain falls with the wind as the logic's raindrops do (Ugh.Rain.Wind), every
-// level has its mood (Ugh.Mood).
+// level has its mood (Ugh.Mood), the figures stand out of it (Ugh.Figures.Look).
 #if WITH_DEV_AUTOMATION_TESTS
 
+#include "Components/DirectionalLightComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Engine/WorldInitializationValues.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
+#include "UghCaveman.h"
+#include "UghFigureLook.h"
 #include "UghMood.h"
 #include "UghRain.h"
 #include "UghShapes.h"
 #include "UghSimulation.h"
+#include "UghStage.h"
 #include "UghWater.h"
 
 namespace
@@ -213,12 +217,78 @@ bool FUghMoodTest::RunTest(const FString& Parameters)
 		TestTrue(TEXT("a windy level is a storm"), UghMood::Of(Level, Level % 2 ? 1 : -1).Kind == FUghMood::EKind::Storm);
 		TestTrue(FString::Printf(TEXT("level %d: the %s readable (exposure)"), Level + 1, Mood.Name),
 			Mood.Exposure > -3 && Mood.Exposure < 3 && Mood.SunLux > 0);
+		TestTrue(FString::Printf(TEXT("level %d: the figures stand out of the %s (their light, their halo)"), Level + 1,
+			Mood.Name), Mood.FigureFill > 0.5f && Mood.Halo > 0 && Mood.Halo < 1);
 	}
 	for (const FUghMood::EKind Kind : { FUghMood::EKind::Day, FUghMood::EKind::Evening, FUghMood::EKind::Dusk,
 		FUghMood::EKind::Night })
 	{
 		TestTrue(FString::Printf(TEXT("a calm level of mood %d"), int32(Kind)), Calm.Contains(Kind));
 	}
+	const FUghMood& Storm = UghMood::Of(0, 1);
+	TestTrue(TEXT("the figures stand out of a storm"), Storm.FigureFill > 0.5f && Storm.Halo > 0 && Storm.Halo < 1);
+	return true;
+}
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghFigureLookTest, "Ugh.Figures.Look",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+/**
+ * The figures stand out (UghFigureLook): a person the game makes is lit by the figures' lights too and drawn into the
+ * custom depth for its halo (in a copter without it); the stage's lights besides the sun light the figures alone,
+ * without shadows.
+ */
+bool FUghFigureLookTest::RunTest(const FString& Parameters)
+{
+	FTestWorld Test;
+	auto Marked = [this](USceneComponent* Root, bool bHalo, const TCHAR* What)
+	{
+		TArray<USceneComponent*> Parts;
+		Root->GetChildrenComponents(true, Parts);
+		int32 Primitives = 0;
+		for (USceneComponent* Part : Parts)
+		{
+			if (const UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Part))
+			{
+				++Primitives;
+				TestTrue(FString::Printf(TEXT("%s: %s in the scene's and the figures' light"), What, *Part->GetName()),
+					Primitive->LightingChannels.bChannel0 && Primitive->LightingChannels.bChannel1);
+				TestEqual(FString::Printf(TEXT("%s: %s in the custom depth"), What, *Part->GetName()),
+					Primitive->bRenderCustomDepth, bHalo);
+			}
+		}
+		TestTrue(FString::Printf(TEXT("%s has parts"), What), Primitives > 0);
+	};
+	FUghCaveman Caveman;
+	if (Caveman.Load())
+	{
+		AActor* Owner = Test.Spawn<AActor>();
+		USceneComponent* Root = NewObject<USceneComponent>(Owner);
+		Owner->SetRootComponent(Root);
+		Root->RegisterComponent();
+		USceneComponent* Person = Caveman.Add(Owner, 1);
+		Marked(Person, true, TEXT("a passenger"));
+		UghFigureLook::Mark(Person, false);
+		Marked(Person, false, TEXT("a passenger in a copter"));
+	}
+	else
+	{
+		AddInfo(TEXT("no people (metahumans.ps1, fetch-assets.ps1): not checked"));
+	}
+	const AUghStage* Stage = Test.Spawn<AUghStage>();
+	TArray<UDirectionalLightComponent*> Lights;
+	Stage->GetComponents(Lights);
+	int32 Scene = 0, Figures = 0;
+	for (const UDirectionalLightComponent* Light : Lights)
+	{
+		const bool bFigures = !Light->LightingChannels.bChannel0;
+		Scene += !bFigures;
+		Figures += bFigures && Light->LightingChannels.bChannel1 && !Light->CastShadows
+			&& Light->IndirectLightingIntensity == 0;
+	}
+	TestEqual(TEXT("the sun lights the scene"), Scene, 1);
+	TestEqual(TEXT("the figures' lights (a fill and a rim) light the figures alone, without shadows"), Figures, 2);
 	return true;
 }
 

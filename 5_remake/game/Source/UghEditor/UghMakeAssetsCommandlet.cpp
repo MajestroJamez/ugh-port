@@ -111,7 +111,7 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 		{ UghMaterials::Flow, &MakeFlow }, { UghMaterials::Mist, &MakeMist },
 		{ UghMaterials::Flame, &MakeFlame }, { UghMaterials::Sparks, &MakeSparks }, { UghMaterials::Smoke, &MakeSmoke },
 		{ UghMaterials::Embers, &MakeEmbers }, { UghMaterials::Puff, &MakePuff },
-		{ UghMaterials::Membrane, &MakeMembrane },
+		{ UghMaterials::Membrane, &MakeMembrane }, { UghMaterials::FigureHalo, &MakeFigureHalo },
 		{ UghMaterials::Burst, &MakeBurst }, { UghMaterials::Bits, &MakeBits }, { UghMaterials::Glint, &MakeGlint } };
 	bool bAllMade = true;
 	for (const FRecipe& Recipe : Recipes)
