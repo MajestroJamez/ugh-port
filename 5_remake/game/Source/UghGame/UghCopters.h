@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "ugh_logic.h"
 #include "UghCaveman.h"
+#include "UghCopterModel.h"
 #include "UghRotorSpin.h"
 #include "UghCopters.generated.h"
 
@@ -12,8 +13,8 @@ class UInstancedStaticMeshComponent;
 class UStaticMeshComponent;
 
 /**
- * A copter's model: its parts, its pilot, its passenger in the cabin, the stone passenger in its sling or on the
- * passenger's seat.
+ * A copter's model: its parts (the drive's chain links instances of one mesh), its pilot, its passenger in the cabin,
+ * the stone passenger in its sling or on the passenger's seat.
  */
 USTRUCT()
 struct FUghCopterParts
@@ -22,7 +23,10 @@ struct FUghCopterParts
 
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Body;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Rotor;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Shaft;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Crank;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Drive;
+	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Chain;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Sling;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Stone;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> SeatedStone;
@@ -36,7 +40,8 @@ struct FUghCopterParts
 /**
  * The copters of the play in the slab of the play, between the views of two steps (UghBetween): the pedal copters of
  * Blender/copter.py in each player's colours, the rotor turning and the pilot sitting and pedalling as fast as the
- * rotor's sprites change (FUghRotorSpin), a passenger sitting behind him (a person of his look, FUghCaveman; the stone
+ * rotor's sprites change (FUghRotorSpin), his crank driving the rotor by the chain (FUghCopterChain), the layshaft
+ * and the crown wheel, a passenger sitting behind him (a person of his look, FUghCaveman; the stone
  * passenger smaller) or the stone passenger hanging in the sling below, swaying as the copter moves. Without the
  * imported models: clay, a box with a rotor that gets shorter and longer as its sprites change; its riders are clay
  * passengers of AUghFigures.
@@ -69,6 +74,8 @@ private:
 		TArray<FTransform>& OutRiders);
 
 	UPROPERTY() FUghCaveman Caveman;
+	FUghCopterChain Chain;
+	TArray<FTransform> ChainLinks;   // a frame's, kept
 	UPROPERTY() TArray<FUghCopterParts> Models;   // by player; none without the models
 	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> ClayBodies;   // by player
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> ClayRotors;

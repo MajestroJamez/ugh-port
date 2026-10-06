@@ -36,6 +36,7 @@ bool FUghShot::Configure()
 	bMenuShot = FParse::Param(CommandLine, TEXT("UghShotMenu"));
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
+	bLand = FParse::Param(CommandLine, TEXT("UghShotLand"));
 	bBubbles = FParse::Param(CommandLine, TEXT("UghShotBubbles"));
 	bCloseUp = FParse::Param(CommandLine, TEXT("UghShotCloseUp"));
 	FParse::Value(CommandLine, TEXT("-UghShotLook="), Look);
@@ -50,6 +51,10 @@ bool FUghShot::Configure()
 	if (CargoLook > 0)
 	{
 		Suffix += FString::Printf(TEXT("-%s%d"), bHanging ? TEXT("hanging") : TEXT("cargo"), CargoLook);
+	}
+	if (bLand)
+	{
+		Suffix += TEXT("-landed");
 	}
 	if (bBubbles)
 	{
@@ -279,7 +284,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	{
 		return EAction::None;
 	}
-	Hover(Mode, View);
+	Hover(Mode, View, DeltaSeconds);
 	PhaseTime += DeltaSeconds;
 	++Frames;
 	if (PhaseTime <= At)
@@ -427,12 +432,13 @@ FKey FUghShot::MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, con
 	return bOnTheWay ? FUghMenu::KeyOf(Wanted[Typed.Len()]) : EKeys::BackSpace;
 }
 
-void FUghShot::Hover(AUghGameMode& Mode, const ugh_logic_view& View)
+void FUghShot::Hover(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds)
 {
 	for (int32 Player = 0; Player < View.copter_count; ++Player)
 	{
 		const int32 Y = View.copters[Player].y;
-		HoverY[Player] = HoverY[Player] < 0 ? Y : HoverY[Player];
+		const double Down = bLand ? LandSpeed * UghShapes::Subpixels * Seconds : 0;
+		HoverY[Player] = HoverY[Player] < 0 ? Y : HoverY[Player] + Down;
 		const bool bPedal = Y > HoverY[Player];
 		if (bPedal != bPedalling[Player])
 		{

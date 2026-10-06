@@ -1383,3 +1383,18 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   stíny, bez bloků (vrtulník při snímku stoupá a klesá). CTest logiky, `6_verification` (163) a 193 testů v UE zelené.
   `levels.ps1 -Quick` a arch bez vad, 0 chyb v logu; fps medián 12 (nejpomalejší 8; krok 22: 21 / 11) - nejspíš
   zahřátý notebook po sérii běhů (neprůhledný materiál je levnější než maskovaný), A/B neměřeno. Další: **krok 24b**.
+- 2026-10-06: krok 24b hotový - vrtulník: šlapání a sezení (`docs/visual-concept.md`). Pilot sedí z profilu (natočený
+  o 70°, dřív 50°) na koženém sedátku s opěradlem na bambusových nohách (místo pařezu), klika s poloměrem 12 cm (dřív
+  8) a na straně ke kameře velké kolo s kostěnými paprsky a 18 zuby; řetěz z kostěných článků vede nahoru na pastorek
+  se 6 zuby na předlohové hřídeli pod střechou, její lucernové kolo točí korunové kolo na hřídeli rotoru (převod 3:1 =
+  `RotorTurnsPerPedal`, takže rotor, pastorek, řetěz, kolo, pedály a nohy jdou spolu). Cestující má vlastní židli
+  (sedák ze štípaných kmenů s koženým polštářem, opěradlo z kostěných žeber, područky s kly). Čísla v
+  `copter_layout.py` / `UghCopterModel.h` (kolo a pastorek odvozené: řetěz kolmo na osu kliky, hřídel míří na osu
+  rotoru); nové sítě `Shaft`, `Drive`, `ChainLink`, články jako instance posouvané každý snímek po dráze řetězu
+  (`FUghCopterChain`). Proutí dál neprůhledné (24a), tělo v ±45. Akce MetaHumanů a jeskynního muže znovu (větší
+  klika). Nový test `Ugh.Copter.Chain`, `Ugh.Copter.Model` kontroluje točící se díly po vrcholech v každém úhlu
+  a rozměry kol podle čísel řetězu. `shot.ps1 -Land` (autopilot nechá vrtulníky pomalu přistát; s `-At 8`). Snímky
+  před a po v `Saved\Shots\24b-before` a `24b-after` (let, přistání, zblízka, tým, kámen na židli). CTest logiky,
+  `6_verification` (163) a 192 testů v UE zelené. `levels.ps1 -Quick` a arch bez vad, 0 chyb v logu, fps medián 27
+  (nejpomalejší 18; po 24a 12 / 8 byl zahřátý notebook, A/B netřeba). Čeká na Jana: posoudit nový vrtulník v okně
+  (`play.ps1`). Další: **krok 24c**.

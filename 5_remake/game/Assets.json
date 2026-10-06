@@ -257,7 +257,7 @@
       "import": ["Models/FBX format/campfire_stones.fbx", "Models/FBX format/campfire_logs.fbx"]
     },
     {
-      "id": "copter", "kind": "generated", "use": "the pedal copters (body, rotor, crank, sling; both players' colours)",
+      "id": "copter", "kind": "generated", "use": "the pedal copters (body, rotor, shaft, crank, drive, chain link, sling; both players' colours)",
       "page": "Blender/copter.py", "license": "CC0-1.0", "author": "UGH remake (Blender/copter.py), textures palm_bark and rock_face_03 (Poly Haven)",
       "path": "generated/copter",
       "blender": { "script": "Blender/copter.py", "inputs": ["palm_bark", "rock_face_03"], "outputs": ["copter.glb"] },

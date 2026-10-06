@@ -2,13 +2,19 @@
 origin where the game turns it (copter_layout):
 
 - Body_1, Body_2 (the players' copters, leather dyed in their colours): a cage of bamboo poles lashed with rope on a
-  floor of logs, wicker at the back and the sides, two stumps with leather cushions as seats, the handlebar on a
-  post, leather banners at the top and the bottom of the front, tusks on the front corners. Origin: the bottom
-  middle of the body.
+  floor of logs, wicker at the back and the sides, the pilot's seat (a leather seat with a backrest on bamboo legs),
+  the passenger's chair (a seat of split logs with a leather cushion, a back of bone ribs, armrests ending in tusks),
+  the handlebar on the post that bears the crank, the hanger that bears the layshaft, leather banners at the top and
+  the bottom of the front, tusks on the front corners. Origin: the bottom middle of the body.
 - Rotor_1, Rotor_2: a stone hub with bone blades, a big leaf lashed on each (the second player's rotor bushier, as in
   the original). Origin: the hub, it turns about Z.
-- Crank: the axle with bone arms and stone pedals the pilot pedals. Origin: the middle of the axle, it turns about X;
-  the left pedal (+X) on top.
+- Shaft: the rotor's shaft down into the cage with the crown wheel the layshaft's pinion turns (copter_layout's
+  drive). Origin: the hub, it turns with the rotor.
+- Crank: the axle with bone arms and stone pedals the pilot pedals, and the chainring on it. Origin: the middle of
+  the axle, in the pilot's frame (the game turns it by PILOT_YAW); it turns about X, the left pedal (+X) on top.
+- Drive: the layshaft with the sprocket the chain turns and the lantern pinion. Origin: the sprocket's middle, in the
+  pilot's frame as the crank (the rotor's shaft towards -X); it turns about X, RATIO times as fast as the crank.
+- ChainLink: one link of the chain (bone), along Y; the game moves the links along the chain.
 - Sling: the rope that holds a hanging stone passenger below the body. Origin: the bottom middle of the body.
 
     blender -b --factory-startup --python-exit-code 1 --python copter.py -- <folder> <palm_bark> <rock_face_03>
@@ -112,8 +118,10 @@ def body(player):
     part.tube([(-HALF_X, 0, TOP + 0.05), (HALF_X, 0, TOP + 0.05)], POLE * 0.8, "bamboo", uv_length=0.36)
     part.tube([(0, 0, TOP + 0.04), (0, 0, layout.ROTOR_HUB[2] - 0.05)], 0.05, "wood")
     part.lash((0, 0, TOP + 0.05), (0, 0, 1), 0.05)
-    seats(part, leather)
-    banner(part, leather, TOP - 0.02, TOP - 0.2)   # under the top front beam
+    pilot_seat(part, leather)
+    passenger_chair(part, leather)
+    layshaft_hanger(part)
+    banner(part, leather, TOP - 0.02, TOP - 0.12)   # under the top front beam
     banner(part, leather, FLOOR + 0.04, FLOOR - 0.06)   # over the front log
     for side in (-1, 1):   # tusks on the front corners
         points = [(side * (HALF_X + 0.02 * t), -HALF_Y - 0.04 * t, TOP + 0.05 + 0.2 * t + 0.02 * math.sin(3 * t))
@@ -122,15 +130,38 @@ def body(player):
     return part
 
 
-def seats(part, leather):
-    for (x, y, z), radius in ((layout.PILOT_SEAT, 0.16), (layout.PASSENGER_SEAT, 0.15)):
-        part.tube([(x, y, FLOOR), (x, y, z - 0.05)], radius, "wood", sides=14)
-        part.blob((x, y, z - 0.03), (radius + 0.01, radius, 0.04), leather)
-    # the handlebar on a post at the crank's axle, in front of the pilot as he sits turned
-    def pilot(offset):
-        return Vector(layout.PILOT_SEAT) + Vector(layout.turned(offset, layout.PILOT_YAW))
-    axle = pilot(layout.PEDAL_AXLE)
-    left, right = (pilot((side * layout.GRIP[0], layout.GRIP[1], layout.GRIP[2])) for side in (1, -1))
+def frame_of(seat, yaw):
+    """A point of a seat's own frame (facing -Y) in the copter."""
+    return lambda offset: Vector(seat) + Vector(layout.turned(offset, yaw))
+
+
+def pilot_seat(part, leather):
+    """A leather seat on four bamboo legs with a slanting backrest, and the handlebar on the post that bears the crank;
+    an outer post bears the axle beyond the chainring."""
+    at = frame_of(layout.PILOT_SEAT, layout.PILOT_YAW)
+    floor = FLOOR - layout.PILOT_SEAT[2]
+    corners = [(x, y) for y in (-0.12, 0.16) for x in (-0.15, 0.15)]
+    for x, y in corners:
+        part.tube([at((x * 1.25, y + (0.04 if y > 0 else -0.04), floor)), at((x, y, -0.07))], 0.024, "bamboo",
+                  uv_length=0.22)
+        part.lash(at((x, y, -0.075)), (0, 0, 1), 0.024, turns=2)
+    for (x0, y0), (x1, y1) in ((corners[0], corners[1]), (corners[2], corners[3]), (corners[0], corners[2]),
+                               (corners[1], corners[3])):
+        part.tube([at((x0, y0, -0.07)), at((x1, y1, -0.07))], 0.02, "bamboo", uv_length=0.22)
+    part.blob(at((0, 0.02, -0.035)), (0.17, 0.16, 0.04), leather)   # the seat: leather stuffed with moss
+    tops = []
+    for x in (-0.14, 0.14):   # the backrest
+        top = at((x * 0.9, 0.25, 0.4))
+        part.tube([at((x, 0.16, -0.07)), top], 0.022, "bamboo", uv_length=0.22)
+        tops.append(top)
+    width = tops[1] - tops[0]
+    part.tube([tops[0] - width * 0.15, tops[1] + width * 0.15], 0.02, "bone", sides=8)
+    for end in (tops[0] - width * 0.17, tops[1] + width * 0.17):
+        part.blob(end, (0.026, 0.026, 0.026), "bone")
+    part.blob(at((0, 0.215, 0.2)), (0.125, 0.022, 0.15), leather)
+    # the handlebar on the post bearing the crank's axle, in front of the pilot
+    axle = at(layout.PEDAL_AXLE)
+    left, right = (at((side * layout.GRIP[0], layout.GRIP[1], layout.GRIP[2])) for side in (1, -1))
     across = Vector(layout.turned((1, 0, 0), layout.PILOT_YAW))
     top = Vector((axle.x, axle.y, left.z))
     part.tube([(axle.x, axle.y, FLOOR), top], 0.035, "bamboo", uv_length=0.22)
@@ -139,6 +170,41 @@ def seats(part, leather):
         part.blob(end, (0.035, 0.035, 0.035), "bone")
     part.lash(top, across, 0.026)
     part.lash(axle, (0, 0, 1), 0.035)
+    outer = at((layout.CHAINRING_SIDE + 0.06, layout.PEDAL_AXLE[1], layout.PEDAL_AXLE[2]))
+    part.tube([(outer.x, outer.y, FLOOR), outer + Vector((0, 0, 0.03))], 0.026, "bamboo", uv_length=0.22)
+    part.lash(outer, (0, 0, 1), 0.026, turns=2)
+
+
+def passenger_chair(part, leather):
+    """A chair of logs: a seat of split logs with a leather cushion, a back of bone ribs under a bamboo rail, armrests
+    of bamboo ending in tusks."""
+    at = frame_of(layout.PASSENGER_SEAT, layout.PASSENGER_YAW)
+    floor = FLOOR - layout.PASSENGER_SEAT[2]
+    for x in (-0.17, 0.17):
+        for y in (-0.13, 0.12):
+            part.tube([at((x, y, floor)), at((x, y, -0.06))], 0.034, "bamboo", uv_length=0.3)
+    for y in (-0.12, -0.04, 0.04, 0.12):   # the seat: split logs across
+        part.tube([at((-0.2, y, -0.065)), at((0.2, y, -0.065))], 0.035, "wood", sides=10)
+    part.blob(at((0, 0.0, -0.025)), (0.18, 0.15, 0.035), leather)
+    rail = []
+    for x in (-0.18, 0.18):   # the back's posts and the arms
+        top = at((x, 0.15, 0.5))
+        part.tube([at((x, 0.12, -0.06)), top], 0.03, "bamboo", uv_length=0.3)
+        rail.append(top)
+        part.tube([at((x * 1.12, 0.12, 0.18)), at((x * 1.15, -0.05, 0.19)), at((x * 1.12, -0.2, 0.2))], 0.022,
+                  "bamboo", uv_length=0.3)
+        part.tube([at((x * 1.12, -0.13, floor + 0.3)), at((x * 1.12, -0.14, 0.19))], 0.02, "bamboo", uv_length=0.3)
+        part.lash(at((x * 1.12, -0.14, 0.19)), (0, 0, 1), 0.02, turns=2)
+        tip = [at((x * 1.12 + x * 0.05 * t, -0.2 - 0.09 * t, 0.2 + 0.06 * t * t)) for t in (i / 5 for i in range(6))]
+        part.tube(tip, [0.026 - 0.02 * i / 5 for i in range(6)], "bone", sides=8)
+    width = rail[1] - rail[0]
+    part.tube([rail[0] - width * 0.04, rail[1] + width * 0.04], 0.03, "bamboo", uv_length=0.3)
+    for top in rail:
+        part.lash(top, width, 0.03, turns=2)
+    for index in range(4):   # the ribs, bowed backwards
+        x = -0.12 + 0.08 * index
+        part.tube([at((x, 0.12, -0.03)), at((x, 0.18, 0.2)), at((x, 0.16, 0.47))], [0.016, 0.02, 0.014], "bone",
+                  sides=8)
 
 
 def banner(part, leather, top, bottom):
@@ -201,15 +267,86 @@ def leaf(part, out, side, start, end, width, lift, spread, material):
                 loop[uv].uv = (coord[0] / 2, coord[1] / steps)
 
 
+def wheel(part, centre, radius, teeth, tooth, spokes, material="wood"):
+    """A wheel square to X at `centre`: a rim, spokes of bone from a stone hub, `teeth` pegs out of the rim up to
+    `tooth` beyond `radius` (where the chain's links run)."""
+    centre = Vector(centre)
+    rim = radius - 0.012
+
+    def on(r, angle):
+        return centre + Vector((0, r * math.cos(angle), r * math.sin(angle)))
+    part.tube([on(rim, 2 * math.pi * i / 48) for i in range(49)], 0.013, material, sides=8)
+    for i in range(spokes):
+        angle = 2 * math.pi * (i + 0.5) / spokes
+        part.tube([on(0.02, angle), on(rim, angle)], 0.009, "bone", sides=6)
+    part.blob(centre, (0.03, 0.035, 0.035), "stone", seed=7, bumps=0.15)
+    for i in range(teeth):
+        angle = 2 * math.pi * i / teeth
+        part.tube([on(rim - 0.005, angle), on(radius + tooth, angle)], [0.009, 0.006], "bone", sides=6)
+
+
 def crank():
     part = Part("Crank")
     spread, radius = layout.PEDAL_SPREAD, layout.PEDAL_RADIUS
-    part.tube([(-spread - 0.08, 0, 0), (spread + 0.08, 0, 0)], 0.02, "wood", sides=8)
-    for side, up in ((1, 1), (-1, -1)):
-        x = side * (spread + 0.065)
-        part.tube([(x, 0, -up * 0.025), (x, 0, up * (radius + 0.02))], [0.022, 0.018], "bone", sides=8)
-        part.tube([(x, 0, up * radius), (side * (spread - 0.05), 0, up * radius)], 0.01, "wood", sides=6)
-        part.blob((side * spread, 0, up * radius), (0.045, 0.04, 0.022), "stone", seed=3 + side, bumps=0.2)
+    side = layout.CHAINRING_SIDE
+    part.tube([(-spread - 0.08, 0, 0), (side + 0.08, 0, 0)], 0.02, "wood", sides=8)
+    for x_side, up in ((1, 1), (-1, -1)):
+        x = x_side * (spread + 0.065)
+        part.tube([(x, 0, -up * 0.03), (x, 0, up * (radius + 0.025))], [0.024, 0.019], "bone", sides=8)
+        part.tube([(x, 0, up * radius), (x_side * (spread - 0.06), 0, up * radius)], 0.011, "wood", sides=6)
+        part.blob((x_side * spread, 0, up * radius), (0.055, 0.05, 0.024), "stone", seed=3 + x_side, bumps=0.2)
+    wheel(part, (side, 0, 0), layout.CHAINRING_RADIUS, layout.CHAINRING_TEETH, 0.016, 6)
+    return part
+
+
+def drive():
+    """The layshaft (the rotor's shaft towards -X) with the sprocket at the origin and the lantern pinion: two discs
+    with pegs between them that the crown wheel's pegs mesh with."""
+    part = Part("Drive")
+    sprocket = layout.sprocket()
+    pinion = layout.CROWN_RADIUS - math.hypot(sprocket[0], sprocket[1])
+    part.tube([(pinion - 0.035, 0, 0), (0.05, 0, 0)], 0.016, "wood", sides=8)
+    wheel(part, (0, 0, 0), layout.SPROCKET_RADIUS, layout.CHAINRING_TEETH // layout.RATIO, 0.014, 3)
+    for x in (pinion - 0.024, pinion + 0.024):
+        part.blob((x, 0, 0), (0.008, layout.CROWN_RADIUS + 0.012, layout.CROWN_RADIUS + 0.012), "wood")
+    for i in range(layout.CROWN_PEGS):
+        angle = 2 * math.pi * (i + 0.5) / layout.CROWN_PEGS
+        y, z = layout.CROWN_RADIUS * math.cos(angle), layout.CROWN_RADIUS * math.sin(angle)
+        part.tube([(pinion - 0.024, y, z), (pinion + 0.024, y, z)], 0.009, "bone", sides=6)
+    return part
+
+
+def shaft():
+    """The rotor's shaft from the hub down to the crown wheel: a disc with pegs pointing down at CROWN_RADIUS to the
+    pinion's top."""
+    part = Part("Shaft")
+    crown = layout.LAYSHAFT_HEIGHT + layout.CROWN_RADIUS + 0.05 - layout.ROTOR_HUB[2]
+    part.tube([(0, 0, -0.04), (0, 0, crown - 0.015)], 0.028, "wood", sides=10)
+    part.blob((0, 0, crown), (layout.CROWN_RADIUS + 0.03, layout.CROWN_RADIUS + 0.03, 0.014), "wood")
+    for i in range(layout.CROWN_PEGS):
+        angle = 2 * math.pi * i / layout.CROWN_PEGS
+        x, y = layout.CROWN_RADIUS * math.cos(angle), layout.CROWN_RADIUS * math.sin(angle)
+        part.tube([(x, y, crown - 0.005), (x, y, crown - 0.055)], [0.01, 0.007], "bone", sides=6)
+    return part
+
+
+def layshaft_hanger(part):
+    """A bamboo hanger from the top front beam to the layshaft's end beyond the sprocket, lashed round it."""
+    across = Vector(layout.turned((1, 0, 0), layout.PILOT_YAW))
+    end = Vector(layout.sprocket()) + across * 0.035
+    top = Vector((end.x, -HALF_Y, TOP))
+    part.tube([top, end + Vector((0, 0, 0.03))], 0.022, "bamboo", uv_length=0.22)
+    part.lash(top, (1, 0, 0), POLE * 0.9, turns=2)
+    part.lash(end, across, 0.018, turns=2)
+
+
+def chain_link():
+    """A bone link along Y, its knuckles reaching the next links'."""
+    part = Part("ChainLink")
+    half = layout.CHAIN_PITCH * 0.42
+    part.tube([(0, -half, 0), (0, half, 0)], 0.011, "bone", sides=8)
+    for y in (-half, half):
+        part.blob((0, y, 0), (0.016, 0.014, 0.016), "bone")
     return part
 
 
@@ -233,7 +370,7 @@ def sling():
 def build():
     kit.clear_scene()
     materials = copter_materials.make(FOLDER, WOOD, STONE)
-    parts = [body(1), body(2), rotor(1), rotor(2), crank(), sling()]
+    parts = [body(1), body(2), rotor(1), rotor(2), shaft(), crank(), drive(), chain_link(), sling()]
     kit.export(os.path.join(FOLDER, "copter.glb"), [part.done(materials) for part in parts])
 
 

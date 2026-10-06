@@ -27,14 +27,25 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
 - **Cedule s čísly plošin** (dlaždice 85-90 kresby) jsou kartičky s původním spritem těsně za deskou: číslo cílové
   plošiny je herní informace (bez textur je ukáže kresba sama).
 - **Vrtulník** (krok 16): pravěký šlapací vrtulník podle spritu originálu - klec z bambusu svázaného provazem na
-  podlaze z kmenů, vzadu a po stranách proplétané proutí, dva pařezy s koženými polštáři, řídítka z kosti na kůlu,
-  klika s kostěnými rameny a kamennými pedály, kožené prapory nahoře a dole vpředu a kly na předních rozích; nahoře
+  podlaze z kmenů, vzadu a po stranách proplétané proutí, řídítka z kosti na kůlu, klika s kostěnými rameny
+  a kamennými pedály, kožené prapory nahoře a dole vpředu a kly na předních rozích; nahoře
   rotor z kostí s velkými listy přivázanými na kamenném náboji (druhý hráč keřovitější, jako v originálu). Tělo
   vyplňuje tělo vrtulníku logiky (`COPTER_BODY_*`, 22 x 20 px) a do hloubky zůstává v ±45 jednotkách, tedy za čelem
   skály (-60) i bublinami; rotor (poloměr 1,3 m) přesahuje tělo do stran jen o 2 px; do hloubky
   opisuje kruh, před čelem skály ale jen nad vzduchem těla (čelo stojí jen na pevných pixelech). Barvy týmu jsou barvy
   kůže: hráč 1 rezavě oranžová, hráč 2 tyrkysová. Rotor se točí plynule tak rychle, jak rychle se mění jeho sprity
   v logice (6 spritů na otáčku), klika 3x pomaleji; pilot šlape přesně s klikou (akce `pedal` držená v úhlu kliky).
+- **Šlapání a sezení** (krok 24b): na první pohled je vidět, že pilot šlape. Pilot sedí z profilu (natočený o 70°
+  doleva) na koženém sedátku s opěradlem na bambusových nohách, klika má poloměr 12 cm a na straně ke kameře velké
+  kolo s kostěnými paprsky a 18 zuby (poloměr 18 cm). Řetěz z kostěných článků vede z kola nahoru na pastorek se 6 zuby
+  na předlohové hřídeli pod střechou (visí na bambusovém závěsu z horního předního trámu), její lucernové kolo točí
+  korunové kolo s kolíky na hřídeli rotoru - převod 3:1 jako `FUghRotorSpin::RotorTurnsPerPedal`, takže rotor, hřídel,
+  pastorek, řetěz, kolo, pedály i nohy pilota jdou spolu. Čísla v `copter_layout.py` a `UghCopterModel.h`
+  (`Chainring`, `Sprocket` z nich odvozené: řetěz v rovině kolmé na osu kliky, předlohová hřídel míří na osu rotoru);
+  články jsou instance jedné sítě (`ChainLink`), hra je každý snímek posune po dráze řetězu (`FUghCopterChain`: dvě
+  tečny a dva oblouky, jeden zub kola na článek, po otáčce kliky stejně). Cestující má vlastní židli: sedák ze
+  štípaných kmenů s koženým polštářem, opěradlo z kostěných žeber pod bambusovou příčkou, područky končící kly.
+  Proutí zůstává neprůhledné (krok 24a). Přistání: `shot.ps1 -Land -At 8` (autopilot nechá vrtulníky pomalu klesat).
 - **Pilot a cestující** (krok 16): jeskynní muž - zavalitý, kreslený, asi 1,15 m (sprity originálu jsou 10 px vysoké
   a 16 px široké), velká hlava s obočím, nosem a očima, kůže z leopardí kožešiny přes rameno, vlasy krátké nebo
   dlouhé a vousy jako části, které hra ukáže podle vzhledu, barvy vlasů, kožešiny a kůže podle vzhledu. Riggovaný
@@ -345,7 +356,7 @@ oba sedí a jsou stejně velcí jako při chůzi, kámen vezený v kabině sedí
   vyplní výšku spritu cestujícího (14 px; při chůzi je o ~5 % nižší), stejně velká stojí, čeká, plave i sedí ve
   vrtulníku (dřív 115 cm v kabině a natažená podle výšky spritu na zemi). Jeskynní muž z Blenderu se škáluje na stejnou
   výšku (jeho pedály a řídítka v `caveman_actions.py` přepočtené).
-- **Sezení v kabině** (`copter_layout.py`, `UghCopterModel.h`): pilot sedí natočený o 50° doleva, cestující o 50°
+- **Sezení v kabině** (`copter_layout.py`, `UghCopterModel.h`): pilot sedí natočený o 50° (od kroku 24b 70°) doleva, cestující o 50°
   doprava, takže kamera zepředu vidí stehna a sezení z boku; klika s pedály a řídítka jsou v rámci pilota (natočené
   s ním, `PedalAxle`, `Grip`), pedály dál a níž pro delší nohy, sedadlo pilota o 8 cm dozadu, aby řídítka zůstala
   v ±45. Akce MetaHumanů jsou udělané pro jejich tělo (`retarget_source_asset`): engine dřív pánev „přetargetoval“ ze

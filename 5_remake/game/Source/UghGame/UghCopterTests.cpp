@@ -1,10 +1,11 @@
-// The copters as automation tests of the editor: the rotor's spin (Ugh.Copter.Spin), the imported models
-// (Ugh.Copter.Model).
+// The copters as automation tests of the editor: the rotor's spin (Ugh.Copter.Spin), the drive's chain
+// (Ugh.Copter.Chain), the imported models (Ugh.Copter.Model).
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Misc/AutomationTest.h"
+#include "StaticMeshAttributes.h"
 #include "UghAssets.h"
 #include "UghCaveman.h"
 #include "UghCopterModel.h"
@@ -30,6 +31,36 @@ namespace
 			}
 			Spin.Update(Sprite, FrameSeconds);
 		}
+	}
+
+	/**
+	 * The box of the copter's part `Name` (its vertices, not its own box turned) as it turns about X (`Turning`: at
+	 * every 15 degrees) and then `Transform` places it.
+	 */
+	FBox PartBox(const TCHAR* Name, const FTransform& Transform, bool bTurning)
+	{
+		FBox Box(ForceInit);
+		UStaticMesh* Mesh = UghAssets::Mesh(UghAssets::Copter, Name);
+#if WITH_EDITOR
+		const FMeshDescription* Description = Mesh ? Mesh->GetMeshDescription(0) : nullptr;
+#else
+		const FMeshDescription* Description = nullptr;
+#endif
+		if (!Description)
+		{
+			return Mesh ? Mesh->GetBoundingBox().TransformBy(Transform) : Box;
+		}
+		const FStaticMeshConstAttributes Attributes(*Description);
+		const TVertexAttributesConstRef<FVector3f> Positions = Attributes.GetVertexPositions();
+		for (int32 Step = 0; Step < (bTurning ? 24 : 1); ++Step)
+		{
+			const FTransform Turned = FTransform(FQuat(FVector::XAxisVector, UE_TWO_PI * Step / 24)) * Transform;
+			for (const FVertexID Vertex : Description->Vertices().GetElementIDs())
+			{
+				Box += Turned.TransformPosition(FVector(Positions[Vertex]));
+			}
+		}
+		return Box;
 	}
 
 	/** The body's box (cm, around the copter's origin) of UGH_LOGIC_COPTER_BODY_*. */
@@ -64,6 +95,53 @@ bool FUghRotorSpinTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghCopterChainTest, "Ugh.Copter.Chain",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUghCopterChainTest::RunTest(const FString& Parameters)
+{
+	using namespace UghCopterModel;
+	TestEqual(TEXT("the rotor turns as many times for a turn of the crank as the chainring has the sprocket's teeth"),
+		double(Ratio), FUghRotorSpin::RotorTurnsPerPedal);
+	TestTrue(TEXT("the chain runs square to the crank's axle"),
+		FMath::Abs(FVector::DotProduct(Sprocket - Chainring, PilotAcross)) < 0.01);
+	TestTrue(TEXT("the layshaft points at the rotor's axis"),
+		FMath::Abs(FVector::CrossProduct(FVector(Sprocket.X, Sprocket.Y, 0), PilotAcross).Size()) < 0.01 &&
+		FVector2D(Sprocket).Size() > CrownRadius + 3);
+	const FUghCopterChain Chain;
+	TArray<FTransform> Links, Later;
+	Chain.Place(0, Links);
+	TestEqual(TEXT("a link a tooth at most"), Links.Num(), FMath::CeilToInt32(Chain.GetLength() / ChainPitch));
+	const FBox Wanted = BodyBox().ExpandBy(FVector(0, -2, 0));
+	for (int32 Link = 0; Link < Links.Num(); ++Link)
+	{
+		const FVector At = Links[Link].GetLocation();
+		const FVector Next = Links[(Link + 1) % Links.Num()].GetLocation();
+		TestTrue(FString::Printf(TEXT("link %d %s in the body, the next close"), Link, *At.ToCompactString()),
+			Wanted.IsInside(At) && FVector::Dist(At, Next) <= ChainPitch + 0.01);
+		const double ToChainring = FVector::Dist(At, Chainring), ToSprocket = FVector::Dist(At, Sprocket);
+		TestTrue(FString::Printf(TEXT("link %d on the chain's way"), Link), ToChainring > ChainringRadius - 0.01 &&
+			ToSprocket > SprocketRadius - 0.01);
+		const FVector Along = Links[Link].GetRotation().GetAxisY();
+		TestTrue(FString::Printf(TEXT("link %d along the chain"), Link),
+			FMath::Abs(FVector::DotProduct(Along, (Next - At).GetSafeNormal())) > 0.8);
+	}
+	// it moves with the chainring's teeth, the top of the chainring going forward, and is the same after a turn
+	Chain.Place(0.01, Later);
+	int32 Lowest = 0;
+	for (int32 Link = 1; Link < Links.Num(); ++Link)
+	{
+		Lowest = Links[Link].GetLocation().Z < Links[Lowest].GetLocation().Z ? Link : Lowest;
+	}
+	const FVector Moved = Later[Lowest].GetLocation() - Links[Lowest].GetLocation();
+	TestTrue(FString::Printf(TEXT("under the chainring it goes back as fast as its teeth (%s)"),
+		*Moved.ToCompactString()), FMath::IsNearlyEqual(FVector::DotProduct(Moved, -PilotForward),
+			UE_TWO_PI * ChainringRadius * 0.01, 0.05));
+	Chain.Place(1, Later);
+	TestTrue(TEXT("the same after a turn of the crank"), Later[0].GetLocation().Equals(Links[0].GetLocation(), 0.01));
+	return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghCopterModelTest, "Ugh.Copter.Model",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
@@ -93,6 +171,29 @@ bool FUghCopterModelTest::RunTest(const FString& Parameters)
 		TestTrue(FString::Printf(TEXT("%s at the top of the body %s"), Name, *Box.ToString()),
 			Box.Min.Z > Wanted.Max.Z * 0.8 && Box.Max.Z < Wanted.Max.Z + 5);
 	}
+	// the drive's parts in the body, the model's wheels as big as the chain's way round them, the crown wheel's pegs
+	// down to the pinion's top
+	const TPair<const TCHAR*, FTransform> Turning[] = {
+		{ Shaft, FTransform(RotorHub) }, { Crank, FTransform(PilotTurn, CrankAxle) },
+		{ Drive, FTransform(PilotTurn, Sprocket) } };
+	for (const TPair<const TCHAR*, FTransform>& Part : Turning)
+	{
+		// the shaft turns about Z, round as it is
+		const FBox Box = PartBox(Part.Key, Part.Value, Part.Key != Shaft);
+		TestTrue(FString::Printf(TEXT("%s %s inside the body as it turns"), Part.Key, *Box.ToString()),
+			Box.IsValid && Wanted.ExpandBy(FVector(1, 0.5, 1)).IsInside(Box));
+	}
+	const FBox CrankBox = UghAssets::Mesh(UghAssets::Copter, Crank)->GetBoundingBox();
+	TestTrue(FString::Printf(TEXT("the chainring %s"), *CrankBox.ToString()),
+		FMath::IsNearlyEqual(CrankBox.Max.Z, ChainringRadius + 1.6, 1.0) && CrankBox.Max.X > ChainringSide);
+	const FBox DriveBox = UghAssets::Mesh(UghAssets::Copter, Drive)->GetBoundingBox();
+	TestTrue(FString::Printf(TEXT("the pinion %s meshes with the crown"), *DriveBox.ToString()),
+		FMath::IsNearlyEqual(DriveBox.Max.Z, CrownRadius + 1.2, 1.0) &&
+		FMath::IsNearlyEqual(DriveBox.Min.X, CrownRadius - FVector2D(Sprocket).Size() - 3.5, 1.0));
+	const FBox ShaftBox = UghAssets::Mesh(UghAssets::Copter, Shaft)->GetBoundingBox().ShiftBy(RotorHub);
+	TestTrue(FString::Printf(TEXT("the crown wheel %s"), *ShaftBox.ToString()),
+		FMath::IsNearlyEqual(ShaftBox.Min.Z, LayshaftHeight + CrownRadius, 1.5) &&
+		FMath::IsNearlyEqual(ShaftBox.Max.X, CrownRadius + 3, 1.0));
 	// the stone passenger is as big as its sprite (16 x 11 px) and stands on its origin
 	const FBox Stone = UghAssets::Stone()->GetBoundingBox();
 	TestTrue(FString::Printf(TEXT("the stone passenger %s"), *Stone.ToString()),

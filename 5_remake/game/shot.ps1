@@ -4,9 +4,10 @@
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\shot.ps1 -Level 12 -Team
 # -Level: from 1 in the order of the mode (one player 1 .. 69, -Team 1 .. 81); -Commands: console commands before the
 # play, separated by commas (e.g. "r.Shadow.Virtual.Enable 0"); -Cargo <look>: the copters shown with a passenger of
-# the logic's cargo look in the cabin (1 .. 4: 4 the stone, smaller), -Hanging below instead, -Bubbles: every passenger
+# the logic's cargo look in the cabin (1 .. 4: 4 the stone, smaller), -Hanging below instead, -Land: the copters come
+# down slowly instead of hovering until they stand on the ground below (give it -At 8), -Bubbles: every passenger
 # with a speech bubble (each the next of the data's), -CloseUp: framing the copters (the name of the shot ends in
-# -cargo<look> / -hanging<look>, -bubbles, -closeup), -Look campfire|torch: framing the first campfire (torch) of the
+# -cargo<look> / -hanging<look>, -landed, -bubbles, -closeup), -Look campfire|torch: framing the first campfire (torch) of the
 # level (the name ends in -campfire / -torch), -Frame <left>,<top>,<width>,<height>: framing that part of the screen in
 # pixels (a look at the figures; with -CloseUp from the first copter's corner: a look into its cabin, with -Look from
 # the middle of the campfire or torch; the name ends in -frame<left>_<top>), -Intro <seconds>: the flight to the stone
@@ -20,6 +21,7 @@
 # FUghProfile); with -Screens scores or -Score and without -Profile a sample one with high scores
 # (Saved\Shots\profile-sample.json). The shots show the screen (the menu, the HUD) too. All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
+    [switch]$Land,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
     [string]$EffectAge = '', [switch]$End, [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '',
     [int]$TimeoutSeconds = 300)
@@ -30,6 +32,7 @@ $mode = if ($Team) { 'team' } else { '1p' }
 $folder = Join-Path $PSScriptRoot 'Saved\Shots'
 $suffix = ''
 if ($Cargo -gt 0) { $suffix += '-{0}{1}' -f $(if ($Hanging) { 'hanging' } else { 'cargo' }), $Cargo }
+if ($Land) { $suffix += '-landed' }
 if ($Bubbles) { $suffix += '-bubbles' }
 if ($CloseUp) { $suffix += '-closeup' }
 if ($Look) {
@@ -103,6 +106,7 @@ $arguments = "`"$Project`" -game `"-UghShot=$folder`" -UghShotLevels=${mode}:$Le
 if ($Commands) { $arguments += " `"-ExecCmds=$Commands`"" }
 if ($Cargo -gt 0) { $arguments += " -UghShotCargo=$Cargo" }
 if ($Hanging) { $arguments += ' -UghShotHanging' }
+if ($Land) { $arguments += ' -UghShotLand' }
 if ($Bubbles) { $arguments += ' -UghShotBubbles' }
 if ($CloseUp) { $arguments += ' -UghShotCloseUp' }
 if ($Look) { $arguments += " -UghShotLook=$Look" }

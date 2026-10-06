@@ -66,6 +66,9 @@ bool AUghCopters::LoadModels()
 {
 	using namespace UghCopterModel;
 	UStaticMesh* CrankMesh = UghAssets::Mesh(UghAssets::Copter, Crank);
+	UStaticMesh* ShaftMesh = UghAssets::Mesh(UghAssets::Copter, Shaft);
+	UStaticMesh* DriveMesh = UghAssets::Mesh(UghAssets::Copter, Drive);
+	UStaticMesh* LinkMesh = UghAssets::Mesh(UghAssets::Copter, ChainLink);
 	UStaticMesh* SlingMesh = UghAssets::Mesh(UghAssets::Copter, Sling);
 	UStaticMesh* StoneMesh = UghAssets::Stone();
 	TArray<UStaticMesh*> BodyMeshes, RotorMeshes;
@@ -74,7 +77,8 @@ bool AUghCopters::LoadModels()
 		BodyMeshes.Add(UghAssets::Mesh(UghAssets::Copter, Bodies[Player]));
 		RotorMeshes.Add(UghAssets::Mesh(UghAssets::Copter, Rotors[Player]));
 	}
-	if (!Caveman.Load() || !CrankMesh || !SlingMesh || !StoneMesh || BodyMeshes.Contains(nullptr) ||
+	if (!Caveman.Load() || !CrankMesh || !ShaftMesh || !DriveMesh || !LinkMesh || !SlingMesh || !StoneMesh ||
+		BodyMeshes.Contains(nullptr) ||
 		RotorMeshes.Contains(nullptr))
 	{
 		UE_LOG(LogTemp, Display, TEXT("UGH the copters are clay (their models are not imported)"));
@@ -85,7 +89,19 @@ bool AUghCopters::LoadModels()
 		FUghCopterParts& Parts = Models.AddDefaulted_GetRef();
 		Parts.Body = AddPart(this, BodyMeshes[Player], RootComponent, FVector::ZeroVector);
 		Parts.Rotor = AddPart(this, RotorMeshes[Player], Parts.Body, RotorHub);
+		Parts.Shaft = AddPart(this, ShaftMesh, Parts.Rotor, FVector::ZeroVector);
 		Parts.Crank = AddPart(this, CrankMesh, Parts.Body, CrankAxle);
+		Parts.Drive = AddPart(this, DriveMesh, Parts.Body, Sprocket);
+		Parts.Chain = NewObject<UInstancedStaticMeshComponent>(this);
+		Parts.Chain->SetStaticMesh(LinkMesh);
+		Parts.Chain->SetMobility(EComponentMobility::Movable);
+		Parts.Chain->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Parts.Chain->SetupAttachment(Parts.Body);
+		Parts.Chain->SetVisibility(false);
+		Parts.Chain->RegisterComponent();
+		AddInstanceComponent(Parts.Chain);
+		Chain.Place(0, ChainLinks);
+		Parts.Chain->AddInstances(ChainLinks, false);
 		Parts.Sling = AddPart(this, SlingMesh, Parts.Body, FVector::ZeroVector);
 		Parts.Stone = AddPart(this, StoneMesh, Parts.Sling, Hanging);
 		Parts.SeatedStone = AddPart(this, StoneMesh, Parts.Body, PassengerSeat);
@@ -126,11 +142,16 @@ void AUghCopters::ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From
 	Parts.Body->SetWorldLocation(UghShapes::ToWorld(At.X + CopterMiddle, At.Y + UghShapes::CopterBodyHeight, 0));
 	Parts.Spin.Update(To.rotor_sprite, Seconds);
 	Parts.Rotor->SetRelativeRotation(FRotator(0, 360 * Parts.Spin.RotorTurn(), 0));
+	// the crank, the chain and the sprocket on the layshaft (Ratio times the crank's turns: the rotor's)
 	const double Crank = UghCopterModel::CrankDirection * UE_TWO_PI * Parts.Spin.PedalTurn();
-	const FQuat Across(FRotator(0, UghCopterModel::PilotYaw, 0));
-	Parts.Crank->SetRelativeRotation(Across * FQuat(FVector::XAxisVector, Crank));
+	const double Layshaft = UghCopterModel::CrankDirection * UE_TWO_PI * Parts.Spin.RotorTurn();
+	Parts.Crank->SetRelativeRotation(UghCopterModel::PilotTurn * FQuat(FVector::XAxisVector, Crank));
+	Parts.Drive->SetRelativeRotation(UghCopterModel::PilotTurn * FQuat(FVector::XAxisVector, Layshaft));
+	Chain.Place(Parts.Spin.PedalTurn(), ChainLinks);
+	Parts.Chain->BatchUpdateInstancesTransforms(0, ChainLinks, false, true);
 	Caveman.Hold(Parts.Pilot, EUghCaveAction::Pedal, Parts.Spin.PedalTurn());
-	for (USceneComponent* Part : TArray<USceneComponent*>{ Parts.Body, Parts.Rotor, Parts.Crank, Parts.Pilot })
+	for (USceneComponent* Part : TArray<USceneComponent*>{ Parts.Body, Parts.Rotor, Parts.Shaft, Parts.Crank,
+		Parts.Drive, Parts.Chain, Parts.Pilot })
 	{
 		Part->SetVisibility(true, Part == Parts.Pilot);
 	}
@@ -177,8 +198,8 @@ void AUghCopters::ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copt
 
 void AUghCopters::HideModel(FUghCopterParts& Parts)
 {
-	const TArray<USceneComponent*> All = { Parts.Body, Parts.Rotor, Parts.Crank, Parts.Sling, Parts.Stone,
-		Parts.SeatedStone, Parts.Pilot, Parts.Rider };
+	const TArray<USceneComponent*> All = { Parts.Body, Parts.Rotor, Parts.Shaft, Parts.Crank, Parts.Drive,
+		Parts.Chain, Parts.Sling, Parts.Stone, Parts.SeatedStone, Parts.Pilot, Parts.Rider };
 	for (USceneComponent* Part : All)
 	{
 		if (Part)
