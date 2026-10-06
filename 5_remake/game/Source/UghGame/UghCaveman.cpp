@@ -1,5 +1,6 @@
 #include "UghCaveman.h"
 
+#include "Algo/Count.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "GameFramework/Actor.h"
@@ -102,7 +103,68 @@ bool FUghCaveman::Load()
 
 USceneComponent* FUghCaveman::Add(AActor* Owner, int32 Look) const
 {
-	const int32 Index = FMath::Clamp(Look, 0, UE_ARRAY_COUNT(CaveLooks) - 1);
+	const int32 Index = LookOf(Look);
+	for (int32 I = 0; I < Spares.Num(); ++I)
+	{
+		USceneComponent* Spare = Spares[I].Get();
+		if (Spare && Spare->GetOwner() == Owner && Spare->ComponentHasTag(LookTag(Index)))
+		{
+			Spares.RemoveAtSwap(I);
+			SetTicking(Spare, true);
+			return Spare;
+		}
+	}
+	return Make(Owner, Index);
+}
+
+void FUghCaveman::Release(USceneComponent* Person) const
+{
+	Person->SetVisibility(false, true);
+	SetTicking(Person, false);
+	Spares.Add(Person);
+}
+
+void FUghCaveman::Stock(AActor* Owner, int32 PerLook) const
+{
+	Spares.RemoveAll([](const TWeakObjectPtr<USceneComponent>& Spare) { return !Spare.IsValid(); });
+	for (int32 Look = 1; IsPassenger(Look); ++Look)
+	{
+		const int32 Have = Algo::CountIf(Spares, [Owner, Look](const TWeakObjectPtr<USceneComponent>& Spare)
+		{
+			return Spare->GetOwner() == Owner && Spare->ComponentHasTag(LookTag(Look));
+		});
+		for (int32 Made = Have; Made < PerLook; ++Made)
+		{
+			USceneComponent* Person = Make(Owner, Look);
+			SetTicking(Person, false);
+			Spares.Add(Person);
+		}
+	}
+}
+
+int32 FUghCaveman::LookOf(int32 Look)
+{
+	return FMath::Clamp(Look, 0, UE_ARRAY_COUNT(CaveLooks) - 1);
+}
+
+FName FUghCaveman::LookTag(int32 Look)
+{
+	return FName(TEXT("UghLook"), Look + 1);
+}
+
+void FUghCaveman::SetTicking(USceneComponent* Person, bool bTicking)
+{
+	TArray<USceneComponent*> Parts;
+	Person->GetChildrenComponents(true, Parts);
+	for (USceneComponent* Part : Parts)
+	{
+		Part->SetComponentTickEnabled(bTicking);
+	}
+}
+
+USceneComponent* FUghCaveman::Make(AActor* Owner, int32 Index) const
+{
+	const double Started = FPlatformTime::Seconds();
 	USceneComponent* Person = NewObject<USceneComponent>(Owner);
 	Person->SetMobility(EComponentMobility::Movable);
 	Person->SetupAttachment(Owner->GetRootComponent());
@@ -120,19 +182,11 @@ USceneComponent* FUghCaveman::Add(AActor* Owner, int32 Look) const
 		Dress(Model, CaveLooks[Index]);
 	}
 	UghFigureLook::Mark(Person);
+	Person->ComponentTags.Add(LookTag(Index));
 	Person->SetVisibility(false, true);
+	const double Took = (FPlatformTime::Seconds() - Started) * 1000;
+	UE_CLOG(Took > 5, LogTemp, Display, TEXT("UGH person of look %d made in %.0f ms"), Index, Took);
 	return Person;
-}
-
-void FUghCaveman::Remove(USceneComponent* Person)
-{
-	TArray<USceneComponent*> Parts;
-	Person->GetChildrenComponents(true, Parts);
-	for (USceneComponent* Part : Parts)
-	{
-		Part->DestroyComponent();
-	}
-	Person->DestroyComponent();
 }
 
 TPair<USkeletalMeshComponent*, const FUghRig*> FUghCaveman::ModelOf(USceneComponent* Person) const

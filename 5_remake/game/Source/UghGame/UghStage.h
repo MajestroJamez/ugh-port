@@ -65,6 +65,8 @@ protected:
 private:
 	/** The plants of the Electric Dreams sample sway in the wind: harder in a storm, along `Wind` (-1, 1; 0 calm). */
 	void SetFoliageWind(int32 Wind);
+	/** The figures' halo drawn or not, by ugh.Halo (the quality preset). */
+	void ShowHalo();
 
 	UPROPERTY() TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY() TObjectPtr<UDirectionalLightComponent> Sun;

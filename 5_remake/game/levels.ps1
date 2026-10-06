@@ -101,6 +101,14 @@ foreach ($sheetName in $expected.Keys) {
 $rates = @(Select-String -Path $log -Pattern 'UGH shot: level_id .* (\d+) fps' | ForEach-Object { [int]$_.Matches[0].Groups[1].Value } | Sort-Object)
 if ($rates.Count -gt 0) {
     $summary = 'median {0}, slowest {1}, fastest {2} ({3} levels)' -f $rates[[int][math]::Floor($rates.Count / 2)], $rates[0], $rates[-1], $rates.Count
+    # the frame times (FUghShot::LogFrames): the levels' 1 % low (median, worst), the hitches of the whole levels
+    $frames = @(Select-String -Path $log -Pattern 'UGH shot frames: .* 1% low ([\d.]+) fps, .* slowest ([\d.]+) ms, (\d+) hitches' | ForEach-Object { $g = $_.Matches[0].Groups; [pscustomobject]@{ Low = [double]$g[1].Value; Slowest = [double]$g[2].Value; Hitches = [int]$g[3].Value } })
+    if ($frames.Count -gt 0) {
+        $lows = @($frames | ForEach-Object { $_.Low } | Sort-Object)
+        $worst = ($frames | Measure-Object -Property Slowest -Maximum).Maximum
+        $hitches = ($frames | Measure-Object -Property Hitches -Sum).Sum
+        $summary += '; 1% low median {0:N0}, worst {1:N0}; {2} hitches over 50 ms in the levels, slowest frame {3:N0} ms' -f $lows[[int][math]::Floor($lows.Count / 2)], $lows[0], $hitches, $worst
+    }
     Write-Host "fps: $summary"
     [IO.File]::WriteAllText((Join-Path $folder 'fps.txt'), $summary)
 }

@@ -54,12 +54,17 @@ class AUghCopters : public AActor
 public:
 	AUghCopters();
 
+	/** Spare riders of each passenger's look made ahead (two copters may carry the same look). */
+	static constexpr int32 RiderSpares = 2;
+
 	/**
 	 * Shows the copters between `Previous` and `Current` (Alpha 0 .. 1), `Seconds` after the last frame; none outside
 	 * the play. Without the models, the riders go to `OutClayRiders` (boxes of the clay passengers).
 	 */
 	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
 		TArray<FTransform>& OutClayRiders);
+	/** Makes spare riders ahead (while a level is built in the black): none is made in the play (FUghCaveman). */
+	void Stock();
 
 protected:
 	virtual void BeginPlay() override;

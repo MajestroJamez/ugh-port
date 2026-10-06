@@ -6,7 +6,7 @@ a modely z Fabu/Sketchfabu nejsou naše a nikam se nenahrávají.
 
 ## Nejrychlejší cesta: hotový zip z notebooku
 
-1. Na notebooku je po kroku 23 `5_remake\game\Packaged\UghGame-Windows.zip` (3,3 GB, bez `.pdb`). Přenes ho domů
+1. Na notebooku je po kroku 24f `5_remake\game\Packaged\UghGame-Windows.zip` (3,4 GB, bez `.pdb`). Přenes ho domů
    na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
 2. Spusť `UghGame.exe`. Při prvním startu bez profilu hra sama vybere kvalitu podle grafiky: na RTX (DLSS) **Epic +
    DLSS**, na integrované grafice Low, jinak High (v logu `UGH recommended quality ...`). Volba se uloží do
@@ -18,6 +18,22 @@ a modely z Fabu/Sketchfabu nejsou naše a nikam se nenahrávají.
 
 PSO cache je v balíčku (nahraná na Radeonu, ale je to popis pipeline, ne binárka ovladače - NVIDIA si ji při prvním
 startu předkompiluje), takže první průlet nemá trhat.
+
+## Hraní na notebooku (Radeon 890M)
+
+```
+powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\play.ps1
+```
+
+- `play.ps1` teď spouští **zabalenou hru** (`Packaged\Windows\UghGame.exe`: uvařený obsah a PSO cache, hladká od
+  prvního snímku); řekne, když je balíček starší než poslední build (pak `pso.ps1`). Profil (nastavení, klávesy,
+  skóre) je pořád `5_remake\game\Saved\UghProfile.json`, log `Saved\Logs\UghPlay.log`.
+- `play.ps1 -Editor` je dřívější hra v editoru: necookovaný obsah, shadery se kompilují za běhu - hryže a je
+  pomalejší, jen na rychlé vyzkoušení změny bez balení. Proto se dřív hra „nehratelně hryzala“.
+- Alt+Enter (celá obrazovka) dřív přepnul grafiku potichu na Epic (engine znovu použil své uživatelské nastavení);
+  opraveno v kroku 24f.
+- Low drží 60 fps dynamickým rozlišením (33-50 % obrazovky, zahřátý notebook kreslí hrubší, ne pomaleji), Medium
+  45 fps (42-59 %). High a Epic mají pevné rozlišení a vzhled beze změny.
 
 ## Sestavení doma od nuly
 
@@ -56,12 +72,14 @@ a Medium s `-logPSO`, z nahrávky udělá PSO cache a zabalí znovu (asi 1 h). J
 ## Měření
 
 - `perf.ps1` - fps zabalené hry bez okna pro Low/Medium/High/Epic (rychlá sada levelů, 1920x1080), tabulka
-  `Saved\Shots\perf.txt`. Bez okna nejede frame generation ani DLSS-G, je to čisté fps renderu.
+  `Saved\Shots\perf.txt`: medián, nejpomalejší a nejrychlejší level, 1 % low (fps nejpomalejšího procenta snímků)
+  a hitche nad 50 ms. Bez okna nejede frame generation ani DLSS-G, je to čisté fps renderu. Porovnávat jen stejně
+  zahřátý notebook (zahřátý je asi o třetinu pomalejší).
 - `levels.ps1 -Package` - všech 150 levelů ze zabalené hry s archy snímků (asi půl hodiny).
 
-## Co čeká na tvoje posouzení (kroky 13-23)
+## Co čeká na tvoje posouzení (kroky 13-24)
 
-Všechno v okně (`play.ps1` v editoru nebo `UghGame.exe` z balíčku):
+Všechno v okně (`play.ps1`, tj. zabalená hra, nebo `UghGame.exe` ze zipu):
 
 1. **Zvuk** (13): poslech menu, levelu s letcem a foukačem, prohry, hlasitosti (PgUp/PgDn).
 2. **Vrtulník a postavy** (16, 17, 19b): vrtulník v pohybu, chůze, mávání, plavání; listy a vlasy MetaHumanů - stačí
@@ -83,3 +101,6 @@ Všechno v okně (`play.ps1` v editoru nebo `UghGame.exe` z balíčku):
     vypadají Low a Medium.
 13. **Vydání** (23): spustit zip na RTX 5060 Ti, ověřit automatickou volbu Epic + DLSS, frame generation 2x-4x,
     plynulost prvního letu (PSO cache).
+14. **Výkon na notebooku** (24f): zahrát `play.ps1` na Low - je to plynulé? Vzhled Low: bez tmavé svatozáře kolem
+    postav, moře bez odrazů enginu (dřív bílé), rozlišení se samo snižuje, když notebook nestíhá. Medium: ohně bez
+    stínů.

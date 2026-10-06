@@ -2,12 +2,17 @@
 // keys bound in the menu and flying the logic, the high scores.
 #if WITH_DEV_AUTOMATION_TESTS
 
+#include "Engine/Engine.h"
+#include "GameFramework/GameUserSettings.h"
 #include "HAL/FileManager.h"
+#include "HAL/IConsoleManager.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Scalability.h"
 #include "UghControls.h"
 #include "UghControlsMenu.h"
+#include "UghGraphics.h"
 #include "UghLogicRecorder.h"
 #include "UghProfile.h"
 #include "UghSettingsMenu.h"
@@ -243,6 +248,51 @@ bool FUghHighScoresTest::RunTest(const FString& Parameters)
 	FUghProfile Loaded;
 	TestTrue(TEXT("kept in the profile"), Saved.Save(Path, Error) && Loaded.Load(Path, Error) && Loaded.Scores == Scores);
 	IFileManager::Get().DeleteDirectory(*FPaths::AutomationTransientDir(), false, true);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghQualityTest, "Ugh.Settings.Quality",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+/**
+ * A quality preset stays when the engine applies its user settings again (Alt+Enter toggling the full screen does:
+ * a game at low went on at epic): the scalability groups and the preset's variables (low: half resolution under FSR,
+ * dynamic resolution, no halo, no fire shadows).
+ */
+bool FUghQualityTest::RunTest(const FString& Parameters)
+{
+	UGameUserSettings* User = GEngine ? GEngine->GetGameUserSettings() : nullptr;
+	if (!TestNotNull(TEXT("the engine's user settings"), User))
+	{
+		return false;
+	}
+	const Scalability::FQualityLevels Before = Scalability::GetQualityLevels();
+	auto Variable = [](const TCHAR* Name)
+	{
+		IConsoleVariable* Found = IConsoleManager::Get().FindConsoleVariable(Name);
+		return Found ? Found->GetString() : FString();
+	};
+	for (int32 Quality = 0; Quality < FUghSettings::QualityLevels; ++Quality)
+	{
+		UghGraphics::ApplyQuality(Quality, nullptr);
+		User->ApplyNonResolutionSettings();   // what Alt+Enter does
+		const Scalability::FQualityLevels Levels = Scalability::GetQualityLevels();
+		const FString What = FUghSettings::QualityName(Quality);
+		TestEqual(What + TEXT(": the effects' scalability kept"), Levels.EffectsQuality, Quality);
+		TestEqual(What + TEXT(": the shadows' scalability kept"), Levels.ShadowQuality, FMath::Max(Quality, 1));
+		TestEqual(What + TEXT(": the global illumination's scalability kept"), Levels.GlobalIlluminationQuality, Quality);
+		for (const UghGraphics::FVariable& Each : UghGraphics::Variables())
+		{
+			// (r.ScreenPercentage: FSR sets it by code from its own mode)
+			if (IConsoleManager::Get().FindConsoleVariable(Each.Name) && FCString::Strcmp(Each.Name, TEXT("r.ScreenPercentage")))
+			{
+				TestEqual(What + TEXT(": ") + Each.Name, FCString::Atof(*Variable(Each.Name)),
+					FCString::Atof(Each.Values[Quality]), 0.01f);
+			}
+		}
+	}
+	UghGraphics::ApplyQuality(FUghSettings::QualityLevels - 1, nullptr);
+	Scalability::SetQualityLevels(Before);
 	return true;
 }
 

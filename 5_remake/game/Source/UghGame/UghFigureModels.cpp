@@ -180,7 +180,7 @@ USceneComponent* FUghFigureModels::PersonOf(AActor* Owner, FUghFigureSlot& Slot,
 {
 	if (Slot.Person && Slot.Look != Look)
 	{
-		FUghCaveman::Remove(Slot.Person);
+		Caveman.Release(Slot.Person);
 		Slot.Person = nullptr;
 	}
 	if (!Slot.Person)
@@ -255,4 +255,9 @@ void FUghFigureModels::Turn(FUghFigureSlot& Slot, const FUghFigureAction& Action
 		const bool bFalling = FCString::Strcmp(Action.Action, TEXT("fall")) == 0;
 		Slot.Spin = bFalling ? Slot.Spin + (Velocity < 0 ? -1 : 1) * TumbleTurns * UE_TWO_PI * Seconds : 0;
 	}
+}
+
+void FUghFigureModels::Stock(AActor* Owner) const
+{
+	Caveman.Stock(Owner, SparePeople);
 }

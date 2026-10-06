@@ -162,3 +162,8 @@ void AUghFigures::Clear()
 		Card->SetVisibility(false);
 	}
 }
+
+void AUghFigures::Stock()
+{
+	Models.Stock(this);
+}

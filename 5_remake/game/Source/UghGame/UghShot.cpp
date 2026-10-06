@@ -1,5 +1,8 @@
 #include "UghShot.h"
 
+#include "Algo/Count.h"
+#include "Algo/MaxElement.h"
+#include "Engine/Engine.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
@@ -34,6 +37,7 @@ bool FUghShot::Configure()
 	}
 	Folder = FPaths::ConvertRelativePathToFull(Folder.IsEmpty() ? FPaths::ProjectSavedDir() / TEXT("Shots") : Folder);
 	FParse::Value(CommandLine, TEXT("-UghShotAt="), At);
+	FParse::Value(CommandLine, TEXT("-UghShotExec="), Exec, false);
 	bMenuShot = FParse::Param(CommandLine, TEXT("UghShotMenu"));
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
@@ -214,6 +218,16 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	}
 	const FTarget& Target = Targets[Next];
 	TargetTime += DeltaSeconds;
+	// the frames of the level once something of it is seen (the flight faded in, or the play; not while it is built
+	// and settles in the black)
+	const bool bSeen = (Mode.GetIntro().IsFlying() && Mode.GetIntro().Shown() > 0) ||
+		Mode.GetSimulation().GetCurrent().phase == UGH_LOGIC_PHASE_PLAY;
+	if (!Mode.IsInMenu() && !bShotTaken && bSeen)
+	{
+		LevelFrames.Add(DeltaSeconds);
+		UE_CLOG(DeltaSeconds > HitchSeconds, LogTemp, Display,
+			TEXT("UGH shot: a hitch of %.0f ms (frame %d of the level)"), DeltaSeconds * 1000, LevelFrames.Num());
+	}
 	if (Mode.IsInMenu() && bShotTaken && bEndWanted)
 	{
 		// given up for the card of the game's end
@@ -229,6 +243,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	{
 		// given up after the shot: the next one
 		++Next;
+		LevelFrames.Reset();
 		TargetTime = 0;
 		bShotTaken = false;
 		Phase = -1;
@@ -262,6 +277,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		Phase = View.phase;
 		PhaseTime = 0;
 		Frames = 0;
+		HoverFrames.Reset();
 		ReleasePedals(Mode);
 		HoverY[0] = HoverY[1] = -1;
 		AtEdge = -1;
@@ -305,12 +321,26 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
+	HoverFrames.Add(DeltaSeconds);
 	if (Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
 	}
 	UE_LOG(LogTemp, Display, TEXT("UGH shot: level_id %d, copter %d,%d, %.0f fps"), View.level_id, View.copters[0].x,
 		View.copters[0].y, Frames / PhaseTime);
+	LogFrames(View);
+	if (!Exec.IsEmpty() && GEngine)
+	{
+		// the next of the list's items (a comparison of settings on the same level in a row), its commands
+		TArray<FString> Items, Commands;
+		Exec.ParseIntoArray(Items, TEXT(";"));
+		Items[Next % Items.Num()].ParseIntoArray(Commands, TEXT(","));
+		for (const FString& Command : Commands)
+		{
+			UE_LOG(LogTemp, Display, TEXT("UGH shot exec: %s"), *Command.TrimStartAndEnd());
+			GEngine->Exec(Mode.GetWorld(), *Command.TrimStartAndEnd());
+		}
+	}
 	bShotTaken = true;
 	if (bEndShot)
 	{
@@ -319,6 +349,23 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		return EAction::None;
 	}
 	return TakeShot(NameOf(Target));
+}
+
+void FUghShot::LogFrames(const ugh_logic_view& View) const
+{
+	if (HoverFrames.IsEmpty() || LevelFrames.IsEmpty())
+	{
+		return;
+	}
+	TArray<float> Hover = HoverFrames;
+	Hover.Sort();
+	const float Median = Hover[Hover.Num() / 2];
+	const float Low = Hover[FMath::Clamp(FMath::CeilToInt(Hover.Num() * 0.99) - 1, 0, Hover.Num() - 1)];
+	const TArrayView<const float> Level = LevelFrames;
+	const int32 Hitches = Algo::CountIf(Level, [](float Seconds) { return Seconds > HitchSeconds; });
+	UE_LOG(LogTemp, Display, TEXT("UGH shot frames: level_id %d, median %.1f ms, 1%% low %.1f fps, slowest %.1f ms;")
+		TEXT(" level %d frames, slowest %.1f ms, %d hitches"), View.level_id, Median * 1000, Low > 0 ? 1 / Low : 0.f,
+		Hover.Last() * 1000, Level.Num(), Level.IsEmpty() ? 0.f : *Algo::MaxElement(Level) * 1000, Hitches);
 }
 
 FString FUghShot::NameOf(const FTarget& Target) const

@@ -55,6 +55,8 @@ struct FUghFigureModels
 	inline static const FName WingSlot = TEXT("membrane");
 	inline static const TCHAR* WingColor = TEXT("pterodactyl_hide_color");
 	inline static const TCHAR* WingNormal = TEXT("pterodactyl_hide_normal");
+	/** Spare people of each passenger's look made ahead: a level shows a few of a look at once. */
+	static constexpr int32 SparePeople = 3;
 
 	/** Finds the imported models (a missing one is logged). */
 	void Load();
@@ -70,6 +72,8 @@ struct FUghFigureModels
 		const FIntPoint& Size, double Velocity, double Seconds);
 	/** Ends a frame: hides what was not shown in it. */
 	void End();
+	/** Makes spare people of every passenger's look on `Owner`, SparePeople of each (FUghCaveman::Stock). */
+	void Stock(AActor* Owner) const;
 	/** The skeletal mesh of a rigged model (the flyer, the walker, the blower, the tree); none when not imported. */
 	USkeletalMesh* SkeletalMeshOf(EUghModel Model) const;
 

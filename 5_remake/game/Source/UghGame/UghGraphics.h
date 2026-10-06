@@ -11,11 +11,14 @@ class UWorld;
  * scalability groups at that level (low with the shadows of medium: the diorama lives by the sun's; without Lumen's
  * global illumination) and the heavy features of the diorama at the preset's values (Variables): the volumetric fog
  * (the shafts of sunlight into the cave), the sea's reflections and refraction, Lumen's reflections, the sun's shadow
- * maps, the translucency's lighting volume (rain, flames), the upscaler's resolution, the fires' shadows and their
- * lights licking about, the people's hair (the grooms' level of detail: cards, or helmets). Epic is the diorama as it
- * was made (the values tuned on the Radeon 890M); low is for 60 fps there (README of the game: Performance). The
- * cvars go in as a game setting: above the scalability groups, below the console (a shot's -ExecCmds). The resolution
- * and the window mode go through the engine's game user settings, only once set in the menu.
+ * maps, the translucency's lighting volume (rain, flames), the upscaler's resolution (FSR's own mode too; low and
+ * medium dynamic, kept within 60 and 45 fps), the fires' shadows and their lights licking about, Nanite's detail, the
+ * figures' halo, the people's hair (the grooms' level of detail: cards, or helmets). Epic is the diorama as it was
+ * made (the values tuned on the Radeon 890M); low is for 60 fps there on a warm notebook (README of the game:
+ * Performance). The cvars go in as a game setting: above the scalability groups, below the console (a shot's
+ * -ExecCmds); the scalability groups go into the engine's user settings too, which it applies again on its own
+ * (Alt+Enter). The resolution and the window mode go through the engine's game user settings, only once set in the
+ * menu.
  */
 namespace UghGraphics
 {

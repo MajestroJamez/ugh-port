@@ -44,6 +44,22 @@
 
 namespace
 {
+	/**
+	 * A part of a frame that takes longer than this is logged ("UGH slow: <part> <ms>"): the cause of a hitch, seen in
+	 * any log (levels.ps1, a player's).
+	 */
+	constexpr double SlowPartSeconds = 0.02;
+	struct FSlowPart
+	{
+		const TCHAR* Name;
+		double Started = FPlatformTime::Seconds();
+		~FSlowPart()
+		{
+			const double Took = FPlatformTime::Seconds() - Started;
+			UE_CLOG(Took > SlowPartSeconds, LogTemp, Display, TEXT("UGH slow: %s %.0f ms"), Name, Took * 1000);
+		}
+	};
+
 	FString AssetsDir()
 	{
 		FString Dir;
@@ -139,7 +155,11 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	if (!bInMenu)
 	{
-		Simulation.Advance(DeltaSeconds);
+		{
+			FSlowPart Part{ TEXT("logic") };
+			Simulation.Advance(DeltaSeconds);
+		}
+		FSlowPart Part{ TEXT("events") };
 		PlayEvents();
 		NoteLevel(Simulation.GetCurrent());
 		if (Simulation.IsOver())
@@ -147,7 +167,10 @@ void AUghGameMode::Tick(float DeltaSeconds)
 			OpenMenu();
 		}
 	}
-	ShowFrame(DeltaSeconds);
+	{
+		FSlowPart Part{ TEXT("frame") };
+		ShowFrame(DeltaSeconds);
+	}
 	if (bShooting)
 	{
 		switch (Shot.Tick(*this, DeltaSeconds))
@@ -177,6 +200,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	if (Current.level_id != BackgroundLevel || Current.level != MoodLevel)
 	{
+		FSlowPart Part{ TEXT("level built") };
 		BuildLevel(Current);
 		CameraLog.Note(TEXT("level built"));
 	}
@@ -203,15 +227,27 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Campfire->SetWater(Surface);
 	Torches->SetWater(Surface);
 	TArray<FTransform> ClayRiders;
-	Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
-	Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
+	{
+		FSlowPart Part{ TEXT("copters") };
+		Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
+	}
+	{
+		FSlowPart Part{ TEXT("figures") };
+		Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
+	}
 	if (bShooting)
 	{
 		HoldShotEffect(Current);
 	}
 	// the plants at the stone's edges bend away from the copters, a bump orders leaves
-	Fringe->Show(Previous, Current, Simulation.Alpha(), Seconds, Effects->GetPlayer());
-	Effects->Show(Previous, Current, Simulation.Alpha(), Seconds);
+	{
+		FSlowPart Part{ TEXT("fringe") };
+		Fringe->Show(Previous, Current, Simulation.Alpha(), Seconds, Effects->GetPlayer());
+	}
+	{
+		FSlowPart Part{ TEXT("effects") };
+		Effects->Show(Previous, Current, Simulation.Alpha(), Seconds);
+	}
 
 	// the fade of the play; black around it (the HUD shows the captions) but after a level's flight; all of the stone
 	// behind the menu
@@ -320,6 +356,13 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	Water->SetWeather(View.wind, Stage->SunDirection(), Mood.Caustics);
 	Water->SetSky(UghAssets::Texture(Mood.Sky), Mood.SkySeen);
 	Rain->Build(View.level_id < 0 ? nullptr : Logic, View.level_id, View.wind);
+	if (View.level_id >= 0 && !bInMenu)
+	{
+		// the people the play may show, made now in the black (a MetaHuman made in the play was a hitch)
+		FSlowPart Part{ TEXT("people stocked") };
+		Figures->Stock();
+		Copters->Stock();
+	}
 }
 
 bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event, FInputDeviceId Device)

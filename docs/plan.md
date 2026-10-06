@@ -1500,3 +1500,29 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   (163) a 196 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, fps medián 19 (nejpomalejší 11; před krokem ve stejném
   sezení 14 / 10 - zahřátý notebook, bez poklesu), Low 64 / 37 (po 24c 67 / 38). Čeká na Jana: posoudit kámen
   v okně (`play.ps1`) - tón (`UghCliff.hlsl` 0,055 a modrý nádech), žilky, sílu vrstev kamene v moři. Další: **krok 24f**.
+- 2026-10-06: krok 24f hotový - optimalizace pro Radeon 890M (README hry: Performance, `docs/doma.md`). Proč Jan hryzal:
+  `play.ps1` pouštěl hru v editoru (necookovaný obsah, shadery se kompilují za hraní, log: 50 PSO hitchů hned na
+  startu) a po Alt+Enter engine znovu použil své uživatelské nastavení = škálovatelnost Epic (Lumen, stíny Epic) při
+  1920x1200 na celé obrazovce. Opraveno: `UghGraphics::ApplyQuality` píše předvolbu i do `UGameUserSettings`
+  (test `Ugh.Settings.Quality`: předvolba přežije `ApplyNonResolutionSettings`), `play.ps1` hraje zabalenou hru
+  (`-Editor` jako dřív, stejný profil `Saved\UghProfile.json`). Další nález: Low kreslil na 67 % jako Epic - plugin FSR
+  nastavuje `r.ScreenPercentage` kódem ze svého režimu nad předvolbou; teď `r.FidelityFX.FSR.QualityMode` podle
+  předvolby (Low 50 %, Medium 59 %). Profil (CSV profiler, `ProfileGPU` na AMD neúplný, A/B cvarů v jednom procesu
+  na stejném levelu: nové `-UghShotExec` po levelech střídá příkazy - mezi procesy šum zahřívání ±15 %): snímek je
+  hlavně GPU podle rozlišení (render thread ~15 ms), žádná jedna věc nedominuje - stíny ohňů Medium 15 %, svatozář
+  4 %, Nanite 4 %, VSM/RT/obloha/mlha/odrazy moře v šumu, occlusion queries vypnuté jen rozhodí tempo snímků. Low:
+  dynamické rozlišení 33-50 % (60 fps), bez svatozáře (`ugh.Halo`), moře bez odrazů enginu, Nanite 2 px; Medium:
+  dynamické 42-59 % (45 fps), ohně bez stínů; High/Epic beze změny. Bílé moře na Low: `r.Water.SingleLayer.Reflection 2`
+  = jen reflection captures a sky light, bez Lumenu tedy plné nebe na hladině; teď 0 (otevřené moře zrcadlí oblohu
+  samo v `UghWater.hlsl`), barva jako Epic. Hitche: zastaralá PSO cache (`pso.ps1` znovu, 8 běhů, Low celá rychlá
+  sada, lety a výbuchy; 580 stabilních PSO), MetaHumani vyráběni až při objevení cestujícího (20-50 ms; teď zásoba
+  `FUghCaveman::Stock` v černé při stavbě levelu, vrácení `Release`), GPU dohání nový level na začátku letu (let
+  v černé čeká na krátké snímky, `FUghIntro` SettleLimit). Měření: `levels.ps1`/`perf.ps1` píšou 1 % low a hitche
+  (`FUghShot::LogFrames`), hitch i pomalá část snímku v logu (`UGH shot: a hitch`, `UGH slow: <část>`), `perf.ps1`
+  2 s na level (bouře team-54 vrtulníky do 2,5 s odfoukne). `perf.ps1` zahřátý notebook před / po (medián, 1 % low,
+  nejpomalejší level): Low 40/25/25 -> 59/38/41, Medium 25/16/17 -> 46/27/33, High 20/10/13 -> 24/15/14, Epic
+  12/8/6 -> 14/11/11. Low má medián snímku 16-17 ms, zbývá 1-3 hitche 50-160 ms v některých levelech (render
+  strana, nejspíš první použití). Balíček s novou PSO cache, zip `Packaged\UghGame-Windows.zip` 3,36 GB.
+  `levels.ps1 -Package -Quick` 0 chyb, `levels.ps1 -Quick` (Epic) arch beze změny proti 24e. CTest logiky,
+  `6_verification` (163) a 197 testů v UE zelené. Čeká na Jana: zahrát `play.ps1` na Low (plynulost, vzhled Low bez
+  svatozáře, moře). Další: hotovo (krok 24).

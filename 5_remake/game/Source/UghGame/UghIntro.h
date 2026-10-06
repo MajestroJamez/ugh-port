@@ -40,14 +40,15 @@ public:
 	static constexpr float StartFieldOfView = 72, MaxRoll = 10;
 	/**
 	 * Its first frames hold still in black: the renderer settles on the new view (its reflections, its light build up
-	 * over frames), then it flies.
+	 * over frames, the new level's geometry is uploaded and its pipelines compiled: frames much longer than the
+	 * others), then it flies: after SettleFrames frames no longer than MaxStep, at most SettleLimit frames.
 	 */
-	static constexpr int32 SettleFrames = 8;
+	static constexpr int32 SettleFrames = 8, SettleLimit = 30;
 
 	/** From the start. */
 	void Start();
 	/**
-	 * Flies on `Seconds` (at most MaxStep, but hurried; nothing the first SettleFrames frames); it ends at its end.
+	 * Flies on `Seconds` (at most MaxStep, but hurried; nothing while it settles); it ends at its end.
 	 */
 	void Advance(double Seconds);
 	/**
@@ -76,6 +77,7 @@ private:
 	/** The rest of the way after the key: the coefficients of its quintic (bHurryAlong), else of its clock (Hurry). */
 	double Hurry0 = 0, Hurry1 = 0, Hurry2 = 0, Hurry3 = 0, Hurry4 = 0, Hurry5 = 0;
 	bool bHurryAlong = false;
-	int32 Settled = 0;   // frames held still so far
+	int32 Settled = 0;   // short frames held still so far
+	int32 Held = 0;      // frames held still so far
 	bool bFlying = false;
 };

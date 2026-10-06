@@ -11,6 +11,7 @@
 #include "Engine/GameViewportClient.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "HAL/IConsoleManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
@@ -24,6 +25,12 @@
 
 namespace
 {
+	/**
+	 * The figures' halo at all (1) or not (0): a post-process of 24 taps a pixel of the screen, after the upscaler. The
+	 * quality presets set it (UghGraphics: none at low, the figures' lights alone set them apart there).
+	 */
+	TAutoConsoleVariable<int32> CVarHalo(TEXT("ugh.Halo"), 1,
+		TEXT("Whether the figures have their soft dark halo (a post-process; 0: none, the pass not drawn)."));
 	/** A fog low over the water: how fast it thins upwards; the mist of a storm, much faster. */
 	constexpr float FogFalloff = 0.3f, MistFalloff = 2.5f;
 	/**
@@ -197,6 +204,17 @@ void AUghStage::SetCamera(const FUghCameraPose& Pose)
 	Look->Settings.MotionBlurAmount = FMath::Max(Pose.MotionBlur, 0.f);
 	Look->Settings.bOverride_AutoExposureBias = Pose.ExposureBias != 0;
 	Look->Settings.AutoExposureBias = Pose.ExposureBias;
+	ShowHalo();
+}
+
+void AUghStage::ShowHalo()
+{
+	const bool bShown = CVarHalo.GetValueOnGameThread() != 0;
+	if (Halo && Look->Settings.WeightedBlendables.Array.Num() > 0 &&
+		(Look->Settings.WeightedBlendables.Array[0].Weight > 0) != bShown)
+	{
+		Look->Settings.WeightedBlendables.Array[0].Weight = bShown ? 1 : 0;   // (none: the pass is not drawn)
+	}
 }
 
 void AUghStage::SetMood(const FUghMood& Mood, int32 Wind)

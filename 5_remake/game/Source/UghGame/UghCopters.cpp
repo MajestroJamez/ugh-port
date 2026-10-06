@@ -182,7 +182,7 @@ void AUghCopters::ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copt
 	{
 		if (Parts.Rider)
 		{
-			FUghCaveman::Remove(Parts.Rider);
+			Caveman.Release(Parts.Rider);
 		}
 		Parts.Rider = Caveman.Add(this, Copter.cargo_look);
 		Parts.Rider->AttachToComponent(Parts.Body, FAttachmentTransformRules::KeepRelativeTransform);
@@ -244,4 +244,9 @@ void AUghCopters::ShowClay(const ugh_logic_view& Previous, const ugh_logic_view&
 		UghShapes::SetShapes(ClayBodies[Player], Body);
 	}
 	UghShapes::SetShapes(ClayRotors, RotorBoxes);
+}
+
+void AUghCopters::Stock()
+{
+	Caveman.Stock(this, RiderSpares);
 }

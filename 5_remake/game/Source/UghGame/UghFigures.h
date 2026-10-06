@@ -37,6 +37,8 @@ public:
 		const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& ClayRiders);
 	/** Learns what the speech bubbles among the `SpriteCount` sprites of `Logic`'s data show (UghBubbles::Look). */
 	void LoadBubbles(const ugh_logic* Logic, int32 SpriteCount);
+	/** Makes spare passengers ahead (while a level is built in the black): none is made in the play (FUghCaveman). */
+	void Stock();
 
 protected:
 	virtual void BeginPlay() override;

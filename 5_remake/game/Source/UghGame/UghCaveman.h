@@ -40,19 +40,35 @@ struct FUghCaveman
 	bool Load();
 	bool IsLoaded() const { return Caveman.IsLoaded() || !MetaHumans.IsEmpty(); }
 
-	/** A new person of `Look` on `Owner`, hidden (show it with its children), without collision (Load first). */
+	/**
+	 * A person of `Look` on `Owner`, hidden (show it with its children), without collision (Load first): a spare one of
+	 * that look (Stock, Release), else made now (a MetaHuman takes 20-50 ms: a hitch in the play).
+	 */
 	USceneComponent* Add(AActor* Owner, int32 Look) const;
-	/** Removes `Person` (Add's) with its parts. */
-	static void Remove(USceneComponent* Person);
+	/** Gives `Person` (Add's) back: hidden and still, a spare for the next of its look. */
+	void Release(USceneComponent* Person) const;
+	/**
+	 * Makes spare people of every passenger's look on `Owner` until there are `PerLook` of each (while a level is built
+	 * in the black, so that none has to be made in the play).
+	 */
+	void Stock(AActor* Owner, int32 PerLook) const;
 	/** `Person` does `Action` over and over. */
 	void Play(USceneComponent* Person, EUghCaveAction Action) const;
 	/** `Person` holds `Action` at `Fraction` (0 .. 1) of its loop (the pedalling follows the crank). */
 	void Hold(USceneComponent* Person, EUghCaveAction Action, double Fraction) const;
 
 private:
+	/** A new person of `Index` (a look within the people's) on `Owner`, hidden. */
+	USceneComponent* Make(AActor* Owner, int32 Index) const;
+	static int32 LookOf(int32 Look);
+	/** The tag of a person of `Look`. */
+	static FName LookTag(int32 Look);
+	/** A spare person's parts do not tick (its pose, its hair). */
+	static void SetTicking(USceneComponent* Person, bool bTicking);
 	/** The model of `Person` and its rig. */
 	TPair<USkeletalMeshComponent*, const FUghRig*> ModelOf(USceneComponent* Person) const;
 
 	UPROPERTY() FUghRig Caveman;                    // its actions by EUghCaveAction; none with the MetaHumans
 	UPROPERTY() TArray<FUghMetaHuman> MetaHumans;   // by look; none without all of them
+	mutable TArray<TWeakObjectPtr<USceneComponent>> Spares;   // hidden, of their owners (which keep them)
 };

@@ -203,14 +203,22 @@ void FUghIntro::Start()
 	Time = 0;
 	Faded = 0;
 	Settled = 0;
+	Held = 0;
 	bFlying = true;
 	bHurried = false;
 }
 
 void FUghIntro::Advance(double Seconds)
 {
-	if (!bFlying || Settled++ < SettleFrames)
+	if (!bFlying)
 	{
+		return;
+	}
+	if (Settled < SettleFrames)
+	{
+		// (a long frame - the GPU catching up on the new level - does not count, but it waits no longer than the limit)
+		++Held;
+		Settled += Seconds <= MaxStep || Held >= SettleLimit ? 1 : 0;
 		return;
 	}
 	Faded += Seconds;

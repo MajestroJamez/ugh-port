@@ -11,8 +11,8 @@ namespace
 		TEXT("Flight to the stone"), TEXT("Controls"), TEXT("Back") };
 
 	const TCHAR* const QualityHints[FUghSettings::QualityLevels] = {
-		TEXT("The fastest (half resolution): the sky's light, the sun's shadows only, no volumetric fog, plainest hair"),
-		TEXT("Lumen's simpler light, softer shadows, steady firelight, coarse volumetric fog, the people's plainest hair"),
+		TEXT("The fastest (a third to half resolution, kept at 60 fps): the sky's light, the sun's shadows, plain hair"),
+		TEXT("Lumen's simpler light, softer shadows, firelight without shadows, coarse volumetric fog, plain hair"),
 		TEXT("Lumen's light, sharp shadows, steady firelight, volumetric fog, hair cards, the sea's reflections at half"),
 		TEXT("Everything at its best: the diorama as it was made, the firelight's shadows dancing"),
 	};

@@ -6,7 +6,7 @@
 # -Presets: some of Low, Medium, High, Epic (separated by commas); -Resolution <width>x<height>; -At: seconds of each
 # level measured (longer: the copters of a storm level may crash first). The shots go to
 # Saved\Shots\Levels-perf-<preset>, the table to Saved\Shots\perf.txt.
-param([string]$Presets = 'Low,Medium,High,Epic', [string]$Resolution = '1920x1080', [double]$At = 2.5)
+param([string]$Presets = 'Low,Medium,High,Epic', [string]$Resolution = '1920x1080', [double]$At = 2)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')

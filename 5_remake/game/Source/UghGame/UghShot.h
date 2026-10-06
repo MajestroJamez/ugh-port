@@ -43,6 +43,13 @@ struct FUghGameEnd;
  * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores
  * separated by commas) first opens each screen of the menu by its keys and saves <folder>/<screen>.png. The game's
  * profile is the defaults (FUghProfile) or the one of -UghProfile, never saved.
+ *
+ * The frame times (perf.ps1): with the frame rate of a level's hover it logs its frames' median, 1 % low (the frame
+ * rate of the slowest 1 % of its frames) and slowest frame, and the slowest frame and the hitches (frames over
+ * HitchSeconds) of the whole level once it is seen (the flight, the hover; not while it is built and settles in the
+ * black). -UghShotExec=<commands> runs console commands when the shot is taken (e.g. ProfileGPU: the GPU's passes of
+ * that frame in the log): items separated by semicolons, one a level in turn (the next level drawn with them; the same
+ * level repeated: settings compared in the same warmth of the GPU), each of commands separated by commas.
  */
 class FUghShot
 {
@@ -78,6 +85,9 @@ public:
 	FString GetEffect() const { return Next < Targets.Num() ? Targets[Next].Effect : FString(); }
 	TOptional<double> GetEffectAge() const { return EffectAge; }
 
+	/** A frame longer than this is a hitch (seconds). */
+	static constexpr double HitchSeconds = 0.05;
+
 	/** A look at a decoration (-UghShotLook) shows this many pixels around its middle. */
 	static constexpr double LookAround = 16;
 
@@ -108,6 +118,8 @@ private:
 	/** The screenshot's name of `Target`: its mode and level, the suffix of the options, its burst. */
 	FString NameOf(const FTarget& Target) const;
 	EAction TakeShot(const FString& Name);
+	/** Logs the frame times of the level's hover and of the whole level. */
+	void LogFrames(const ugh_logic_view& View) const;
 	/** The next key that opens the menu's screen of -UghShotScreens (settings, controls, scores); none when it shows. */
 	static FKey ScreenKey(const FUghMenu& Menu, const FString& Screen);
 	/** The next key that turns the menu into the target's game. */
@@ -154,6 +166,9 @@ private:
 	int32 Phase = -1;          // of the last frame
 	double PhaseTime = 0;      // how long it has been in it (in the play: since fully shown)
 	int32 Frames = 0;          // drawn in that time: the frame rate of the level
+	TArray<float> HoverFrames; // their times (seconds)
+	TArray<float> LevelFrames; // the times of the target's frames since it left the menu
+	FString Exec;              // -UghShotExec
 	double HoverY[2] = { -1, -1 };   // 1/32 px
 	bool bPedalling[2] = { false, false };
 };
