@@ -8,17 +8,19 @@
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\levels.ps1 -Quick
 # -Quick: a fixed set of 12 levels showing every mood and feature (day, evening, dusk, night, rising and high water,
 # storms, both modes) on one sheet, levels-quick.png; -Levels: other levels, items <1p|team>:<first>[-<last>]; -At:
-# seconds of the fully shown level before each shot.
-param([switch]$Quick, [string]$Levels = '1p:1-69,team:1-81', [double]$At = 1.5, [int]$TimeoutSeconds = 3600)
+# seconds of the fully shown level before each shot; -Package: the packaged game (package.ps1) instead of the editor;
+# -Profile <file>: a profile (FUghProfile JSON: a quality preset) instead of the defaults; -Commands: console commands
+# before the play (e.g. "r.SetRes 1920x1080w"); -Tag <name>: into Saved\Shots\Levels-<name> and its own log (perf.ps1).
+param([switch]$Quick, [string]$Levels = '1p:1-69,team:1-81', [double]$At = 1.5, [switch]$Package, [string]$Profile = '',
+    [string]$Commands = '', [string]$Tag = '', [int]$TimeoutSeconds = 3600)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
 Add-Type -AssemblyName System.Drawing
-$folder = Join-Path $PSScriptRoot 'Saved\Shots\Levels'
-$log = Join-Path $PSScriptRoot 'Saved\Logs\UghLevels.log'
-# the quick set: one player 1 (day), 3 (evening), 6 (night), 8 (rising water), 12, 23 (dusk), 36 (high water), 43 (a
-# storm, rising water), 62 (a storm); the team's 1, 21 and 54 (a storm)
-if ($Quick) { $Levels = '1p:1,1p:3,1p:6,1p:8,1p:12,1p:23,1p:36,1p:43,1p:62,team:1,team:21,team:54' }
+$run = if ($Tag) { "Levels-$Tag" } else { 'Levels' }
+$folder = Join-Path $PSScriptRoot "Saved\Shots\$run"
+$log = Join-Path $PSScriptRoot "Saved\Logs\Ugh$run.log"
+if ($Quick) { $Levels = $UghQuickLevels }   # ue.ps1
 
 # the screenshots the list asks for, by sheet (a mode's; all on the quick one)
 $expected = [ordered]@{}
@@ -42,8 +44,17 @@ foreach ($item in $Levels.Split(',')) {
 if (Test-Path $folder) { Remove-Item -Recurse -Force $folder }
 $null = New-Item -ItemType Directory -Force $folder
 $started = Get-Date
-$arguments = "`"$Project`" -game `"-UghShot=$folder`" -UghShotMenu -UghShotLevels=$Levels -UghShotAt=$At `"-abslog=$log`""
-$code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
+$arguments = "`"-UghShot=$folder`" -UghShotMenu -UghShotLevels=$Levels -UghShotAt=$At `"-abslog=$log`""
+if ($Commands) { $arguments += " `"-ExecCmds=$Commands`"" }
+if ($Profile) { $arguments += " `"-UghProfile=$Profile`"" }
+$exe = $UeEditor
+if ($Package) {
+    $exe = Join-Path $PSScriptRoot 'Packaged\Windows\UghGame.exe'
+    if (-not (Test-Path $exe)) { Write-Host "FAILED: no package $exe (package.ps1)" -ForegroundColor Red; exit 1 }
+} else {
+    $arguments = "`"$Project`" -game $arguments"
+}
+$code = Invoke-UghOffscreen $exe $arguments $TimeoutSeconds
 $minutes = ((Get-Date) - $started).TotalMinutes
 if ($code -ne 0) {
     Write-Host "FAILED: exit code $code (-1: no end in $TimeoutSeconds s), see $log" -ForegroundColor Red
@@ -89,8 +100,14 @@ foreach ($sheetName in $expected.Keys) {
 # the frame rate each level was shot at (FUghShot logs it): the median, the slowest, the fastest
 $rates = @(Select-String -Path $log -Pattern 'UGH shot: level_id .* (\d+) fps' | ForEach-Object { [int]$_.Matches[0].Groups[1].Value } | Sort-Object)
 if ($rates.Count -gt 0) {
-    Write-Host ('fps: median {0}, slowest {1}, fastest {2} ({3} levels)' -f $rates[[int][math]::Floor($rates.Count / 2)], $rates[0], $rates[-1], $rates.Count)
+    $summary = 'median {0}, slowest {1}, fastest {2} ({3} levels)' -f $rates[[int][math]::Floor($rates.Count / 2)], $rates[0], $rates[-1], $rates.Count
+    Write-Host "fps: $summary"
+    [IO.File]::WriteAllText((Join-Path $folder 'fps.txt'), $summary)
 }
+# the errors the game logged (a missing asset of the package, a failed load)
+$errors = @(Select-String -Path $log -Pattern '\bError: ' | ForEach-Object { $_.Line })
+Write-Host "errors in the log: $($errors.Count)"
+$errors | Select-Object -First 10 | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
 if (-not (Test-Path (Join-Path $folder 'menu.png'))) { $null = $missing.Add('menu') }
 if ($missing.Count -gt 0) {
     Write-Host "FAILED: no screenshot of $($missing -join ', '), see $log" -ForegroundColor Red

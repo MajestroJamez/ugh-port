@@ -1303,3 +1303,31 @@ Jan 2026-10-05: strom s obličejem, kamenný cestující a nepřátelé jsou je�
   Čeká na Jana: vyzkoušet skutečný gamepad (Xbox; žádný tu není - ověřeno jen testem cestou ovladače) a dva gamepady
   v týmu, přepnutí rozlišení a okna v okně (`play.ps1`), jak vypadají předvolby Low/Medium (helmy místo vlasů,
   bez objemové mlhy) a zda Low stačí na 60 fps (krok 23). Další: **krok 23**.
+- 2026-10-06: krok 23 hotový - vydání (README hry: Performance, návod `docs/doma.md`). Balení (`package.ps1`) teď
+  vaří vše, co hra používá: `Content/Generated`, `Content/Imported`, kopii Electric Dreams a čtyři MetaHumany
+  (`DirectoriesToAlwaysCook` po složkách postav, ne postavy Creatoru), pluginy MetaHuman a vlasů se přibalí samy;
+  jen DirectX 12 / SM6 (`-D3D11TargetedShaderFormats`: poloviční cook shaderů); vedle data `assets/`, zvuky, písma;
+  zip přes .NET (Zip64 - `Compress-Archive` neumí soubory nad 2 GB), velikosti na konci. Balíček 4,16 GB, zip bez
+  `.pdb` 3,34 GB (jen pro vlastní použití, nikam se nenahrává). Cook padal na assertu shader mapy (`FAnisotropyPS`):
+  master materiály vzorku převádějí atributy do Substrate uzlem legacy conversion s napojenou anizotropií, kterou
+  nenastavují - uložená data říkají „bez anizotropie“, překlad „s ní“; `UghElectricDreamsRepair` (v
+  `UghCopyElectricDreams` po kopii) vstup Anisotropy odpojí a materiál uloží (4 materiály, vzhled beze změny).
+  V zabalené hře opraveny ensure: sítě stavěné za běhu nemají UV hustotu (`UghMeshes::FromDescription` pro skálu,
+  listy i ostatní), groomy MetaHumanů bez PSO precache (`PrecachePSOs`). PSO cache (`pso.ps1`, 6 běhů: menu
+  a obrazovky, rychlá sada, let ke kameni v každé náladě, efekty ve dne i v noci, karta konce hry, Low a Medium):
+  643 stabilních PSO, při startu 172 předkompilováno, 0 bez shaderů. Výkon: hlavní pevná cena snímku na Radeonu 890M
+  byly stíny ohňů a loučí (bodová světla = krychle 6 stínových map, kmitající světlo je kreslí každý snímek znovu) -
+  zjištěno A/B cvarů ze zabalené hry (CSV profil: render thread čeká na GPU; 25 % rozlišení jen +20 %, bez stínů
+  2×). Předvolby (`UghGraphics::Variables`): Low 50 % rozlišení, bez GI Lumenu (sky light), bez stínů ohňů; Medium
+  58 %, světla ohňů stojí (`ugh.FireLights.Lick` 0, VSM je cachuje); High jako Epic, ale světla stojí; Epic beze
+  změny (67 %, stíny tančí); `r.ScreenPercentage` z upscaleru do předvolby. Hra bez profilu vybere předvolbu podle
+  GPU (`RecommendedQuality`: RTX/DLSS Epic, integrovaná Low, jinak High; test v `Ugh.Settings.SaveLoad`). Nápovědy
+  kvality v Settings upravené. `perf.ps1` (zabalená hra, rychlá sada, 1920x1080, FSR, mediány fps; před krokem):
+  Low 58 (28), Medium 39 (17), High 30 (16), Epic 18 (11); Low nejpomalejší 42, nejrychlejší 62 - cíl 60 jen na
+  studeném GPU, po pár minutách plné zátěže notebook zpomalí asi o třetinu (stejná Low pak medián 37). Nové
+  `levels.ps1 -Package -Profile -Commands -Tag` (vypíše i chyby z logu), `perf.ps1`, rychlá sada a profil předvolby
+  v `ue.ps1`. Celý `levels.ps1 -Package` (150 levelů ze zabaleného, 31 min): všechny snímky, 0 chyb v logu, medián
+  25 fps (Epic, 1280x720, zahřátý), oba archy bez vad; rozbalený zip prošel autopilotem bez chyb a ensure. CTest
+  logiky, `6_verification` (163) a 193 testů v UE zelené. Čeká na Jana: spustit zip doma na RTX 5060 Ti (automatická
+  volba Epic + DLSS, frame generation 2x-4x, plynulost prvního letu), posoudit vzhled Low a Medium, a seznam z kroků
+  13-22 v `docs/doma.md`. Další: hotovo (plán 23 kroků vyčerpán).

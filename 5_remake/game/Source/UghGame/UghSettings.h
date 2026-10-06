@@ -35,6 +35,12 @@ struct FUghSettings
 	static const TCHAR* UpscalerName(EUghUpscaler Upscaler);
 	static const TCHAR* FrameGenerationName(int32 FrameGeneration);
 	static const TCHAR* WindowModeName(int32 WindowMode);
+	/**
+	 * The quality preset a computer without a profile starts with (UghGraphics::RecommendedQuality): epic where the GPU
+	 * has DLSS (an RTX: the upscaler and its frame generation carry it), low on an integrated GPU (a notebook's), else
+	 * high.
+	 */
+	static int32 RecommendedQuality(bool bDlss, bool bIntegrated);
 
 	TSharedRef<FJsonObject> ToJson() const;
 	/** From JSON; what is missing or out of range keeps the default. */

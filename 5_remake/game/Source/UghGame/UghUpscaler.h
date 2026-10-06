@@ -5,9 +5,10 @@
 #include "UghSettings.h"
 
 /**
- * The upscaler at 67 % resolution: DLSS where the GPU supports it, else FSR, else TSR; the DLSS frame generation (off,
- * 2x, 3x, 4x where supported). Set by the settings (FUghSettings); in a game U switches to the next upscaler that
- * works, G cycles the frame generation. Tried in the toolchain trial (2_reverse_engineering/notes/phase4-modernization.md).
+ * The upscaler (from the resolution of the quality preset, UghGraphics: 50 .. 67 %): DLSS where the GPU supports it,
+ * else FSR, else TSR; the DLSS frame generation (off, 2x, 3x, 4x where supported). Set by the settings (FUghSettings);
+ * in a game U switches to the next upscaler that works, G cycles the frame generation. Tried in the toolchain trial
+ * (2_reverse_engineering/notes/phase4-modernization.md).
  */
 class FUghUpscaler
 {

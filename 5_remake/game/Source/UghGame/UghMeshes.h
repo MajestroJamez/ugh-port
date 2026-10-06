@@ -6,6 +6,7 @@
 
 class UMaterialInterface;
 class UStaticMesh;
+struct FMeshDescription;
 
 /** Static meshes the frontend builds from its own vertices (one material slot, no collision). */
 namespace UghMeshes
@@ -24,6 +25,11 @@ namespace UghMeshes
 	 * its vertices' normals (the engine draws the side whose corners turn clockwise).
 	 */
 	UStaticMesh* Build(UObject* Outer, const TArray<FVertex>& Vertices, const TArray<int32>& Triangles);
+	/**
+	 * A mesh of `Description` with one material slot `Slot`, built at run time (fast, no collision); the slot's UV density
+	 * is set as the editor's build would (a package's texture streaming wants it).
+	 */
+	UStaticMesh* FromDescription(UObject* Outer, FMeshDescription& Description, FName Slot);
 
 	/** A quad standing upright, facing the camera: its middle, size, its own numbers (the second UV). */
 	struct FQuad

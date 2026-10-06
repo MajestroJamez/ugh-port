@@ -42,7 +42,6 @@ void FUghUpscaler::Use(EUghUpscaler NewKind)
 	Kind = NewKind == EUghUpscaler::Dlss && !HasDlss() ? EUghUpscaler::Fsr : NewKind;
 	SetCVar(TEXT("r.NGX.DLSS.Enable"), Kind == EUghUpscaler::Dlss ? TEXT("1") : TEXT("0"));
 	SetCVar(TEXT("r.FidelityFX.FSR.Enabled"), Kind == EUghUpscaler::Fsr ? TEXT("1") : TEXT("0"));
-	SetCVar(TEXT("r.ScreenPercentage"), TEXT("67"));
 }
 
 void FUghUpscaler::Next()

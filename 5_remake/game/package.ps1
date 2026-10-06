@@ -19,6 +19,9 @@ if ($LASTEXITCODE -ne 0) { Write-Host 'FAILED: build' -ForegroundColor Red; exit
 # UAT talks to the Zen server on [::1]; without ::1 in NO_PROXY .NET sends that through the HTTP proxy
 $noProxy = @($env:NO_PROXY, '::1', '[::1]') | Where-Object { $_ }
 $env:NO_PROXY = $noProxy -join ','
+# a fresh archive: nothing of an older package (an old pak, its assets) stays next to the new one
+$archive = Join-Path $out 'Windows'
+if (Test-Path $archive) { Remove-Item -Recurse -Force $archive }
 # through cmd, so the log stays UTF-8 and PowerShell does not turn UAT's stderr into errors
 cmd /c "`"$uat`" BuildCookRun `"-project=$Project`" -platform=Win64 -clientconfig=Development -build -cook -stage -pak -archive `"-archivedirectory=$out`" -unattended -utf8output -nop4 > `"$log`" 2>&1"
 $code = $LASTEXITCODE
@@ -50,9 +53,13 @@ if (-not $NoZip) {
     # without the .pdb files and what a run of the packaged game saved next to itself (pso.ps1)
     robocopy (Join-Path $out 'Windows') $staging /E /XF *.pdb /XD Saved /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { Write-Host "FAILED: copy for the zip (robocopy $LASTEXITCODE)" -ForegroundColor Red; exit 1 }
-    Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $zip
+    # .NET's zip (Zip64: the paks are bigger than the 2 GB Compress-Archive can take); they are compressed already
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($staging, $zip, [System.IO.Compression.CompressionLevel]::Fastest, $false)
     Remove-Item -Recurse -Force $staging
-    Write-Host "zip: $zip"
+    Write-Host ('zip: {0} ({1:N2} GB)' -f $zip, ((Get-Item $zip).Length / 1GB))
 }
+$size = (Get-ChildItem -Recurse -File $archive | Measure-Object -Sum Length).Sum
+Write-Host ('package: {0:N2} GB' -f ($size / 1GB))
 Write-Host "OK: $(Join-Path $out 'Windows\UghGame.exe')" -ForegroundColor Green
 exit 0

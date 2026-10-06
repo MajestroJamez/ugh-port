@@ -1,6 +1,7 @@
 // The game's profile: the settings put into the engine, saved; the keys of the frontend.
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+#include "Misc/Paths.h"
 #include "UghGameMode.h"
 #include "UghGraphics.h"
 #include "UghSpeaker.h"
@@ -18,6 +19,10 @@ void AUghGameMode::LoadProfile()
 	if (!Profile.Load(ProfilePath, Error))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UGH profile: %s (the defaults instead)"), *Error);
+	}
+	else if (!FPaths::FileExists(ProfilePath))
+	{
+		Profile.Settings.Quality = UghGraphics::RecommendedQuality();   // a first start: the preset for this GPU
 	}
 	UE_LOG(LogTemp, Display, TEXT("UGH profile %s"), *ProfilePath);
 }

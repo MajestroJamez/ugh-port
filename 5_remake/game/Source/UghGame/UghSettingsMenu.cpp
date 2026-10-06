@@ -11,10 +11,10 @@ namespace
 		TEXT("Flight to the stone"), TEXT("Controls"), TEXT("Back") };
 
 	const TCHAR* const QualityHints[FUghSettings::QualityLevels] = {
-		TEXT("The fastest: Lumen's simpler light, simple shadows and effects, no volumetric fog, the people's plainest hair"),
-		TEXT("Lumen's simpler light, softer shadows, coarse volumetric fog, the people's plainest hair"),
-		TEXT("Lumen's light, sharp shadows, volumetric fog, hair cards, the sea's reflections at half resolution"),
-		TEXT("Everything at its best: the diorama as it was made"),
+		TEXT("The fastest (half resolution): the sky's light, the sun's shadows only, no volumetric fog, plainest hair"),
+		TEXT("Lumen's simpler light, softer shadows, steady firelight, coarse volumetric fog, the people's plainest hair"),
+		TEXT("Lumen's light, sharp shadows, steady firelight, volumetric fog, hair cards, the sea's reflections at half"),
+		TEXT("Everything at its best: the diorama as it was made, the firelight's shadows dancing"),
 	};
 
 	/** The value of `Values` (sorted by `Less`, not empty) next to `Current` that way (`Direction` 1 or -1), round. */
@@ -172,8 +172,8 @@ FString FUghSettingsMenu::HintOf(ERow Row, const FUghSettings& Settings, const F
 	{
 	case ERow::Quality: return QualityHints[FMath::Clamp(Settings.Quality, 0, FUghSettings::QualityLevels - 1)];
 	case ERow::Upscaler:
-		return Options.bDlss ? TEXT("Drawn at 67 % and upscaled: NVIDIA's DLSS, AMD's FSR or the engine's TSR")
-			: TEXT("Drawn at 67 % and upscaled: AMD's FSR or the engine's TSR (DLSS needs an NVIDIA RTX)");
+		return Options.bDlss ? TEXT("Drawn smaller (by the quality), upscaled: NVIDIA's DLSS, AMD's FSR or the engine's TSR")
+			: TEXT("Drawn smaller (by the quality) and upscaled: AMD's FSR or the engine's TSR (DLSS needs an RTX)");
 	case ERow::FrameGeneration:
 		return Options.FrameGenerations.Num() > 1 ? TEXT("DLSS makes frames between the drawn ones (with DLSS)")
 			: TEXT("DLSS frame generation needs an NVIDIA RTX 40 or 50");

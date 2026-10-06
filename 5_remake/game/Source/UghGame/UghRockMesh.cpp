@@ -4,6 +4,7 @@
 #include "Engine/StaticMesh.h"
 #include "MeshDescription.h"
 #include "StaticMeshAttributes.h"
+#include "UghMeshes.h"
 #include "UghSurfaceNets.h"
 
 namespace
@@ -129,14 +130,7 @@ UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer) const
 		Description.CreateTriangle(Group, { Instances[Triangles[Index]], Instances[Triangles[Index + 1]],
 			Instances[Triangles[Index + 2]] });
 	}
-	UStaticMesh* Mesh = NewObject<UStaticMesh>(Outer);
-	Mesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, SlotName));
-	UStaticMesh::FBuildMeshDescriptionsParams Params;
-	Params.bFastBuild = true;   // at run time
-	Params.bCommitMeshDescription = false;
-	Params.bMarkPackageDirty = false;
-	Mesh->BuildFromMeshDescriptions({ &Description }, Params);
-	return Mesh;
+	return UghMeshes::FromDescription(Outer, Description, SlotName);
 }
 
 FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, const FVector& Outward)

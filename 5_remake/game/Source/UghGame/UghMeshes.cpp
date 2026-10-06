@@ -41,14 +41,7 @@ UStaticMesh* UghMeshes::Build(UObject* Outer, const TArray<FVertex>& Vertices, c
 		}
 		Description.CreateTriangle(Group, { Instances[A], Instances[B], Instances[C] });
 	}
-	UStaticMesh* Mesh = NewObject<UStaticMesh>(Outer);
-	Mesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, Slot));
-	UStaticMesh::FBuildMeshDescriptionsParams Params;
-	Params.bFastBuild = true;   // at run time
-	Params.bCommitMeshDescription = false;
-	Params.bMarkPackageDirty = false;
-	Mesh->BuildFromMeshDescriptions({ &Description }, Params);
-	return Mesh;
+	return UghMeshes::FromDescription(Outer, Description, Slot);
 }
 
 UStaticMesh* UghMeshes::Quads(UObject* Outer, const TArray<FQuad>& Quads)
@@ -68,4 +61,18 @@ UStaticMesh* UghMeshes::Quads(UObject* Outer, const TArray<FQuad>& Quads)
 		Triangles.Append({ First, First + 2, First + 1, First, First + 3, First + 2 });
 	}
 	return Build(Outer, Vertices, Triangles);
+}
+
+UStaticMesh* UghMeshes::FromDescription(UObject* Outer, FMeshDescription& Description, FName Slot)
+{
+	UStaticMesh* Mesh = NewObject<UStaticMesh>(Outer);
+	FStaticMaterial Material(nullptr, Slot);
+	Material.UVChannelData = FMeshUVChannelInfo(1.f);
+	Mesh->GetStaticMaterials().Add(Material);
+	UStaticMesh::FBuildMeshDescriptionsParams Params;
+	Params.bFastBuild = true;
+	Params.bCommitMeshDescription = false;
+	Params.bMarkPackageDirty = false;
+	Mesh->BuildFromMeshDescriptions({ &Description }, Params);
+	return Mesh;
 }

@@ -16,6 +16,7 @@ public class UghGame : ModuleRules
 			"MeshDescription", "StaticMeshDescription",   // the rock as a static mesh built at run time (FUghRockMesh)
 			"AssetRegistry",   // the imported assets (UghAssets)
 			"HairStrandsCore",   // the MetaHumans' grooms (UghMetaHumans)
+			"RHI",   // the GPU, for the quality a computer starts with (UghGraphics)
 			"DLSSBlueprint", "StreamlineDLSSGBlueprint"   // the upscalers (plugins DLSS, Streamline; FSR needs no code)
 		});
 	}

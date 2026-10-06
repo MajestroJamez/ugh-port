@@ -29,7 +29,10 @@ namespace
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghProfileTest, "Ugh.Settings.SaveLoad",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-/** The profile saved and read back is the same; a missing file is the defaults, a broken one too. */
+/**
+ * The profile saved and read back is the same; a missing file is the defaults, a broken one too; the preset a GPU
+ * starts with.
+ */
 bool FUghProfileTest::RunTest(const FString& Parameters)
 {
 	FUghProfile Saved;
@@ -78,6 +81,11 @@ bool FUghProfileTest::RunTest(const FString& Parameters)
 		!Loaded.Settings.Keys.Get({ 0, UGH_LOGIC_KEY_FIRE, 0 }).IsValid() &&
 		Loaded.Settings.Keys.Get({ 0, UGH_LOGIC_KEY_FIRE, 1 }) == Defaults.Get({ 0, UGH_LOGIC_KEY_FIRE, 1 }));
 	IFileManager::Get().DeleteDirectory(*FPaths::AutomationTransientDir(), false, true);
+
+	// without a profile: epic with DLSS (an RTX, integrated or not), low on an integrated GPU, else high
+	TestTrue(TEXT("the preset a computer starts with"), FUghSettings::RecommendedQuality(true, false) == 3 &&
+		FUghSettings::RecommendedQuality(true, true) == 3 && FUghSettings::RecommendedQuality(false, true) == 0 &&
+		FUghSettings::RecommendedQuality(false, false) == 2);
 	return true;
 }
 

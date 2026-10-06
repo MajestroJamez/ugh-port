@@ -7,6 +7,7 @@
 #include "GroomComponent.h"
 #include "HAL/IConsoleManager.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "RHIGlobals.h"
 #include "Scalability.h"
 #include "UghUpscaler.h"
 #include "UnrealClient.h"
@@ -40,6 +41,12 @@ TConstArrayView<UghGraphics::FVariable> UghGraphics::Variables()
 		{ TEXT("r.Lumen.Reflections.DownsampleFactor"), { TEXT("2"), TEXT("2"), TEXT("2"), TEXT("2") } },
 		{ TEXT("r.Shadow.Virtual.ResolutionLodBiasDirectional"), { TEXT("2"), TEXT("1.5"), TEXT("1"), TEXT("1") } },
 		{ TEXT("r.TranslucencyLightingVolume.Dim"), { TEXT("16"), TEXT("24"), TEXT("32"), TEXT("32") } },
+		// the resolution the upscaler (DLSS, FSR, TSR) works from, percent of the screen's
+		{ TEXT("r.ScreenPercentage"), { TEXT("50"), TEXT("58"), TEXT("67"), TEXT("67") } },
+		// the campfires' and torches' shadows (point lights: a cube of six shadow maps each - on an integrated GPU low
+		// is twice as fast without them), and their lights licking about (moved, they draw them anew every frame)
+		{ TEXT("r.AllowPointLightCubemapShadows"), { TEXT("0"), TEXT("1"), TEXT("1"), TEXT("1") } },
+		{ TEXT("ugh.FireLights.Lick"), { TEXT("0"), TEXT("0"), TEXT("0"), TEXT("1") } },
 	};
 	return Table;
 }
@@ -81,13 +88,23 @@ FUghDisplayOptions UghGraphics::Options()
 	return Options;
 }
 
+int32 UghGraphics::RecommendedQuality()
+{
+	const bool bDlss = FUghUpscaler::HasDlss();
+	const int32 Quality = FUghSettings::RecommendedQuality(bDlss, GRHIDeviceIsIntegrated);
+	UE_LOG(LogTemp, Display, TEXT("UGH recommended quality %s for %s (%s, %s)"), FUghSettings::QualityName(Quality),
+		*GRHIAdapterName, GRHIDeviceIsIntegrated ? TEXT("integrated") : TEXT("discrete"),
+		bDlss ? TEXT("DLSS") : TEXT("no DLSS"));
+	return Quality;
+}
+
 void UghGraphics::ApplyQuality(int32 Quality, UWorld* World)
 {
 	const int32 Level = FMath::Clamp(Quality, 0, FUghSettings::QualityLevels - 1);
 	Scalability::FQualityLevels Levels = Scalability::GetQualityLevels();
 	Levels.SetFromSingleQualityLevel(Level);
 	Levels.ShadowQuality = FMath::Max(Level, 1);
-	Levels.GlobalIlluminationQuality = FMath::Max(Level, 1);
+	Levels.GlobalIlluminationQuality = Level;   // low without Lumen's global illumination: the sky light only
 	Scalability::SetQualityLevels(Levels);
 	for (const FVariable& Variable : Variables())
 	{

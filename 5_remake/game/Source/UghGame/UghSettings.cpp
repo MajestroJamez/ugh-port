@@ -51,6 +51,11 @@ const TCHAR* FUghSettings::WindowModeName(int32 WindowMode)
 	return WindowModeNames[FMath::Clamp(WindowMode, 0, int32(UE_ARRAY_COUNT(WindowModeNames)) - 1)];
 }
 
+int32 FUghSettings::RecommendedQuality(bool bDlss, bool bIntegrated)
+{
+	return bDlss ? 3 : bIntegrated ? 0 : 2;
+}
+
 TSharedRef<FJsonObject> FUghSettings::ToJson() const
 {
 	TSharedRef<FJsonObject> Json = MakeShared<FJsonObject>();

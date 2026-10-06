@@ -4,6 +4,7 @@
 #include "Components/PointLightComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
+#include "HAL/IConsoleManager.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/PackageName.h"
 #include "UghMaterials.h"
@@ -21,6 +22,13 @@ namespace
 	constexpr float PartsReach = 25;
 
 	const TCHAR* PlaneMesh = TEXT("/Engine/BasicShapes/Plane.Plane");
+
+	/**
+	 * How far the fires' lights lick about with their flames (0 .. 1): a light that moves draws its shadow maps anew every
+	 * frame (the virtual shadow maps keep the pages of one that stays put). The quality presets set it (UghGraphics).
+	 */
+	TAutoConsoleVariable<float> CVarLick(TEXT("ugh.FireLights.Lick"), 1.f,
+		TEXT("How far the lights of the campfires and torches lick about with their flames (0: they stay put)."));
 
 	float Noise(double Time, float Speed, float Phase)
 	{
@@ -59,7 +67,7 @@ UPointLightComponent* UghFireParts::NewLight(AActor* Owner, float Radius, float 
 
 void UghFireParts::Flare(UPointLightComponent* Light, const FVector& Place, const FFlicker& Flicker, float Candelas)
 {
-	Light->SetWorldLocation(Place + Flicker.Offset);
+	Light->SetWorldLocation(Place + Flicker.Offset * CVarLick.GetValueOnGameThread());
 	Light->SetIntensity(Candelas * Flicker.Brightness);
 	Light->SetTemperature(Flicker.Temperature);
 }

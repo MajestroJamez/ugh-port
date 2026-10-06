@@ -13,7 +13,8 @@
  * copied packages' references there (checked: a top folder without its redirect fails). The sample is only read:
  * its content is mounted at /UghSample/ for the registry, nothing is written there. electric-dreams.ps1 runs it:
  * UnrealEditor-Cmd UghGame.uproject -run=UghCopyElectricDreams -Source=<the sample's project folder>. Idempotent
- * (a file of the same size and time is left alone; what the game no longer needs is deleted); then it loads every
+ * (a file of the same size and time is left alone; what the game no longer needs is deleted); then it repairs what
+ * the cook cannot take (UghElectricDreamsRepair: a material saved again is copied anew next time) and loads every
  * asset the game asks for, so the meshes' Nanite data is built once here, not in the game. Fails when
  * the sample or one of the assets is missing, or a copied asset does not load.
  */

@@ -11,6 +11,7 @@
 #include "PhysicsEngine/SkeletalBodySetup.h"
 #include "StaticMeshAttributes.h"
 #include "UghElectricDreams.h"
+#include "UghMeshes.h"
 #include "UghShapes.h"
 
 namespace
@@ -204,19 +205,6 @@ namespace
 			}
 		}
 	}
-
-	/** A static mesh of `Description` (one material slot), built at run time. */
-	UStaticMesh* MeshOf(FMeshDescription& Description)
-	{
-		UStaticMesh* Mesh = NewObject<UStaticMesh>(GetTransientPackage());
-		Mesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, LeafSlot));
-		UStaticMesh::FBuildMeshDescriptionsParams Params;
-		Params.bFastBuild = true;
-		Params.bCommitMeshDescription = false;
-		Params.bMarkPackageDirty = false;
-		Mesh->BuildFromMeshDescriptions({ &Description }, Params);
-		return Mesh;
-	}
 }
 
 void FUghLeaves::Make(const USkeletalMesh* Body, double Height, bool bTop)
@@ -257,7 +245,7 @@ void FUghLeaves::Make(const USkeletalMesh* Body, double Height, bool bTop)
 	}
 	for (TPair<FName, FMeshDescription>& Each : Descriptions)
 	{
-		Parts.Add({ Each.Key, MeshOf(Each.Value) });
+		Parts.Add({ Each.Key, UghMeshes::FromDescription(GetTransientPackage(), Each.Value, LeafSlot) });
 	}
 	UMaterialInterface* Taro = UghElectricDreams::Material(UghElectricDreams::LeafMaterial);
 	UMaterialInstanceDynamic* Leaf = Taro ? UMaterialInstanceDynamic::Create(Taro, GetTransientPackage())

@@ -109,6 +109,8 @@ void FUghMetaHuman::AddNode(FAdding& Adding, const USCS_Node* Node, USceneCompon
 		// not in the ray traced scene (Lumen's reflections): a moving body's and its hair's geometry would be rebuilt
 		// there every frame, for reflections too small to see
 		Cast<UPrimitiveComponent>(Part)->SetVisibleInRayTracing(false);
+		// a component made at run time precaches its pipelines itself (a loaded one does it in PostLoad)
+		Cast<UPrimitiveComponent>(Part)->PrecachePSOs();
 		Part->SetupAttachment(Parent, Node->AttachToName);
 		Part->RegisterComponent();
 		Owner->AddInstanceComponent(Part);

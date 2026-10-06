@@ -9,6 +9,7 @@
 #include "Misc/Paths.h"
 #include "UObject/CoreRedirects.h"
 #include "UghElectricDreams.h"
+#include "UghElectricDreamsRepair.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUghCopyElectricDreams, Log, All);
 
@@ -81,7 +82,7 @@ int32 UUghCopyElectricDreamsCommandlet::Main(const FString& Params)
 		return 1;
 	}
 	FAssetRegistryModule::GetRegistry().ScanPathsSynchronous({ UghElectricDreams::Root }, true);
-	if (!LoadAll())
+	if (!UghElectricDreamsRepair::Materials(UghElectricDreams::Root) || !LoadAll())
 	{
 		return 1;
 	}

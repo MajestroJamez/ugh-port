@@ -568,8 +568,8 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   vpravo; High scores jsou dvě tabulky vedle sebe uprostřed nad ztmavenou scénou. Vybraný řádek jantarové sklo se
   šipkami, hlasitosti jako řada kamínků, co řádek dělá, v panelu pod ním; klávesy pilotů jako tabulka políček (šipky
   větší, písmo záložní); jméno nejlepšího skóre jako řada políček na kartě konce hry (kurzor jantarový).
-- Předvolby kvality (`UghGraphics.cpp`): skupiny škálovatelnosti enginu na úrovni předvolby (nízká se stíny a GI
-  Lumenu střední: dioráma bez nich nežije) a těžké věci diorámatu:
+- Předvolby kvality (`UghGraphics.cpp`): skupiny škálovatelnosti enginu na úrovni předvolby (nízká se stíny slunce
+  střední: dioráma bez nich nežije; od kroku 23 bez GI Lumenu, jen sky light) a těžké věci diorámatu:
 
 | | Nízká | Střední | Vysoká | Epická (jak bylo vyladěno) |
 |---|---|---|---|---|
@@ -579,3 +579,11 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
 | stínové mapy slunce (LOD bias) | 2 | 1,5 | 1 | 1 |
 | objem osvětlení průsvitných | 16 | 24 | 32 | 32 |
 | vlasy lidí (LOD groomu) | helmy (4) | helmy (4) | karty (3) | karty (3) |
+| rozlišení pro upscaler (krok 23) | 50 % | 58 % | 67 % | 67 % |
+| stíny ohňů a loučí (krok 23) | ne | ano | ano | ano |
+| světla ohňů se kmitají s plamenem (krok 23) | ne | ne | ne | ano |
+
+Krok 23: na Radeonu 890M byly stíny ohňů (bodová světla: krychle šesti stínových map) hlavní pevná cena snímku -
+bez nich je nízká dvakrát rychlejší; světlo, které se hýbe, kreslí své stínové mapy každý snímek znovu (virtuální
+stínové mapy nehybného světla drží stránky), proto se pod Epic nehýbe. Hra bez profilu začne na předvolbě podle GPU:
+RTX (DLSS) Epic, integrovaná Low, jinak High.
