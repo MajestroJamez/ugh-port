@@ -1,6 +1,7 @@
-// The soft edges of the level as an automation test of the editor (Ugh.Fringe): the plants at the stone's edges are
+// The soft edges of the level as automation tests of the editor (Ugh.Fringe): the plants at the stone's edges are
 // off the screen of the play, a copter at each of its limits runs into them, they bend away from it, hide it in the
-// overhang and leave it alone elsewhere.
+// overhang and leave it alone elsewhere; how they sway (Ugh.Sway): hit high, in the middle, low or in the overhang, a
+// liana's bottom moves about as far as where it is hit - not further, as a lever -, a little later, and settles.
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
@@ -144,6 +145,155 @@ bool FUghFringeTest::RunTest(const FString& Parameters)
 		}
 	}
 	TestEqual(TEXT("nothing bends for a copter away from the edges"), Moved, 0);
+	return true;
+}
+
+namespace
+{
+	/**
+	 * A copter flown into an edge (Ugh.Sway): from Approach pixels away at Speed pixels a second, held there
+	 * Hold seconds, back as fast, then gone; the sway watched this long (seconds) in frames of SwayFrame seconds.
+	 */
+	constexpr double Approach = 30, Speed = 60, Hold = 0.6, Watch = 14, SwayFrame = 1.0 / 60;
+	/**
+	 * Pixels: the bottom of a chain moves at most MostBottom times as far as where the copter holds it (a lever would
+	 * swing it further the longer it is; HardlyHeld pixels more where it is hardly held), and at most MostPixels at all;
+	 * held high on a curtain (at least LongBelow pixels above its bottom) the bottom follows at least LeastBottom times
+	 * as far, a little later (Later seconds at least: the bend runs down it).
+	 */
+	constexpr double MostBottom = 1.25, HardlyHeld = 0.5, MostPixels = 11, LongBelow = 60, LeastBottom = 0.5, Later = 0.15;
+
+	struct FSwayCase
+	{
+		const TCHAR* Name;
+		FVector2D Edge, Away;   // the copter's top left corner at the edge, the way back from it
+	};
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghFringeSwayTest, "Ugh.Sway",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUghFringeSwayTest::RunTest(const FString& Parameters)
+{
+	const TArray<FUghFringePlant> Plants = UghFringe::Plan();
+	const FSwayCase Cases[] = {
+		{ TEXT("left, high"), FVector2D(UghFringe::LeftEdge, 0), FVector2D(1, 0) },
+		{ TEXT("left, middle"), FVector2D(UghFringe::LeftEdge, 80), FVector2D(1, 0) },
+		{ TEXT("left, low"), FVector2D(UghFringe::LeftEdge, 150), FVector2D(1, 0) },
+		{ TEXT("right, middle"), FVector2D(UghFringe::RightEdge, 60), FVector2D(-1, 0) },
+		{ TEXT("top"), FVector2D(100, UghFringe::TopEdge), FVector2D(0, 1) } };
+	for (const FSwayCase& Case : Cases)
+	{
+		// the copter coming, at the edge (a bump), going, gone; `Look` at the sway after each frame
+		auto Fly = [&](TFunctionRef<void(const FUghFringeSway&, double)> Look)
+		{
+			FUghFringeSway Sway;
+			Sway.Build(Plants);
+			const double Arrive = Approach / Speed;
+			bool bStill = false;
+			for (double Time = 0; Time < Watch; Time += SwayFrame)
+			{
+				TArray<FBox2D> Reaches;
+				TArray<double> Bumps;
+				const double Back = Time - Arrive - Hold;
+				if (Back < Arrive)
+				{
+					const double Out = Time < Arrive ? Approach - Time * Speed : FMath::Max(Back, 0.0) * Speed;
+					Reaches.Add(UghFringe::Reach(Case.Edge + Case.Away * Out));
+					Bumps.Add(Time >= Arrive && Time - SwayFrame < Arrive ? Speed : 0);
+				}
+				bStill = !Sway.Step(Reaches, Bumps, SwayFrame);
+				Look(Sway, Time);
+			}
+			return bStill;
+		};
+		// how far each chain goes where it is held and at its bottom, how low it is held
+		int32 Count = 0;
+		TArray<double> Hit, Bottom, HitAt, BottomAt, Lowest;
+		const bool bStill = Fly([&](const FUghFringeSway& Sway, double Time)
+		{
+			if (Count == 0)
+			{
+				Count = Sway.Chains().Num();
+				Hit.Init(0, Count);
+				Bottom.Init(0, Count);
+				Lowest.Init(-UE_BIG_NUMBER, Count);
+			}
+			for (int32 Chain = 0; Chain < Count; ++Chain)
+			{
+				const FUghFringeSway::FChain& Each = Sway.Chains()[Chain];
+				for (int32 Point = 1; Point < Each.Rest.Num(); ++Point)
+				{
+					if (Each.Held[Point] > 0)
+					{
+						Hit[Chain] = FMath::Max(Hit[Chain], Each.Offset[Point].Size());
+						Lowest[Chain] = FMath::Max(Lowest[Chain], Each.Rest[Point].Y);
+					}
+				}
+				Bottom[Chain] = FMath::Max(Bottom[Chain], Each.Offset.Last().Size());
+			}
+		});
+		// when each got half as far (again, the most known)
+		HitAt.Init(-1, Count);
+		BottomAt.Init(-1, Count);
+		Fly([&](const FUghFringeSway& Sway, double Time)
+		{
+			for (int32 Chain = 0; Chain < Count; ++Chain)
+			{
+				const FUghFringeSway::FChain& Each = Sway.Chains()[Chain];
+				double Held = 0;
+				for (int32 Point = 1; Point < Each.Rest.Num(); ++Point)
+				{
+					Held = Each.Held[Point] > 0 ? FMath::Max(Held, Each.Offset[Point].Size()) : Held;
+				}
+				HitAt[Chain] = HitAt[Chain] < 0 && Hit[Chain] > 0 && Held >= Hit[Chain] / 2 ? Time : HitAt[Chain];
+				BottomAt[Chain] = BottomAt[Chain] < 0 && Bottom[Chain] > 0 &&
+					Each.Offset.Last().Size() >= Bottom[Chain] / 2 ? Time : BottomAt[Chain];
+			}
+		});
+		FUghFringeSway Built;
+		Built.Build(Plants);
+
+		int32 Touched = 0, Amplified = 0, Behind = 0, Early = 0;
+		double MostShare = 0, Furthest = 0;
+		for (int32 Chain = 0; Chain < Count; ++Chain)
+		{
+			if (Hit[Chain] <= 0)
+			{
+				continue;
+			}
+			++Touched;
+			const FUghFringeSway::FChain& Each = Built.Chains()[Chain];
+			const double Share = Bottom[Chain] / Hit[Chain];
+			MostShare = FMath::Max(MostShare, Share);
+			Furthest = FMath::Max(Furthest, Bottom[Chain]);
+			if (Bottom[Chain] > MostBottom * Hit[Chain] + HardlyHeld && Amplified++ < 3)
+			{
+				AddInfo(FString::Printf(TEXT("%s: a chain at %.0f, %.0f held %.1f px, its bottom %.1f px"), Case.Name,
+					Each.Rest[0].X, Each.Rest[0].Y, Hit[Chain], Bottom[Chain]));
+			}
+			const bool bLong = Each.Rest.Last().Y - Lowest[Chain] >= LongBelow;
+			if (bLong && Share < LeastBottom && Behind++ < 3)
+			{
+				AddInfo(FString::Printf(TEXT("%s: a curtain at %.0f held %.1f px, its bottom only %.1f px"), Case.Name,
+					Each.Rest[0].X, Hit[Chain], Bottom[Chain]));
+			}
+			if (bLong && Bottom[Chain] > 0.5 && BottomAt[Chain] < HitAt[Chain] + Later && Early++ < 3)
+			{
+				AddInfo(FString::Printf(TEXT("%s: a curtain at %.0f: its bottom at %.2f s, where it is held at %.2f s"),
+					Case.Name, Each.Rest[0].X, BottomAt[Chain], HitAt[Chain]));
+			}
+		}
+		AddInfo(FString::Printf(TEXT("%s: %d chains touched, their bottoms at most %.2f times as far as where they are held, %.1f px at most"),
+			Case.Name, Touched, MostShare, Furthest));
+		TestTrue(FString::Printf(TEXT("%s: the copter pushes plants"), Case.Name), Touched > 0);
+		TestEqual(FString::Printf(TEXT("%s: no bottom swung further than where it is held (a lever)"), Case.Name),
+			Amplified, 0);
+		TestTrue(FString::Printf(TEXT("%s: the bottoms %.1f px at most"), Case.Name, Furthest), Furthest <= MostPixels);
+		TestEqual(FString::Printf(TEXT("%s: held high, the curtain below follows"), Case.Name), Behind, 0);
+		TestEqual(FString::Printf(TEXT("%s: a little later (the bend runs down)"), Case.Name), Early, 0);
+		TestTrue(FString::Printf(TEXT("%s: then it settles"), Case.Name), bStill);
+	}
 	return true;
 }
 

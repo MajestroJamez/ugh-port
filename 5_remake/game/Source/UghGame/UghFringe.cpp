@@ -114,18 +114,24 @@ namespace
 		return FTransform(Rotation, Pivot - Rotation.RotateVector(Anchor * Scale), Scale);
 	}
 
-	/** The spring of a plant's bend: its own swing (a second), how much it is damped (of critical). */
-	constexpr double SwingRate = 1.3, Damping = 0.28;
-	/** Seconds of a step of its spring at most. */
-	constexpr double SpringStep = 1.0 / 120;
 	/**
-	 * A copter's bump into an edge: from this speed (pixels a second) it shakes the plants (degrees a second for a
-	 * pixel a second, at most), a few leaves fall (the burst Rustle, at most every LeavesEvery seconds a copter);
-	 * while it is in them they shiver (degrees a second, a frame).
+	 * A sway's chain (FUghFringeSway): its points at most ChainStep pixels apart (a plant of the overhang at least
+	 * ShortSegments of them); a bend runs down 100 pixels of it in TravelAt100 seconds (a hanging chain: the longer, the
+	 * slower - sqrt), its first swing damped FirstDamping of critical, its third ThirdDamping (a damped string: the wave
+	 * goes down smooth, without a whip at its end); a copter holds a point HoldStiff times as stiffly as the chain
+	 * pulls it, damped HoldDamping of critical. Seconds of a step at most.
 	 */
-	constexpr double BumpSpeed = 12, BumpKick = 1.5, MostKick = 120, LeavesEvery = 0.7, Shiver = 260;
-	/** Below this a plant is at rest (degrees, degrees a second). */
-	constexpr double Rest = 0.02;
+	constexpr double ChainStep = 6, TravelAt100 = 0.6, FirstDamping = 0.4, ThirdDamping = 0.8, HoldStiff = 6,
+		HoldDamping = 0.8, MostStep = 1.0 / 240;
+	constexpr int32 ShortSegments = 3;
+	/**
+	 * A copter's bump into an edge: from this speed (pixels a second) it shakes the plants it touches (pixels a second for
+	 * a pixel a second, at most), a few leaves fall (the burst Rustle, at most every LeavesEvery seconds a copter);
+	 * while it is in them they shiver (pixels a second, a second).
+	 */
+	constexpr double BumpSpeed = 12, BumpKick = 0.2, MostKick = 15, LeavesEvery = 0.7, Shiver = 80;
+	/** Below this a chain is at rest (pixels, pixels a second); a frame this long at most (seconds). */
+	constexpr double RestOffset = 0.01, RestSpeed = 0.02, LongestFrame = 0.1;
 }
 
 FVector FUghFringePlant::Tip() const
@@ -265,27 +271,21 @@ FBox2D UghFringe::Reach(const FVector2D& At)
 	return FBox2D(At + FVector2D(ReachLeft, ReachTop), At + FVector2D(ReachRight, ReachBottom));
 }
 
-double UghFringe::Touch(const FUghFringePlant& Plant, const FBox2D& Reach)
+double UghFringe::Touch(const FBox2D& Box, const FBox2D& Reach)
 {
-	if (!Plant.Bends())
-	{
-		return 0;
-	}
-	const FBox2D Box = Plant.Box();
 	const double Apart = FVector2D(FMath::Max3(Reach.Min.X - Box.Max.X, Box.Min.X - Reach.Max.X, 0.0),
 		FMath::Max3(Reach.Min.Y - Box.Max.Y, Box.Min.Y - Reach.Max.Y, 0.0)).Size();
 	return FMath::Clamp(1 - Apart / Near, 0.0, 1.0);
 }
 
-FVector2D UghFringe::Bend(const FUghFringePlant& Plant, const FBox2D& Reach)
+FVector2D UghFringe::Push(ESide Side, double Depth, const FBox2D& Box, const FBox2D& Reach)
 {
-	const double Touched = Touch(Plant, Reach);
+	const double Touched = Touch(Box, Reach);
 	if (Touched <= 0)
 	{
 		return FVector2D::ZeroVector;
 	}
-	const FBox2D Box = Plant.Box();
-	// how far into it the copter reaches across (a share of its width) and down it (a share of its length)
+	// how far into it the copter reaches across (a share of its width) and down it (a share of its height)
 	const double Into = FMath::Clamp(
 		(FMath::Min(Box.Max.X, Reach.Max.X) - FMath::Max(Box.Min.X, Reach.Min.X)) / FMath::Max(Box.GetSize().X, 1.0),
 		0.0, 1.0);
@@ -293,17 +293,217 @@ FVector2D UghFringe::Bend(const FUghFringePlant& Plant, const FBox2D& Reach)
 		(FMath::Min(Box.Max.Y, Reach.Max.Y) - FMath::Max(Box.Min.Y, Reach.Min.Y)) / FMath::Max(Box.GetSize().Y, 1.0),
 		0.0, 1.0);
 	// away from the copter: beside the level outwards, above it apart from its middle, and towards the camera
-	const double Away = Plant.Side == ESide::Left ? -1 : Plant.Side == ESide::Right ? 1
+	const double Away = Side == ESide::Left ? -1 : Side == ESide::Right ? 1
 		: Box.GetCenter().X < Reach.GetCenter().X ? -1 : 1;
-	if (Plant.Side == ESide::Top)
+	if (Side == ESide::Top)
 	{
 		// the overhang drapes over it: a little apart, most towards the camera (it stays hidden in it)
 		return FVector2D(Away * Touched * (0.3 + 0.7 * Into) * TopAside, Touched * (0.3 + 0.7 * Down) * TopForward);
 	}
 	// a curtain: outwards, the pieces in front of it towards the camera, those behind it away
-	const double Aside = Away * Touched * (0.35 + 0.65 * Into) * (0.5 + 0.5 * Down) * SideAside;
-	const double Forward = (Plant.Depth > 0 ? -1 : 1) * Touched * (0.4 + 0.6 * Into) * SideForward;
-	return FVector2D(Aside, Forward);
+	return FVector2D(Away * Touched * (0.35 + 0.65 * Into) * SideAside,
+		(Depth > 0 ? -1 : 1) * Touched * (0.4 + 0.6 * Into) * SideForward);
+}
+
+double UghFringe::Touch(const FUghFringePlant& Plant, const FBox2D& Reach)
+{
+	return Plant.Bends() ? Touch(Plant.Box(), Reach) : 0;
+}
+
+FVector2D UghFringe::Bend(const FUghFringePlant& Plant, const FBox2D& Reach)
+{
+	return Plant.Bends() ? Push(Plant.Side, Plant.Depth, Plant.Box(), Reach) : FVector2D::ZeroVector;
+}
+
+void FUghFringeSway::Build(const TArray<FUghFringePlant>& Plants)
+{
+	ChainList.Reset();
+	On.Reset();
+	On.SetNum(Plants.Num());
+	// a curtain's pieces on the chain of the one they hang from, every other plant that bends on its own
+	TArray<int32> Members;
+	for (int32 Index = 0; Index < Plants.Num(); ++Index)
+	{
+		const FUghFringePlant& Plant = Plants[Index];
+		if (!Plant.Bends())
+		{
+			continue;
+		}
+		On[Index].Chain = Plant.Above != INDEX_NONE && On[Plant.Above].Chain != INDEX_NONE ? On[Plant.Above].Chain
+			: ChainList.AddDefaulted();
+		On[Index].Pivot = UghShapes::ToWorld(Plant.X, Plant.Y, Plant.Depth);
+		const FVector Tip = Plant.Tip();
+		On[Index].Tip = UghShapes::ToWorld(Tip.X, Tip.Y, Tip.Z);
+		Members.Add(Index);
+	}
+	TArray<TArray<int32>> Its;
+	Its.SetNum(ChainList.Num());
+	for (const int32 Index : Members)
+	{
+		Its[On[Index].Chain].Add(Index);
+	}
+	for (int32 Chain = 0; Chain < ChainList.Num(); ++Chain)
+	{
+		FChain& Each = ChainList[Chain];
+		const FUghFringePlant& First = Plants[Its[Chain][0]];
+		Each.Side = First.Side;
+		Each.Depth = First.Depth;
+		const FVector2D Top(First.X, First.Y);
+		FVector2D Bottom(First.Tip().X, First.Tip().Y);
+		double Length = First.Length;
+		for (const int32 Index : Its[Chain])
+		{
+			Each.Width = FMath::Max(Each.Width, Plants[Index].Width);
+			Bottom = Plants[Index].Tip().Y > Bottom.Y ? FVector2D(Plants[Index].Tip().X, Plants[Index].Tip().Y) : Bottom;
+		}
+		// a curtain hangs straight down from its first piece's pivot to its last one's tip, a plant of the overhang
+		// along its own way (its length all of it, also what goes towards the camera)
+		const bool bCurtain = First.Side != FUghFringePlant::ESide::Top;
+		if (bCurtain)
+		{
+			Bottom.X = Top.X;
+			Length = Bottom.Y - Top.Y;
+		}
+		const int32 Segments = FMath::Max(FMath::CeilToInt32(Length / ChainStep), ShortSegments);
+		Each.Spacing = Length / Segments;
+		Each.Wave = Length / (TravelAt100 * FMath::Sqrt(Length / 100));
+		for (int32 Point = 0; Point <= Segments; ++Point)
+		{
+			Each.Rest.Add(FMath::Lerp(Top, Bottom, double(Point) / Segments));
+		}
+		Each.Offset.Init(FVector2D::ZeroVector, Each.Rest.Num());
+		Each.Speed.Init(FVector2D::ZeroVector, Each.Rest.Num());
+		Each.Held.Init(0, Each.Rest.Num());
+		for (const int32 Index : Its[Chain])
+		{
+			const FUghFringePlant& Plant = Plants[Index];
+			On[Index].From = bCurtain ? (Plant.Y - Top.Y) / Each.Spacing : 0;
+			On[Index].To = bCurtain ? (Plant.Tip().Y - Top.Y) / Each.Spacing : Segments;
+		}
+	}
+}
+
+bool FUghFringeSway::Step(TConstArrayView<FBox2D> Reaches, TConstArrayView<double> Bumps, double Seconds)
+{
+	Seconds = FMath::Min(Seconds, LongestFrame);
+	bool bAny = false;
+	TArray<FVector2D> Target, Force;
+	for (FChain& Chain : ChainList)
+	{
+		const int32 Count = Chain.Rest.Num();
+		const bool bWas = Chain.bMoving;
+		// where the copters hold it, a bump's kick, a shiver
+		Target.Init(FVector2D::ZeroVector, Count);
+		bool bHeld = false;
+		for (int32 Point = 1; Point < Count; ++Point)
+		{
+			Chain.Held[Point] = 0;
+			const FVector2D Half(Chain.Width / 2, Chain.Spacing / 2);
+			const FBox2D Box(Chain.Rest[Point] - Half, Chain.Rest[Point] + Half);
+			for (int32 Copter = 0; Copter < Reaches.Num(); ++Copter)
+			{
+				const double Touched = UghFringe::Touch(Box, Reaches[Copter]);
+				if (Touched <= 0)
+				{
+					continue;
+				}
+				const FVector2D Push = UghFringe::Push(Chain.Side, Chain.Depth, Box, Reaches[Copter]);
+				if (Touched > Chain.Held[Point])
+				{
+					Chain.Held[Point] = Touched;
+					Target[Point] = Push;
+				}
+				const FVector2D Away = Push.IsNearlyZero() ? FVector2D(0, 1) : Push.GetSafeNormal();
+				const double Bump = Copter < Bumps.Num() ? Bumps[Copter] : 0;
+				Chain.Speed[Point] += Away * FMath::Min(Bump * BumpKick, MostKick) * Touched;
+				Chain.Speed[Point] += FVector2D(Random.FRandRange(-1.0, 1.0), Random.FRandRange(-1.0, 1.0)) * Shiver *
+					Touched * FMath::Min(Seconds, 0.05);
+				bHeld = true;
+			}
+		}
+		if (!bHeld && !Chain.bMoving)
+		{
+			Chain.bMoved = false;
+			continue;
+		}
+		// a damped string hung from its first point, free at its end: its tension (the wave's speed), a damping of its
+		// first swing and one of its bends (stronger the sharper: Kelvin-Voigt), the copters' hold
+		const double Length = Chain.Spacing * (Count - 1);
+		const double First = UE_HALF_PI * Chain.Wave / Length, Third = 5 * First;
+		const double Pull = FMath::Square(Chain.Wave / Chain.Spacing);
+		const double Drag = 2 * FirstDamping * First;
+		const double Smooth = 2 * ThirdDamping * Chain.Wave * Chain.Wave / Third / FMath::Square(Chain.Spacing);
+		const double Hold = HoldStiff * Pull, HoldDrag = 2 * HoldDamping * FMath::Sqrt(Hold);
+		const double Most = FMath::Min3(MostStep, 0.3 / Smooth, 0.5 / FMath::Sqrt(Hold + 4 * Pull));
+		const int32 Steps = FMath::Max(FMath::CeilToInt32(Seconds / Most), 1);
+		const double Step = Seconds / Steps;
+		Force.SetNumUninitialized(Count);
+		for (int32 Each = 0; Each < Steps; ++Each)
+		{
+			for (int32 Point = 1; Point < Count; ++Point)
+			{
+				// (the free end has half a segment's mass: twice the pull of its one neighbour)
+				const bool bEnd = Point == Count - 1;
+				const FVector2D Bend = bEnd ? 2 * (Chain.Offset[Point - 1] - Chain.Offset[Point])
+					: Chain.Offset[Point - 1] - 2 * Chain.Offset[Point] + Chain.Offset[Point + 1];
+				const FVector2D BendSpeed = bEnd ? 2 * (Chain.Speed[Point - 1] - Chain.Speed[Point])
+					: Chain.Speed[Point - 1] - 2 * Chain.Speed[Point] + Chain.Speed[Point + 1];
+				Force[Point] = Pull * Bend + Smooth * BendSpeed - Drag * Chain.Speed[Point] +
+					Chain.Held[Point] * (Hold * (Target[Point] - Chain.Offset[Point]) - HoldDrag * Chain.Speed[Point]);
+			}
+			for (int32 Point = 1; Point < Count; ++Point)
+			{
+				Chain.Speed[Point] += Force[Point] * Step;
+				Chain.Offset[Point] += Chain.Speed[Point] * Step;
+			}
+		}
+		Chain.bMoving = bHeld;
+		for (int32 Point = 1; Point < Count && !Chain.bMoving; ++Point)
+		{
+			Chain.bMoving = Chain.Offset[Point].GetAbsMax() > RestOffset || Chain.Speed[Point].GetAbsMax() > RestSpeed;
+		}
+		if (!Chain.bMoving)
+		{
+			for (int32 Point = 0; Point < Count; ++Point)
+			{
+				Chain.Offset[Point] = Chain.Speed[Point] = FVector2D::ZeroVector;
+			}
+		}
+		Chain.bMoved = bWas || Chain.bMoving;
+		bAny |= Chain.bMoving;
+	}
+	return bAny;
+}
+
+bool FUghFringeSway::Moved(int32 Plant) const
+{
+	return On.IsValidIndex(Plant) && On[Plant].Chain != INDEX_NONE && ChainList[On[Plant].Chain].bMoved;
+}
+
+FVector2D FUghFringeSway::OffsetAt(const FChain& Chain, double Along)
+{
+	const double At = FMath::Clamp(Along, 0.0, Chain.Rest.Num() - 1.0);
+	const int32 Below = FMath::Min(FMath::FloorToInt32(At), Chain.Rest.Num() - 2);
+	return FMath::Lerp(Chain.Offset[Below], Chain.Offset[Below + 1], At - Below);
+}
+
+FTransform FUghFringeSway::Motion(int32 Plant) const
+{
+	if (!On.IsValidIndex(Plant) || On[Plant].Chain == INDEX_NONE)
+	{
+		return FTransform::Identity;
+	}
+	const FOn& Its = On[Plant];
+	const FChain& Chain = ChainList[Its.Chain];
+	// aside: the world's X, towards the camera: the world's +Y
+	auto World = [](const FVector2D& Offset)
+	{
+		return FVector(Offset.X, Offset.Y, 0) * UghShapes::UnitsPerPixel;
+	};
+	const FVector Pivot = Its.Pivot + World(OffsetAt(Chain, Its.From));
+	const FVector Tip = Its.Tip + World(OffsetAt(Chain, Its.To));
+	const FQuat Turn = FQuat::FindBetweenVectors(Its.Tip - Its.Pivot, Tip - Pivot);
+	return FTransform(-Its.Pivot) * FTransform(Turn) * FTransform(Pivot);
 }
 
 AUghFringe::AUghFringe()
@@ -359,13 +559,13 @@ void AUghFringe::BeginPlay()
 		Each.Mesh = *Component;
 		Each.Instance = Instances[*Component].Num();
 		Each.Rest = Fit(Plant, Mesh);
-		Each.Pivot = UghShapes::ToWorld(Plant.X, Plant.Y, Plant.Depth);
 		Instances[*Component].Add(Each.Rest);
 	}
 	for (int32 Component = 0; Component < Components.Num(); ++Component)
 	{
 		Components[Component]->AddInstances(Instances[Component], false, true);
 	}
+	Sway.Build(Plants);
 	UE_LOG(LogTemp, Display, TEXT("UGH fringe: %d plants, %d models"), Plants.Num(), Components.Num());
 }
 
@@ -426,63 +626,25 @@ void AUghFringe::Show(const ugh_logic_view& Previous, const ugh_logic_view& Curr
 		return;
 	}
 
-	// each plant: its spring towards where the copters push it, then where its bend takes it (and the pieces under it)
-	const double Stiff = FMath::Square(UE_TWO_PI * SwingRate), Damp = 2 * Damping * UE_TWO_PI * SwingRate;
-	const int32 Steps = FMath::Clamp(FMath::CeilToInt32(Seconds / SpringStep), 1, 24);
-	const double Step = Seconds / Steps;
-	bool bAnyMoving = false;
+	// the chains sway (FUghFringeSway), the plants on them go where they have them
+	bStill = !Sway.Step(Reaches, Bumps, Seconds);
+	TArray<bool, TInlineAllocator<64>> Dirty;
+	Dirty.Init(false, Components.Num());
 	for (int32 Index = 0; Index < Plants.Num(); ++Index)
 	{
-		const FUghFringePlant& Plant = Plants[Index];
-		FShown& Each = Shown[Index];
-		if (Each.Mesh == INDEX_NONE)
+		const FShown& Each = Shown[Index];
+		if (Each.Mesh != INDEX_NONE && Sway.Moved(Index))
 		{
-			continue;
+			Components[Each.Mesh]->UpdateInstanceTransform(Each.Instance, Each.Rest * Sway.Motion(Index), true, false,
+				true);
+			Dirty[Each.Mesh] = true;
 		}
-		const bool bAboveMoved = Plant.Above != INDEX_NONE && Shown[Plant.Above].bMoved;
-		FVector2D Target = FVector2D::ZeroVector;
-		if (Plant.Bends())
-		{
-			for (int32 Copter = 0; Copter < Reaches.Num(); ++Copter)
-			{
-				const FVector2D Push = UghFringe::Bend(Plant, Reaches[Copter]);
-				if (Push.GetAbsMax() > Target.GetAbsMax())
-				{
-					Target = Push;
-				}
-				const double Touched = UghFringe::Touch(Plant, Reaches[Copter]);
-				if (Touched > 0)
-				{
-					// a bump shakes it away from the copter, being in it makes it shiver
-					const FVector2D Away = Push.IsNearlyZero() ? FVector2D(0, 1) : Push.GetSafeNormal();
-					Each.Spin += Away * FMath::Min(Bumps[Copter] * BumpKick, MostKick) * Touched;
-					Each.Spin += FVector2D(FMath::FRandRange(-1.0, 1.0), FMath::FRandRange(-1.0, 1.0)) * Shiver *
-						Touched * FMath::Min(Seconds, 0.05);
-				}
-			}
-		}
-		const FVector2D Before = Each.Angle;
-		for (int32 Count = 0; Count < Steps; ++Count)
-		{
-			Each.Spin += (Stiff * (Target - Each.Angle) - Damp * Each.Spin) * Step;
-			Each.Angle += Each.Spin * Step;
-		}
-		if (Target.IsNearlyZero() && Each.Angle.GetAbsMax() < Rest && Each.Spin.GetAbsMax() < Rest)
-		{
-			Each.Angle = Each.Spin = FVector2D::ZeroVector;
-		}
-		Each.bMoved = bAboveMoved || !(Each.Angle - Before).IsNearlyZero(1e-4);
-		bAnyMoving |= !Each.Angle.IsNearlyZero() || !Each.Spin.IsNearlyZero();
-		if (!Each.bMoved)
-		{
-			continue;
-		}
-		// its tip aside (to the screen's right), towards the camera (the world's +Y): turned about its pivot
-		const FQuat Turn = FQuat(FVector::YAxisVector, -FMath::DegreesToRadians(Each.Angle.X)) *
-			FQuat(FVector::XAxisVector, FMath::DegreesToRadians(Each.Angle.Y));
-		const FTransform Own = FTransform(-Each.Pivot) * FTransform(Turn) * FTransform(Each.Pivot);
-		Each.Bent = Plant.Above != INDEX_NONE ? Own * Shown[Plant.Above].Bent : Own;
-		Components[Each.Mesh]->UpdateInstanceTransform(Each.Instance, Each.Rest * Each.Bent, true, true, true);
 	}
-	bStill = !bAnyMoving;
+	for (int32 Component = 0; Component < Components.Num(); ++Component)
+	{
+		if (Dirty[Component])
+		{
+			Components[Component]->MarkRenderStateDirty();
+		}
+	}
 }

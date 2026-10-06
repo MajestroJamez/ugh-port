@@ -1597,3 +1597,15 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   `1p-01-intro4.5.png`), arch `Saved\Shots\Levels-25b\levels-quick.png` (všech 12 levelů celých, 0 chyb). CTest logiky,
   `6_verification` (163) a 198 testů v UE zelené. `levels.ps1 -Quick` (editor, Epic) fps medián 19, 1 % low 13 (25a:
   17 / 12). Balíček nepřebalen. Další: **krok 25c**.
+- 2026-10-07: krok 25c hotový - liány po stranách se prohnou věrohodně (`docs/visual-concept.md`). Příčina „10 metrů“:
+  kus závěsu se natočil kolem úchytu a kusy pod ním s ním jako tuhá páka. Teď `FUghFringeSway`: závěs je jeden řetěz
+  bodů po 0,6 m (rostlina převisu svůj krátký), tlumená struna visící z horního bodu - kde ho vrtulník drží, je
+  odtlačený asi jako dřív (do 0,7 m), nad tím se nakloní, pod tím visí posunutý zhruba stejně, ohyb doběhne dolů se
+  zpožděním (100 px za 0,6 s, delší pomaleji), tlumeně (i ostré ohyby, volný konec nešlehne), pak dokmitá; náraz dá
+  menší šťouch. Nový test `Ugh.Sway` (náraz vlevo nahoře / uprostřed / dole, vpravo, převis): spodek nejvýš 1,25krát
+  výchylka v místě nárazu (naměřeno 1,07 / 1,27 dole s tolerancí 0,5 px u sotva dotčených / 1,04 vpravo / 1,00 převis),
+  nejvýš 1,1 m (naměřeno nejvýš 7,9 px), při nárazu nahoře spodek aspoň polovinu a později, nakonec klid. Snímky
+  `Saved\Shots\25c` (`sheet-high.png`, `sheet-middle.png`, `sheet-low.png` - noc, `sheet-top.png` - vrtulník schovaný
+  v převisu). CTest logiky, `6_verification` (163) a 199 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze
+  změny, fps medián 18, 1 % low 12 (editor, Epic). Balíček nepřebalen. Čeká na Jana: zahrát (po přebalení) - náraz do
+  liány nahoře, uprostřed, dole. Další: **krok 25d**.

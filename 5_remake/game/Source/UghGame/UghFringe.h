@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Math/RandomStream.h"
 #include "ugh_logic.h"
 #include "UghFringe.generated.h"
 
@@ -75,31 +76,88 @@ namespace UghFringe
 	/** A plant bends this many pixels before the copter's reach touches it (its leaves spread wider than its line). */
 	constexpr double Near = 6;
 	/**
-	 * Degrees a plant bends at most, held by a copter: a curtain's piece outwards and towards the camera (away from it,
-	 * behind the copter), the overhang a little apart and towards the camera (it drapes over the copter, which stays
-	 * hidden in it). A bump shakes them further (AUghFringe).
+	 * Pixels a plant is pushed at most where a copter holds it (FUghFringeSway: the rest of it follows as a hanging
+	 * chain): a curtain outwards and towards the camera (away from it, behind the copter), the overhang a little apart
+	 * and towards the camera (it drapes over the copter, which stays hidden in it). A bump shakes them further.
 	 */
-	constexpr double SideAside = 14, SideForward = 6, TopAside = 8, TopForward = 12;
+	constexpr double SideAside = 7, SideForward = 3, TopAside = 2.2, TopForward = 3.5;
 
 	/** The plants, the same every time (in an order where a piece of a curtain follows the one it hangs from). */
 	TArray<FUghFringePlant> Plan();
 	/** What of a copter with its top left corner at `At` (pixels) pushes the plants. */
 	FBox2D Reach(const FVector2D& At);
+	/** How near a copter's `Reach` is to `Box` (pixels): 0 far, 1 touching it or in it. */
+	double Touch(const FBox2D& Box, const FBox2D& Reach);
 	/**
-	 * How far `Plant` bends at rest against a copter's `Reach` (degrees: x aside - positive its tip to the screen's
-	 * right -, y towards the camera); none when it does not bend or the copter is not near.
+	 * Where a copter's `Reach` pushes the part `Box` (pixels) of a plant on `Side`, `Depth` units deep (pixels: x aside -
+	 * positive to the screen's right -, y towards the camera); none when it is not near.
 	 */
+	FVector2D Push(FUghFringePlant::ESide Side, double Depth, const FBox2D& Box, const FBox2D& Reach);
+	/** Where `Plant` is pushed at rest against a copter's `Reach` (Push of its box); none when it does not bend. */
 	FVector2D Bend(const FUghFringePlant& Plant, const FBox2D& Reach);
-	/** How near a copter's `Reach` is to `Plant`: 0 far, 1 touching it or in it. */
+	/** How near a copter's `Reach` is to `Plant`: 0 far (or it does not bend), 1 touching it or in it. */
 	double Touch(const FUghFringePlant& Plant, const FBox2D& Reach);
 }
 
 /**
+ * How the plants of the fringe that bend sway (Jan, step 25c): each a hanging chain - a curtain's pieces one chain from
+ * the top of the hollow down to the sea, each plant of the overhang its own - of points ChainStep pixels apart, hung
+ * from its top, moved aside and towards the camera (pixels) as a damped string: where a copter holds it, it is pushed
+ * (UghFringe::Push), above that it leans from its top to there, below it hangs on the same distance aside - not more,
+ * as a lever would swing it -, reaching down as a wave a little later and damped, then it settles. A bump shakes
+ * where it hits. A plant shown is turned and moved so that its pivot and its tip go where its chain has them.
+ */
+class FUghFringeSway
+{
+public:
+	/** The chains of `Plants` (those that bend). */
+	void Build(const TArray<FUghFringePlant>& Plants);
+	/**
+	 * `Seconds` on, the copters' `Reaches` (UghFringe::Reach) holding the chains, `Bumps` (pixels a second into an edge,
+	 * 0 none) shaking them; false when nothing moves (any more).
+	 */
+	bool Step(TConstArrayView<FBox2D> Reaches, TConstArrayView<double> Bumps, double Seconds);
+	/** Whether `Plant` moved in the last step (its Motion changed). */
+	bool Moved(int32 Plant) const;
+	/** How `Plant` is moved from its place at rest: the world about its pivot (none for a plant that does not bend). */
+	FTransform Motion(int32 Plant) const;
+
+	/** A chain (for a look at it): its side, its points at rest (pixels), how far each is moved now (pixels). */
+	struct FChain
+	{
+		FUghFringePlant::ESide Side = FUghFringePlant::ESide::Top;
+		double Width = 0, Depth = 0;           // pixels across, units deep (its plants')
+		double Spacing = 1;                    // pixels between its points (along it)
+		double Wave = 1;                       // pixels a second a bend runs down it
+		TArray<FVector2D> Rest;                // its points, the first its top (held)
+		TArray<FVector2D> Offset, Speed;       // pixels, pixels a second
+		TArray<double> Held;                   // how hard a copter holds each point now (0 .. 1)
+		bool bMoving = false, bMoved = false;   // now; in the last step
+	};
+	TConstArrayView<FChain> Chains() const { return ChainList; }
+
+private:
+	/** A plant on its chain: where its pivot and its tip are along it (points, fractional), in the world at rest. */
+	struct FOn
+	{
+		int32 Chain = INDEX_NONE;
+		double From = 0, To = 0;
+		FVector Pivot = FVector::ZeroVector, Tip = FVector::ZeroVector;
+	};
+	/** A chain's offset at a point along it (fractional). */
+	static FVector2D OffsetAt(const FChain& Chain, double Along);
+
+	TArray<FChain> ChainList;
+	TArray<FOn> On;   // by the plants
+	FRandomStream Random{ 2510 };
+};
+
+/**
  * The soft edges (UghFringe): the scanned plants of the Electric Dreams sample (lianas, ferns, roots, bushes, creepers;
- * a liana of Blender's vines.py without them, the rest then absent), instanced. A copter near them bends them away -
- * each plant a damped spring about its pivot (a curtain's pieces hanging from each other), turned there instance by
- * instance (no material of the sample changed) - a bump into the edge or the overhang shakes them, a few leaves fall
- * (the burst Rustle) and they swing back; the plants sway in the wind as the sample's do.
+ * a liana of Blender's vines.py without them, the rest then absent), instanced. A copter near them pushes them away -
+ * swaying as hanging chains (FUghFringeSway), each plant turned and moved instance by instance (no material of the
+ * sample changed) - a bump into the edge or the overhang shakes them, a few leaves fall (the burst Rustle) and they
+ * swing back; the plants sway in the wind as the sample's do.
  */
 UCLASS()
 class AUghFringe : public AActor
@@ -120,16 +178,12 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	/** A plant shown: its instance, where it is at rest, how it bends now (degrees, and degrees a second). */
+	/** A plant shown: its instance, where it is at rest. */
 	struct FShown
 	{
 		int32 Mesh = INDEX_NONE;   // in Components
 		int32 Instance = INDEX_NONE;
 		FTransform Rest;
-		FVector Pivot = FVector::ZeroVector;   // the world
-		FVector2D Angle = FVector2D::ZeroVector, Spin = FVector2D::ZeroVector;
-		FTransform Bent;   // how its bend moves the world (with the pieces above it)
-		bool bMoved = false;
 	};
 	/** A copter as the fringe saw it last: where (its top left corner, pixels), how fast (pixels a second). */
 	struct FCopterSeen
@@ -144,5 +198,6 @@ private:
 	TArray<FShown> Shown;
 	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Components;
 	FCopterSeen Seen[2];
+	FUghFringeSway Sway;
 	bool bStill = true;   // nothing bends
 };

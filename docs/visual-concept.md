@@ -713,3 +713,19 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   džungle na římsách kamene až 150 px od dutiny (kamera hry je nesmí vidět - ve hře je džungle schovaná).
 - Test `Ugh.Stack` navíc hlídá, že plochy čela, které vidí kamera hry nad mořem, nejsou natočené nahoru (nejvýš 0,5 %
   bodů sítě); popředí nic nezakryje (nic z kamene přes obrazovku), arch rychlé sady se všemi levely celými.
+
+## Liány po stranách: fyzikálně věrohodné prohnutí (krok 25c)
+
+- Dřív se každý kus závěsu natočil kolem svého úchytu a kusy pod ním se s ním otočily jako tuhá páka: náraz nahoře
+  (14° na prvním kusu) odnesl spodek 24 m dlouhé liány o metry. Teď (`FUghFringeSway`) je každý závěs jeden řetěz bodů
+  po 0,6 m od horní hrany dutiny k moři (každá rostlina převisu svůj krátký řetěz), visí za horní bod a hýbe se do
+  strany a ke kameře jako tlumená struna: kde ho vrtulník drží, je odtlačený (`UghFringe::Push`, nejvýš 0,7 m do strany
+  a 0,3 m ke kameře, převis 0,22 / 0,35 m), nad tím se nakloní od úchytu k tomu místu, pod tím visí posunutý zhruba
+  stejně (ne víc). Ohyb doběhne dolů jako vlna (100 px za 0,6 s, delší liána pomaleji - odmocnina jako u visícího
+  řetězu), tlumená (první kmit 0,4 kritického, ostré ohyby víc: Kelvin-Voigt, bez šlehnutí volného konce), pak dokmitá
+  a zastaví se. Náraz do okraje dá zasaženým bodům malý šťouch (0,2 px/s na px/s, nejvýš 15 px/s), v porostu se chvěje.
+  Kus rostliny se vykreslí natočený a posunutý tak, aby jeho úchyt a špička byly tam, kde je má řetěz.
+- Test `Ugh.Sway`: vrtulník nalétne do levého okraje nahoře, uprostřed, dole, do pravého a do převisu; spodek každého
+  řetězu nejvýš 1,25krát tak daleko jako místo nárazu (+0,5 px u sotva dotčených) a nejvýš 1,1 m, při nárazu nahoře
+  spodek dlouhé liány aspoň polovinu a později, nakonec vše v klidu. Snímky `shot.ps1 -Edge left -EdgeY <y>
+  -EdgeAfter <s>` (`Saved\Shots\25c`).
