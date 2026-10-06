@@ -39,6 +39,11 @@ public:
 
 	/** The stone's field at a point (pixels): positive in the stone, about how far from its surface. */
 	static double Value(const FVector& Point);
+	/**
+	 * How deep (pixels) the stone's face is at x, y seen from in front: the first point of the stone along the depth
+	 * from the grid's front (its back where there is none).
+	 */
+	static double FaceDepth(double X, double Y);
 	/** Which way the field grows at the point (into the stone). */
 	static FVector Gradient(const FVector& Point);
 	/**

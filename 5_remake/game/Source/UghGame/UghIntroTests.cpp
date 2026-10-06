@@ -41,6 +41,12 @@ namespace
 	constexpr double RayStep = 2, RayEnd = 4, OnStone = 4;
 	/** Pixels: the stone may be seen this far over the screen's edge (its mesh is coarse: 6 px). */
 	constexpr double ScreenEdge = 0.5;
+	/**
+	 * The face of the stone the play sees above the sea (pixels: AboveTheSea) has no ledges: at most this share of its
+	 * points faces up as much as FacesUp (the world's z of its normal: soil and grass from about there, UghCliff.hlsl;
+	 * a few points of the coarse mesh at a crease may).
+	 */
+	constexpr double AboveTheSea = 175, FacesUp = 0.5, MostLedges = 0.005;
 	/** The caption's fade-out and the black before the play: 65 + 8 frames of the logic (its phases). */
 	constexpr double CaptionToPlay = (65 + 8) / 70.086;
 
@@ -289,15 +295,26 @@ bool FUghStackTest::RunTest(const FString& Parameters)
 	{
 		const FUghCameraPose Game = AUghStage::Play(Aspect);
 		const FVector Camera = Pixels(Game.Location);
-		int32 Over = 0, Left = 0, Right = 0, Above = 0, Below = 0;
-		for (const FVector& Vertex : Mesh.Vertices)
+		int32 Over = 0, Left = 0, Right = 0, Above = 0, Below = 0, Ledges = 0, Seen = 0;
+		for (int32 Index = 0; Index < Mesh.Vertices.Num(); ++Index)
 		{
+			const FVector& Vertex = Mesh.Vertices[Index];
 			if (!SeesOfStone(Field, Game, Aspect, Vertex))
 			{
 				continue;
 			}
 			// where it is seen on the plane of the play
 			const FVector At = Pixels(Vertex);
+			// no ledges on the face seen above the sea (the cliff's material lays soil and grass on what faces up)
+			if (At.Y < AboveTheSea)
+			{
+				++Seen;
+				if (Mesh.Normals[Index].Z >= FacesUp && Ledges++ < 5)
+				{
+					AddInfo(FString::Printf(TEXT("a ledge seen at %s (facing up %.2f)"), *At.ToString(),
+						Mesh.Normals[Index].Z));
+				}
+			}
 			const FVector OnPlane = Camera + (At - Camera) * (-Camera.Z / (At.Z - Camera.Z));
 			Left += OnPlane.X < 0;
 			Right += OnPlane.X > UghShapes::ScreenWidth;
@@ -311,6 +328,8 @@ bool FUghStackTest::RunTest(const FString& Parameters)
 			}
 		}
 		TestEqual(FString::Printf(TEXT("aspect %.2f: none of the stone over the screen"), Aspect), Over, 0);
+		TestTrue(FString::Printf(TEXT("aspect %.2f: no ledges on the face seen (%d of %d points face up)"), Aspect, Ledges,
+			Seen), Ledges <= MostLedges * Seen);
 		TestTrue(FString::Printf(TEXT("aspect %.2f: its edges seen (left %d, right %d, above %d, below %d)"), Aspect, Left,
 			Right, Above, Below), Left > 0 && Right > 0 && Above > 0);
 		const int32 PlantsSeen = Algo::CountIf(Plants, [&](const FUghDecoration& Plant)

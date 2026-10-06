@@ -16,8 +16,14 @@ namespace
 	using ESide = FUghFringePlant::ESide;
 	using Field = FUghStackField;
 
-	/** The stone's face around its hollow (pixels deep: Field::FrameDepth), a plant on it a little in front. */
-	constexpr double Face = Field::FrameDepth - 1.5;
+	/** A plant on the stone's face around its hollow grows this far in front of it (pixels). */
+	constexpr double OnFace = 1.5;
+
+	/** Where a plant at x, y grows on the stone's face (pixels deep). */
+	double Face(double X, double Y)
+	{
+		return Field::FaceDepth(X, Y) - OnFace;
+	}
 
 	/**
 	 * The overhang over the level: lianas hanging from the hollow's top edge (Lip) in two rows - in front of the
@@ -203,13 +209,17 @@ TArray<FUghFringePlant> UghFringe::Plan()
 	for (double X = Left - 8 + Random.FRand() * BushStep; X < Right + 8; X += BushStep * Random.FRandRange(0.75, 1.25))
 	{
 		const double Length = Random.FRandRange(16, 24);
-		Add(EKind::Bush, ESide::Top, X, Lip - Random.FRandRange(4, 11), Face, Out(Random.FRandRange(-0.4, 0.4),
-			Random.FRandRange(-0.25, 0.35)), Length, Length * 1.2, false);
+		const double Y = Lip - Random.FRandRange(4, 11);
+		const double Aside = Random.FRandRange(-0.4, 0.4);
+		Add(EKind::Bush, ESide::Top, X, Y, Face(X, Y), Out(Aside, Random.FRandRange(-0.25, 0.35)), Length, Length * 1.2,
+			false);
 	}
 	for (double X = Left - 10 + Random.FRand() * CreeperStep; X < Right + 10; X += CreeperStep * Random.FRandRange(0.7, 1.3))
 	{
-		Add(EKind::Creeper, ESide::Top, X, Lip - Random.FRandRange(14, 20), Face + 0.5, -FVector::UpVector,
-			Random.FRandRange(12, 17), Random.FRandRange(18, 26), false);
+		const double Y = Lip - Random.FRandRange(14, 20);
+		const double Length = Random.FRandRange(12, 17);
+		Add(EKind::Creeper, ESide::Top, X, Y, Face(X, Y) + 0.5, -FVector::UpVector, Length, Random.FRandRange(18, 26),
+			false);
 	}
 
 	// beside it: the left mirrored to the right
@@ -235,13 +245,16 @@ TArray<FUghFringePlant> UghFringe::Plan()
 		{
 			const double Length = Random.FRandRange(13, 20);
 			const bool bFern = Random.FRand() < 0.4;
-			Add(bFern ? EKind::Fern : EKind::Bush, Side, Across(Left - Random.FRandRange(4, 12)), Y, Face,
-				Out(Mirror * Random.FRandRange(0.4, 0.8), Random.FRandRange(-0.3, 0.3)), Length, Length * 1.2, false);
+			const double X = Across(Left - Random.FRandRange(4, 12));
+			const double Aside = Mirror * Random.FRandRange(0.4, 0.8);
+			Add(bFern ? EKind::Fern : EKind::Bush, Side, X, Y, Face(X, Y), Out(Aside, Random.FRandRange(-0.3, 0.3)), Length,
+				Length * 1.2, false);
 		}
 		for (double Y = Lip - 6 + Random.FRand() * SideCreeperStep; Y < CurtainEnd; Y += SideCreeperStep * Random.FRandRange(0.7, 1.3))
 		{
-			Add(EKind::Creeper, Side, Across(Left - Random.FRandRange(10, 20)), Y, Face + 0.5, -FVector::UpVector,
-				Random.FRandRange(28, 42), Random.FRandRange(14, 20), false);
+			const double X = Across(Left - Random.FRandRange(10, 20));
+			const double Length = Random.FRandRange(28, 42);
+			Add(EKind::Creeper, Side, X, Y, Face(X, Y) + 0.5, -FVector::UpVector, Length, Random.FRandRange(14, 20), false);
 		}
 	}
 	return Plants;

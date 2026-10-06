@@ -1585,3 +1585,15 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   `1p-01-frame205_20-fling0.5.png`). CTest logiky, `6_verification` (163) a 198 testů v UE zelené; `levels.ps1
   -Quick` 0 chyb, arch beze změny, fps medián 17, 1 % low 12 (editor, Epic; bez sražení žádná práce navíc). Balíček
   nepřebalen (25c). Další: **krok 25b**.
+- 2026-10-07: krok 25b hotový - kamera dál, kámen i v popředí (`docs/visual-concept.md`). Kamera hry (`AUghStage::Play`)
+  ukáže kolem obrazovky aspoň 64 px kamene nahoře (HUD na kameni), 34 px dole a 120 px po stranách: level je asi 61 %
+  výšky obrazu (dřív 71 %). Čelo kamene (`FUghStackField`) vedle dutiny strmě vystupuje o další 4 m ke kameře (ostění od
+  moře nahoru, nad levelem pozvolna zapadá; nadpraží ne - v poledním slunci by stínilo horní čtvrtinu levelu), level
+  vypadá vytesaný dovnitř. Pohled dál odhalil na čele ploché hnědé skvrny (hlína a tráva materiálu na plochách nahoru):
+  čelo, které kamera hry vidí, teď nemá římsy (šupiny, mělké švy, bloky jen praskliny), test `Ugh.Stack` to hlídá; keře
+  a břečťan okrajů (`AUghFringe`) rostou na skutečné ploše čela (`FaceDepth`), keře džungle na římsách až 150 px od
+  dutiny (kamera hry je nevidí). Konec letu je dál přesně kamera hry; log kamery (`Saved\Shots\25b\camera-1p01.csv`)
+  jako po 24d: dojezd 26 -> 0 jednotek/s, zrychlení na konci ~160. Snímky `Saved\Shots\25b` (`1p-01.png`,
+  `1p-01-intro4.5.png`), arch `Saved\Shots\Levels-25b\levels-quick.png` (všech 12 levelů celých, 0 chyb). CTest logiky,
+  `6_verification` (163) a 198 testů v UE zelené. `levels.ps1 -Quick` (editor, Epic) fps medián 19, 1 % low 13 (25a:
+  17 / 12). Balíček nepřebalen. Další: **krok 25c**.

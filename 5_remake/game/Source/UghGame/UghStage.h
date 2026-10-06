@@ -42,12 +42,13 @@ public:
 	 */
 	static FUghCameraPose Fit(const FBox2D& Pixels, double Aspect);
 	/**
-	 * The camera of the play: the whole screen and around it the edges of the stone it is carved into (AUghSeaStack: at
-	 * least StoneAbove pixels above and below the screen, StoneBeside beside it), as Fit.
+	 * The camera of the play: the whole screen and around it the stone it is carved into (AUghSeaStack: at least
+	 * StoneAbove pixels above the screen - the HUD lies on the stone there -, StoneBelow below it and StoneBeside beside
+	 * it: the stone's face standing out in front of the level, the level carved into it), as Fit.
 	 */
 	static FUghCameraPose Play(double Aspect);
-	/** Pixels of the stone seen around the screen at least: above and below it, beside it. */
-	static constexpr double StoneAbove = 30, StoneBeside = 60;
+	/** Pixels of the stone seen around the screen at least: above it, below it (the sea), beside it. */
+	static constexpr double StoneAbove = 64, StoneBelow = 34, StoneBeside = 120;
 	/** The viewport's aspect now (width / height; 16:9 without one). */
 	static double ViewportAspect();
 	/** Puts the camera there (the game's, or on its way to it: FUghIntro). */

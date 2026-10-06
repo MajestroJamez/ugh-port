@@ -164,8 +164,8 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
 
 ## Kamera
 
-Pevná, úzký objektiv (30°), celý řez v záběru a kolem něj okraje kamene (krok 24d), mírně shora (-4°), aby byly vidět
-horní plochy plošin. Na začátku levelu k ní kamera přiletí nad mořem (krok 19e, níže).
+Pevná, úzký objektiv (30°), celý řez v záběru a kolem něj kámen i s čelem v popředí (kroky 24d, 25b), mírně
+shora (-4°), aby byly vidět horní plochy plošin. Na začátku levelu k ní kamera přiletí nad mořem (krok 19e, níže).
 
 ## Technika
 
@@ -696,3 +696,20 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   tak hluboko a vrátí se tam, kde ho má logika, než vyplave. Pád kratší než 6 px (voda vystoupala k plošině) se
   neodhazuje. Test `Ugh.Fling` na skutečné logice levelu 1 (autopilot `FUghKnockPilot` srazí cestujícího), snímky
   `shot.ps1 -Fling <sekundy>`.
+
+## Kamera ještě dál, kámen i v popředí (krok 25b)
+
+- **Kamera hry** (`AUghStage::Play`): kolem obrazovky aspoň 64 px kamene nahoře (HUD leží na kameni), 34 px dole
+  (moře) a 120 px po stranách; level zabírá asi 61 % výšky obrazu (dřív 71 %). Konec letu (24d) je stále přesně kamera
+  hry, let se jen protáhne o kus dál od kamene - dojezd beze změny měkký (log kamery `Saved\Shots\25b\camera-1p01.csv`:
+  rychlost na konci 26 -> 0 jednotek/s, zrychlení na konci ~160 jako po 24d).
+- **Kámen v popředí** (`FUghStackField`): vedle dutiny levelu čelo kamene strmě vystupuje o další 4 m ke kameře (ostění
+  - `JambOut`, od 0,2 do 3,4 m od dutiny), od moře nahoru a výš než 5 m nad levelem pozvolna zapadá zpět do čela; level
+  tak vypadá vytesaný dovnitř balvanu a voda u ostění je blíž kameře než u levelu. Nad levelem ne: vystupující nadpraží
+  by v poledním slunci (sklon -55°) stínilo horní čtvrtinu levelu - vpředu nahoře je převis porostu (24d). Stíny ostění
+  padají mimo obrazovku (slunce zleva zepředu). Co kamera hry z čela vidí, nemá římsy: šupinaté vrstvy, švy jen mělké,
+  bloky jen jako praskliny - na každé ploše nahoru materiál skály kladl hlínu a trávu (ploché hnědé skvrny na stěně).
+  Keře a břečťan na čele (`AUghFringe`) rostou na skutečné ploše čela (`FUghStackField::FaceDepth`), keře a kapradí
+  džungle na římsách kamene až 150 px od dutiny (kamera hry je nesmí vidět - ve hře je džungle schovaná).
+- Test `Ugh.Stack` navíc hlídá, že plochy čela, které vidí kamera hry nad mořem, nejsou natočené nahoru (nejvýš 0,5 %
+  bodů sítě); popředí nic nezakryje (nic z kamene přes obrazovku), arch rychlé sady se všemi levely celými.

@@ -22,15 +22,26 @@ namespace
 	/** The face stands out up to FaceOut pixels further than the frame, from FaceFrom to FaceTo pixels from the hollow. */
 	constexpr double FaceOut = 22, FaceFrom = 12, FaceTo = 160;
 	/**
+	 * Beside the hollow (from under the sea up to JambUp pixels above it, then sinking back slowly up to JambEnd: no
+	 * ledge) the face stands out JambOut pixels more from JambFrom to JambTo pixels from it, steeply: the stone in front
+	 * of the level on both sides, the level carved into it (Jan, step 25b). Not above it: a lintel standing out would
+	 * shade the level's top in a high sun (the overhang's plants are its front).
+	 */
+	constexpr double JambOut = 40, JambFrom = 2, JambTo = 34, JambUp = 50, JambEnd = 300;
+	/**
 	 * The relief, pixels: lumps, flutes the rain cut down it, beds of slate (about BedHeight thick, stepping Beds,
 	 * broken into flakes about FlakeLength long, each out most at its foot: lips, overhangs), fractured blocks, a notch
 	 * the waves cut at about the sea (NotchY; not in the face). On the face it goes in at most FaceIn (the shroud stays
-	 * inside); within FrameWidth of the hollow it only stands out, and less (the frame: its beds FrameBeds). Further
-	 * than ReliefReach from the plain shape it cannot change the side: not reckoned.
+	 * inside); within FrameWidth of the hollow it only stands out, and less (the frame: its beds FrameBeds). The face the
+	 * play sees (up to SeenFrom pixels from the hollow, then fading in up to SeenTo) has no ledges: its beds step SeenBeds
+	 * with seams SeenSeams deep, its blocks only cracks (a step of a block or a seam's floor faces up: the cliff's material
+	 * lays soil and grass there - flat tan stains on a wall). Further than ReliefReach from the plain shape it cannot
+	 * change the side: not reckoned.
 	 */
 	constexpr double Lumps = 22, Flutes = 8, Beds = 18, BedHeight = 48, FlakeLength = 110, FrameBeds = 5, Blocks = 8,
 		Notch = 18, NotchY = FootY - 18, NotchHeight = 14;
 	constexpr double FaceIn = 4, FrameWidth = 50, ReliefReach = 110;
+	constexpr double SeenFrom = 170, SeenTo = 240, SeenBeds = 11, SeenSeams = 5, SeenCracks = 3;
 	/** How far from the surface (pixels) its openness looks (a crevice, a hollow); the grass hangs this far down. */
 	constexpr double NearLook = 4, FarLook = 12, LipReach = 40;
 
@@ -48,7 +59,7 @@ namespace
 	 * The top is above TopBelow; the ledges with plants below it, above the sea, at least LedgesFromHole from the
 	 * hollow (pixels); creepers hang from CreepersFrom to CreepersTo below the top.
 	 */
-	constexpr double TopBelow = TopY + 160, LedgesAboveSea = FootY - 25, LedgesFromHole = 70, CreepersFrom = 10,
+	constexpr double TopBelow = TopY + 160, LedgesAboveSea = FootY - 25, LedgesFromHole = 150, CreepersFrom = 10,
 		CreepersTo = 60;
 	constexpr int32 PlantSeed = 1938;
 
@@ -86,9 +97,13 @@ namespace
 		const UghRockNoise::FBlock Block = UghRockNoise::Blocks(P.X + P.Z, P.Y, 64, 30, 11);
 		const double Rough = Lump + Flute + Blocks * (Block.Height - 0.5) - 0.5 * Blocks * (1 - Block.Crack);
 		const double All = Rough + Bedding;
+		// the face the play sees: no ledges
+		const double Seen = Lump + Flute - 0.5 * SeenCracks * (1 - Block.Crack) + SeenBeds * (Bed.Height - 0.5) -
+			0.5 * SeenSeams * (1 - Bed.Crack);
 		// the frame only stands out (its lips face down or the camera, no ledges for grass around the level)
-		const double Framed = FMath::Lerp(0.25 * FMath::Max(Rough, 0.0) + FrameBeds * Bed.Height * Bed.Crack,
-			FMath::Max(All, -FaceIn), FMath::SmoothStep(0.0, FrameWidth, Hole));
+		const double Framed = FMath::Lerp(0.25 * FMath::Max(Lump + Flute, 0.0) + FrameBeds * Bed.Height * Bed.Crack,
+			FMath::Lerp(FMath::Max(Seen, -FaceIn), FMath::Max(All, -FaceIn), FMath::SmoothStep(SeenFrom, SeenTo, Hole)),
+			FMath::SmoothStep(0.0, FrameWidth, Hole));
 		const double OnFace = 1 - FMath::SmoothStep(20.0, 80.0, BehindFace);
 		return FMath::Lerp(All - Notch * FMath::Exp(-FMath::Square((P.Y - NotchY) / NotchHeight)), Framed, OnFace);
 	}
@@ -100,8 +115,12 @@ FUghStackField::FShape FUghStackField::Shape(const FVector& P)
 	Shape.Hole = FromHole(P.X, P.Y);
 	const double Below = FMath::Max(P.Y - FootY, 0.0);
 	const double Half = HalfWidth - Taper * FMath::Max(TaperFrom - P.Y, 0.0) + FootSpread * Below;
+	// the jambs: beside the hollow from under the sea up, sinking back into the face slowly high above it (no ledge)
+	const double Beside = FMath::Max3(HoleLeft - P.X, P.X - HoleRight, 0.0);
+	const double Jamb = JambOut * FMath::SmoothStep(JambFrom, JambTo, Beside) *
+		(1 - FMath::SmoothStep(JambUp, JambEnd, HoleTop - P.Y));
 	// (the foot spreads to the front only away from the level)
-	Shape.Front = FrameDepth - FaceOut * FMath::SmoothStep(FaceFrom, FaceTo, Shape.Hole) -
+	Shape.Front = FrameDepth - Jamb - FaceOut * FMath::SmoothStep(FaceFrom, FaceTo, Shape.Hole) -
 		FootSpread * Below * FMath::SmoothStep(40.0, 120.0, Shape.Hole);
 	const double Back = FrameDepth + StoneDepth + FootSpread * Below;
 	const double Mid = (Shape.Front + Back) / 2, HalfDepth = (Back - Shape.Front) / 2;
@@ -123,6 +142,26 @@ double FUghStackField::Value(const FVector& P)
 	const double Hollow = FMath::Max3(FMath::Max(HoleLeft - X, X - HoleRight), FMath::Max(HoleTop - Y, Y - HoleBottom),
 		Depth - HoleBack);
 	return FMath::Min(Stone, Hollow);
+}
+
+double FUghStackField::FaceDepth(double X, double Y)
+{
+	constexpr double Step = 2;
+	const double Back = Origin.Z + (LayerCount - 1) * Cell;
+	for (double Depth = Origin.Z; Depth < Back; Depth += Step)
+	{
+		if (Value(FVector(X, Y, Depth + Step)) > 0)
+		{
+			double Near = Depth, Far = Depth + Step;
+			for (int32 Halve = 0; Halve < 8; ++Halve)
+			{
+				const double Mid = (Near + Far) / 2;
+				(Value(FVector(X, Y, Mid)) > 0 ? Far : Near) = Mid;
+			}
+			return Far;
+		}
+	}
+	return Back;
 }
 
 FColor FUghStackField::Shade(const FVector& Point, const FVector& Outward)
