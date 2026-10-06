@@ -7,35 +7,49 @@
 // texture covers). It returns the base colour; CliffNormal (world), CliffRough and CliffOcclusion are its other
 // outputs.
 //
-// Each map is seen from the three axes and blended by the way the surface faces (triplanar: nothing stretches), only
-// the projections and layers that count are sampled. The layers: grass on what faces up and along the top edges of
-// the face, moss hanging below it, in the crevices and hollows, in some of the large patches, where the drawing is
-// green, on the little ledges and slopes, on deep floors and in the wet; soil in the crevices of what faces up; else
-// rock - the limestone of fractured blocks where the drawing is warm (its rock), with patches of the grey stone with
-// lichen, that stone where the drawing is grey (its cave walls) and deep in the cave; where two meet, the higher
-// relief of the two wins (height blend). The limestone is sampled at two scales, the large patches choosing between
-// them, so that its tiles do not repeat visibly; the grey stone's relief, finer, lies on all the rock. The limestone
-// is greyed (weathered karst: mid grey, a little warm, dark streaks down it), the rock matte; crevices and the
-// hollows of the relief are darker, the large patches lighter and darker, warmer and greyer, the rock just at the
-// water and under it wet; the drawing shades it a little, so that each level keeps its light and dark areas.
+// The whole stone is one boulder of dark grey slate (step 24e): its strata dip to the right by the stone's dip (the
+// same as the beds of FUghRockField and FUghStackField, UghRockNoise::StrataDip), so the maps are seen from the three
+// axes of the strata's frame (triplanar: nothing stretches, the plates of the scanned rock lie along the strata on every
+// wall) and blended by the way the surface faces, only the projections and layers that count are sampled. The layers:
+// grass on what faces up and along the top edges of the face, moss here and there - hanging below the grass, in deep
+// crevices, in a few of the large patches, where the drawing is green, on the little ledges and slopes, on deep floors
+// and in the wet -; soil in the crevices of what faces up; else the slate (rock and stone, the same scanned plates at
+// two sizes; the rock's at two scales the large patches choose between, so that its tiles do not repeat visibly); where
+// two meet, the higher relief of the two wins (height blend). The slate is greyed to a dark blue grey (darker than the
+// figures, so that they stand out of it), each of its beds its own shade and its flakes along them too, dark seams
+// between the beds, the gaps between its plates deep and dark, thin white quartz veins along the strata (in pieces,
+// wandering, a few crossing them) and pale wisps; matte; the rock just at the water and under it wet; the drawing
+// shades it a little, so that each level keeps its light and dark areas.
 
 #define UGH_WRAP View.MaterialTextureBilinearWrapedSampler
+#define UGH_HASH(P) frac(sin(dot(P, float2(127.1, 311.7))) * 43758.5453)
+#define UGH_NOISE(P, R) { float2 i_ = fmod(floor(P), 289.0); float2 f_ = frac(P); float2 s_ = f_ * f_ * (3 - 2 * f_); \
+	R = lerp(lerp(UGH_HASH(i_), UGH_HASH(i_ + float2(1, 0)), s_.x), \
+		lerp(UGH_HASH(i_ + float2(0, 1)), UGH_HASH(i_ + float2(1, 1)), s_.x), s_.y); }
+// the strata's frame: turned about the world's y (the depth) so that its z is across the strata (the dip: 0.14, the
+// tangent of the angle; cos, sin)
+const float dipC = 0.990338, dipS = 0.138647;
+#define UGH_ROT(A) float3((A).x * dipC + (A).z * dipS, (A).y, (A).z * dipC - (A).x * dipS)
+#define UGH_UNROT(A) float3((A).x * dipC - (A).z * dipS, (A).y, (A).z * dipC + (A).x * dipS)
+
 float3 n = normalize(VertexNormal);
 float3 m = Position * 0.01;
+float3 nr = UGH_ROT(n), mr = UGH_ROT(m);
 
-// the projections: their weights, coordinates (v down the picture) and the world's directions of u and v
-float3 w = pow(abs(n), 4);
+// the projections in the strata's frame: their weights, coordinates (v down the picture) and the frame's directions of
+// u and v
+float3 w = pow(abs(nr), 4);
 w /= w.x + w.y + w.z;
 w *= step(0.03, w);
 w /= w.x + w.y + w.z;
-float3 s = step(0, n) * 2 - 1;
-float2 uvX = float2(m.y * s.x, -m.z), uvY = float2(-m.x * s.y, -m.z), uvZ = float2(m.x, -m.y * s.z);
+float3 s = step(0, nr) * 2 - 1;
+float2 uvX = float2(mr.y * s.x, -mr.z), uvY = float2(-mr.x * s.y, -mr.z), uvZ = float2(mr.x, -mr.y * s.z);
 float3 uX = float3(0, s.x, 0), uY = float3(-s.y, 0, 0), uZ = float3(1, 0, 0);
 float3 vX = float3(0, 0, -1), vY = float3(0, 0, -1), vZ = float3(0, -s.z, 0);
 float2 dxX = ddx(uvX), dyX = ddy(uvX), dxY = ddx(uvY), dyY = ddy(uvY), dxZ = ddx(uvZ), dyZ = ddy(uvZ);
 
 // map T sampled along axis P (X, Y, Z) at K repeats per metre shifted by O; the three blended; a normal map's three in
-// the world
+// the strata's frame
 #define UGH_SAMPLE(T, P, K, O) Texture2DSampleGrad(T, UGH_WRAP, uv##P * (K) + (O), dx##P * (K), dy##P * (K))
 #define UGH_TRI(T, K, O, R) R = 0; \
 	[branch] if (w.x > 0) R += w.x * UGH_SAMPLE(T, X, K, O); \
@@ -52,28 +66,28 @@ float lum = max(dot(art, float3(0.3, 0.59, 0.11)), 0.02);
 float green = saturate((art.g - max(art.r, art.b)) / lum * 4);
 float warm = saturate((art.r - art.b) / lum * 2.5);
 float open = Shade.r, deep = Shade.g, patches = Shade.a;
-float back = smoothstep(0.25, 0.6, deep);   // the cave's back wall: grey, darker
+float back = smoothstep(0.25, 0.6, deep);   // the cave's back wall: darker
 // below a top edge, on what faces the camera or up (not the sides of the slab of the play)
 float lip = Shade.b * saturate(max(n.y, n.z) * 3);
 // wet at the water and up to a metre above it (here more, there less), and under it
 float wet = 1 - smoothstep(0, 0.3 + 0.7 * patches, m.z - WaterLevel * 0.01);
-// moss: in the crevices and hollows of the face, on its little ledges and the slopes of the cave, in a part of the
-// large patches
-float mossy = max(max(smoothstep(0.55, 0.15, open) * (1 - back),
-	smoothstep(0.45, 0.75, n.z) * smoothstep(0.4, 0.65, 1 - patches) * 0.8),
-	smoothstep(0.62, 0.78, 1 - patches) * 0.85);
+// moss only here and there: in the deep crevices of the face, on its little ledges and the slopes of the cave, in a few
+// of the large patches
+float mossy = max(max(0.7 * smoothstep(0.45, 0.12, open) * (1 - back),
+	smoothstep(0.45, 0.75, n.z) * smoothstep(0.45, 0.7, 1 - patches) * 0.8),
+	smoothstep(0.72, 0.84, 1 - patches) * 0.8);
 
 // the layers' shares: Rock, Stone, Grass, Moss, Soil
 float W[5];
 W[2] = max(smoothstep(0.75, 0.92, n.z) * (1 - 0.6 * deep), smoothstep(0.3, 0.65, lip + 0.3 * (patches - 0.5)));
 W[3] = saturate(max(max(max(green * 0.8, smoothstep(0.3, 0.7, n.z) * deep), mossy),
-	max(smoothstep(0.0, 0.25, lip), wet * smoothstep(0.45, 0.7, patches))) - W[2]);
+	max(smoothstep(0.0, 0.25, lip), wet * smoothstep(0.55, 0.75, patches))) - W[2]);
 W[4] = smoothstep(0.45, 0.75, n.z + 0.25 * (1 - open)) * saturate(1 - W[2] - W[3]) * 0.8;
 float rest = saturate(1 - W[2] - W[3] - W[4]);
 W[1] = rest * saturate(max(1 - warm, back) + 0.8 * smoothstep(0.5, 0.72, patches));
 W[0] = rest - W[1];
 
-// the limestone at two scales: where the large patches (and the reliefs) say, the one or the other
+// the rock's slate at two scales: where the large patches (and the reliefs) say, the one or the other
 float kRock = 1 / RockSize, kRock2 = 0.71 / RockSize;
 float2 shift = float2(0.37, 0.61);
 float swap = 0;
@@ -96,7 +110,7 @@ UGH_HEIGHT(3, Moss)
 UGH_HEIGHT(4, Soil)
 float top = 0;
 [unroll] for (int i = 0; i < 5; ++i) { top = max(top, W[i] > 0.005 ? W[i] + H[i] : 0); }
-float sum = 0, relief = 0;
+float sum = 0, relief = 0, slateRelief = 0;
 [unroll] for (int j = 0; j < 5; ++j)
 {
 	W[j] = W[j] > 0.005 ? max(W[j] + H[j] - top + 0.25, 0) : 0;
@@ -104,55 +118,100 @@ float sum = 0, relief = 0;
 	relief += W[j] * H[j];
 }
 relief /= sum;
+slateRelief = (W[0] * H[0] + W[1] * H[1]) / max(W[0] + W[1], 1e-4);
 
-float3 base = 0, bump = 0;
+// the slate's colour apart from the other layers' (it is greyed on its own)
+float3 slate = 0, base = 0, bump = 0;
 float rough = 0;
 float4 c, r;
 float3 nn;
-#define UGH_MAPS(Layer, K, O, Share) UGH_TRI(Layer##BaseColor, K, O, c); UGH_TRI_NORMAL(Layer##Normal, K, O, nn); \
-	UGH_TRI(Layer##Roughness, K, O, r); base += (Share) * c.rgb; bump += (Share) * nn; rough += (Share) * r.g;
+#define UGH_MAPS(Layer, K, O, Share, Into) UGH_TRI(Layer##BaseColor, K, O, c); UGH_TRI_NORMAL(Layer##Normal, K, O, nn); \
+	UGH_TRI(Layer##Roughness, K, O, r); Into += (Share) * c.rgb; bump += (Share) * nn; rough += (Share) * r.g;
 [branch] if (W[0] > 0)
 {
-	[branch] if (swap < 0.99) { UGH_MAPS(Rock, kRock, 0, W[0] * (1 - swap)) }
-	[branch] if (swap > 0.01) { UGH_MAPS(Rock, kRock2, shift, W[0] * swap) }
+	[branch] if (swap < 0.99) { UGH_MAPS(Rock, kRock, 0, W[0] * (1 - swap), slate) }
+	[branch] if (swap > 0.01) { UGH_MAPS(Rock, kRock2, shift, W[0] * swap, slate) }
 }
-#define UGH_LAYER(I, Layer) [branch] if (W[I] > 0) { UGH_MAPS(Layer, 1 / Layer##Size, 0, W[I]) }
-UGH_LAYER(1, Stone)
+[branch] if (W[1] > 0) { UGH_MAPS(Stone, 1 / StoneSize, 0, W[1], slate) }
+#define UGH_LAYER(I, Layer) [branch] if (W[I] > 0) { UGH_MAPS(Layer, 1 / Layer##Size, 0, W[I], base) }
 UGH_LAYER(2, Grass)
 UGH_LAYER(3, Moss)
 UGH_LAYER(4, Soil)
-// the grey stone's relief, finer, on all the rock
-float rock = (W[0] + W[1]) / sum;
-[branch] if (rock > 0.05)
+// the slate's finer plates on all of it
+float rockShare = (W[0] + W[1]) / sum;
+[branch] if (rockShare > 0.05)
 {
 	UGH_TRI_NORMAL(StoneNormal, 3.3 / StoneSize, shift, nn);
-	bump += 0.6 * rock * sum * nn;
+	bump += 0.6 * rockShare * sum * nn;
 }
-base /= sum;
 bump /= sum;
 rough /= sum;
 
-// weathered karst limestone: the blocks greyed to a mid, a little warm grey (darker than the figures, so that they
-// stand out of it; more contrast: darker cracks and weathering), the stone with lichen a little greyer too
-float grey = dot(base, float3(0.3, 0.59, 0.11));
-float3 limestone = 0.16 * pow(max(grey / 0.25, 0), 1.4) * float3(1.04, 1.0, 0.92);
-base = lerp(base, limestone, (W[0] + 0.3 * W[1]) / sum);
+// the slate (on every pixel, not in a branch: its derivatives want the neighbours)
+{
+	// dark blue grey slate: the scanned plates' own light and dark (more contrast), darker than the figures
+	float grey = dot(slate / max(W[0] + W[1], 1e-4), float3(0.3, 0.59, 0.11));
+	float3 tone = 0.055 * pow(max(grey / 0.032, 0), 1.5) * float3(0.86, 0.97, 1.16);
+	// along the strata (metres across them, undulating): thick beds and thin ones in them, each its own shade, a
+	// little browner or bluer; the flakes along a thin bed a little apart; all fading where too fine to see
+	float2 strata = float2(mr.x + mr.y, mr.z);   // along the strata (on any wall), across them
+	float wave, wave2;
+	UGH_NOISE(strata * float2(0.35, 0.5), wave);
+	UGH_NOISE(strata * float2(1.3, 1.6) + 17, wave2);
+	float thick = mr.z / 1.7 + 0.8 * wave;
+	float thin = mr.z / 0.32 + 2.2 * wave + 0.7 * wave2;
+	float thickBed = floor(thick), thinBed = floor(thin), inThin = frac(thin);
+	float flake = floor(strata.x / (0.5 + 1.2 * UGH_HASH(float2(thinBed, 3))) + 9 * UGH_HASH(float2(thinBed, 5)));
+	float fineThick = saturate(1 - fwidth(thick) * 3), fineThin = saturate(1 - fwidth(thin) * 2.5);
+	float bedShade = lerp(1, lerp(0.7, 1.3, UGH_HASH(float2(thickBed, 11))), fineThick) *
+		lerp(1, lerp(0.82, 1.15, UGH_HASH(float2(thinBed, 13))) * lerp(0.9, 1.1, UGH_HASH(float2(flake, thinBed))),
+			fineThin);
+	float hue = UGH_HASH(float2(thickBed, 19));
+	tone *= bedShade * lerp(1, lerp(float3(1.05, 1.0, 0.93), float3(0.95, 1.0, 1.06), hue), fineThick);
+	// the seam at the foot of a thin bed: dark, open in some of its flakes only
+	float seamWidth = 0.01 + fwidth(thin) * 0.32;
+	float seam = (1 - smoothstep(0.004, seamWidth, min(inThin, 1 - inThin) * 0.32)) *
+		step(0.35, UGH_HASH(float2(flake, thinBed + 0.5))) * 0.01 / seamWidth;
+	tone *= 1 - 0.65 * saturate(seam);
+	// pale wisps along the strata (mica, quartz dust)
+	float wisp;
+	UGH_NOISE(strata * float2(1.2, 16), wisp);
+	tone *= 1 + 0.45 * smoothstep(0.68, 0.95, wisp) * saturate(1 - fwidth(strata.y * 16) * 0.8);
+	// the gaps between the plates deep and dark, the plates' faces a little lighter
+	tone *= lerp(0.4, 1.12, smoothstep(0.4, 0.66, slateRelief));
+	// thin white quartz veins: along the strata, wandering, in pieces; a few crossing them
+	float meander, meander2, width, pieces, crossing;
+	UGH_NOISE(strata * float2(0.6, 0.9) + 41, meander);
+	UGH_NOISE(strata * float2(6.5, 5) + 7, meander2);
+	UGH_NOISE(strata * 1.7 + 63, width);
+	float veinAcross = mr.z / 0.85 + 1.4 * meander + 0.12 * meander2;
+	UGH_NOISE(float2(strata.x * 2.6, floor(veinAcross) * 3.7), pieces);
+	float veinBlur = fwidth(veinAcross) * 0.85;
+	float veinWidth = 0.002 + 0.006 * width;
+	float vein = (1 - smoothstep(veinWidth, veinWidth + veinBlur + 0.002, abs(frac(veinAcross) - 0.5) * 0.85)) *
+		smoothstep(0.5, 0.62, pieces) * veinWidth / (veinWidth + veinBlur);
+	float crossAcross = (strata.x * 0.8 + strata.y * 0.6) / 2.3 + 0.8 * meander2;
+	UGH_NOISE(float2(strata.x * 0.6 - strata.y * 0.8, floor(crossAcross) * 5.3) * 1.3, crossing);
+	float crossBlur = fwidth(crossAcross) * 2.3;
+	vein = max(vein, (1 - smoothstep(veinWidth * 0.6, veinWidth * 0.6 + crossBlur + 0.002,
+		abs(frac(crossAcross) - 0.5) * 2.3)) * smoothstep(0.8, 0.9, crossing) * veinWidth / (veinWidth + crossBlur));
+	tone = lerp(tone, float3(0.55, 0.57, 0.6) * lerp(0.7, 1.1, meander2), saturate(1.4 * vein));
+	base += (W[0] + W[1]) * tone;
+}
+base /= sum;
 // large patches lighter and darker, warmer and greyer
-base *= lerp(0.8, 1.2, patches) * lerp(float3(0.97, 0.99, 1.02), float3(1.03, 1.0, 0.96), patches);
-// dark streaks of weathering down the limestone (where rain water runs): its relief stretched downwards
-float streak = dot(Texture2DSampleLevel(RockHeight, UGH_WRAP, float2((m.x + m.y) * 0.3, m.z * 0.03), 3).rgb,
-	RockHeightMask.rgb);
-base *= lerp(1, 0.6, smoothstep(0.42, 0.25, streak) * W[0] / sum * (1 - wet));
+base *= lerp(0.85, 1.15, patches) * lerp(float3(0.98, 0.99, 1.02), float3(1.02, 1.0, 0.98), patches);
 // crevices of the rock and hollows of the relief darker
-base *= lerp(0.35, 1, open) * lerp(0.65, 1.08, saturate(relief * 1.5));
+base *= lerp(0.35, 1, open) * lerp(0.75, 1.05, saturate(relief * 1.5));
 // the drawing's lightness a little, deep in the cave darker
 base *= lerp(1, saturate(lum * 2.5), 0.1) * lerp(1, 0.5, back);
 // matte: dry rock never glossy; wet: darker, glossy
-rough = max(rough, 0.75 * rock);
+rough = max(rough, 0.78 * rockShare);
 base *= lerp(1, 0.5, wet);
 rough = lerp(rough, 0.3, 0.8 * wet);
 
-CliffNormal = normalize(n + 1.8 * bump);
+CliffNormal = normalize(n + 1.8 * UGH_UNROT(bump));
 CliffRough = rough;
-CliffOcclusion = lerp(0.3, 1, open) * lerp(0.75, 1, saturate(relief * 1.5));
+CliffOcclusion = lerp(0.3, 1, open) * lerp(0.75, 1, saturate(relief * 1.5)) *
+	lerp(1, lerp(0.55, 1, smoothstep(0.4, 0.66, slateRelief)), rockShare);
 return base;

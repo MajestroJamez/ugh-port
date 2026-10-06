@@ -1483,3 +1483,20 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   (`before-1p01.csv`). CTest logiky, `6_verification` (163) a 196 testů v UE zelené (4 s varováním enginu o timeoutu
   HTTP). `levels.ps1 -Quick` 0 chyb, fps medián 20 a 18 (stejný stav bez převisu a se schovaným kamenem ve stejném
   sezení 17; notebook teď pomalejší než po 24b2). Čeká na Jana: posoudit v okně (`play.ps1`). Další: **krok 24e**.
+- 2026-10-06: krok 24e hotový - kámen jako jeden obří balvan tmavé břidlice (`docs/visual-concept.md`). Rozmazaná
+  textura skály byla hlavně streaming: síť skály má UV obrazovky, streamer podle nich držel jen nejmenší mipy (A/B
+  `r.Streaming.FullyLoadUsedTextures 1` ostré) - `AUghBackground::MakeCliffMaterial` teď textury vrstev do 4096 drží
+  celé. Vrstva skály i kamene je Poly Haven `dark_rock_02` (CC0, vrstevnatá skála z ostrých plátů; `marble_cliff_03`
+  a `mossy_rock` nepoužité), `UghCliff.hlsl` ji převádí do tmavě modrošedé (albedo ~0,055), triplanár otočený o sklon
+  vrstev 0,14 (`UghRockNoise::StrataDip`, stejný jako geometrie), vrstvy po 1,7 a 0,32 m s vlastním odstínem, tmavé
+  spáry, hluboké mezery mezi pláty, tenké bílé křemenné žilky (po kusech, pár křížem, mizí pod pixel), světlé šmouhy,
+  méně mechu, bez stékaných pruhů. Geometrie `UghRockNoise::Slate`: vrstvy rozlámané na šupiny s ostrým břitem u paty
+  (stín na vrstvě pod ním, žádné plochy pro trávu) na čele levelu, jako žebra na strmých stěnách jeskyně, stupně
+  zadní stěny (2 px; 4 px zvedaly břehy potoka - `Ugh.Streams`), na kameni v moři vrstvy 48 px se stupněm 18 px (méně
+  boulí; rám kolem levelu jen vystupuje). Útesy vzadu (`M_UghScan`) přebarvené do tmavé modrošedé. Nanite
+  tessellation nezkoušena (reliéf nese pole, fps na hraně). Kolizní hrana beze změny (`Ugh.Rock`). Snímky
+  `Saved\Shots\24e-after` (`pair-reference-1p03.png` reference / po / před, `pair-1p01.png`, `1p-01-intro1.4.png`,
+  `menu.png`), před `24e-before`, archy `Levels-24e-after`, Low `Levels-24e-low`. CTest logiky, `6_verification`
+  (163) a 196 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, fps medián 19 (nejpomalejší 11; před krokem ve stejném
+  sezení 14 / 10 - zahřátý notebook, bez poklesu), Low 64 / 37 (po 24c 67 / 38). Čeká na Jana: posoudit kámen
+  v okně (`play.ps1`) - tón (`UghCliff.hlsl` 0,055 a modrý nádech), žilky, sílu vrstev kamene v moři. Další: **krok 24f**.

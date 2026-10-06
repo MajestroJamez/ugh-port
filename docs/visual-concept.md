@@ -654,3 +654,31 @@ v rovině hry: postavy > plošiny > skála, v každé náladě a předvolbě.
   jejího úchytu, natočení instancí, materiály vzorku beze změny; převis se přes vrtulník přehne k
   kameře), náraz do okraje jimi zatřese a spadne pár listů (výbuch `rustle`); zašustí jen vizuálně (zvuky jsou
   originálu). `shot.ps1 -Edge left|right|top` nalétne do okraje a vyfotí.
+
+## Kámen jako jeden obří balvan břidlice (krok 24e)
+
+Jan: kámen vypadá „hnusně“ - hladká hmota s rozmazanou texturou. Reference
+(`C:\Users\Ja079591\.claude\ugh-rock-reference-slate.png`): tmavě šedá vrstevnatá břidlice / fylit, ostré lámané
+vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky, matná.
+
+- **Rozmazaná textura** byla hlavně streaming: síť skály má UV obrazovky (celý level na jednu texturu), streamer podle
+  nich držel jen nejmenší mipy, i když kód materiálu mapuje textury ze světa po metrech (A/B s
+  `r.Streaming.FullyLoadUsedTextures 1`: ostré). `AUghBackground::MakeCliffMaterial` teď textury vrstev skály do 4096
+  drží celé (`bForceMiplevelsToBeResident`) - kámen v moři má stejný materiál.
+- **Materiál** (`M_UghCliff`, `UghCliff.hlsl`): vrstvu skály i kamene tvoří Poly Haven `dark_rock_02` (tmavá
+  vrstevnatá skála z ostrých plátů, CC0; 3 m a 2,2 m na dlaždici, jemné pláty 0,67 m jako normála na celé skále),
+  převedená do tmavě modrošedé (albedo kolem 0,055 - na slunci při expozici nálad vypadá jako středně tmavá šedá,
+  postavy nad ní vyniknou). Triplanár je v rámci vrstev: otočený o sklon vrstev (0,14, `UghRockNoise::StrataDip`), takže
+  pláty skenu leží podél vrstev na každé stěně a stejně jako vrstvy geometrie. Po vrstvách (1,7 m a 0,32 m, zvlněné
+  šumem) každá svůj odstín (trochu do hněda, trochu do modra) a šupiny podél tenkých vrstev trochu jinak, tmavé spáry
+  na patě části tenkých vrstev, světlé šmouhy podél vrstev, mezery mezi pláty hluboké a tmavé (i AO), tenké bílé
+  křemenné žilky podél vrstev (bloudí, po kusech, pár křížem); vše jemné mizí, kde je menší než pixel (bez mihotání).
+  Mech jen místy (méně ve skvrnách a škvírách), tráva nahoře a přes hrany beze změny, stékané pruhy vápence pryč.
+- **Geometrie** (`UghRockNoise::Slate`): vrstvy stoupající doprava, některé silnější, zvlněné, rozlámané na šupiny,
+  každá šupina vystupuje po svém a nejvíc u paty - ostrý břit nad vrstvou pod ní, která pod ním začíná hluboko (stín);
+  žádné plochy nahoru (žádné proužky trávy). Čelo levelu (vrstvy 5,5 px, šupiny 16 px, odštěpky), stěny jeskyně
+  (vrstvy jako žebra jen na strmých stěnách, až za deskou hry), zadní stěna (vrstvy vystupují o 2 px; o 4 px zvedaly břehy potoka u stěny - `Ugh.Streams`), kámen v moři (vrstvy 48 px se
+  stupněm 18 px, šupiny kolem kamene, méně boulí; rám kolem levelu jen vystupuje). Kolizní hrana v rovině hry beze
+  změny (`Ugh.Rock`).
+- **Útesy vzadu** (`M_UghScan`): přebarvené do tmavé modrošedé (tón 0,5/0,56/0,66, 10 % sytosti, méně mechu).
+- Nanite tessellation / displacement nezkoušena: reliéf nese pole skály (strmé břity v síti) a notebook je na hraně fps.

@@ -49,11 +49,11 @@ namespace UghAssets
 	/** The texture set of the logs of the streams' footbridges (AUghFalls): weathered timber. */
 	inline const TCHAR* BridgeWood = TEXT("rough_wood");
 	/**
-	 * The texture sets of the cliff's layers (UghMaterials::CliffLayers in the same order): a fractured cliff of blocks
-	 * and ledges (the cliff's material greys it into karst limestone), grey rock with lichen, grass, moss, red soil
-	 * with stones.
+	 * The texture sets of the cliff's layers (UghMaterials::CliffLayers in the same order): dark stratified rock of
+	 * sharp fractured plates for the rock and the stone (the cliff's material greys it into the stone's slate, at two
+	 * sizes), grass, moss, red soil with stones.
 	 */
-	inline const TCHAR* const CliffSets[] = { TEXT("marble_cliff_03"), TEXT("mossy_rock"), TEXT("grass004"),
+	inline const TCHAR* const CliffSets[] = { TEXT("dark_rock_02"), TEXT("dark_rock_02"), TEXT("grass004"),
 		TEXT("moss002"), TEXT("red_laterite_soil_stones") };
 	/** The skies of the moods (UghMood): a day with clouds, a golden evening, a dusk, a night, an overcast storm. */
 	inline const TCHAR* SkyDay = TEXT("sky_kloofendal_cloudy");

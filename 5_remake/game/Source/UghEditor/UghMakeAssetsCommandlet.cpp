@@ -24,7 +24,7 @@ using namespace UghMaterialNodes;
 namespace
 {
 	/** How many metres one texture of each layer of the cliff covers (UghMaterials::CliffLayers). */
-	constexpr float CliffSizes[] = { 4.5f, 3.f, 1.5f, 1.5f, 2.5f };
+	constexpr float CliffSizes[] = { 3.f, 2.2f, 1.5f, 1.5f, 2.5f };
 	static_assert(UE_ARRAY_COUNT(CliffSizes) == UE_ARRAY_COUNT(UghMaterials::CliffLayers));
 	/** How far the relief of a texture set shifts its textures with the view (parallax), of its size. */
 	constexpr float ParallaxRatio = 0.02f;

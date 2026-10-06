@@ -25,6 +25,8 @@ namespace
 	 * the cave).
 	 */
 	constexpr double ShroudThickness = 200, ShroudOverlap = 12;
+	/** The cliff's textures up to this size keep all their mips (larger ones would cost too much memory). */
+	constexpr float ResidentMaxSize = 4096;
 
 	/** The drawing blurred (a box of ArtBlur pixels around each). */
 	TArray<FColor> Soften(const TArray<FColor>& Art)
@@ -100,6 +102,20 @@ UMaterialInstanceDynamic* AUghBackground::MakeCliffMaterial(UObject* Outer)
 		if (!SetScannedLayer(Cliff, Layer) && !SetImportedLayer(Cliff, Layer))
 		{
 			return nullptr;
+		}
+	}
+	// all their mips: the streamer would go by the mesh's UVs (the screen, the whole level on a texture) and keep only
+	// the smallest, the rock blurred - the code maps them from the world, metres to a texture
+	for (const TCHAR* Layer : UghMaterials::CliffLayers)
+	{
+		for (const TCHAR* Map : UghMaterials::CliffMaps)
+		{
+			UTexture* Texture = nullptr;
+			if (Cliff->GetTextureParameterValue(FHashedMaterialParameterInfo(FName(FString(Layer) + Map)), Texture) &&
+				Texture && Texture->GetSurfaceWidth() <= ResidentMaxSize)
+			{
+				Texture->bForceMiplevelsToBeResident = true;
+			}
 		}
 	}
 	return Cliff;

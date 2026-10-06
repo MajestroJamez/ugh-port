@@ -63,6 +63,34 @@ UghRockNoise::FBlock UghRockNoise::Blocks(double X, double Y, double Width, doub
 	return Block;
 }
 
+UghRockNoise::FBlock UghRockNoise::Slate(double X, double Y, double Along, double BedHeight, double FlakeLength,
+	uint32 Salt)
+{
+	// across the strata (beds, down): undulating, and a monotone wave so that the beds are not all as thick
+	const double Undulation = 0.35 * FMath::PerlinNoise2D(FVector2D(Along, Y) * (0.3 / BedHeight)) +
+		0.2 * FMath::PerlinNoise2D(FVector2D(Along + 91, Y - 37) * (1.1 / BedHeight));
+	const double Straight = (Y + StrataDip * X) / BedHeight + Undulation;
+	const double Across = Straight + 0.28 * FMath::Sin(Straight * 2.3 + 0.7 * Salt);
+	const int32 Bed = FMath::FloorToInt32(Across);
+	const double Down = Across - Bed;   // 0 at a bed's top, 1 at its foot
+	// along a bed: its flakes, each as long as the bed says, their ends a little wavy
+	const double Length = FlakeLength * (0.6 + 0.8 * Fraction(Bed, 1, Salt));
+	const double Way = Along / Length + 7 * Fraction(Bed, 2, Salt) +
+		0.05 * FMath::PerlinNoise2D(FVector2D(Along, Y) * (0.9 / BedHeight));
+	const int32 Flake = FMath::FloorToInt32(Way);
+	const double Within = Way - Flake;
+	FBlock Block;
+	// each flake out its own way, leaning a little along the bed, out most at its foot
+	const double Out = Fraction(Bed, Flake, Salt + 3);
+	const double Lean = 0.25 * (Fraction(Bed, Flake, Salt + 4) * 2 - 1) * (Within - 0.5);
+	const double Lip = FMath::Pow(Down, 1.6) * (0.65 + 0.35 * Fraction(Bed, Flake, Salt + 5));
+	Block.Height = FMath::Clamp(0.4 * Out + 0.6 * Lip + Lean, 0.0, 1.0);
+	// some of the flakes' ends are open seams
+	const bool bOpen = Fraction(Bed, Flake, Salt + 6) < 0.5;
+	Block.Crack = bOpen ? FMath::SmoothStep(0.0, 0.07, FMath::Min(Within, 1 - Within) * Length / FlakeLength) : 1;
+	return Block;
+}
+
 double UghRockNoise::SmoothMax(double A, double B, double K)
 {
 	const double H = FMath::Max(K - FMath::Abs(A - B), 0.0) / K;

@@ -22,13 +22,14 @@ namespace
 	/** The face stands out up to FaceOut pixels further than the frame, from FaceFrom to FaceTo pixels from the hollow. */
 	constexpr double FaceOut = 22, FaceFrom = 12, FaceTo = 160;
 	/**
-	 * The relief, pixels: lumps, flutes the rain cut down it, beds of limestone (BedHeight high, each standing out at
-	 * its top: ledges, overhangs), fractured blocks, a notch the waves cut at about the sea (NotchY; not in the face).
-	 * On the face it goes in at most FaceIn (the shroud stays inside); within FrameWidth of the hollow it only stands
-	 * out, and less (the frame). Further than ReliefReach from the plain shape it cannot change the side: not reckoned.
+	 * The relief, pixels: lumps, flutes the rain cut down it, beds of slate (about BedHeight thick, stepping Beds,
+	 * broken into flakes about FlakeLength long, each out most at its foot: lips, overhangs), fractured blocks, a notch
+	 * the waves cut at about the sea (NotchY; not in the face). On the face it goes in at most FaceIn (the shroud stays
+	 * inside); within FrameWidth of the hollow it only stands out, and less (the frame: its beds FrameBeds). Further
+	 * than ReliefReach from the plain shape it cannot change the side: not reckoned.
 	 */
-	constexpr double Lumps = 40, Flutes = 16, Beds = 10, BedHeight = 110, Blocks = 12, Notch = 18, NotchY = FootY - 18,
-		NotchHeight = 14;
+	constexpr double Lumps = 22, Flutes = 8, Beds = 18, BedHeight = 48, FlakeLength = 110, FrameBeds = 5, Blocks = 8,
+		Notch = 18, NotchY = FootY - 18, NotchHeight = 14;
 	constexpr double FaceIn = 4, FrameWidth = 50, ReliefReach = 110;
 	/** How far from the surface (pixels) its openness looks (a crevice, a hollow); the grass hangs this far down. */
 	constexpr double NearLook = 4, FarLook = 12, LipReach = 40;
@@ -78,15 +79,16 @@ namespace
 		const double Lump =
 			Lumps * (FMath::PerlinNoise3D(P * 0.0045) + 0.45 * FMath::PerlinNoise3D(P * 0.012 + FVector(31)));
 		const double Flute = Flutes * FMath::PerlinNoise3D(FVector(P.X * 0.028, P.Y * 0.0045, P.Z * 0.028));
-		// down a bed it goes in, at the next one's top it stands out again (y down)
-		const double Bed = FMath::Frac(P.Y / BedHeight + 0.6 * FMath::PerlinNoise2D(FVector2D(P.X, P.Z) * 0.004));
-		const double Bedding = Beds * (FMath::SmoothStep(0.0, 0.08, Bed) * 2 * FMath::Square(1 - Bed) - 0.6);
+		// the slate's beds (as the level's rock's: rising to the right), their flakes around the stone (along x and
+		// the depth) out most at their feet, sharp lips over the beds below
+		const UghRockNoise::FBlock Bed = UghRockNoise::Slate(P.X, P.Y, P.X + P.Z, BedHeight, FlakeLength, 13);
+		const double Bedding = Beds * (Bed.Height - 0.5) - 0.5 * Beds * (1 - Bed.Crack);
 		const UghRockNoise::FBlock Block = UghRockNoise::Blocks(P.X + P.Z, P.Y, 64, 30, 11);
 		const double Rough = Lump + Flute + Blocks * (Block.Height - 0.5) - 0.5 * Blocks * (1 - Block.Crack);
 		const double All = Rough + Bedding;
-		// (no beds in the frame: their little ledges would be lines of grass around the level)
-		const double Framed = FMath::Lerp(0.25 * FMath::Max(Rough, 0.0), FMath::Max(All, -FaceIn),
-			FMath::SmoothStep(0.0, FrameWidth, Hole));
+		// the frame only stands out (its lips face down or the camera, no ledges for grass around the level)
+		const double Framed = FMath::Lerp(0.25 * FMath::Max(Rough, 0.0) + FrameBeds * Bed.Height * Bed.Crack,
+			FMath::Max(All, -FaceIn), FMath::SmoothStep(0.0, FrameWidth, Hole));
 		const double OnFace = 1 - FMath::SmoothStep(20.0, 80.0, BehindFace);
 		return FMath::Lerp(All - Notch * FMath::Exp(-FMath::Square((P.Y - NotchY) / NotchHeight)), Framed, OnFace);
 	}

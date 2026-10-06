@@ -20,6 +20,21 @@ namespace UghRockNoise
 	 */
 	FBlock Blocks(double X, double Y, double Width, double Height, uint32 Salt);
 
+	/**
+	 * How steeply the strata of the stone's slate rise to the right (y up a pixel of x): the beds of the level's rock,
+	 * of the sea stack and of the cliff's material (UghCliff.hlsl: the same dip) lie alike, one boulder.
+	 */
+	constexpr double StrataDip = 0.14;
+
+	/**
+	 * The slate at x, y (pixels, y down): beds about `BedHeight` thick (some thicker, some thinner, undulating) rising
+	 * to the right by StrataDip, each broken into flakes about `FlakeLength` long along `Along` (pixels along the
+	 * strata: x on the face, x and the depth around the stone). Height 0 .. 1: a flake stands out most at its foot (a
+	 * sharp lip over the bed below, which starts deep under it: a shadow), each flake its own way; Crack 0 in the open
+	 * seam between two flakes of a bed. `Salt` makes another pattern.
+	 */
+	FBlock Slate(double X, double Y, double Along, double BedHeight, double FlakeLength, uint32 Salt);
+
 	/** The greater of two fields, rounded where they are within `K` of each other (two shapes melting together). */
 	double SmoothMax(double A, double B, double K);
 }

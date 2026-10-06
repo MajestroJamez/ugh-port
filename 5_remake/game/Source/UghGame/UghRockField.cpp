@@ -21,8 +21,16 @@ namespace
 	 */
 	constexpr double EdgeRadius = 2.5, FaceBase = 0.8, FaceRelief = 2.4, FaceBulge = 0.8, BulgeWidth = 8;
 	static_assert(FaceBase + FaceRelief + FaceBulge <= FUghRockField::FaceMax);
-	/** The face's fractured blocks of limestone: about this wide and high, pixels (ledges); smaller ones on them. */
-	constexpr double BlockWidth = 16, BlockHeight = 9, SmallBlocks = 0.4;
+	/**
+	 * The face's slate: beds about this thick (pixels), broken into flakes about this long; chips broken out of them
+	 * about this wide and high.
+	 */
+	constexpr double BedHeight = 5.5, FlakeLength = 16, ChipWidth = 6.5, ChipHeight = 3.5;
+	/**
+	 * The cave's walls: the slate's beds as ribs, this thick and standing out up to this much (pixels); the back wall's
+	 * beds this thick and deep.
+	 */
+	constexpr double WallBeds = 6, WallRibs = 1.2, BackBeds = 9, BackSteps = 2;
 	/**
 	 * Behind the slab: the exact outline turns into the blurred one within Blend pixels; walls and ceilings reach up to
 	 * GrowMax pixels further into the cave (half of it GrowDepth deep); their roughness grows with the depth.
@@ -60,18 +68,18 @@ namespace
 	}
 
 	/**
-	 * How far the face stands out at x, y (pixels), 0 .. 1: fractured blocks of limestone (each standing out its own
-	 * way with a flat face, a crack around it; smaller blocks on them), broad swellings and a grain.
+	 * How far the face stands out at x, y (pixels), 0 .. 1: beds of slate (flakes each standing out its own way, most
+	 * at its foot - a sharp lip over the bed below -, open seams between some of them), chips broken out of them, broad
+	 * swellings and a grain.
 	 */
 	double Relief(double X, double Y)
 	{
-		const UghRockNoise::FBlock Big = UghRockNoise::Blocks(X, Y, BlockWidth, BlockHeight, 0);
-		const UghRockNoise::FBlock Small =
-			UghRockNoise::Blocks(X, Y, BlockWidth * SmallBlocks, BlockHeight * SmallBlocks, 7);
-		const double Blocks = (0.85 * Big.Height + 0.15 * Small.Height) * (0.7 + 0.3 * Small.Crack);
+		const UghRockNoise::FBlock Bed = UghRockNoise::Slate(X, Y, X, BedHeight, FlakeLength, 0);
+		const UghRockNoise::FBlock Chip = UghRockNoise::Blocks(X, Y, ChipWidth, ChipHeight, 7);
 		const double Swell = 0.5 + 0.5 * Noise(X, Y, 0.04);
 		const double Grain = 0.5 + 0.5 * Noise(X, Y, 0.35);
-		return FMath::Clamp(0.8 * Blocks + 0.12 * Swell + 0.08 * Grain, 0.0, 1.0) * (0.25 + 0.75 * Big.Crack);
+		return FMath::Clamp(0.78 * Bed.Height * (0.8 + 0.2 * Chip.Crack) + 0.1 * Chip.Height + 0.08 * Swell +
+			0.04 * Grain, 0.0, 1.0) * (0.3 + 0.7 * Bed.Crack);
 	}
 
 	/** The luminance of the drawing at each pixel of the screen, blurred over Radius pixels (the holes, not the cracks). */
@@ -238,9 +246,16 @@ float FUghRockField::Behind(int32 I, int32 J, double Depth) const
 	Value += Blended * GrowMax * (1 - FMath::Exp(-Behind / GrowDepth)) * (Wall + 0.6 * Ceiling);
 	const double Rough = Blended * FMath::Min(RoughMin + RoughPerPixel * Behind, RoughMax) *
 		(0.3 + 0.7 * FMath::Max(Wall, Ceiling));
-	if (FMath::Abs(Value) < Rough + 0.5)   // only near the surface: further it cannot change the side
+	// (only on steep walls, not at the slab nor on floors: a stream's banks stay level)
+	const double Ribs = FMath::SmoothStep(Blend, 2 * Blend, Behind) * WallRibs * FMath::SmoothStep(0.75, 0.95, Wall);
+	if (FMath::Abs(Value) < Rough + Ribs + 0.5)   // only near the surface: further it cannot change the side
 	{
 		Value += Rough * (0.7 * Noise(X, Y, Depth, 0.18) + 0.3 * Noise(X, Y, Depth, 0.5));
+		// the slate's beds along the walls (into the depth) as ribs
+		if (Ribs > 0.01)
+		{
+			Value += Ribs * UghRockNoise::Slate(X, Y, Depth, WallBeds, FlakeLength, 21).Height;
+		}
 	}
 	return SmoothMax(Value, Depth - BackWall[FUghRockOutline::Index(I, J)], WallSmooth);
 }
@@ -254,7 +269,9 @@ void FUghRockField::MakeBackWall(TConstArrayView<FColor> Art)
 		for (int32 I = 0; I < Columns; ++I)
 		{
 			const double X = FUghRockOutline::X(I), Y = FUghRockOutline::Y(J);
-			double Wall = WallDepth + WallBumps * (0.7 * Noise(X, Y, 0.025) + 0.3 * Noise(X, Y, 0.09));
+			// bumpy, the slate's beds stepping out of it
+			double Wall = WallDepth + WallBumps * (0.7 * Noise(X, Y, 0.025) + 0.3 * Noise(X, Y, 0.09)) -
+				BackSteps * (UghRockNoise::Slate(X, Y, X, BackBeds, 2 * FlakeLength, 31).Height - 0.5);
 			if (FUghRockOutline::Outside(I, J) == 0)
 			{
 				const float Dark = Luminance[FMath::FloorToInt32(Y) * Width + FMath::FloorToInt32(X)];
