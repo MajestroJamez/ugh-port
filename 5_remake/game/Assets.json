@@ -271,7 +271,7 @@
       "import": ["copter.glb"]
     },
     {
-      "id": "caveman", "kind": "generated", "use": "the caveman: pilots and passengers (rigged; actions idle, sit, pedal, hang, walk, wave, tread, swim, fall)",
+      "id": "caveman", "kind": "generated", "use": "the caveman: pilots and passengers (rigged; actions idle, sit, pedal, hang, walk, wave, tread, swim, fall, flail)",
       "page": "Blender/caveman.py", "license": "CC0-1.0", "author": "UGH remake (Blender/caveman.py)",
       "path": "generated/caveman",
       "blender": { "script": "Blender/caveman.py", "outputs": ["caveman.glb"] },

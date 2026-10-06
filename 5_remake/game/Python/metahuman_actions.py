@@ -5,11 +5,11 @@ on its body (/Game/External/MetaHumans/<name>/Actions/AS_<action>), each a loop,
   place,
 - the others posed here (no clips for them): wave (calling a copter with both arms over the head), sit (in the
   cabin, hands on the knees), pedal (the copter's crank, holding its handles), hang (from a rope by both hands),
-  tread, swim and fall (in the water).
+  tread, swim and fall (in the water), flail (flung through the air into the sea, windmilling the arms).
 
 Where an action has its origin is as the caveman's (Blender/caveman_actions.py): on the ground between the feet
 (idle, walk, wave), the seat (sit, pedal), where the hands hold the rope (hang), the water's surface with the chin
-just above it (tread, swim, fall). The copter's crank and handles are copter_layout.py's in the copter's scale: the
+just above it (tread, swim, fall, flail). The copter's crank and handles are copter_layout.py's in the copter's scale: the
 game shows a MetaHuman as high as a walking passenger's sprite (metahuman_poses.PERSON). The figures face +Y, their
 left is +X.
 

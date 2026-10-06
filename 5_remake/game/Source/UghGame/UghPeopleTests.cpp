@@ -76,8 +76,8 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghPeopleTest, "Ugh.Figures.People",
 /**
  * Each MetaHuman's actions put him where the game wants him, in the people's height (the game's units): standing on
  * the ground and in the slab of the play, sitting on the seat, pedalling the copter's crank holding its handles,
- * hanging from where his hands hold, in the water with his head at the surface. His leaves cover his hips from the
- * belt to the thighs (and the woman's chest).
+ * hanging from where his hands hold, in the water with his head at the surface, flung windmilling his arms. His
+ * leaves cover his hips from the belt to the thighs (and the woman's chest).
  */
 bool FUghPeopleTest::RunTest(const FString& Parameters)
 {
@@ -131,13 +131,24 @@ bool FUghPeopleTest::RunTest(const FString& Parameters)
 				const FVector Holding = At(Hang, Hands[Side], Fraction);
 				Check(Holding.Size() < 2 * Near, TEXT("holds the rope"), Hang, Holding);
 			}
-			for (const EUghCaveAction Action : { Tread, Fall })
+			for (const EUghCaveAction Action : { Tread, Fall, Flail })
 			{
 				const FVector Joint = At(Action, Head, Fraction);
 				Check(Joint.Z > -2 && Joint.Z < 8 && FMath::Abs(Joint.Y) < Slab, TEXT("has his head at the surface"),
 					Action, Joint);
 			}
 		}
+		// flung through the air he windmills his arms: far out beside him, over his head and down again
+		double Out = 0, Highest = -UE_BIG_NUMBER, Lowest = UE_BIG_NUMBER;
+		for (int32 Sample = 0; Sample < Samples; ++Sample)
+		{
+			const FVector Hand = At(Flail, Hands[0], double(Sample) / Samples);
+			Out = FMath::Max(Out, FMath::Abs(Hand.X));
+			Highest = FMath::Max(Highest, Hand.Z);
+			Lowest = FMath::Min(Lowest, Hand.Z);
+		}
+		Check(Out > 45 && Highest > 20 && Highest - Lowest > 40, TEXT("windmills his arms"), Flail,
+			FVector(Out, Lowest, Highest));
 		// the left pedal is on top at the start of the loop, the right one half a turn later
 		const double Axle = UghCopterModel::PedalAxle.Z;
 		Check(At(Pedal, Feet[0], 0).Z > Axle && At(Pedal, Feet[1], 0.5).Z > Axle, TEXT("turns the crank"), Pedal,

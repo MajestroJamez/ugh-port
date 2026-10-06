@@ -71,6 +71,8 @@ public:
 	bool IsHolding() const;
 	/** Every burst, flash and score gone (a game ends). */
 	void Clear();
+	/** Makes one of each of `Bursts` ahead, hidden (while a level is built in the black: none made in the play). */
+	void Stock(TConstArrayView<EUghBurst> Bursts);
 
 	TConstArrayView<FPopup> GetPopups() const { return Popups; }
 

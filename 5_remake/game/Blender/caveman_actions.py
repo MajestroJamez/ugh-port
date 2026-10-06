@@ -10,7 +10,8 @@ origin is:
 - walk, wave: on the ground as idle; walk is two steps forward (the left foot forward at the start), wave calls a
   copter with both arms over the head,
 - tread, swim, fall: in the water (the origin at its surface, his chin just above it): treading water, swimming
-  forward (his head up), falling or sinking with the arms up.
+  forward (his head up), falling or sinking with the arms up,
+- flail: flung off a pad through the air into the sea, windmilling his arms (the origin as fall's).
 """
 import math
 
@@ -198,8 +199,29 @@ def fall(t):
     return pose
 
 
+def flail(t):
+    """Flung off a pad through the air into the sea: the arms windmilling wide in turn, the legs running on air,
+    leaning back, looking down at the water (the origin as fall's)."""
+    pose = Pose()
+    in_water(pose, -0.22, 0.01 * math.sin(2 * t))
+    pose.turn["chest"] = turn(x=-0.1, y=0.08 * math.sin(2 * t), z=0.1 * math.sin(2 * t))
+    pose.turn["head"] = turn(x=0.3, z=0.2 * math.sin(2 * t))
+    for side, name in sides():
+        phase = 2 * t + (0 if side > 0 else math.pi)
+        # a big circle beside the body in its front plane, a little in front of it (the hand never crosses it)
+        middle = Vector((side * 0.38, -0.05, 0.07))
+        hand = middle + Vector((side * 0.19 * math.cos(phase), -0.04 * math.sin(phase), 0.19 * math.sin(phase)))
+        pose.reach[f"upperarm.{name}"] = (hand, (side * 1, 0.4, -0.3))
+        pose.aim[f"hand.{name}"] = Vector((side * math.cos(phase), -0.3, math.sin(phase)))
+        stride = -0.09 * math.sin(phase + 0.5 * math.pi)
+        lift = 0.06 * max(0.0, math.cos(phase + 0.5 * math.pi))
+        pose.reach[f"thigh.{name}"] = ((side * 0.13, stride, -0.72 + lift), (0, -1, 0))
+        pose.aim[f"foot.{name}"] = Vector((0, -0.4, -1))
+    return pose
+
+
 ACTIONS = {"idle": (idle, 48), "sit": (sit, 48), "pedal": (pedal, 24), "hang": (hang, 48), "walk": (walk, 24),
-           "wave": (wave, 24), "tread": (tread, 48), "swim": (swim, 36), "fall": (fall, 24)}
+           "wave": (wave, 24), "tread": (tread, 48), "swim": (swim, 36), "fall": (fall, 24), "flail": (flail, 28)}
 
 
 def make(armature):

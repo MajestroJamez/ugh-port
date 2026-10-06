@@ -38,6 +38,10 @@ struct FUghGameEnd;
  * all) shoots each level once for each burst, held by the first copter when the play begins (beside it in the air, on
  * the ground or the water under it) -UghShotEffectAge seconds into it (else its ShotAge) and framed around it, the name
  * ending in -<burst> after the others: a look at the bursts of the events (AUghEffects), which come from no event then.
+ * -UghShotFling=<seconds> (several separated by commas: the level shot once for each) lets the first copter knock the
+ * first passenger on land off its pad (FUghKnockPilot) and takes the shot that many seconds after the logic knocked it
+ * into the water (FUghFlings: flung towards the camera, its splash), the name ending in -fling<seconds> after the
+ * others.
  * -UghShotEnd gives each level up instead of its shot and saves the card of the game's end in the menu (the name
  * ending in -end after the others); -UghShotScore=<points> makes that game end with so many points (only the picture: a
  * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores
@@ -108,6 +112,7 @@ private:
 		int32 Players;
 		int32 Level;   // from 0
 		FString Effect;   // the burst it shows (-UghShotEffect), empty none
+		double Fling = -1;   // seconds after a passenger was knocked off (-UghShotFling), -1 none
 	};
 
 	/**
@@ -131,6 +136,13 @@ private:
 	 * pedalling up); true EdgeAfter seconds after it got there (the shot).
 	 */
 	bool FlyToEdge(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds);
+	/**
+	 * -UghShotFling: the first copter knocks the first passenger on land off its pad (FUghKnockPilot), then hovers; true
+	 * `Age` seconds after the logic knocked it into the water (the shot).
+	 */
+	bool Knock(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age);
+	/** Holds pilot 1's logic key `LogicKey` (UGH_LOGIC_KEY_UP, LEFT, RIGHT) or lets it go. */
+	void Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld);
 	void ReleasePedals(AUghGameMode& Mode);
 	static void Tap(AUghGameMode& Mode, const FKey& Key);
 
@@ -153,6 +165,9 @@ private:
 	FKey Steering;             // the key it holds to fly there
 	TArray<FString> Effects;   // -UghShotEffect
 	TOptional<double> EffectAge;   // -UghShotEffectAge
+	TArray<double> Flings;     // -UghShotFling
+	double FlingTime = -1;     // since the passenger was knocked off, -1 not yet
+	bool bSteering[2] = { false, false };   // pilot 1's left and right held by Knock
 	bool bEndShot = false;     // -UghShotEnd
 	bool bEndWanted = false;   // the target was given up: its end is to be shot
 	TOptional<uint32> EndScore;   // -UghShotScore

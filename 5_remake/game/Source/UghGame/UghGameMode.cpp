@@ -109,7 +109,8 @@ void AUghGameMode::StartPlay()
 	}
 	FigureActions.Load(Simulation.GetLogic(), Sprites.Count());
 	Figures->LoadBubbles(Simulation.GetLogic(), Sprites.Count());
-	Effects->GetPlayer().Load(Simulation.GetLogic(), &Sprites, &FigureActions);
+	Flings.Load(Simulation.GetLogic(), &Sprites);
+	Effects->GetPlayer().Load(Simulation.GetLogic(), &Sprites, &FigureActions, &Flings);
 	Speaker->GetPlayer().Load(Assets / TEXT("sound"));
 	if (!bShooting)
 	{
@@ -216,10 +217,17 @@ void AUghGameMode::ShowFrame(double Seconds)
 		CameraLog.Note(bStone ? TEXT("stone shown") : TEXT("stone hidden"));
 	}
 	SeaStack->Show(bStone);
+	// the passengers knocked off their pads flung into the sea: their splashes where their feet reach the water
+	Flings.Show(Previous, Current, Simulation.Alpha(), Seconds);
+	for (const FUghFlingSplash& Splash : Flings.TakeSplashes())
+	{
+		Effects->GetPlayer().Order(EUghBurst::Plunge, Splash.Place, Current, Splash.Scale, Splash.Depth);
+	}
 	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
 	Background->SetWater(Surface);
 	SeaStack->SetWater(Surface);
-	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface), true);   // the open sea all along (no switch)
+	// the open sea all along (no switch)
+	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface, &Flings), true);
 	Falls->SetWater(Surface);
 	Water->SetFalls(Falls->Feet(Surface));
 	Rain->Show(Current, Surface);
@@ -233,7 +241,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	{
 		FSlowPart Part{ TEXT("figures") };
-		Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders);
+		Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders, &Flings);
 	}
 	if (bShooting)
 	{
@@ -362,6 +370,7 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 		FSlowPart Part{ TEXT("people stocked") };
 		Figures->Stock();
 		Copters->Stock();
+		Effects->Stock({ EUghBurst::Plunge });   // (a flung passenger's splash, FUghFlings)
 	}
 }
 
@@ -465,7 +474,7 @@ void AUghGameMode::Quit()
 void AUghGameMode::PlayEvents()
 {
 	UghEvents::Play(Simulation.GetEvents(), Simulation.GetPrevious(), Simulation.GetCurrent(), Speaker->GetPlayer(),
-		Effects->GetPlayer());
+		Effects->GetPlayer(), &Flings);
 }
 
 void AUghGameMode::HoldShotEffect(const ugh_logic_view& View)

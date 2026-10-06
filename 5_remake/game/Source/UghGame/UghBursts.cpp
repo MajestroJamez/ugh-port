@@ -99,6 +99,18 @@ namespace
 			.Spread = 1.2f, .Gravity = -30, .Drag = 2, .Size = 16, .Box = { 20, 10, 10 }, .Color = Gold,
 			.Strength = 4 } };
 
+	/** A body falling from high into the water (a flung passenger): a crown of drops, a column of spray, rings. */
+	const FPart PlungeParts[] = {
+		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 140, .Life = 1.1f, .Stagger = 0.08f, .Speed = 760,
+			.Spread = 0.35f, .Gravity = Fall, .Drag = 0.3f, .Size = 7, .Stretch = 1.5f, .Box = { 20, 10, 2 },
+			.Color = Water, .Strength = 0.9f },
+		{ .Count = 26, .Life = 1.5f, .Stagger = 0.12f, .Speed = 380, .Spread = 0.25f, .Lift = 0.9f, .Gravity = 500,
+			.Drag = 1.2f, .Size = 30, .Grow = 3, .Spin = 0.5f, .Box = { 15, 10, 4 }, .Color = Foam, .Strength = 0.7f },
+		{ .Count = 18, .Life = 1.2f, .Stagger = 0.1f, .Speed = 220, .Spread = 1.2f, .Lift = 0.4f, .Gravity = 300,
+			.Drag = 2, .Size = 26, .Grow = 3, .Spin = 0.5f, .Box = { 25, 10, 4 }, .Color = Foam, .Strength = 0.6f },
+		{ .Shape = EShape::Ring, .Mode = EMode::Flat, .Count = 4, .Life = 2.2f, .Stagger = 0.45f, .Size = 60, .Grow = 5,
+			.Color = Foam, .Strength = 0.7f } };
+
 	/** In the order of EUghBurst. */
 	const FBurst Bursts[] = {
 		{ TEXT("splash"), SplashParts, false, {}, 18, 0.35, ERest::Water },
@@ -113,7 +125,8 @@ namespace
 		{ TEXT("thud"), ThudParts, false, {}, 16, 0.3, ERest::Ground },
 		{ TEXT("leaves"), LeafParts, false, {}, 20, 1.2, ERest::Air },
 		{ TEXT("celebration"), CelebrationParts, false, { Gold, 10, 1.f }, 30, 0.6, ERest::Air },
-		{ TEXT("rustle"), RustleParts, false, {}, 20, 0.8, ERest::Air, -150 } };
+		{ TEXT("rustle"), RustleParts, false, {}, 20, 0.8, ERest::Air, -150 },
+		{ TEXT("plunge"), PlungeParts, false, {}, 24, 0.35, ERest::Water } };
 	static_assert(UE_ARRAY_COUNT(Bursts) == int32(EUghBurst::Count));
 }
 

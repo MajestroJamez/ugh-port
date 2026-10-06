@@ -6,6 +6,7 @@
 #include "UghCameraLog.h"
 #include "UghControls.h"
 #include "UghFigureActions.h"
+#include "UghFling.h"
 #include "UghIntro.h"
 #include "UghLevelArt.h"
 #include "UghMenu.h"
@@ -84,6 +85,8 @@ public:
 	const FUghMenu& GetMenu() const { return Menu; }
 	/** The flight to the stone at the start of a level. */
 	const FUghIntro& GetIntro() const { return Intro; }
+	/** The passengers knocked off their pads, flung into the sea. */
+	const FUghFlings& GetFlings() const { return Flings; }
 	/** The help of the keys is wanted (F1 or a gamepad's Y in a game). */
 	bool IsHelpWanted() const { return bHelp; }
 	/** The folder of the game's data; empty before the game starts. */
@@ -126,6 +129,7 @@ private:
 	FUghSimulation Simulation;
 	FUghSprites Sprites;
 	FUghFigureActions FigureActions;
+	FUghFlings Flings;
 	FUghLevelArt LevelArt;
 	FUghPasswords Passwords;
 	FUghProfile Profile;

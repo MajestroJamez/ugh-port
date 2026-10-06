@@ -241,10 +241,38 @@ def fall(body):
     return posing
 
 
+def flail(body):
+    """Flung off a pad through the air into the sea: the arms windmilling wide in turn, the legs running on air, leaning
+    back, looking down at the water (the origin as fall's: where the water's surface will be at the chin)."""
+    def posing(t):
+        p = Posing()
+        in_water(p, body, -0.22, 0.01 * body.height * math.sin(2 * t))
+        p.spine(-0.12, 0.1 * math.sin(2 * t), 0.06 * math.sin(2 * t))
+        p.head(0.3, 0.2 * math.sin(2 * t))
+        for side, s in SIDES:
+            phase = 2 * t + (0 if side > 0 else math.pi)
+            shoulder = sub(body.shoulder(s), (0, 0, body.at["pelvis"][2] - p.pelvis[2]))
+            # a big circle beside the body in its front plane, a little in front of it (the hand never crosses it)
+            middle = add(shoulder, (side * 0.45 * body.arm, 0.1 * body.arm, 0.3 * body.arm))
+            radius = 0.48 * body.arm
+            hand = add(middle, (side * radius * math.cos(phase), 0.1 * body.arm * math.sin(phase),
+                                radius * math.sin(phase)))
+            p.reach[f"upperarm_{s}"] = (hand, (side, -0.4, -0.3))
+            p.aim[f"hand_{s}"] = ((side * math.cos(phase), 0.3, math.sin(phase)), (0, 1, 0))
+            p.curl[s] = 0.5 + 0.3 * math.sin(phase)
+            hip = add(p.pelvis, (side * abs(body.hip(s)[0]), 0, -body.hip_drop))
+            stride = 0.28 * body.leg * math.sin(phase + 0.5 * math.pi)
+            lift = 0.18 * body.leg * max(0.0, math.cos(phase + 0.5 * math.pi))
+            p.reach[f"thigh_{s}"] = (add(hip, (side * 0.03 * body.height, stride, -0.85 * body.leg + lift)), (0, 1, 0))
+            p.aim[f"foot_{s}"] = ((0, 0.4, -1), (0, 1, 0.3))
+        return p
+    return posing
+
+
 def actions(rest, height):
     """The actions by name: (seconds a loop, the posing of a moment; none: sampled from a clip on the rest pose)."""
     body = Body(rest, height)
     return {"idle": (0, None), "sit": (3.2, sit(body)), "pedal": (1.0, pedal(body)), "hang": (3.2, hang(body)),
             "walk": (0, None), "wave": (1.2, wave(body)), "tread": (2.4, tread(body)), "swim": (2.4, swim(body)),
-            "fall": (1.2, fall(body))}
+            "fall": (1.2, fall(body)), "flail": (1.4, flail(body))}
 

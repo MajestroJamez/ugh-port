@@ -3,6 +3,7 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UghBetween.h"
+#include "UghFling.h"
 #include "UghMaterials.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
@@ -40,14 +41,15 @@ TOptional<FTransform> UghWater::Box(double Surface, bool bOpenSea)
 		Height + FUghRockMesh::MarginY - Top, (Back + Front) / 2, Back - Front);
 }
 
-TArray<FVector4> UghWater::Rings(const ugh_logic_view& View, const FUghSprites& Sprites, double Surface)
+TArray<FVector4> UghWater::Rings(const ugh_logic_view& View, const FUghSprites& Sprites, double Surface,
+	const FUghFlings* Flings)
 {
 	TArray<FVector4> Rings;
-	auto Stir = [&](double Left, double Right, double Top, double Bottom, float Strength)
+	auto Stir = [&](double Left, double Right, double Top, double Bottom, float Strength, double Depth = 0)
 	{
 		if (Rings.Num() < MaxRings && Top < Surface && Surface <= Bottom + 1)
 		{
-			Rings.Add(FVector4(UghShapes::ToWorld((Left + Right) / 2, Surface, 0), Strength));
+			Rings.Add(FVector4(UghShapes::ToWorld((Left + Right) / 2, Surface, Depth), Strength));
 		}
 	};
 	for (int32 I = 0; I < View.copter_count; ++I)
@@ -63,7 +65,9 @@ TArray<FVector4> UghWater::Rings(const ugh_logic_view& View, const FUghSprites& 
 		{
 			const FVector2D At = UghBetween::Pixels(Entity.x, Entity.y);
 			const FIntPoint Size = Sprites.Size(Entity.sprite);
-			Stir(At.X, At.X + Size.X, At.Y, At.Y + Size.Y, SwimmerStir);
+			const TOptional<FUghFlight> Flight =
+				Flings ? Flings->Of(Entity.index, At.Y, Surface) : TOptional<FUghFlight>();
+			Stir(At.X, At.X + Size.X, At.Y, At.Y + Size.Y, SwimmerStir, Flight ? Flight->Depth : 0);
 		}
 	}
 	return Rings;

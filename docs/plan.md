@@ -561,6 +561,50 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   po změnách 24a-24e znovu), streaming, GC. Levné náhrady na Low (helmy místo vlasů, LOD dekoru, bez halo / levnější).
 - Hotovo když: `perf.ps1` ukáže cíl na zahřátém stroji, nový balíček s PSO cache.
 
+## Krok 25 - Janovy připomínky po hraní 24f (2026-10-06)
+
+### Krok 25a - Shozený cestující padá obloukem do popředí a žbluňkne do vody
+
+- Teď sražený cestující propadne kolmo dolů. Chce: odhodí ho to obloukem směrem ke kameře (do popředí), padá
+  s mácháním rukama a dopadne se žbluňknutím (šplouchnutí, kruhy na vodě) do moře před kamenem. Jen vizuál: logika
+  beze změny - zjistit v logice, co se sraženým cestujícím děje (kam padá, kdy zmizí, jestli může dopadnout na
+  plošinu) a vizuální oblouk navázat tak, aby nikdy neodporoval tomu, co hráč v logice potřebuje vidět.
+- Hotovo když: série snímků pádu (start, oblouk, dopad, šplouchnutí), autopilot a testy beze změny.
+
+### Krok 25b - Kamera ještě dál, kámen i v popředí
+
+- Herní kamera ještě o kus oddálit, aby byl kolem levelu vidět celý kámen, ve kterém se level odehrává, i jeho část
+  **v popředí** (přední hrana/čelo balvanu před herní rovinou, level jako vytesaný dovnitř). Popředí nesmí zakrýt
+  herní plochu ani postavy; HUD na kameni. Konec příletu (24d) navázat na novou kameru.
+- Hotovo když: arch rychlé sady se všemi levely celými, snímek konce příletu.
+
+### Krok 25c - Liány po stranách: fyzikálně věrohodné prohnutí
+
+- Liány (24d) se Janovi líbí, ale chování ne: náraz nahoře pohne spodkem o „10 metrů“ (páka zesiluje výchylku dolů).
+  Správně: v místě nárazu se liána odsune asi jako teď, pod tím se výchylka přenese zhruba stejně velká (ne
+  zesílená), postupně tlumená a se zpožděním (vlna dolů po liáně), pak dokmitá. Totéž převis nahoře.
+- Hotovo když: snímky po nárazu nahoře/uprostřed/dole ukážou výchylku úměrnou, test omezí maximální výchylku spodku.
+
+### Krok 25d - Čáknutí, když vrtulník spadne do vody
+
+- Při dopadu vrtulníku do vody velké čáknutí: sloup a koruna vody, kapky, pěna, kruhy na hladině, vrtulník se
+  ponoří / houpe podle toho, co dělá logika (zjistit stav a časování v logice, navázat na efekty kroku 20 a vodu
+  kroku 19). Jen vizuál, logika beze změny; levné na Low, předem načtené (bez hitche).
+- Hotovo když: série snímků dopadu (těsně před, náraz, sloup vody, kruhy), testy beze změny.
+
+### Krok 25e - Herní objekt „kámen“ podle Janovy reference
+
+- Jan původně myslel (ke 24e): nahradit **objekt kámen** (ten, který vrtulník nese a shazuje na stromy a zvířata,
+  i kámen na sedadle v kabině) modelem podle reference `C:\Users\Ja079591\.claude\ugh-rock-reference-slate.png`
+  (tmavá vrstevnatá břidlice, ostré šupiny, bílé křemenné žilky). Břidlice na levelu (24e) zůstává, Janovi se líbí.
+- Model: Blender skriptem (tvar balvanu z reference, vrstvy a šupiny geometrií/normálou, textura z reference nebo
+  CC0 `dark_rock_02` + žilky), velikost podle spritu, nízký počet trojúhelníků + LOD (levné na Low). Zjistit, kde
+  všude se kámen objevuje (nesení, pád, dopad na strom/zvíře, kámen jako cestující s očima ze 19h?) a použít ho tam;
+  Jan: „dej ho i do koptéry“ - nový kámen i jako kamenný cestující (stojící i sedící v kabině), oči z 19h zachovat.
+- Hotovo když: snímky zblízka vedle reference, kámen pod vrtulníkem, pád a dopad; testy beze změny.
+
+## Průběžně
+
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
   a `rider` (jiný port než IDEA 64342), pak restart Claude Code.
 
@@ -1526,3 +1570,18 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   `levels.ps1 -Package -Quick` 0 chyb, `levels.ps1 -Quick` (Epic) arch beze změny proti 24e. CTest logiky,
   `6_verification` (163) a 197 testů v UE zelené. Čeká na Jana: zahrát `play.ps1` na Low (plynulost, vzhled Low bez
   svatozáře, moře). Další: hotovo (krok 24).
+- 2026-10-06: krok 25a hotový - shozený cestující letí obloukem do moře (`docs/visual-concept.md`). Logika: vrtulník
+  ve vzduchu srazí cestujícího z plošiny do stavu `Splash` (událost `PassengerInWater` hned při sražení), ten padá
+  kolmo dolů skrz římsy i skálu (na plošinu nedopadne), o tělo pod hladinu, vynoří se a plave (`Swimming`, vrtulník
+  na vodě ho vezme), jinak klesne (`Sinking`) a zmizí; x se nemění. Vizuál `FUghFlings` (logika beze změny): x
+  a výška z logiky, k tomu oblouk ke kameře (hloubka roste s časem pádu, až 15 m, omezeno, aby šplouchnutí zůstalo
+  na obrazovce) a hrb nahoru na začátku, ve vzduchu máchá rukama (nová akce `flail` MetaHumanů i cavemana), kde se
+  nohy dotknou vody, žbluňkne před kamenem (nový efekt `plunge`: koruna kapek, sloup tříště, kruhy; připraven předem
+  v černé, šplouchnutí události v okamžiku sražení zrušeno), kruhy na vodě tam, kde je vidět, pod vodou se ponoří
+  napůl a vrátí do místa logiky dřív, než vyplave. Pád pod 6 px (stoupající voda) se neodhazuje. Test `Ugh.Fling` na
+  skutečné logice levelu 1 (autopilot `FUghKnockPilot` srazí cestujícího): start v místě, kde stál, oblouk jen ke
+  kameře, jedno šplouchnutí přesně při dopadu nohou, konec bez skoku tam, kde plave v logice; `Ugh.Figures.People`
+  hlídá `flail`. Snímky `shot.ps1 -Fling 0.3,0.9,1.4,1.72,1.85,2.1` (`Saved\Shots\1p-01-fling*.png`, zblízka
+  `1p-01-frame205_20-fling0.5.png`). CTest logiky, `6_verification` (163) a 198 testů v UE zelené; `levels.ps1
+  -Quick` 0 chyb, arch beze změny, fps medián 17, 1 % low 12 (editor, Epic; bez sražení žádná práce navíc). Balíček
+  nepřebalen (25c). Další: **krok 25b**.

@@ -3,6 +3,7 @@
 #include "Algo/Find.h"
 #include "UghBetween.h"
 #include "UghFigureActions.h"
+#include "UghFling.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
 
@@ -101,20 +102,22 @@ const FUghEffectCue* FUghEffectPlayer::CueOf(int32 Event)
 	return Algo::FindBy(CueTable, Event, &FUghEffectCue::Event);
 }
 
-void FUghEffectPlayer::Load(const ugh_logic* InLogic, const FUghSprites* InSprites, const FUghFigureActions* InActions)
+void FUghEffectPlayer::Load(const ugh_logic* InLogic, const FUghSprites* InSprites, const FUghFigureActions* InActions,
+	const FUghFlings* InFlings)
 {
 	Logic = InLogic;
 	Sprites = InSprites;
 	Actions = InActions;
+	Flings = InFlings;
 	Forget();
 }
 
 void FUghEffectPlayer::OnEvent(const ugh_logic_event& Event, const ugh_logic_view& View)
 {
 	const FUghEffectCue* Cue = CueOf(Event.kind);
-	if (!Cue)
+	if (!Cue || (Event.kind == UGH_LOGIC_EVENT_PASSENGER_IN_WATER && Flings && Flings->IsFlung(Event.entity)))
 	{
-		return;
+		return;   // (a flung passenger splashes where its feet reach the water: FUghFlings)
 	}
 	const ugh_logic_entity* Entity =
 		Event.entity >= 0 ? EntityIn(View, EntityKindOf(Event.kind), Event.entity) : nullptr;
@@ -339,9 +342,11 @@ void FUghEffectPlayer::Forget()
 	bAirborne[0] = bAirborne[1] = false;
 }
 
-void FUghEffectPlayer::Order(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View, double Scale)
+void FUghEffectPlayer::Order(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View, double Scale,
+	double Depth)
 {
 	FUghEffectOrder Order = OrderAt(Burst, Place, View);
 	Order.Scale = Scale;
+	Order.Depth = Depth;
 	Orders.Add(Order);
 }

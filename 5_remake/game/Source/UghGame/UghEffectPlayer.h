@@ -6,6 +6,7 @@
 #include "UghBursts.h"
 
 class FUghFigureActions;
+class FUghFlings;
 class FUghSprites;
 
 /** How an event plays its burst (as FUghSounds::EAction its sound). */
@@ -49,6 +50,7 @@ struct FUghEffectOrder
 	EUghBurst Burst = EUghBurst::Dust;
 	EUghEffectAction Action = EUghEffectAction::Play;
 	FVector2D Place = FVector2D::ZeroVector;   // pixels of the screen
+	double Depth = 0;             // units besides its burst's (negative towards the camera: a flung passenger's splash)
 	double Floor = TNumericLimits<double>::Max();   // the row (pixels) of the ground or water under it, none: max
 	bool bFacingLeft = false;
 	double Scale = 1;
@@ -62,7 +64,9 @@ struct FUghEffectOrder
  * the events), placed by its entity, its player's copter or the water line; a few are seen in the view instead,
  * which has no event for them: a copter landing on a pad (dust), a bonus item landing (a little dust), a copter
  * crashing into the water (a splash with its explosion). Where an event's entity is gone from the view (a collected
- * bonus item, a boarded passenger) it is where it was last seen. Only decoration: nothing goes back to the logic.
+ * bonus item, a boarded passenger) it is where it was last seen. A passenger knocked off its pad high above the water
+ * is flung (FUghFlings): its splash is the fling's, where its feet reach the water, not the event's. Only decoration:
+ * nothing goes back to the logic.
  */
 class FUghEffectPlayer
 {
@@ -76,15 +80,22 @@ public:
 	/** The cue of an event of the logic, nullptr for none. */
 	static const FUghEffectCue* CueOf(int32 Event);
 
-	/** What the bursts need to know: the level's pads and rock, the sprites' sizes, what the enemies are (any null). */
-	void Load(const ugh_logic* InLogic, const FUghSprites* InSprites, const FUghFigureActions* InActions);
+	/**
+	 * What the bursts need to know: the level's pads and rock, the sprites' sizes, what the enemies are, the flung
+	 * passengers (any null).
+	 */
+	void Load(const ugh_logic* InLogic, const FUghSprites* InSprites, const FUghFigureActions* InActions,
+		const FUghFlings* InFlings = nullptr);
 
 	/** An event of the logic after the steps that led to `View`. */
 	void OnEvent(const ugh_logic_event& Event, const ugh_logic_view& View);
 	/** The views of the last step of a frame (after its events): the landings, where the figures were last seen. */
 	void OnView(const ugh_logic_view& Previous, const ugh_logic_view& Current);
-	/** A burst of the frontend's own (no event of the logic): `Burst` at `Place` (pixels) in `View`, `Scale` its size. */
-	void Order(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View, double Scale = 1);
+	/**
+	 * A burst of the frontend's own (no event of the logic): `Burst` at `Place` (pixels) in `View`, `Scale` its size,
+	 * `Depth` units besides its own (negative towards the camera).
+	 */
+	void Order(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View, double Scale = 1, double Depth = 0);
 	/** The bursts since the last call. */
 	TArray<FUghEffectOrder> TakeOrders();
 
@@ -110,6 +121,7 @@ private:
 	const ugh_logic* Logic = nullptr;
 	const FUghSprites* Sprites = nullptr;
 	const FUghFigureActions* Actions = nullptr;
+	const FUghFlings* Flings = nullptr;
 	TArray<FUghEffectOrder> Orders;
 	TMap<int32, FBox2D> LastSeen;   // by EntityKey
 	TSet<int32> Falling;            // the bonus items (slots) falling in the last step

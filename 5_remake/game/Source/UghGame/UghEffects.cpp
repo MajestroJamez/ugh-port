@@ -181,7 +181,7 @@ FUghBurstShown* AUghEffects::Start(const FUghEffectOrder& Order)
 		return nullptr;
 	}
 	FUghBurstShown& Each = Take(Order.Burst);
-	const FVector Where = UghShapes::ToWorld(Order.Place.X, Order.Place.Y, Burst.Depth);
+	const FVector Where = UghShapes::ToWorld(Order.Place.X, Order.Place.Y, Burst.Depth + Order.Depth);
 	const float Floor = Order.Floor < TNumericLimits<double>::Max()
 		? float(UghShapes::ToWorld(0, Order.Floor, 0).Z) : -1e6f;
 	for (int32 Part = 0; Part < Each.Parts.Num(); ++Part)
@@ -204,7 +204,7 @@ FUghBurstShown* AUghEffects::Start(const FUghEffectOrder& Order)
 		}
 		UghBursts::FFlash Flash = Burst.Flash;
 		Flash.Candelas *= float(Order.Scale);
-		Flashes.Add({ Flash, UghShapes::ToWorld(Order.Place.X, Order.Place.Y, FlashDepth) });
+		Flashes.Add({ Flash, UghShapes::ToWorld(Order.Place.X, Order.Place.Y, FlashDepth + Order.Depth) });
 	}
 	if (Order.Points > 0)
 	{
@@ -315,6 +315,17 @@ void AUghEffects::Flare(double Seconds)
 			Light->SetWorldLocation(Flashing.Where);
 			Light->SetLightColor(Flashing.Flash.Color);
 			Light->SetIntensity(Flashing.Flash.Candelas * float(Left * Left));
+		}
+	}
+}
+
+void AUghEffects::Stock(TConstArrayView<EUghBurst> Bursts)
+{
+	for (const EUghBurst Burst : Bursts)
+	{
+		if (!Shown.ContainsByPredicate([Burst](const FUghBurstShown& Each) { return Each.Burst == Burst; }))
+		{
+			Take(Burst);
 		}
 	}
 }

@@ -66,10 +66,11 @@ struct FUghFigureModels
 	void Begin();
 	/**
 	 * Shows `Entity` (on `Owner`) doing `Action`, its sprite of `Size` px with its top left corner at `At` (pixels),
-	 * moving `Velocity` px a step across, `Seconds` after the last frame; false when its model is missing.
+	 * moving `Velocity` px a step across, `Seconds` after the last frame, moved by `Offset` (world: a flung passenger);
+	 * false when its model is missing.
 	 */
 	bool Show(AActor* Owner, const ugh_logic_entity& Entity, const FUghFigureAction& Action, const FVector2D& At,
-		const FIntPoint& Size, double Velocity, double Seconds);
+		const FIntPoint& Size, double Velocity, double Seconds, const FVector& Offset = FVector::ZeroVector);
 	/** Ends a frame: hides what was not shown in it. */
 	void End();
 	/** Makes spare people of every passenger's look on `Owner`, SparePeople of each (FUghCaveman::Stock). */

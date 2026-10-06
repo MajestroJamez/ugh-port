@@ -682,3 +682,17 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   změny (`Ugh.Rock`).
 - **Útesy vzadu** (`M_UghScan`): přebarvené do tmavé modrošedé (tón 0,5/0,56/0,66, 10 % sytosti, méně mechu).
 - Nanite tessellation / displacement nezkoušena: reliéf nese pole skály (strmé břity v síti) a notebook je na hraně fps.
+
+## Shozený cestující obloukem do moře (krok 25a)
+
+- Logika (`passengers/route`): vrtulník ve vzduchu, který se dotkne cestujícího na jeho plošině (`OnPickupPad`), ho
+  srazí do stavu `Splash` (hned událost `PassengerInWater`): padá kolmo dolů z místa, kde stál, skrz římsy i skálu
+  (na nic nedopadne), zrychluje, až je o tělo pod hladinou, zabrzdí, vynoří se a je postaven na hladinu; tam plave
+  (`Swimming`, vrtulník na vodě ho může vzít), jinak po čase klesá (`Sinking`) a zmizí. X se nemění.
+- Vidět (`FUghFlings`): odhozen obloukem ke kameře - x a výška jako v logice, k tomu hloubka k divákovi rostoucí
+  s časem pádu (až 15 m, jen tolik, aby šplouchnutí zůstalo na obrazovce) a hrb nahoru na začátku; ve vzduchu máchá
+  rukama (akce `flail`, MetaHumani i caveman). Kde se nohy dotknou vody, žbluňkne před kamenem (efekt `plunge`:
+  koruna kapek, sloup tříště, kruhy; místo šplouchnutí události v okamžiku sražení), pod vodou se ponoří jen napůl
+  tak hluboko a vrátí se tam, kde ho má logika, než vyplave. Pád kratší než 6 px (voda vystoupala k plošině) se
+  neodhazuje. Test `Ugh.Fling` na skutečné logice levelu 1 (autopilot `FUghKnockPilot` srazí cestujícího), snímky
+  `shot.ps1 -Fling <sekundy>`.

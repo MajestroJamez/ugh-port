@@ -7,10 +7,12 @@
 #include "UghBubbles.h"
 #include "UghFigureActions.h"
 #include "UghFigureLook.h"
+#include "UghFling.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghSprites.h"
 #include "UghTexture.h"
+#include "UghWater.h"
 
 namespace
 {
@@ -60,21 +62,24 @@ void AUghFigures::BeginPlay()
 }
 
 void AUghFigures::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
-	const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& ClayRiders)
+	const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& ClayRiders,
+	const FUghFlings* Flings)
 {
 	if (Current.phase != UGH_LOGIC_PHASE_PLAY || Current.level_id < 0)
 	{
 		Clear();
 		return;
 	}
-	ShowEntities(UghBetween::From(Previous, Current), Current, Alpha, Seconds, Sprites, Actions, ClayRiders);
+	ShowEntities(UghBetween::From(Previous, Current), Current, Alpha, Seconds, Sprites, Actions, ClayRiders, Flings);
 }
 
 void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-	double Seconds, const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& Riders)
+	double Seconds, const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& Riders,
+	const FUghFlings* Flings)
 {
 	TArray<FTransform> PassengerShapes = Riders, EnemyShapes, BonusShapes;
 	TArray<FBubble> Bubbles;
+	const double Surface = UghWater::Surface(Previous, Current, Alpha);
 	Models.Begin();
 	for (int32 I = 0; I < Current.entity_count; ++I)
 	{
@@ -91,13 +96,30 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 		{
 			Bubbles.Add({ *BubbleLooks[E.bubble], UghBubbles::Place(At, Size.X) });
 		}
-		const TOptional<FUghFigureAction> Action = Actions.Of(E, P);
+		TOptional<FUghFigureAction> Action = Actions.Of(E, P);
 		const double Velocity = P && P->sprite >= 0 ? double(E.x - P->x) / UghShapes::Subpixels : 0;
-		if (Action && Models.Show(this, E, *Action, At, Size, Velocity, Seconds))
+		FVector Offset = FVector::ZeroVector;
+		const TOptional<FUghFlight> Flight = E.kind == UGH_LOGIC_ENTITY_PASSENGER && Flings
+			? Flings->Of(E.index, At.Y, Surface) : TOptional<FUghFlight>();
+		if (Flight)
+		{
+			// flung towards the camera, flailing in the air (placed as in the water from the start)
+			Offset = UghShapes::ToWorld(0, -Flight->Lift, Flight->Depth) - UghShapes::ToWorld(0, 0, 0);
+			if (Action && Flight->bInAir)
+			{
+				Action->Action = TEXT("flail");
+				Action->Facing = EUghFacing::Camera;
+				Action->bFollowsFrames = false;
+				Action->bInWater = true;
+				Action->Door = 0;
+			}
+		}
+		if (Action && Models.Show(this, E, *Action, At, Size, Velocity, Seconds, Offset))
 		{
 			continue;
 		}
-		const FTransform Shape = UghShapes::Box(At.X, At.Y, Size.X, Size.Y, FigureDepth, FigureThickness);
+		FTransform Shape = UghShapes::Box(At.X, At.Y, Size.X, Size.Y, FigureDepth, FigureThickness);
+		Shape.AddToTranslation(Offset);
 		switch (E.kind)
 		{
 		case UGH_LOGIC_ENTITY_PASSENGER: PassengerShapes.Add(Shape); break;

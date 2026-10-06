@@ -99,7 +99,7 @@ void FUghFigureModels::Begin()
 }
 
 bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const FUghFigureAction& Action,
-	const FVector2D& At, const FIntPoint& Size, double Velocity, double Seconds)
+	const FVector2D& At, const FIntPoint& Size, double Velocity, double Seconds, const FVector& Offset)
 {
 	const bool bPerson = Action.Model == EUghModel::Caveman;
 	const bool bRigged = !bPerson && Action.Model != EUghModel::Stone && Action.Model != EUghModel::BonusItem;
@@ -149,7 +149,9 @@ bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const
 		Animate(Slot, Action, Seconds);
 	}
 	Turn(Slot, Action, Velocity, Seconds);
-	Shown->SetWorldTransform(UghFigurePlace::Of(Action, At, Size, Slot.Clock.Phase(), Slot.Spin));
+	FTransform Place = UghFigurePlace::Of(Action, At, Size, Slot.Clock.Phase(), Slot.Spin);
+	Place.AddToTranslation(Offset);
+	Shown->SetWorldTransform(Place);
 	USceneComponent* const Parts[] = { Slot.Person.Get(), Slot.Rigged.Get(), Slot.Mesh.Get() };
 	for (USceneComponent* Part : Parts)
 	{

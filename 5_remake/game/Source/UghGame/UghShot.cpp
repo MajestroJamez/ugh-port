@@ -12,6 +12,7 @@
 #include "UghProfile.h"
 #include "UghBursts.h"
 #include "UghFringe.h"
+#include "UghKnockPilot.h"
 #include "UghShapes.h"
 
 namespace
@@ -116,6 +117,16 @@ bool FUghShot::Configure()
 	{
 		EffectAge = Age;
 	}
+	FString FlingList;
+	if (FParse::Value(CommandLine, TEXT("-UghShotFling="), FlingList, false))
+	{
+		TArray<FString> Moments;
+		FlingList.ParseIntoArray(Moments, TEXT(","));
+		for (const FString& Moment : Moments)
+		{
+			Flings.Add(FCString::Atod(*Moment));
+		}
+	}
 	bEndShot = FParse::Param(CommandLine, TEXT("UghShotEnd"));
 	uint32 Score = 0;
 	if (FParse::Value(CommandLine, TEXT("-UghShotScore="), Score))
@@ -167,7 +178,11 @@ bool FUghShot::AddTargets(const FString& List)
 		{
 			for (int32 Effect = 0; Effect < FMath::Max(1, Effects.Num()); ++Effect)
 			{
-				Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1, Effects.IsEmpty() ? FString() : Effects[Effect] });
+				for (int32 Fling = 0; Fling < FMath::Max(1, Flings.Num()); ++Fling)
+				{
+					Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1,
+						Effects.IsEmpty() ? FString() : Effects[Effect], Flings.IsEmpty() ? -1.0 : Flings[Fling] });
+				}
 			}
 		}
 	}
@@ -281,6 +296,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		ReleasePedals(Mode);
 		HoverY[0] = HoverY[1] = -1;
 		AtEdge = -1;
+		FlingTime = -1;
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION && IntroAt)
 	{
@@ -314,15 +330,17 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	{
 		return EAction::None;
 	}
+	const bool bFling = Target.Fling >= 0;
 	const bool bAtEdge = !Edge.IsEmpty() && FlyToEdge(Mode, View, DeltaSeconds);
-	if (Edge.IsEmpty())
+	const bool bFlung = bFling && Knock(Mode, View, DeltaSeconds, Target.Fling);
+	if (Edge.IsEmpty() && !bFling)
 	{
 		Hover(Mode, View, DeltaSeconds);
 	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
 	HoverFrames.Add(DeltaSeconds);
-	if (Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
+	if (bFling ? !bFlung : Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
 	}
@@ -371,7 +389,8 @@ void FUghShot::LogFrames(const ugh_logic_view& View) const
 FString FUghShot::NameOf(const FTarget& Target) const
 {
 	const FString Effect = Target.Effect.IsEmpty() ? FString() : TEXT("-") + Target.Effect;
-	return TargetName(Target.Players, Target.Level) + Suffix + Effect + (bEndShot ? TEXT("-end") : TEXT(""));
+	const FString Fling = Target.Fling < 0 ? FString() : FString::Printf(TEXT("-fling%g"), Target.Fling);
+	return TargetName(Target.Players, Target.Level) + Suffix + Effect + Fling + (bEndShot ? TEXT("-end") : TEXT(""));
 }
 
 FUghShot::EAction FUghShot::TakeShot(const FString& Name)
@@ -515,6 +534,13 @@ void FUghShot::Hover(AUghGameMode& Mode, const ugh_logic_view& View, double Seco
 
 void FUghShot::ReleasePedals(AUghGameMode& Mode)
 {
+	for (int32 Side = 0; Side < UE_ARRAY_COUNT(bSteering); ++Side)
+	{
+		if (bSteering[Side])
+		{
+			Hold(Mode, Side == 0 ? UGH_LOGIC_KEY_LEFT : UGH_LOGIC_KEY_RIGHT, false);
+		}
+	}
 	if (Steering.IsValid())
 	{
 		Mode.HandleKey(Steering, IE_Released);
@@ -562,4 +588,34 @@ bool FUghShot::FlyToEdge(AUghGameMode& Mode, const ugh_logic_view& View, double 
 		: Copter.x >= UghFringe::RightEdge * UghShapes::Subpixels;
 	AtEdge = bThere ? FMath::Max(AtEdge, 0.0) + Seconds : -1;
 	return AtEdge >= EdgeAfter;
+}
+
+bool FUghShot::Knock(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age)
+{
+	// its time from the logic's knock (the fling's while it lasts)
+	const TOptional<double> Flung = Mode.GetFlings().Age();
+	FlingTime = Flung ? *Flung : FlingTime >= 0 ? FlingTime + Seconds : -1;
+	const FUghPilotKeys Keys = FUghKnockPilot::Fly(Mode.GetSimulation().GetLogic(), Mode.GetSimulation().GetPrevious(),
+		View, FlingTime >= 0);
+	Hold(Mode, UGH_LOGIC_KEY_UP, Keys.bUp);
+	Hold(Mode, UGH_LOGIC_KEY_LEFT, Keys.bLeft);
+	Hold(Mode, UGH_LOGIC_KEY_RIGHT, Keys.bRight);
+	if (FlingTime < Age)
+	{
+		return false;
+	}
+	const TOptional<double> Splashed = Mode.GetFlings().SplashAge();
+	UE_LOG(LogTemp, Display, TEXT("UGH shot: %.2f s after the knock (the splash at %s)"), FlingTime,
+		Splashed ? *FString::Printf(TEXT("%.2f s"), *Splashed) : TEXT("-"));
+	return true;
+}
+
+void FUghShot::Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld)
+{
+	bool& bHolding = LogicKey == UGH_LOGIC_KEY_UP ? bPedalling[0] : bSteering[LogicKey == UGH_LOGIC_KEY_LEFT ? 0 : 1];
+	if (bHolding != bHeld)
+	{
+		Mode.HandleKey(Mode.GetProfile().Settings.Keys.KeyOf(0, LogicKey), bHeld ? IE_Pressed : IE_Released);
+		bHolding = bHeld;
+	}
 }

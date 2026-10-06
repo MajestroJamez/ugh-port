@@ -7,6 +7,7 @@
 #include "UghRockMesh.h"
 #include "UghWater.generated.h"
 
+class FUghFlings;
 class FUghSprites;
 class UInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
@@ -39,9 +40,11 @@ namespace UghWater
 	TOptional<FTransform> Box(double Surface, bool bOpenSea = false);
 	/**
 	 * What swims or floats at the surface `Surface` (pixels) in `View` - passengers in the water, copters on it: its
-	 * place on the surface (world) and how much it stirs it (w); at most MaxRings.
+	 * place on the surface (world) and how much it stirs it (w); at most MaxRings. A flung passenger (`Flings`) stirs
+	 * it where it is seen.
 	 */
-	TArray<FVector4> Rings(const ugh_logic_view& View, const FUghSprites& Sprites, double Surface);
+	TArray<FVector4> Rings(const ugh_logic_view& View, const FUghSprites& Sprites, double Surface,
+		const FUghFlings* Flings = nullptr);
 }
 
 /**
