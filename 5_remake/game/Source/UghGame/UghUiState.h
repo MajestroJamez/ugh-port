@@ -2,7 +2,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UghHighScores.h"
 #include "UghMenu.h"
+#include "UghSettings.h"
 #include "UghUiStyle.h"
 
 /** A score earned, rising where it was earned. */
@@ -14,8 +16,9 @@ struct FUghUiPopup
 };
 
 /**
- * What the screen (UghUi) shows of the game, taken every frame by AUghHud: the menu, the status of the play, its
- * caption, the help, a setting just changed, the scores rising. The widgets only read it.
+ * What the screen (UghUi) shows of the game, taken every frame by AUghHud: the menu and its screens (the settings, the
+ * keys, the high scores), the status of the play, its caption, the help, a setting just changed, the scores rising. The
+ * widgets only read it.
  */
 struct FUghUiState
 {
@@ -34,6 +37,22 @@ struct FUghUiState
 	bool bShowingEnd = false;
 	TOptional<FUghGameEnd> LastGame;
 	int32 Volume = 100;   // percent
+	/** The level the mode's last game got to (-1 none) and its password, of one player and of the team. */
+	int32 LastLevels[2] = { -1, -1 };
+	FString LastPasswords[2];
+
+	// the menu's other screens
+	FUghMenu::EScreen MenuScreen = FUghMenu::EScreen::Title;
+	FUghSettings Settings;   // the profile's
+	FUghDisplayOptions Options;
+	FUghSettingsMenu::ERow SettingsRow = FUghSettingsMenu::ERow::Quality;
+	int32 ControlsRow = 0, ControlsColumn = 0;
+	bool bCapturing = false;
+	FString ControlsNotice;
+	FUghHighScores Scores;
+	TOptional<TPair<int32, int32>> Highlight;   // the high scores' new entry: the mode's players, its place
+	TOptional<FUghNameEntry> NameEntry;   // a high score's name being typed after a game
+	int32 NewRank = INDEX_NONE;
 
 	// the play (the logic's view)
 	int32 Phase = 0;   // UGH_LOGIC_PHASE_...

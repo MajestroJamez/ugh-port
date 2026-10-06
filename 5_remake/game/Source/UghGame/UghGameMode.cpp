@@ -19,10 +19,10 @@
 #include "UghEvents.h"
 #include "UghFalls.h"
 #include "UghFigures.h"
+#include "UghGraphics.h"
 #include "UghGround.h"
 #include "UghHud.h"
 #include "UghJson.h"
-#include "UghKeyboard.h"
 #include "UghMenuView.h"
 #include "UghMood.h"
 #include "UghPlayerController.h"
@@ -69,9 +69,9 @@ void AUghGameMode::StartPlay()
 {
 	Super::StartPlay();
 	BuildStage();
-	Upscaler.ChooseBest();
-
 	bShooting = Shot.Configure();
+	LoadProfile();
+	ApplySettings();
 	GAreScreenMessagesEnabled = false;   // the engine's messages: the log has them, the screen is the game's
 	bIntro = FUghIntro::bFlies && !FParse::Param(FCommandLine::Get(), TEXT("UghNoIntro"));
 
@@ -138,6 +138,7 @@ void AUghGameMode::Tick(float DeltaSeconds)
 	{
 		Simulation.Advance(DeltaSeconds);
 		PlayEvents();
+		NoteLevel(Simulation.GetCurrent());
 		if (Simulation.IsOver())
 		{
 			OpenMenu();
@@ -226,7 +227,8 @@ void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)
 	{
 		bIntroScene = false;   // the play's own fades again
 	}
-	if (bIntro && !bInMenu && View.phase == UGH_LOGIC_PHASE_CAPTION && View.level != IntroLevel)
+	const bool bFlies = bIntro && Profile.Settings.bIntro;
+	if (bFlies && !bInMenu && View.phase == UGH_LOGIC_PHASE_CAPTION && View.level != IntroLevel)
 	{
 		IntroLevel = View.level;   // not again after a crash
 		Intro.Start();
@@ -295,7 +297,7 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	Rain->Build(View.level_id < 0 ? nullptr : Logic, View.level_id, View.wind);
 }
 
-bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
+bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event, FInputDeviceId Device)
 {
 	if (HandleVolumeKey(Key, Event))
 	{
@@ -310,21 +312,8 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 		}
 		return true;
 	}
-	// the frontend's keys: their releases are not keys of the game either (a caption would take one)
-	if (Key == EKeys::U || Key == EKeys::G || Key == EKeys::F1)
+	if (HandleFrontendKey(Key, Event))
 	{
-		if (Event == IE_Pressed && Key == EKeys::U)
-		{
-			Upscaler.Next();
-		}
-		else if (Event == IE_Pressed && Key == EKeys::G)
-		{
-			Upscaler.NextFrameGeneration();
-		}
-		else if (Event == IE_Pressed)
-		{
-			bHelp = !bHelp;
-		}
 		return true;
 	}
 	if (!Simulation.IsLoaded())
@@ -340,13 +329,19 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event)
 	{
 		Intro.Hurry();   // (the key goes to the logic all the same)
 	}
-	FUghKeyboard::Handle(Simulation, Key, Event);
+	Controls.Handle(Simulation, Key, Event, Device);
 	return true;
 }
 
 void AUghGameMode::HandleMenuKey(const FKey& Key)
 {
-	switch (Menu.HandleKey(Key))
+	const FKey MenuKey = FUghControls::MenuKeyOf(Key);
+	if (!MenuKey.IsValid())
+	{
+		return;
+	}
+	DisplayOptions = UghGraphics::Options();   // the window now (the settings show it)
+	switch (Menu.HandleKey(MenuKey))
 	{
 	case FUghMenu::EAction::Play:
 		if (Simulation.NewGame(Menu.GetChoice()))
@@ -355,10 +350,16 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 			bInMenu = false;
 			StartKey = Key;
 			IntroLevel = -1;
+			Playing = Menu.GetChoice();
+			Controls.Reset();
 		}
 		break;
 	case FUghMenu::EAction::Quit:
 		Quit();
+		break;
+	case FUghMenu::EAction::Save:
+		ApplySettings();
+		SaveProfile();
 		break;
 	default:
 		if (Menu.GetChoice() != Previewed)
@@ -373,7 +374,12 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 void AUghGameMode::OpenMenu()
 {
 	const ugh_logic_view& View = Simulation.GetCurrent();
-	Menu.ShowEnd({ Menu.GetChoice(), View.level, View.score, Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE });
+	FUghGameEnd End{ Playing, View.level, View.score, Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE };
+	if (bShooting)
+	{
+		Shot.DressEnd(End);
+	}
+	Menu.ShowEnd(End);
 	Speaker->GetPlayer().OnGameEnd(Simulation.GetResult());
 	bInMenu = true;
 	Intro.Stop();
@@ -386,24 +392,6 @@ void AUghGameMode::OpenMenu()
 void AUghGameMode::Quit()
 {
 	UKismetSystemLibrary::QuitGame(this, GetWorld()->GetFirstPlayerController(), EQuitPreference::Quit, false);
-}
-
-bool AUghGameMode::HandleVolumeKey(const FKey& Key, EInputEvent Event)
-{
-	if (Key != EKeys::PageUp && Key != EKeys::PageDown)
-	{
-		return false;
-	}
-	if (Event == IE_Pressed)
-	{
-		Speaker->GetPlayer().ChangeVolume(Key == EKeys::PageUp ? 1 : -1);
-	}
-	return true;   // nor is its release a key of the game
-}
-
-int32 AUghGameMode::GetVolumePercent() const
-{
-	return Speaker ? Speaker->GetPlayer().GetVolumePercent() : 0;
 }
 
 void AUghGameMode::PlayEvents()

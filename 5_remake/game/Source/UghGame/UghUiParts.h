@@ -22,6 +22,29 @@ namespace UghUiParts
 	FText Score(uint32 Score);
 	/** Shown (not taking the mouse) when `bShown`, else collapsed. */
 	EVisibility ShownIf(bool bShown);
+
+	/** Where the title screen's column and the menu's screens in it stand (slate units of a screen 1080 high). */
+	extern const FMargin ColumnPadding;
+	/**
+	 * A row of a setting: its name `LabelWidth` wide, its value between arrows to change it, shown while it is chosen
+	 * (then the row is amber glass, its label amber).
+	 */
+	TSharedRef<SWidget> SettingRow(const FString& Name, float LabelWidth, const TFunction<bool()>& IsChosen,
+		const TSharedRef<SWidget>& Value, const FMargin& Padding = FMargin(18, 11));
+	/** A row that opens a screen, goes back or quits: its text, lit amber when chosen. */
+	TSharedRef<SWidget> MenuItem(const FString& Text, const TFunction<bool()>& IsChosen);
+	/** A screen of the menu in the title's column: its title big, what it shows, its keys at the bottom. */
+	TSharedRef<SWidget> MenuPage(const FString& Title, const TSharedRef<SWidget>& Content, const TSharedRef<SWidget>& Keys);
+	/** A bar of `Steps` stones lit amber up to `Level` (0 .. 1). */
+	TSharedRef<SWidget> StepBar(const TAttribute<float>& Level, int32 Steps);
+	/** A key cap and what it does. */
+	struct FKeyHint
+	{
+		const TCHAR* Key;
+		const TCHAR* What;
+	};
+	/** A line of key hints. */
+	TSharedRef<SWidget> KeyLine(std::initializer_list<FKeyHint> Hints);
 }
 
 /** The energy gauge: a bone with a groove, filled green, amber, then red and pulsing as the energy runs low. */

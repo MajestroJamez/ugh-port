@@ -56,4 +56,6 @@ namespace UghUiStyle
 
 	/** A key cap with `Key` and what it does beside it. */
 	TSharedRef<SWidget> KeyHint(const FString& Key, const TAttribute<FText>& What);
+	/** A key cap whose key may change (as bound) and what it does beside it. */
+	TSharedRef<SWidget> LiveKeyHint(const TAttribute<FText>& Key, const TAttribute<FText>& What);
 }

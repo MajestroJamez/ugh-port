@@ -7,8 +7,8 @@
  * The sounds that play now, mixed into one 16-bit stream (the samples of FUghSounds, all at one rate): the music (one
  * piece, repeated, it may fade out or wait before it starts) and up to Channels effects, like the original's four
  * effect channels (a fifth takes the place of the one that started first). An effect plays once or repeats until it is
- * stopped by its owner (the entity of the logic). The volume scales everything. Unlike the original, the effects do
- * not take the music's voices: both are heard.
+ * stopped by its owner (the entity of the logic). Their volumes scale the music and the effects. Unlike the original,
+ * the effects do not take the music's voices: both are heard.
  */
 class FUghMixer
 {
@@ -29,9 +29,10 @@ public:
 	/** The music that plays (or waits for its start), nullptr none. */
 	const TArray<int16>* GetMusic() const { return Music.Sound; }
 
-	/** 0 silent .. 1 as the sounds are. */
-	void SetVolume(float InVolume) { Volume = FMath::Clamp(InVolume, 0.f, 1.f); }
-	float GetVolume() const { return Volume; }
+	/** The volumes of the music and of the effects: 0 silent .. 1 as the sounds are. */
+	void SetVolumes(float InMusicVolume, float InEffectsVolume);
+	float GetMusicVolume() const { return MusicVolume; }
+	float GetEffectsVolume() const { return EffectsVolume; }
 
 	/** The next `Out.Num()` samples of the stream. */
 	void Mix(TArrayView<int16> Out);
@@ -60,5 +61,5 @@ private:
 	FEffect Effects[Channels];
 	FMusic Music;
 	uint64 EffectsStarted = 0;
-	float Volume = 1.f;
+	float MusicVolume = 1.f, EffectsVolume = 1.f;
 };

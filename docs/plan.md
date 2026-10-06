@@ -1264,3 +1264,42 @@ Jan 2026-10-05: strom s obličejem, kamenný cestující a nepřátelé jsou je�
   (nejpomalejší 12; v kroku 20 23 / 17, v šumu). Čeká na Jana: posoudit menu a HUD v okně (`play.ps1`), hlavně logo
   (`UghStoneShapes.cpp`), barvy a velikosti (`UghUiStyle.cpp`), let kamery v menu (`UghMenuView.cpp`); gamepad
   v menu přijde s krokem 22. Další: **krok 22**.
+- 2026-10-06: krok 22 hotový - nastavení a ovládání (`docs/visual-concept.md`, README hry). Profil
+  (`FUghProfile`) je jeden JSON `Saved\UghProfile.json` (i v zabalené hře; `-UghProfile=<soubor>`; chybějící nebo
+  rozbitý soubor = výchozí, zaloguje se): nastavení (`FUghSettings`), klávesy pilotů (`FUghKeyBindings`: ke každé
+  klávese logiky dvě, výchozí jako dřív, klávesa jinde se prohodí, vlastní klávesy hry Esc P F1 U G PgUp PgDn, myš
+  a gamepad se přiřadit nedají), nejlepší skóre (`FUghHighScores`: 10 nejlepších každého režimu, stejné skóre později
+  pod dřívějším, level, obtížnost, den) a level, kam došla poslední hra režimu (jen dohraný, ne startovní z hesla).
+  Ukládá se při každé změně, autopilot (`-UghShot`) ho nikdy neukládá a bez `-UghProfile` hraje s výchozím. Menu má
+  řádky Settings a High scores; na řádku hesla → doplní heslo posledního dosaženého levelu (pole ukazuje „last: level
+  N“), ← smaže. Obrazovka Settings (`FUghSettingsMenu`, `SUghSettingsScreen` ve sloupci titulní obrazovky): kvalita
+  Low/Medium/High/Epic (`UghGraphics`: skupiny škálovatelnosti, nízká se stíny a GI Lumenu střední, a těžké věci
+  diorámatu jako herní nastavení nad škálovatelností a pod konzolí - objemová mlha, odrazy a lom moře, odrazy Lumenu,
+  stínové mapy slunce, objem průsvitných, LOD groomů karty/helmy; Epic = dosavadní vyladění, řádky přesunuté
+  z `DefaultEngine.ini` do kódu, výchozí, shoty beze změny), upscaler DLSS/FSR/TSR (bez DLSS jen FSR a TSR), frame
+  generation (jen podporované), rozlišení (podporovaná, okno teď), okno (fullscreen / borderless / window; použije se
+  až nastavené, ve shotu nikdy), hlasitost celková, hudba, efekty (mixer má hlasitost hudby a efektů zvlášť), let ke
+  kameni zap/vyp, Controls; co řádek dělá v panelu pod ním. Obrazovka Controls (`FUghControlsMenu`): tabulka 5 kláves
+  × 2 piloti × 2 klávesy, Enter čeká na klávesu (prohození se oznámí, vlastní klávesa hry odmítnuta, Esc nechá),
+  Backspace smaže, Defaults; pomoc F1 ve hře ukazuje klávesy, jak jsou přiřazené. Gamepad (`FUghControls` místo
+  `FUghKeyboard`; `Config/Windows/WindowsInput.ini` `input.DeviceMappingPolicy=3`, aby všechny gamepady patřily
+  jednomu hráči): první gamepad pilot 1, druhý pilot 2 (podle id zařízení), levá páčka nebo d-pad letí, A nebo pravý
+  trigger střílí, Start pauza, Back vzdá, Y pomoc; stejné vstupy logiky jako klávesnice (`ugh_logic_key` /
+  `ugh_logic_menu_key`, logika beze změny), klávesa logiky držená dvěma klávesami (páčka a d-pad, Space a Right Ctrl)
+  se pustí až s poslední; v menu d-pad vybírá a mění, A potvrdí, B zpět (na titulu nic), X maže. Po hře se skóre
+  mezi 10 nejlepšími zeptá na jméno (`FUghNameEntry`, řádka kamenných políček na kartě konce hry: psát klávesami, nebo
+  jako na automatu ↑↓ písmeno a ←→ posun), pak ukáže High scores (`SUghScoresScreen`: oba režimy vedle sebe, nový
+  zápis jantarově, pod každou tabulkou poslední dosažený level s heslem). `shot.ps1 -Screens settings,controls,scores`
+  (snímky obrazovek menu klávesami), `-Score <body>` (s `-End`: karta konce se jménem), `-Profile <soubor>` (bez něj
+  s `scores`/`-Score` vzorový profil); 1080 řádků přes `-Commands "r.SetRes 1920x1080w"`. Nové testy
+  `Ugh.Settings.SaveLoad` (profil uložen a načten stejný, chybějící/rozbitý/divný soubor), `Ugh.Settings.Menu`,
+  `Ugh.Settings.Keys` (přiřazení v obrazovce Controls letí v logice, prohození, odmítnutí, výchozí),
+  `Ugh.Settings.HighScores` (řazení, 10, rovnost, uložení), `Ugh.Gamepad` (tlačítka 1. a 2. gamepadu dají logice
+  cestou hráčova ovladače totéž co klávesy pilota 1 a 2, menu, vrtulník páčkou vyletí stejně vysoko jako šipkou),
+  `Ugh.Menu` rozšířený (nové řádky, obrazovky, jméno klávesami i gamepadem, heslo posledního levelu), `Ugh.Sounds`
+  (hlasitosti hudby a efektů). Snímky 1920x1080 prohlédnuté: `settings.png`, `controls.png`, `scores.png`,
+  `menu.png`, `1p-03-end` (jméno nejlepšího skóre), pomoc F1 v team-01. CTest logiky, `6_verification` (163)
+  a 191 testů v UE zelené. `levels.ps1 -Quick` a arch bez vad, fps medián 21 (nejpomalejší 11; v kroku 21 22 / 12).
+  Čeká na Jana: vyzkoušet skutečný gamepad (Xbox; žádný tu není - ověřeno jen testem cestou ovladače) a dva gamepady
+  v týmu, přepnutí rozlišení a okna v okně (`play.ps1`), jak vypadají předvolby Low/Medium (helmy místo vlasů,
+  bez objemové mlhy) a zda Low stačí na 60 fps (krok 23). Další: **krok 23**.

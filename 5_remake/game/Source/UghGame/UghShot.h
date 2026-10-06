@@ -8,6 +8,7 @@
 class AUghGameMode;
 class FUghMenu;
 class FUghPasswords;
+struct FUghGameEnd;
 
 /**
  * -UghShot=<folder> [-UghShotLevels=<list>] [-UghShotAt=<seconds>] [-UghShotMenu]: the game takes screenshots by
@@ -34,7 +35,10 @@ class FUghPasswords;
  * water under it) -UghShotEffectAge seconds into it (else its ShotAge) and framed around it, the name ending in
  * -<burst> after the others: a look at the bursts of the events (AUghEffects), which come from no event then.
  * -UghShotEnd gives each level up instead of its shot and saves the card of the game's end in the menu (the name
- * ending in -end after the others).
+ * ending in -end after the others); -UghShotScore=<points> makes that game end with so many points (only the picture: a
+ * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores
+ * separated by commas) first opens each screen of the menu by its keys and saves <folder>/<screen>.png. The game's
+ * profile is the defaults (FUghProfile) or the one of -UghProfile, never saved.
  */
 class FUghShot
 {
@@ -62,6 +66,8 @@ public:
 	 */
 	TOptional<FBox2D> CloseUp(const ugh_logic_view& View, const TOptional<FVector2D>& Looked,
 		double Around = LookAround) const;
+	/** A game's end as the shot shows it: with the points of -UghShotScore. */
+	void DressEnd(FUghGameEnd& End) const;
 	/** What -UghShotLook=<kind> wants framed: "campfire", "torch" (the first of its kind of the level), or nothing. */
 	const FString& GetLook() const { return Look; }
 	/** The burst (UghBursts) the level being shot shows held (-UghShotEffect), empty for none; how far into it. */
@@ -72,8 +78,8 @@ public:
 	static constexpr double LookAround = 16;
 
 private:
-	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 4, EndShotAfter = 1, AfterShot = 0.5,
-		LevelTimeLimit = 60;
+	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 4, ScreenShotAfter = 1, EndShotAfter = 1,
+		AfterShot = 0.5, LevelTimeLimit = 60;
 	/** The speech bubbles are looked for among the sprites below this one. */
 	static constexpr int32 BubbleSearch = 1000;
 	/** A close-up shows this many pixels around the copters. */
@@ -96,6 +102,8 @@ private:
 	/** The screenshot's name of `Target`: its mode and level, the suffix of the options, its burst. */
 	FString NameOf(const FTarget& Target) const;
 	EAction TakeShot(const FString& Name);
+	/** The next key that opens the menu's screen of -UghShotScreens (settings, controls, scores); none when it shows. */
+	static FKey ScreenKey(const FUghMenu& Menu, const FString& Screen);
 	/** The next key that turns the menu into the target's game. */
 	FKey MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FTarget& Target) const;
 	/** The copters hover: pedal while below the height they had when the level was fully shown. */
@@ -119,6 +127,8 @@ private:
 	TOptional<double> EffectAge;   // -UghShotEffectAge
 	bool bEndShot = false;     // -UghShotEnd
 	bool bEndWanted = false;   // the target was given up: its end is to be shot
+	TOptional<uint32> EndScore;   // -UghShotScore
+	TArray<FString> Screens;   // -UghShotScreens still to be shot
 	FString Suffix;           // of the shots' names
 	TArray<FTarget> Targets;
 	int32 Next = 0;            // the target being shot

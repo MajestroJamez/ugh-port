@@ -1,4 +1,4 @@
-// The title screen's parts about games: the last game, the card of a game's end, the keys.
+// The title screen's parts about games: the last game, the card of a game's end with a high score's name, the keys.
 #include "UghUiMenu.h"
 
 #include "UghUiParts.h"
@@ -50,7 +50,8 @@ TSharedRef<SWidget> SUghMenuScreen::Keys()
 		+ SHorizontalBox::Slot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("PgUp PgDn"), TAttribute<FText>::CreateLambda([this]
 			{
 				return FText::FromString(FString::Printf(TEXT("volume %d %%"), State->Volume));
-			})) ];
+			})) ]
+		+ SHorizontalBox::Slot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("Gamepad"), FText::FromString(TEXT("d-pad, A, B"))) ];
 }
 
 TSharedRef<SWidget> SUghMenuScreen::LastGame()
@@ -132,10 +133,76 @@ TSharedRef<SWidget> SUghMenuScreen::EndCard()
 				]
 			]
 		]
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 18, 0, 0)[ NameEntry() ]
 		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 24, 0, 0)
 		[
 			SNew(STextBlock).Font(UghUiStyle::Text(19, true)).Text(FText::FromString(TEXT("Press any key")))
 				.ShadowOffset(FVector2D(0, 2)).ShadowColorAndOpacity(UghUiStyle::Shadow)
 				.ColorAndOpacity_Lambda([this] { return UghUiStyle::Bone.CopyWithNewOpacity(UghUiParts::Pulse(State->Time)); })
+				.Visibility_Lambda([this] { return UghUiParts::ShownIf(!State->NameEntry); })
 		];
+}
+
+TSharedRef<SWidget> SUghMenuScreen::NameEntry()
+{
+	TSharedRef<SHorizontalBox> Letters = SNew(SHorizontalBox);
+	for (int32 Index = 0; Index < FUghNameEntry::MaxLength; ++Index)
+	{
+		auto IsCursor = [this, Index] { return State->NameEntry && State->NameEntry->GetCursor() == Index; };
+		Letters->AddSlot().AutoWidth().Padding(3, 0)
+		[
+			SNew(SBox).WidthOverride(46).HeightOverride(60)
+			[
+				SNew(SBorder).HAlign(HAlign_Center).VAlign(VAlign_Center)
+					.BorderImage_Lambda([IsCursor] { return UghUiStyle::Field(IsCursor()); })
+				[
+					SNew(STextBlock).Font(UghUiStyle::Display(34))
+						.Text_Lambda([this, Index, IsCursor]
+						{
+							const FString Name = State->NameEntry ? State->NameEntry->GetName() : FString();
+							const bool bEmpty = Index >= Name.Len() || Name[Index] == TEXT(' ');
+							// the cursor on nothing: a blinking stroke
+							return FText::FromString(!bEmpty ? Name.Mid(Index, 1)
+								: IsCursor() && UghUiParts::Pulse(State->Time) > 0.775f ? TEXT("_") : TEXT(""));
+						})
+						.ColorAndOpacity_Lambda([IsCursor] { return IsCursor() ? UghUiStyle::Amber : UghUiStyle::Bone; })
+				]
+			]
+		];
+	}
+	return SNew(SBorder).BorderImage(UghUiStyle::Panel()).Padding(FMargin(30, 16, 30, 14))
+		.Visibility_Lambda([this] { return UghUiParts::ShownIf(State->NameEntry.IsSet()); })
+	[
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+			[
+				SNew(STextBlock).Font(UghUiStyle::Display(30)).ColorAndOpacity(UghUiStyle::Amber)
+					.ShadowOffset(FVector2D(0, 2)).ShadowColorAndOpacity(UghUiStyle::Shadow)
+					.Text(FText::FromString(TEXT("A new high score!")))
+			]
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(16, 4, 0, 0)
+			[
+				SNew(STextBlock).Font(UghUiStyle::Text(19, true)).ColorAndOpacity(UghUiStyle::Muted).Text_Lambda([this]
+				{
+					const int32 Place = State->NewRank + 1;
+					const TCHAR* Suffix = Place == 1 ? TEXT("st") : Place == 2 ? TEXT("nd") : Place == 3 ? TEXT("rd") : TEXT("th");
+					const TCHAR* Mode = State->LastGame && State->LastGame->Choice.Players == 2 ? TEXT("team") : TEXT("one player");
+					return FText::FromString(FString::Printf(TEXT("%d%s of the ten best of %s"), Place, Suffix, Mode));
+				})
+			]
+		]
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 14, 0, 4)
+		[
+			UghUiParts::Label(TEXT("Carve your name"), UghUiStyle::Muted)
+		]
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 4, 0, 14)[ Letters ]
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+		[
+			UghUiParts::KeyLine({ { TEXT("A-Z 0-9"), TEXT("type") }, { TEXT("↑ ↓"), TEXT("letter") },
+				{ TEXT("← →"), TEXT("move") }, { TEXT("Enter"), TEXT("carve it") } })
+		]
+	];
 }

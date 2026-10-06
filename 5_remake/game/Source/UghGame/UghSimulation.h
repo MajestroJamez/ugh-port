@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "ugh_logic.h"
+#include "UghControls.h"
 #include "UghMenu.h"
 
 /**
@@ -10,7 +11,7 @@
  * as many steps as the real time asks for and keeps the views before and after the last step, so a frame is drawn
  * between them (Alpha).
  */
-class FUghSimulation
+class FUghSimulation : public IUghLogicInput
 {
 public:
 	/** Steps of the logic a second: the frame rate of the original. */
@@ -37,10 +38,8 @@ public:
 	/** UGH_LOGIC_GAME_OVER or UGH_LOGIC_ALL_LEVELS_DONE once over. */
 	int32 GetResult() const { return Result; }
 
-	/** A pilot's key (UGH_LOGIC_KEY_...), player 0 or 1. */
-	void Key(int32 Player, int32 LogicKey, bool bPressed);
-	/** A key the game loop sees (UGH_LOGIC_MENU_...). */
-	void MenuKey(int32 LogicMenuKey);
+	virtual void Key(int32 Player, int32 LogicKey, bool bPressed) override;
+	virtual void MenuKey(int32 LogicMenuKey) override;
 
 	/** Runs the steps that `Seconds` more of real time ask for (at most MaxStepsPerFrame: a long hitch is dropped). */
 	void Advance(double Seconds);

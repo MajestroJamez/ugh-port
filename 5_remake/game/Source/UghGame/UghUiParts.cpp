@@ -6,6 +6,11 @@
 #include "Rendering/SlateRenderer.h"
 #include "UghUiState.h"
 #include "UghUiStyle.h"
+#include "Widgets/Images/SImage.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SBox.h"
+#include "Widgets/Layout/SSpacer.h"
+#include "Widgets/SBoxPanel.h"
 #include "Widgets/Text/STextBlock.h"
 
 namespace
@@ -50,6 +55,98 @@ EVisibility UghUiParts::ShownIf(bool bShown)
 	return bShown ? EVisibility::HitTestInvisible : EVisibility::Collapsed;
 }
 
+
+const FMargin UghUiParts::ColumnPadding(110, 52, 0, 44);
+
+TSharedRef<SWidget> UghUiParts::SettingRow(const FString& Name, float LabelWidth, const TFunction<bool()>& IsChosen,
+	const TSharedRef<SWidget>& Value, const FMargin& Padding)
+{
+	auto Arrow = [IsChosen](const TCHAR* Text)
+	{
+		return SNew(STextBlock).Font(UghUiStyle::Display(24)).ColorAndOpacity(UghUiStyle::Amber)
+			.Text(FText::FromString(Text))
+			.Visibility_Lambda([IsChosen] { return IsChosen() ? EVisibility::Visible : EVisibility::Hidden; });
+	};
+	return SNew(SBorder).Padding(Padding)
+		.BorderImage_Lambda([IsChosen] { return IsChosen() ? UghUiStyle::Chosen() : FStyleDefaults::GetNoBrush(); })
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+			[
+				SNew(SBox).WidthOverride(LabelWidth)
+				[
+					Label(Name, TAttribute<FSlateColor>::CreateLambda([IsChosen]
+					{
+						return IsChosen() ? UghUiStyle::Amber : UghUiStyle::Muted;
+					}))
+				]
+			]
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)[ Arrow(TEXT("‹")) ]
+			+ SHorizontalBox::Slot().FillWidth(1).VAlign(VAlign_Center).Padding(14, 0)[ Value ]
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)[ Arrow(TEXT("›")) ]
+		];
+}
+
+TSharedRef<SWidget> UghUiParts::MenuItem(const FString& Text, const TFunction<bool()>& IsChosen)
+{
+	return SNew(SBorder).Padding(FMargin(18, 8)).HAlign(HAlign_Center)
+		.BorderImage_Lambda([IsChosen] { return IsChosen() ? UghUiStyle::Chosen() : FStyleDefaults::GetNoBrush(); })
+		[
+			SNew(STextBlock).Font(UghUiStyle::Text(18, true)).Text(FText::FromString(Text))
+				.ColorAndOpacity_Lambda([IsChosen] { return IsChosen() ? UghUiStyle::Amber : UghUiStyle::Muted; })
+		];
+}
+
+TSharedRef<SWidget> UghUiParts::MenuPage(const FString& Title, const TSharedRef<SWidget>& Content,
+	const TSharedRef<SWidget>& Keys)
+{
+	return SNew(SVerticalBox)
+		+ SVerticalBox::Slot().AutoHeight().Padding(4, 4, 0, 0)
+		[
+			SNew(STextBlock).Font(UghUiStyle::Display(64, 2)).ColorAndOpacity(UghUiStyle::Bone)
+				.ShadowOffset(FVector2D(0, 4)).ShadowColorAndOpacity(UghUiStyle::Shadow).Text(FText::FromString(Title))
+		]
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Left).Padding(8, 2, 0, 20)
+		[
+			SNew(SBox).WidthOverride(150).HeightOverride(3)
+			[
+				SNew(SImage).Image(UghUiStyle::Rounded()).ColorAndOpacity(UghUiStyle::Amber)
+			]
+		]
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Left)[ Content ]
+		+ SVerticalBox::Slot().FillHeight(1)[ SNew(SSpacer) ]
+		+ SVerticalBox::Slot().AutoHeight()[ Keys ];
+}
+
+TSharedRef<SWidget> UghUiParts::StepBar(const TAttribute<float>& Level, int32 Steps)
+{
+	TSharedRef<SHorizontalBox> Bar = SNew(SHorizontalBox);
+	for (int32 Step = 0; Step < Steps; ++Step)
+	{
+		Bar->AddSlot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 4, 0)
+		[
+			SNew(SBox).WidthOverride(17).HeightOverride(12)
+			[
+				SNew(SImage).Image(UghUiStyle::Rounded()).ColorAndOpacity_Lambda([Level, Step, Steps]
+				{
+					return Step < FMath::RoundToInt(Level.Get() * Steps) ? UghUiStyle::Amber
+						: UghUiStyle::Bone.CopyWithNewOpacity(0.16f);
+				})
+			]
+		];
+	}
+	return Bar;
+}
+
+TSharedRef<SWidget> UghUiParts::KeyLine(std::initializer_list<FKeyHint> Hints)
+{
+	TSharedRef<SHorizontalBox> Line = SNew(SHorizontalBox);
+	for (const FKeyHint& Hint : Hints)
+	{
+		Line->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(Hint.Key, FText::FromString(Hint.What)) ];
+	}
+	return Line;
+}
 FVector2D SUghGauge::ComputeDesiredSize(float) const
 {
 	return State->Pictures ? State->Pictures->Bone.ImageSize : FVector2D(336, 42);

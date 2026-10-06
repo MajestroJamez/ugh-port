@@ -144,6 +144,11 @@ TSharedRef<UghUiStyle::FPictures> UghUiStyle::MakePictures(UObject* Outer, TArra
 
 TSharedRef<SWidget> UghUiStyle::KeyHint(const FString& Key, const TAttribute<FText>& What)
 {
+	return LiveKeyHint(FText::FromString(Key), What);
+}
+
+TSharedRef<SWidget> UghUiStyle::LiveKeyHint(const TAttribute<FText>& Key, const TAttribute<FText>& What)
+{
 	static const FTextBlockStyle KeyStyle = TextStyle(Text(14, true), Bone);
 	static const FTextBlockStyle WhatStyle = TextStyle(Text(15), Muted);
 	return SNew(SHorizontalBox)
@@ -151,7 +156,7 @@ TSharedRef<SWidget> UghUiStyle::KeyHint(const FString& Key, const TAttribute<FTe
 		[
 			SNew(SBorder).BorderImage(KeyCap()).Padding(FMargin(8, 2))
 			[
-				SNew(STextBlock).TextStyle(&KeyStyle).Text(FText::FromString(Key))
+				SNew(STextBlock).TextStyle(&KeyStyle).Text(Key)
 			]
 		]
 		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(7, 0, 20, 0)

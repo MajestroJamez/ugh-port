@@ -16,9 +16,6 @@
 class FUghSoundPlayer
 {
 public:
-	/** The volume changes in steps of a tenth. */
-	static constexpr int32 VolumeSteps = 10;
-
 	/** Reads the sounds of assets/sound and starts the menu's music. */
 	void Load(const FString& SoundDir);
 
@@ -31,10 +28,8 @@ public:
 	/** The view after the steps of a frame: the play's start and end. */
 	void OnView(const ugh_logic_view& View);
 
-	/** Louder (+1) or quieter (-1) by a step. */
-	void ChangeVolume(int32 Steps);
-	/** The volume in percent. */
-	int32 GetVolumePercent() const { return FMath::RoundToInt(Mixer.GetVolume() * 100); }
+	/** The volumes in percent (FUghSettings): of everything, of the music, of the effects. */
+	void SetVolumes(int32 Volume, int32 Music, int32 Effects);
 
 	FUghMixer& GetMixer() { return Mixer; }
 	const FUghSounds& GetSounds() const { return Sounds; }

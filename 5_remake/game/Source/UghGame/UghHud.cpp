@@ -71,7 +71,7 @@ void AUghHud::Update(const AUghGameMode& Mode, double Seconds)
 	Shown.bPasswordKnown = Menu.IsPasswordKnown();
 	Shown.bShowingEnd = Menu.IsShowingEnd();
 	Shown.LastGame = Menu.GetLastGame();
-	Shown.Volume = Mode.GetVolumePercent();
+	UpdateScreens(Mode);
 	Shown.Upscaler = Mode.GetUpscaler().Describe();
 
 	const ugh_logic_view& View = Mode.GetSimulation().GetCurrent();
@@ -138,4 +138,33 @@ void AUghHud::UpdateNotice(const AUghGameMode& Mode, double Seconds)
 	}
 	LastVolume = State->Volume;
 	LastUpscaler = State->Upscaler;
+}
+
+void AUghHud::UpdateScreens(const AUghGameMode& Mode)
+{
+	FUghUiState& Shown = *State;
+	const FUghMenu& Menu = Mode.GetMenu();
+	const FUghProfile& Profile = Mode.GetProfile();
+	const FUghPasswords& Passwords = Mode.GetPasswords();
+	Shown.Volume = Profile.Settings.Volume;
+	Shown.Settings = Profile.Settings;
+	Shown.Scores = Profile.Scores;
+	Shown.Options = Mode.GetDisplayOptions();
+	for (int32 Players = 1; Players <= 2; ++Players)
+	{
+		const int32 Last = Profile.Scores.LastLevel(Players);
+		Shown.LastLevels[Players - 1] = Last;
+		Shown.LastPasswords[Players - 1] =
+			Last >= 0 && Last < Passwords.LevelCount(Players) ? Passwords.Get(Players, Last) : FString();
+	}
+	Shown.MenuScreen = Menu.GetScreen();
+	Shown.SettingsRow = Menu.GetSettingsMenu().GetRow();
+	const FUghControlsMenu& Controls = Menu.GetControlsMenu();
+	Shown.ControlsRow = Controls.GetRow();
+	Shown.ControlsColumn = Controls.GetColumn();
+	Shown.bCapturing = Controls.IsCapturing();
+	Shown.ControlsNotice = Controls.GetNotice();
+	Shown.Highlight = Menu.GetHighlight();
+	Shown.NameEntry = Menu.GetNameEntry();
+	Shown.NewRank = Menu.GetNewRank();
 }

@@ -4,18 +4,18 @@
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "UghGameMode.h"
-#include "UghKeyboard.h"
 #include "UghMenu.h"
 #include "UghPasswords.h"
+#include "UghProfile.h"
 #include "UghBursts.h"
 #include "UghShapes.h"
 
 namespace
 {
-	/** The key that keeps a pilot's copter up. */
-	FKey PedalKey(int32 Player)
+	/** The key that keeps a pilot's copter up (the profile's). */
+	FKey PedalKey(const AUghGameMode& Mode, int32 Player)
 	{
-		return FUghKeyboard::KeyOf(Player, UGH_LOGIC_KEY_UP);
+		return Mode.GetProfile().Settings.Keys.KeyOf(Player, UGH_LOGIC_KEY_UP);
 	}
 
 	FString TargetName(int32 Players, int32 Level)
@@ -101,6 +101,22 @@ bool FUghShot::Configure()
 		EffectAge = Age;
 	}
 	bEndShot = FParse::Param(CommandLine, TEXT("UghShotEnd"));
+	uint32 Score = 0;
+	if (FParse::Value(CommandLine, TEXT("-UghShotScore="), Score))
+	{
+		EndScore = Score;
+	}
+	FString ScreenList;
+	if (FParse::Value(CommandLine, TEXT("-UghShotScreens="), ScreenList, false))
+	{
+		ScreenList.ParseIntoArray(Screens, TEXT(","));
+		Screens.RemoveAll([](const FString& Screen)
+		{
+			const bool bKnown = Screen == TEXT("settings") || Screen == TEXT("controls") || Screen == TEXT("scores");
+			UE_CLOG(!bKnown, LogTemp, Error, TEXT("UGH shot: no screen %s (settings, controls, scores)"), *Screen);
+			return !bKnown;
+		});
+	}
 	FString List = TEXT("1p:1");
 	FParse::Value(CommandLine, TEXT("-UghShotLevels="), List, false);
 	if (!AddTargets(List))
@@ -159,6 +175,26 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		bMenuShot = false;
 		PhaseTime = 0;
 		return TakeShot(TEXT("menu"));
+	}
+	if (!Screens.IsEmpty() && Mode.IsInMenu())
+	{
+		// the menu's screens by their keys, each shot once it shows
+		const FKey Key = ScreenKey(Mode.GetMenu(), Screens[0]);
+		if (Key.IsValid())
+		{
+			Tap(Mode, Key);
+			PhaseTime = 0;
+			return EAction::None;
+		}
+		PhaseTime += DeltaSeconds;
+		if (PhaseTime < ScreenShotAfter)
+		{
+			return EAction::None;
+		}
+		PhaseTime = 0;
+		const FString Name = Screens[0];
+		Screens.RemoveAt(0);
+		return TakeShot(Name);
 	}
 	if (Next == Targets.Num())
 	{
@@ -334,8 +370,47 @@ TOptional<FBox2D> FUghShot::CloseUp(const ugh_logic_view& View, const TOptional<
 	return Copters.ExpandBy(CloseUpMargin);
 }
 
+FKey FUghShot::ScreenKey(const FUghMenu& Menu, const FString& Screen)
+{
+	using EScreen = FUghMenu::EScreen;
+	const EScreen Wanted = Screen == TEXT("settings") ? EScreen::Settings
+		: Screen == TEXT("controls") ? EScreen::Controls : EScreen::Scores;
+	const EScreen Shown = Menu.GetScreen();
+	if (Menu.IsShowingEnd())
+	{
+		return EKeys::Escape;   // closes the card (carves a name)
+	}
+	if (Shown == Wanted)
+	{
+		return FKey();
+	}
+	if (Shown == EScreen::Title)
+	{
+		const FUghMenu::ERow Row = Wanted == EScreen::Scores ? FUghMenu::ERow::Scores : FUghMenu::ERow::Settings;
+		return Menu.GetRow() == Row ? EKeys::Enter : EKeys::Down;
+	}
+	if (Shown == EScreen::Settings && Wanted == EScreen::Controls)
+	{
+		return Menu.GetSettingsMenu().GetRow() == FUghSettingsMenu::ERow::Controls ? EKeys::Enter : EKeys::Down;
+	}
+	return EKeys::Escape;   // back
+}
+
+void FUghShot::DressEnd(FUghGameEnd& End) const
+{
+	End.Score = EndScore.Get(End.Score);
+}
+
 FKey FUghShot::MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FTarget& Target) const
 {
+	if (Menu.GetScreen() != FUghMenu::EScreen::Title || Menu.GetNameEntry())
+	{
+		return EKeys::Escape;   // back to the title (a name carved as it is)
+	}
+	if (Menu.GetRow() > FUghMenu::ERow::Play)
+	{
+		return EKeys::Up;   // Enter there would not play
+	}
 	if (Menu.GetChoice().Players != Target.Players)
 	{
 		return Menu.GetRow() == FUghMenu::ERow::Players ? EKeys::Right : EKeys::Up;
@@ -361,7 +436,7 @@ void FUghShot::Hover(AUghGameMode& Mode, const ugh_logic_view& View)
 		const bool bPedal = Y > HoverY[Player];
 		if (bPedal != bPedalling[Player])
 		{
-			Mode.HandleKey(PedalKey(Player), bPedal ? IE_Pressed : IE_Released);
+			Mode.HandleKey(PedalKey(Mode, Player), bPedal ? IE_Pressed : IE_Released);
 			bPedalling[Player] = bPedal;
 		}
 	}
@@ -373,7 +448,7 @@ void FUghShot::ReleasePedals(AUghGameMode& Mode)
 	{
 		if (bPedalling[Player])
 		{
-			Mode.HandleKey(PedalKey(Player), IE_Released);
+			Mode.HandleKey(PedalKey(Mode, Player), IE_Released);
 			bPedalling[Player] = false;
 		}
 	}

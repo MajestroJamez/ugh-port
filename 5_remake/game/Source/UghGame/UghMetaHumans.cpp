@@ -9,16 +9,12 @@
 #include "GameFramework/Actor.h"
 #include "GroomComponent.h"
 #include "Misc/PackageName.h"
+#include "UghGraphics.h"
 
 namespace
 {
 	/** The blueprint's components of the body and the face (by their names). */
 	const FName BodyName(TEXT("Body")), FaceName(TEXT("Face"));
-	/**
-	 * The grooms' level of detail: hair cards (the quality Medium assembles strands, too slow for the game, the cards
-	 * of this level and helmets beyond it).
-	 */
-	constexpr int32 GroomLOD = 3;
 
 	/** The asset of type TAsset at `Path` (a package path, its object named as the package or `Object`). */
 	template <typename TAsset>
@@ -107,7 +103,8 @@ void FUghMetaHuman::AddNode(FAdding& Adding, const USCS_Node* Node, USceneCompon
 		{
 			Groom->SimulationSettings.bOverrideSettings = true;   // no hair physics on the small figures
 			Groom->SimulationSettings.SolverSettings.bEnableSimulation = false;
-			Groom->SetForcedLOD(GroomLOD);
+			// hair cards or helmets by the quality (the quality Medium of the creator assembles strands: too slow)
+			Groom->SetForcedLOD(UghGraphics::GroomLOD());
 		}
 		// not in the ray traced scene (Lumen's reflections): a moving body's and its hair's geometry would be rebuilt
 		// there every frame, for reflections too small to see

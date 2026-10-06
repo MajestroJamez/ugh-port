@@ -66,10 +66,10 @@ void FUghSoundPlayer::OnView(const ugh_logic_view& View)
 	Fade = View.fade;
 }
 
-void FUghSoundPlayer::ChangeVolume(int32 Steps)
+void FUghSoundPlayer::SetVolumes(int32 Volume, int32 Music, int32 Effects)
 {
-	const int32 Step = FMath::Clamp(FMath::RoundToInt(Mixer.GetVolume() * VolumeSteps) + Steps, 0, VolumeSteps);
-	Mixer.SetVolume(float(Step) / VolumeSteps);
+	const float All = Volume / 100.f;
+	Mixer.SetVolumes(All * Music / 100.f, All * Effects / 100.f);
 }
 
 void FUghSoundPlayer::PlayMusic(const TCHAR* Name, int32 DelaySamples)

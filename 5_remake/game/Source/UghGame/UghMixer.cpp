@@ -88,7 +88,8 @@ void FUghMixer::Mix(TArrayView<int16> Out)
 {
 	for (int16& Sample : Out)
 	{
-		float Sum = NextMusicSample();
+		float Sum = NextMusicSample() * MusicVolume;
+		float EffectsSum = 0;
 		for (FEffect& Effect : Effects)
 		{
 			if (!Effect.Sound)
@@ -104,8 +105,14 @@ void FUghMixer::Mix(TArrayView<int16> Out)
 				}
 				Effect.Position = 0;
 			}
-			Sum += (*Effect.Sound)[Effect.Position++];
+			EffectsSum += (*Effect.Sound)[Effect.Position++];
 		}
-		Sample = int16(FMath::Clamp(Sum * Volume, -32768.f, 32767.f));
+		Sample = int16(FMath::Clamp(Sum + EffectsSum * EffectsVolume, -32768.f, 32767.f));
 	}
+}
+
+void FUghMixer::SetVolumes(float InMusicVolume, float InEffectsVolume)
+{
+	MusicVolume = FMath::Clamp(InMusicVolume, 0.f, 1.f);
+	EffectsVolume = FMath::Clamp(InEffectsVolume, 0.f, 1.f);
 }

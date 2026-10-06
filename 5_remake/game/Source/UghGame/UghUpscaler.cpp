@@ -8,8 +8,7 @@ namespace
 {
 	const EStreamlineDLSSGMode FrameGenerationModes[] = {
 		EStreamlineDLSSGMode::Off, EStreamlineDLSSGMode::On2X, EStreamlineDLSSGMode::On3X, EStreamlineDLSSGMode::On4X };
-	const TCHAR* FrameGenerationNames[] = { TEXT("off"), TEXT("2x"), TEXT("3x"), TEXT("4x") };
-	static_assert(UE_ARRAY_COUNT(FrameGenerationModes) == UE_ARRAY_COUNT(FrameGenerationNames));
+	static_assert(UE_ARRAY_COUNT(FrameGenerationModes) == FUghSettings::FrameGenerations);
 
 	void SetCVar(const TCHAR* Name, const TCHAR* Value)
 	{
@@ -20,51 +19,62 @@ namespace
 	}
 }
 
-void FUghUpscaler::ChooseBest()
+bool FUghUpscaler::HasDlss()
 {
-	Use(UDLSSLibrary::IsDLSSSupported() ? EKind::Dlss : EKind::Fsr);
+	return UDLSSLibrary::IsDLSSSupported();
+}
+
+TArray<int32> FUghUpscaler::FrameGenerations()
+{
+	TArray<int32> Supported = { 0 };
+	for (int32 Mode = 1; Mode < UE_ARRAY_COUNT(FrameGenerationModes) && UStreamlineLibraryDLSSG::IsDLSSGSupported(); ++Mode)
+	{
+		if (UStreamlineLibraryDLSSG::IsDLSSGModeSupported(FrameGenerationModes[Mode]))
+		{
+			Supported.Add(Mode);
+		}
+	}
+	return Supported;
+}
+
+void FUghUpscaler::Use(EUghUpscaler NewKind)
+{
+	Kind = NewKind == EUghUpscaler::Dlss && !HasDlss() ? EUghUpscaler::Fsr : NewKind;
+	SetCVar(TEXT("r.NGX.DLSS.Enable"), Kind == EUghUpscaler::Dlss ? TEXT("1") : TEXT("0"));
+	SetCVar(TEXT("r.FidelityFX.FSR.Enabled"), Kind == EUghUpscaler::Fsr ? TEXT("1") : TEXT("0"));
+	SetCVar(TEXT("r.ScreenPercentage"), TEXT("67"));
 }
 
 void FUghUpscaler::Next()
 {
 	switch (Kind)
 	{
-	case EKind::Dlss: Use(EKind::Fsr); break;
-	case EKind::Fsr: Use(EKind::Tsr); break;
-	case EKind::Tsr: Use(UDLSSLibrary::IsDLSSSupported() ? EKind::Dlss : EKind::Fsr); break;
+	case EUghUpscaler::Dlss: Use(EUghUpscaler::Fsr); break;
+	case EUghUpscaler::Fsr: Use(EUghUpscaler::Tsr); break;
+	case EUghUpscaler::Tsr: Use(EUghUpscaler::Dlss); break;
 	}
 }
 
-void FUghUpscaler::Use(EKind NewKind)
+void FUghUpscaler::SetFrameGeneration(int32 NewFrameGeneration)
 {
-	Kind = NewKind;
-	SetCVar(TEXT("r.NGX.DLSS.Enable"), Kind == EKind::Dlss ? TEXT("1") : TEXT("0"));
-	SetCVar(TEXT("r.FidelityFX.FSR.Enabled"), Kind == EKind::Fsr ? TEXT("1") : TEXT("0"));
-	SetCVar(TEXT("r.ScreenPercentage"), TEXT("67"));
+	const int32 Wanted = FMath::Clamp(NewFrameGeneration, 0, FUghSettings::FrameGenerations - 1);
+	FrameGeneration = FrameGenerations().Contains(Wanted) ? Wanted : 0;
+	if (UStreamlineLibraryDLSSG::IsDLSSGSupported())
+	{
+		UStreamlineLibraryDLSSG::SetDLSSGMode(FrameGenerationModes[FrameGeneration]);
+	}
 }
 
 void FUghUpscaler::NextFrameGeneration()
 {
-	if (!UStreamlineLibraryDLSSG::IsDLSSGSupported())
-	{
-		return;
-	}
-	for (int32 Step = 1; Step <= UE_ARRAY_COUNT(FrameGenerationModes); ++Step)
-	{
-		const int32 Mode = (FrameGeneration + Step) % UE_ARRAY_COUNT(FrameGenerationModes);
-		if (FrameGenerationModes[Mode] == EStreamlineDLSSGMode::Off ||
-			UStreamlineLibraryDLSSG::IsDLSSGModeSupported(FrameGenerationModes[Mode]))
-		{
-			FrameGeneration = Mode;
-			UStreamlineLibraryDLSSG::SetDLSSGMode(FrameGenerationModes[Mode]);
-			return;
-		}
-	}
+	const TArray<int32> Supported = FrameGenerations();
+	const int32 Index = Supported.Find(FrameGeneration);
+	SetFrameGeneration(Supported[(Index + 1) % Supported.Num()]);
 }
 
 FString FUghUpscaler::Describe() const
 {
-	const TCHAR* Name = Kind == EKind::Dlss ? TEXT("DLSS") : Kind == EKind::Fsr ? TEXT("FSR") : TEXT("TSR");
-	return FString::Printf(TEXT("%s, frame generation %s"), Name,
-		UStreamlineLibraryDLSSG::IsDLSSGSupported() ? FrameGenerationNames[FrameGeneration] : TEXT("not supported"));
+	return FString::Printf(TEXT("%s, frame generation %s"), FUghSettings::UpscalerName(Kind),
+		UStreamlineLibraryDLSSG::IsDLSSGSupported() ? *FString(FUghSettings::FrameGenerationName(FrameGeneration)).ToLower()
+			: TEXT("not supported"));
 }

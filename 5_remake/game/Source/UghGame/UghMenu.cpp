@@ -1,6 +1,8 @@
 #include "UghMenu.h"
 
+#include "UghControls.h"
 #include "UghPasswords.h"
+#include "UghProfile.h"
 
 namespace
 {
@@ -43,18 +45,88 @@ void FUghMenu::ShowEnd(const FUghGameEnd& End)
 {
 	LastGame = End;
 	bShowingEnd = true;
+	Screen = EScreen::Title;
+	Highlight.Reset();
+	NewRank = Profile.Scores.RankOf(End.Choice.Players, End.Score);
+	NameEntry.Reset();
+	if (NewRank != INDEX_NONE)
+	{
+		NameEntry.Emplace(Profile.Scores.LastName);
+	}
 }
 
 FUghMenu::EAction FUghMenu::HandleKey(const FKey& Key)
 {
 	if (bShowingEnd)
 	{
-		bShowingEnd = false;   // the key only closes it
+		return HandleEndKey(Key);
+	}
+	switch (Screen)
+	{
+	case EScreen::Settings:
+		switch (SettingsMenu.HandleKey(Key, Profile.Settings, Options))
+		{
+		case FUghSettingsMenu::EResult::Changed: return EAction::Save;
+		case FUghSettingsMenu::EResult::Controls: ControlsMenu.Open(); Screen = EScreen::Controls; break;
+		case FUghSettingsMenu::EResult::Back: Screen = EScreen::Title; break;
+		default: break;
+		}
+		return EAction::None;
+	case EScreen::Controls:
+		switch (ControlsMenu.HandleKey(Key, Profile.Settings.Keys))
+		{
+		case FUghControlsMenu::EResult::Changed: return EAction::Save;
+		case FUghControlsMenu::EResult::Back: Screen = EScreen::Settings; break;
+		default: break;
+		}
+		return EAction::None;
+	case EScreen::Scores:
+		Screen = EScreen::Title;   // any key
+		Highlight.Reset();
+		return EAction::None;
+	default:
+		return HandleTitleKey(Key);
+	}
+}
+
+FUghMenu::EAction FUghMenu::HandleEndKey(const FKey& Key)
+{
+	if (NameEntry && !NameEntry->HandleKey(Key == FUghControls::BackKey() ? EKeys::BackSpace : Key))
+	{
 		return EAction::None;
 	}
+	bShowingEnd = false;   // a key only closes it
+	if (!NameEntry)
+	{
+		return EAction::None;
+	}
+	const FUghGameEnd& End = *LastGame;
+	const FString Name = NameEntry->GetCarved();
+	const int32 Rank = Profile.Scores.Insert(End.Choice.Players,
+		{ Name, End.Score, End.Level, End.Choice.Difficulty, FUghHighScores::Today() });
+	Profile.Scores.LastName = Name;
+	NameEntry.Reset();
+	Highlight = MakeTuple(End.Choice.Players, Rank);
+	Screen = EScreen::Scores;
+	return EAction::Save;
+}
+
+FUghMenu::EAction FUghMenu::HandleTitleKey(const FKey& Key)
+{
 	if (Key == EKeys::Escape || (Key == EKeys::Enter && Row == ERow::Quit))
 	{
 		return EAction::Quit;
+	}
+	if (Key == EKeys::Enter && Row == ERow::Settings)
+	{
+		SettingsMenu.Open();
+		Screen = EScreen::Settings;
+		return EAction::None;
+	}
+	if (Key == EKeys::Enter && Row == ERow::Scores)
+	{
+		Screen = EScreen::Scores;
+		return EAction::None;
 	}
 	if (Key == EKeys::Enter)
 	{
@@ -82,10 +154,16 @@ FUghMenu::EAction FUghMenu::HandleKey(const FKey& Key)
 
 void FUghMenu::Change(int32 Direction)
 {
+	const int32 Last = Profile.Scores.LastLevel(Players);
 	switch (Row)
 	{
 	case ERow::Players: Players = 3 - Players; break;
 	case ERow::Difficulty: Difficulty = FMath::Clamp(Difficulty + Direction, 0, DifficultyCount - 1); break;
+	case ERow::Password:
+		// the level the mode's last game got to (its first level needs none), or none
+		Password = Direction > 0 && Last > 0 && Last < Passwords.LevelCount(Players) ? Passwords.Get(Players, Last)
+			: FString();
+		break;
 	default: break;
 	}
 }

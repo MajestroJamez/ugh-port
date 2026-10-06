@@ -13,7 +13,7 @@ void AUghPlayerController::BeginPlay()
 bool AUghPlayerController::InputKey(const FInputKeyEventArgs& Params)
 {
 	AUghGameMode* Mode = GetWorld()->GetAuthGameMode<AUghGameMode>();
-	if (Mode && Mode->HandleKey(Params.Key, Params.Event))
+	if (Mode && Mode->HandleKey(Params.Key, Params.Event, Params.InputDevice))
 	{
 		return true;
 	}

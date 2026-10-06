@@ -354,9 +354,9 @@ oba sedí a jsou stejně velcí jako při chůzi, kámen vezený v kabině sedí
   zmenšený na 0,32 a dívá se do kamery (`AUghCopters`, `SeatedStone`; `shot.ps1 -Cargo 4 -CloseUp`).
 - **Výkon**: karty vlasů stojí na Radeonu 890M asi 1 ms snímku (interpolace karet, BLAS paprsků, base pass), proto
   lidé nejsou ve scéně ray tracingu (`SetVisibleInRayTracing(false)`: odrazy Lumenu by je stejně neukázaly) a jinde
-  se šetří, co není vidět (`DefaultEngine.ini`): odrazy Lumenu v polovičním rozlišení, stínové mapy slunce o 2,5
-  úrovně hrubší, objem osvětlení průsvitných věcí 32 buněk. Snímek GPU (team-21) 23,1 -> 19,9 ms; `levels.ps1`
-  medián 25 fps.
+  se šetří, co není vidět (od kroku 22 předvolba kvality Epic v `UghGraphics.cpp`, dřív `DefaultEngine.ini`): odrazy
+  Lumenu v polovičním rozlišení, stínové mapy slunce o 2,5 úrovně hrubší, objem osvětlení průsvitných věcí 32 buněk.
+  Snímek GPU (team-21) 23,1 -> 19,9 ms; `levels.ps1` medián 25 fps.
 
 ## Skály podle reference: šedý krasový vápenec, vchody do jeskyní (krok 19c)
 
@@ -560,3 +560,22 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
   červená pulzující; skóre a násobitel), mizí s prolínáním hry; žádný dlouhý řádek kláves - pomoc F1 (sama v levelu 1
   přes popisek a 6 s hry); popisek levelu jako kamenná deska s vytesaným číslem a heslem nad letem; body stoupají
   jantarově s obrysem; hlasitost a upscaler jako krátké oznámení.
+
+## Nastavení a ovládání (krok 22)
+
+- Obrazovky menu ve stejném stylu jako titulní (`UghUi*`): Settings a Controls stojí ve sloupci titulní obrazovky
+  (velký titulek Lilita One s jantarovou linkou, skleněný panel, klávesy dole), scéna kolem kamene zůstává vidět
+  vpravo; High scores jsou dvě tabulky vedle sebe uprostřed nad ztmavenou scénou. Vybraný řádek jantarové sklo se
+  šipkami, hlasitosti jako řada kamínků, co řádek dělá, v panelu pod ním; klávesy pilotů jako tabulka políček (šipky
+  větší, písmo záložní); jméno nejlepšího skóre jako řada políček na kartě konce hry (kurzor jantarový).
+- Předvolby kvality (`UghGraphics.cpp`): skupiny škálovatelnosti enginu na úrovni předvolby (nízká se stíny a GI
+  Lumenu střední: dioráma bez nich nežije) a těžké věci diorámatu:
+
+| | Nízká | Střední | Vysoká | Epická (jak bylo vyladěno) |
+|---|---|---|---|---|
+| objemová mlha (paprsky slunce do jeskyně) | ne | buňky 24 px, 48 vrstev | 16 px, 64 | 16 px, 64 |
+| odrazy moře | obloha a záchyty | Lumen, poloviční | Lumen, poloviční | Lumen, poloviční |
+| lom moře | poloviční | poloviční | plný | plný |
+| stínové mapy slunce (LOD bias) | 2 | 1,5 | 1 | 1 |
+| objem osvětlení průsvitných | 16 | 24 | 32 | 32 |
+| vlasy lidí (LOD groomu) | helmy (4) | helmy (4) | karty (3) | karty (3) |

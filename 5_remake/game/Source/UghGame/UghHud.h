@@ -35,6 +35,8 @@ private:
 	/** How much the help shows now, `Seconds` after the last frame. */
 	void UpdateHelp(const AUghGameMode& Mode, double Seconds);
 	void UpdateNotice(const AUghGameMode& Mode, double Seconds);
+	/** The menu's screens, the profile's settings and high scores. */
+	void UpdateScreens(const AUghGameMode& Mode);
 
 	TSharedPtr<FUghUiState> State;
 	TSharedPtr<SWidget> Screen;

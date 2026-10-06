@@ -83,11 +83,15 @@ bool FUghMixerTest::RunTest(const FString& Parameters)
 	Mixer.PlayMusic(Music, 2);
 	Mixer.Mix(Out);
 	TestTrue(TEXT("the music waits, then repeats"), Out[1] == 0 && Out[2] == 5 && Out[3] == 5);
-	Mixer.SetVolume(0.5f);
+	Mixer.SetVolumes(0.5f, 1.f);
 	Mixer.FadeOutMusic(2);
 	Mixer.Mix(Out);
 	TestTrue(TEXT("half as loud, fading, then over"), Out[0] == 2 && Out[1] == 1 && Out[2] == 0);
 	TestNull(TEXT("no music after its fade"), Mixer.GetMusic());
+	Mixer.SetVolumes(1.f, 0.25f);
+	Mixer.PlayEffect(One);
+	Mixer.Mix(Out);
+	TestEqual(TEXT("the effects a quarter as loud"), Out[0], int16(250));
 	return true;
 }
 
@@ -126,8 +130,9 @@ bool FUghSoundPlayerTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("then the menu's music"), Mixer.GetMusic(), Sounds.Find(FUghSounds::MenuMusic));
 	Player.OnGameEnd(UGH_LOGIC_ALL_LEVELS_DONE);
 	TestEqual(TEXT("the ending's music"), Mixer.GetMusic(), Sounds.Find(FUghSounds::EndingMusic));
-	Player.ChangeVolume(-3);
-	TestEqual(TEXT("the volume a step lower"), Player.GetVolumePercent(), 70);
+	Player.SetVolumes(70, 50, 100);
+	TestTrue(TEXT("the volumes: all of the music's and the effects'"),
+		FMath::IsNearlyEqual(Mixer.GetMusicVolume(), 0.35f) && FMath::IsNearlyEqual(Mixer.GetEffectsVolume(), 0.7f));
 	return true;
 }
 

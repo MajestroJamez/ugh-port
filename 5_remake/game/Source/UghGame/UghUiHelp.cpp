@@ -4,6 +4,7 @@
 #include "UghUiParts.h"
 #include "UghUiState.h"
 #include "UghUiStyle.h"
+#include "ugh_logic.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -28,14 +29,41 @@ TSharedRef<SWidget> SUghPlayScreen::Help()
 {
 	auto Row = [] { return SNew(SHorizontalBox); };
 	TSharedRef<SHorizontalBox> Pilots = Row(), Game = Row(), Frontend = Row();
-	Pilots->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("← ↑ → ↓"), Fixed(TEXT("fly"))) ];
-	Pilots->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("Space"), Fixed(TEXT("or"))) ];
-	Pilots->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("Right Ctrl"), Fixed(TEXT("fire"))) ];
+	// a pilot's keys as bound (FUghKeyBindings): the first ones to fly, both to fire
+	auto FlyKeys = [this](int32 Pilot)
+	{
+		return TAttribute<FText>::CreateLambda([this, Pilot]
+		{
+			TArray<FString> Names;
+			for (const int32 Action : { UGH_LOGIC_KEY_UP, UGH_LOGIC_KEY_LEFT, UGH_LOGIC_KEY_DOWN, UGH_LOGIC_KEY_RIGHT })
+			{
+				Names.Add(FUghKeyBindings::NameOf(State->Settings.Keys.KeyOf(Pilot, Action)));
+			}
+			return FText::FromString(FString::Join(Names, TEXT(" ")));
+		});
+	};
+	auto FireKeys = [this](int32 Pilot)
+	{
+		return TAttribute<FText>::CreateLambda([this, Pilot]
+		{
+			TArray<FString> Names;
+			for (const FKey& Key : State->Settings.Keys.Keys[Pilot][UGH_LOGIC_KEY_FIRE])
+			{
+				if (Key.IsValid())
+				{
+					Names.Add(FUghKeyBindings::NameOf(Key));
+				}
+			}
+			return FText::FromString(Names.IsEmpty() ? FString(TEXT("-")) : FString::Join(Names, TEXT(" / ")));
+		});
+	};
+	Pilots->AddSlot().AutoWidth()[ UghUiStyle::LiveKeyHint(FlyKeys(0), Fixed(TEXT("fly"))) ];
+	Pilots->AddSlot().AutoWidth()[ UghUiStyle::LiveKeyHint(FireKeys(0), Fixed(TEXT("fire"))) ];
 	Pilots->AddSlot().AutoWidth()
 	[
 		SNew(SHorizontalBox).Visibility_Lambda([this] { return UghUiParts::ShownIf(State->Players == 2); })
-		+ SHorizontalBox::Slot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("W A S D"), Fixed(TEXT("pilot 2 flies"))) ]
-		+ SHorizontalBox::Slot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("Left Ctrl"), Fixed(TEXT("and fires"))) ]
+		+ SHorizontalBox::Slot().AutoWidth()[ UghUiStyle::LiveKeyHint(FlyKeys(1), Fixed(TEXT("pilot 2 flies"))) ]
+		+ SHorizontalBox::Slot().AutoWidth()[ UghUiStyle::LiveKeyHint(FireKeys(1), Fixed(TEXT("and fires"))) ]
 	];
 	Game->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("P"), Fixed(TEXT("pause"))) ];
 	Game->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("Esc"), Fixed(TEXT("give up"))) ];
@@ -44,6 +72,7 @@ TSharedRef<SWidget> SUghPlayScreen::Help()
 		{
 			return FText::FromString(FString::Printf(TEXT("volume %d %%"), State->Volume));
 		})) ];
+	Game->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("Gamepad"), Fixed(TEXT("stick fly, A fire, Y help"))) ];
 	Frontend->AddSlot().AutoWidth()[ UghUiStyle::KeyHint(TEXT("U"), TAttribute<FText>::CreateLambda([this]
 		{
 			return FText::FromString(TEXT("upscaler: ") + State->Upscaler);
