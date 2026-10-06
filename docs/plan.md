@@ -540,7 +540,26 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
 - Hotovo když: záznam letu (snímky po krocích nebo měření kamery po snímcích) bez skoků, koncový snímek s okraji
   kamene, snímek vrtulníku u okraje s prohnutým porostem.
 
-## Průběžně
+### Krok 24e - Kámen jako skutečný velký šutr (Jan po 24c)
+
+- Jan: kámen vypadá „hnusně“. Reference `C:\Users\Ja079591\.claude\ugh-rock-reference-slate.png`: tmavě šedá
+  vrstevnatá břidlice / fylit, ostré lámané vrstvy a šupiny, výrazný reliéf (hluboké stíny mezi vrstvami), tenké
+  bílé křemenné žilky, matný povrch. Celý kámen (čelo levelu, okolní stěny, zadní stěna, útes v moři) má působit
+  jako jeden obří balvan z tohoto materiálu, ne jako hladká hmota s rozmazanou texturou.
+- Materiál: scan/CC0 textura břidlice s vrstvami (nebo procedurální z reference), triplanar bez natahování, výrazná
+  normála + displacement/Nanite tessellation na okrajích, žilky jako detail; mech a porost jen místy. Zachovat 24c:
+  skála tmavší než postavy, postavy > plošiny > skála. Kolizní hrana v herní rovině beze změny.
+- Hotovo když: snímek zblízka vedle reference vypadá jako stejný druh kamene, arch rychlé sady bez regresí, fps
+  nepadne o víc než pár procent.
+
+### Krok 24f - Optimalizace (Jan po hraní 24c)
+
+- Jan: na notebooku (Radeon 890M) se hra i na Low „nehratelně hryže“ - na tak jednoduchou hru málo. Cíl: Low stabilně
+  60 fps na zahřátém notebooku bez škubání, Medium aspoň 45; měřit snímkové časy (1 % low, hitche), ne jen medián.
+- Profilovat (Unreal Insights / `stat gpu`, CSV) zabalenou hru: Lumen, VSM, Nanite, groomy MetaHumanů, Niagara oheň,
+  moře, mlha, světla postav z 24c, halo post-process, počet draw callů dekoru; hitche: kompilace shaderů (PSO cache
+  po změnách 24a-24e znovu), streaming, GC. Levné náhrady na Low (helmy místo vlasů, LOD dekoru, bez halo / levnější).
+- Hotovo když: `perf.ps1` ukáže cíl na zahřátém stroji, nový balíček s PSO cache.
 
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
   a `rider` (jiný port než IDEA 64342), pak restart Claude Code.
@@ -1424,3 +1443,16 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   replayů a 34 dalších). `levels.ps1 -Quick` 0 chyb v logu, fps medián 27 (nejpomalejší 16; před 26 / 15), Low 67 / 38.
   Čeká na Jana: posoudit v okně (`play.ps1`), zda je svatozář dost jemná a den ne moc tmavý. Další: **krok 24b2**
   (pak 24d).
+- 2026-10-06: krok 24b2 hotový - vrtulník průhlednější a zelenější (`docs/visual-concept.md`). Vzadu místo proutěné
+  stěny jen dva bambusy křížem svázané uprostřed, jinak otevřeno (vidět skála a porost za vrtulníkem); průhlednost je
+  geometrie, žádné maskované díry (24a). Rohové sloupky, kříž a horní trámy omotává břečťan (stonek ve spirále,
+  listy přiložené ke kmeni), z horních trámů visí pět lián (vpředu u rohů krátké, mimo obličeje, kliku a řetěz),
+  mech na kmenech; stonky, listy a mech z `Blender/vines.py` (teď modul: `materials(folder)`, `leaf`, `hanging`,
+  liány scény beze změny). Bambus zelenější (olivový), boční proutí nízko zůstává. Barva hráče už jen na pěti malých
+  praporcích pod předním trámem, manžetách nahoře na sloupcích a kůži sedátek (spodní a horní pruh pryč) - v týmu
+  červené a tyrkysové praporky rozliší vrtulníky dál. Listy a liány `copter.py` stlačí do těla vrtulníku a ověří, že
+  tělo je celé v něm (`Ugh.Copter.Model` platí); tělo ~23 tis. trojúhelníků. Pohon, sedátka a 24c (postavy ve
+  světelném kanálu) beze změny. Snímky před a po `Saved\Shots\24b2-before`, `24b2-after` (zblízka letí a přistál,
+  herní kamera, tým, noc): stíny bez kostiček. CTest logiky, `6_verification` (163) a 195 testů v UE zelené.
+  `levels.ps1 -Quick` 0 chyb v logu, fps medián 23, opakovaně 25 (nejpomalejší 18 / 14; po 24c 27) - spíš zahřátý
+  notebook po sérii běhů, A/B neměřeno. Čeká na Jana: posoudit v okně (`play.ps1`). Další: **krok 24d**.

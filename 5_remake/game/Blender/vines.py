@@ -4,6 +4,8 @@ along them (more near the top), a tuft of moss where they hang from and a curled
 2.8 and 3.6 m long.
 
     blender -b --factory-startup --python-exit-code 1 --python vines.py -- <folder>
+
+copter.py takes its materials, stems and leaves for the ivy and the lianas of the copters.
 """
 import math
 import os
@@ -17,13 +19,13 @@ from mathutils import Quaternion, Vector  # noqa: E402
 
 import ugh_kit as kit  # noqa: E402
 
-FOLDER = kit.arguments()[0]
 LENGTHS = (1.2, 2.0, 2.8, 3.6)
 STEM, LEAF, MOSS = 0, 1, 2
 CURL = 5   # points of a stem's curled tip
 
 
-def materials():
+def materials(folder):
+    """The materials stem, leaf and moss (STEM, LEAF, MOSS), their textures saved to `folder`."""
     size = kit.TEXTURE_SIZE
     u = (numpy.arange(size)[None, :] + 0.5) / size * numpy.ones((size, 1))
     v = (numpy.arange(size)[:, None] + 0.5) / size * numpy.ones((1, size))
@@ -35,12 +37,12 @@ def materials():
     leaf = leaf * (1 + 0.25 * (rib + veins)[..., None])
     stem = kit.colour_ramp(kit.noise(size, 2, seed=602, stretch=(1, 8)), (0.18, 0.2, 0.08), (0.34, 0.33, 0.14))
     moss = kit.colour_ramp(kit.noise(size, 2.6, seed=603), (0.12, 0.22, 0.05), (0.32, 0.45, 0.12))
-    return [kit.material("stem", kit.save_image(FOLDER, "vine_stem", stem), roughness=0.8),
-            kit.material("leaf", kit.save_image(FOLDER, "vine_leaf", leaf),
-                         kit.save_image(FOLDER, "vine_leaf_normal", kit.normals_from_height(rib + veins, 2),
+    return [kit.material("stem", kit.save_image(folder, "vine_stem", stem), roughness=0.8),
+            kit.material("leaf", kit.save_image(folder, "vine_leaf", leaf),
+                         kit.save_image(folder, "vine_leaf_normal", kit.normals_from_height(rib + veins, 2),
                                         colour=False), roughness=0.55, double_sided=True),
-            kit.material("moss", kit.save_image(FOLDER, "vine_moss", moss),
-                         kit.save_image(FOLDER, "vine_moss_normal",
+            kit.material("moss", kit.save_image(folder, "vine_moss", moss),
+                         kit.save_image(folder, "vine_moss_normal",
                                         kit.normals_from_height(kit.noise(size, 2.6, seed=603), 6), colour=False),
                          roughness=0.9)]
 
@@ -59,22 +61,35 @@ def stem_path(length, rng, sway):
     return points
 
 
-def leaf(bm, at, out, size, uv):
-    """A heart-shaped leaf from its stalk at `at`, pointing along `out`, facing mostly the camera (-Y)."""
+def leaf(bm, at, out, size, uv, facing=Vector((0, -1, 0)), material_index=LEAF):
+    """A heart-shaped leaf from its stalk at `at`, pointing along `out`, facing mostly `facing` (the camera, -Y)."""
     out = out.normalized()
-    across = out.cross(Vector((0, -1, 0)))
+    across = out.cross(facing)
     across = across.normalized() if across.length > 1e-3 else Vector((1, 0, 0))
     outline = [(0.0, 0.0), (0.35, 0.12), (0.45, 0.35), (0.3, 0.7), (0.0, 1.0), (-0.3, 0.7), (-0.45, 0.35),
                (-0.35, 0.12)]
-    centre = bm.verts.new(at + out * size * 0.45 + Vector((0, -0.01, 0)))
-    ring = [bm.verts.new(at + across * x * size + out * y * size + Vector((0, 0.02 * y * size, 0)))
+    centre = bm.verts.new(at + out * size * 0.45 + facing * 0.01)
+    ring = [bm.verts.new(at + across * x * size + out * y * size - facing * (0.02 * y * size))
             for x, y in outline]
     for a, b in zip(ring, ring[1:] + ring[:1]):
         face = bm.faces.new((centre, a, b))
-        face.material_index, face.smooth = LEAF, True
+        face.material_index, face.smooth = material_index, True
         for loop in face.loops:
             local = loop.vert.co - at
             loop[uv].uv = (0.5 + local.dot(across) / size, local.dot(out) / size)
+
+
+def hanging(bm, path, radius, rng, uv, leaves=3.0, sizes=(0.08, 0.15), stem=STEM, leafy=LEAF):
+    """A stem along `path` (from its top, tapering) with leaves along it (not on its curl), denser near the top:
+    `leaves` a point at the top on average, `sizes` the smallest and the biggest; `stem` and `leafy` the material
+    slots."""
+    kit.tube(bm, path, [radius * (1 - 0.6 * i / len(path)) for i in range(len(path))], sides=6, uv_length=0.5,
+             material_index=stem)
+    for index, point in enumerate(path[:-CURL]):
+        for _ in range(int(rng.poisson(leaves * (1.2 - index / len(path))))):
+            out = Vector((rng.choice((-1, 1)) * rng.uniform(0.4, 1), rng.uniform(-0.4, 0.2), rng.uniform(-1, 0.1)))
+            out.rotate(Quaternion(Vector((0, 0, 1)), rng.uniform(-0.4, 0.4)))
+            leaf(bm, point, out, rng.uniform(*sizes), uv, material_index=leafy)
 
 
 def vine(length, seed):
@@ -85,14 +100,7 @@ def vine(length, seed):
     if length > 1.5:
         stems.append((stem_path(length * 0.7, rng, 0.1), 0.012))
     for path, radius in stems:
-        kit.tube(bm, path, [radius * (1 - 0.6 * i / len(path)) for i in range(len(path))], sides=6, uv_length=0.5,
-                 material_index=STEM)
-        # leaves along it (not on its curl), denser near the top
-        for index, point in enumerate(path[:-CURL]):
-            for _ in range(int(rng.poisson(3.0 * (1.2 - index / len(path))))):
-                out = Vector((rng.choice((-1, 1)) * rng.uniform(0.4, 1), rng.uniform(-0.4, 0.2), rng.uniform(-1, 0.1)))
-                out.rotate(Quaternion(Vector((0, 0, 1)), rng.uniform(-0.4, 0.4)))
-                leaf(bm, point, out, rng.uniform(0.08, 0.15), uv)
+        hanging(bm, path, radius, rng, uv)
     for _ in range(5):   # the moss it hangs from
         size = rng.uniform(0.06, 0.12)
         kit.blob(bm, Vector((rng.uniform(-0.15, 0.15), rng.uniform(-0.06, 0.06), -rng.uniform(0, 0.08))),
@@ -101,12 +109,13 @@ def vine(length, seed):
     return bm
 
 
-def build():
+def build(folder):
     kit.clear_scene()
-    made = materials()
+    made = materials(folder)
     objects = [kit.mesh_object(f"vine_{index + 1}", vine(length, 610 + index), made)
                for index, length in enumerate(LENGTHS)]
-    kit.export(os.path.join(FOLDER, "vines.glb"), objects)
+    kit.export(os.path.join(folder, "vines.glb"), objects)
 
 
-build()
+if __name__ == "__main__":
+    build(kit.arguments()[0])

@@ -27,8 +27,9 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
 - **Cedule s čísly plošin** (dlaždice 85-90 kresby) jsou kartičky s původním spritem těsně za deskou: číslo cílové
   plošiny je herní informace (bez textur je ukáže kresba sama).
 - **Vrtulník** (krok 16): pravěký šlapací vrtulník podle spritu originálu - klec z bambusu svázaného provazem na
-  podlaze z kmenů, vzadu a po stranách proplétané proutí, řídítka z kosti na kůlu, klika s kostěnými rameny
-  a kamennými pedály, kožené prapory nahoře a dole vpředu a kly na předních rozích; nahoře
+  podlaze z kmenů, po stranách nízko proplétané proutí (vzadu od kroku 24b2 otevřené), řídítka z kosti na kůlu, klika
+  s kostěnými rameny a kamennými pedály, kožené praporky nahoře vpředu (dřív prapory nahoře i dole) a kly na předních
+  rozích; nahoře
   rotor z kostí s velkými listy přivázanými na kamenném náboji (druhý hráč keřovitější, jako v originálu). Tělo
   vyplňuje tělo vrtulníku logiky (`COPTER_BODY_*`, 22 x 20 px) a do hloubky zůstává v ±45 jednotkách, tedy za čelem
   skály (-60) i bublinami; rotor (poloměr 1,3 m) přesahuje tělo do stran jen o 2 px; do hloubky
@@ -46,6 +47,13 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   tečny a dva oblouky, jeden zub kola na článek, po otáčce kliky stejně). Cestující má vlastní židli: sedák ze
   štípaných kmenů s koženým polštářem, opěradlo z kostěných žeber pod bambusovou příčkou, područky končící kly.
   Proutí zůstává neprůhledné (krok 24a). Přistání: `shot.ps1 -Land -At 8` (autopilot nechá vrtulníky pomalu klesat).
+- **Průhlednější a zelenější** (krok 24b2): vzadu žádná stěna, jen dva bambusy křížem svázané uprostřed, jinak je
+  vidět skála za vrtulníkem; průhlednost je geometrie, ne maskované díry (krok 24a). Rohové sloupky, kříž a horní trámy
+  omotává břečťan (tenký stonek ve spirále, listy přiložené ke kmeni a převislé), z horních trámů visí liány (u předních
+  rohů krátké, aby nezakryly obličeje, kliku a řetěz; vzadu delší), na koncích kmenů mech - stonky, listy a mech jsou
+  `vines.py` (stejné materiály jako liány ve scéně). Bambus zelenější. Barva hráče už jen na pěti malých praporcích
+  pod předním horním trámem, na manžetách nahoře na sloupcích a na kůži sedátek - v týmu vrtulníky rozliší dál,
+  dominantní není. Vše zůstává v těle vrtulníku (`copter.py` to ověří, `Ugh.Copter.Model` také).
 - **Pilot a cestující** (krok 16): jeskynní muž - zavalitý, kreslený, asi 1,15 m (sprity originálu jsou 10 px vysoké
   a 16 px široké), velká hlava s obočím, nosem a očima, kůže z leopardí kožešiny přes rameno, vlasy krátké nebo
   dlouhé a vousy jako části, které hra ukáže podle vzhledu, barvy vlasů, kožešiny a kůže podle vzhledu. Riggovaný

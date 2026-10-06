@@ -12,7 +12,7 @@ from its ceilings and down its back wall, all behind the figures, here and there
 across a ledge in a channel under a footbridge of logs and over the edge into the sea as a waterfall with spray at its foot, a weathered board on a post at every pad with its
 number carved in tally marks as the original's boards show it; the scanned assets come from Epic's Electric Dreams sample where it was copied (`electric-dreams.ps1`),
 else free ones; the copters are stone age pedal
-copters of bamboo, wicker, leather, bone and stone (made by Blender scripts) with a stone age man sitting and
+copters of bamboo wrapped in ivy, wicker, leather, bone and stone (made by Blender scripts) with a stone age man sitting and
 pedalling them and their passengers sitting behind him or hanging below; the passengers are stone age people (a man, a
 woman, an old man) as big as their sprites, walking, waving, waiting, swimming and falling as their sprites say (the
 standing passenger a scanned mossy rock with wet eyes under lids of rock, sitting smaller in a cabin) - photoreal

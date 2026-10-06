@@ -2,10 +2,12 @@
 origin where the game turns it (copter_layout):
 
 - Body_1, Body_2 (the players' copters, leather dyed in their colours): a cage of bamboo poles lashed with rope on a
-  floor of logs, wicker at the back and the sides, the pilot's seat (a leather seat with a backrest on bamboo legs),
-  the passenger's chair (a seat of split logs with a leather cushion, a back of bone ribs, armrests ending in tusks),
-  the handlebar on the post that bears the crank, the hanger that bears the layshaft, leather banners at the top and
-  the bottom of the front, tusks on the front corners. Origin: the bottom middle of the body.
+  floor of logs, wicker low at the sides, open at the back but for two poles crossed, ivy winding up the posts and
+  the crossed poles and along the top beams, lianas hanging from them, moss on the logs (vines.py's stems, leaves and
+  moss), the pilot's seat (a leather seat with a backrest on bamboo legs), the passenger's chair (a seat of split
+  logs with a leather cushion, a back of bone ribs, armrests ending in tusks), the handlebar on the post that bears
+  the crank, the hanger that bears the layshaft, small leather pennants under the top front beam and leather collars
+  at the top of the posts, tusks on the front corners. Origin: the bottom middle of the body.
 - Rotor_1, Rotor_2: a stone hub with bone blades, a big leaf lashed on each (the second player's rotor bushier, as in
   the original). Origin: the hub, it turns about Z.
 - Shaft: the rotor's shaft down into the cage with the crown wheel the layshaft's pinion turns (copter_layout's
@@ -28,16 +30,20 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bmesh  # noqa: E402
+import numpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
 import copter_layout as layout  # noqa: E402
 import copter_materials  # noqa: E402
 import ugh_kit as kit  # noqa: E402
+import vines  # noqa: E402
 
 FOLDER, WOOD, STONE = kit.arguments()[:3]
 HALF_X, HALF_Y = layout.BODY_WIDTH / 2 - 0.1, layout.BODY_DEPTH - 0.08   # the corner posts
 FLOOR, TOP, RAIL = 0.12, 1.72, 0.92
 POLE, ROPE = 0.055, 0.009
+# the copter's body (copter_layout: BODY_WIDTH x BODY_HEIGHT, BODY_DEPTH in front and behind)
+BOX = ((-layout.BODY_WIDTH / 2, -layout.BODY_DEPTH, 0.0), (layout.BODY_WIDTH / 2, layout.BODY_DEPTH, layout.BODY_HEIGHT))
 
 
 class Part:
@@ -82,6 +88,81 @@ class Part:
         return kit.mesh_object(self.name, self.bm, [materials[name] for name in self.materials])
 
 
+def clamped(part, make):
+    """What `make()` adds to the part, its vertices pushed into the copter's body (BOX): ivy and lianas on the
+    frame's edges (copter_layout's body, which the game's test holds the model to)."""
+    part.bm.verts.ensure_lookup_table()
+    first = len(part.bm.verts)
+    make()
+    part.bm.verts.ensure_lookup_table()
+    for vert in part.bm.verts[first:]:
+        vert.co = Vector([min(max(c, low), high) for c, low, high in zip(vert.co, *BOX)])
+
+
+def ivy(part, a, b, radius, seed, turns=1.6, leaves=46.0, sizes=(0.055, 0.11)):
+    """Ivy winding round a pole of `radius` from a to b: a thin stem in a loose spiral (`turns` a metre), leaves on
+    it (`leaves` a metre) lying on the pole, pointing along it and away from it, mostly drooping."""
+    a, b = Vector(a), Vector(b)
+    axis = (b - a).normalized()
+    side = axis.orthogonal().normalized()
+    up = axis.cross(side)
+    length = (b - a).length
+    rng = numpy.random.default_rng(seed)
+    phase = rng.uniform(0, 2 * math.pi)
+    steps = max(8, int(length * 24))
+    points, radials = [], []
+    for i in range(steps + 1):
+        t = i / steps
+        angle = phase + 2 * math.pi * turns * length * t + 0.4 * math.sin(7 * t + phase)
+        radial = side * math.cos(angle) + up * math.sin(angle)
+        points.append(a + (b - a) * t + radial * (radius + 0.012))
+        radials.append(radial)
+    uv = part.bm.loops.layers.uv.verify()
+
+    def make():
+        part.tube(points, [0.011 - 0.004 * i / steps for i in range(steps + 1)], "stem", sides=5, uv_length=0.5)
+        for point, radial in zip(points, radials):
+            for _ in range(int(rng.poisson(leaves * length / steps))):
+                tangent = axis.cross(radial)
+                out = (axis * rng.uniform(-1, 0.35) + tangent * rng.uniform(-0.8, 0.8) + radial * 0.2).normalized()
+                vines.leaf(part.bm, point + radial * 0.006, out, rng.uniform(*sizes), uv, facing=radial,
+                           material_index=part.slot("leaf"))
+    clamped(part, make)
+
+
+def liana(part, top, length, seed):
+    """A liana (vines.py's stem with its leaves, swaying less) hanging from `top` on the frame, a tuft of moss there."""
+    rng = numpy.random.default_rng(seed)
+    path = [Vector(top) + Vector((p.x * 0.6, p.y * 0.25, p.z)) for p in vines.stem_path(length, rng, 0.1)]
+    uv = part.bm.loops.layers.uv.verify()
+    clamped(part, lambda: vines.hanging(part.bm, path, 0.02, rng, uv, leaves=6.0, sizes=(0.07, 0.14),
+                                        stem=part.slot("stem"), leafy=part.slot("leaf")))
+    part.blob(Vector(top) + Vector((0, 0, 0.02)), (0.07, 0.05, 0.045), "moss", seed=seed, bumps=0.3)
+
+
+def pennants(part, leather, count=5):
+    """Small leather pennants in the player's colour hanging from the top front beam, a little wavy."""
+    uv = part.bm.loops.layers.uv.verify()
+    width, height, y = 0.25, 0.22, -HALF_Y - 0.06
+    for index in range(count):
+        x = (index - (count - 1) / 2) * 0.38
+        rows = 4
+        verts = []
+        for row in range(rows + 1):
+            t = row / rows
+            half = width / 2 * (1 - t)
+            wave = 0.012 * math.sin(math.pi * t + index)
+            verts.append([part.bm.verts.new((x + s * half + 0.015 * t * t, y - wave, TOP - 0.02 - height * t))
+                          for s in ((-1, 1) if row < rows else (0,))])
+        for row in range(rows):
+            (a, b), below = verts[row], verts[row + 1]
+            face = part.bm.faces.new((below[0], below[1], b, a) if len(below) == 2 else (below[0], b, a))
+            face.material_index = part.slot(leather)
+            for loop in face.loops:
+                local = loop.vert.co
+                loop[uv].uv = ((local.x - x) / width + 0.5 + index * 0.37, (TOP - local.z) / height * 0.5)
+
+
 def wicker(part, a, b, height_from, height_to):
     """A wicker wall between corners a and b (x, y) from one height to another."""
     a, b = Vector((*a, 0)), Vector((*b, 0))
@@ -94,26 +175,50 @@ def wicker(part, a, b, height_from, height_to):
 
 
 def body(player):
+    """The cage, open at the back (step 24b2): no wall there but two bamboo poles crossed, ivy winding up them and
+    up the corner posts, lianas hanging from the top beams, moss on the logs; the player's colour on the pennants
+    under the top front beam, the collars at the top of the posts and the seats' leather."""
     part = Part(f"Body_{player}")
     leather = f"leather_{player}"
     corners = [(x, y) for x in (-HALF_X, HALF_X) for y in (-HALF_Y, HALF_Y)]
-    for x, y in corners:
+    for index, (x, y) in enumerate(corners):
         part.tube([(x, y, 0.02), (x, y, TOP + 0.08)], POLE, "bamboo", uv_length=0.36)
-        for low, high in ((TOP - 0.12, TOP - 0.02), (FLOOR, FLOOR + 0.12)):
-            part.tube([(x, y, low), (x, y, high)], POLE + 0.006, leather, sides=12)
+        part.tube([(x, y, TOP - 0.12), (x, y, TOP - 0.02)], POLE + 0.006, leather, sides=12)
         part.lash((x, y, RAIL), (0, 0, 1), POLE)
+        ivy(part, (x, y, FLOOR), (x, y, TOP - 0.13), POLE, seed=40 + 10 * player + index)
     for log in range(5):
         y = -HALF_Y + 2 * HALF_Y * log / 4
         part.tube([(-HALF_X - 0.08, y, FLOOR - 0.04), (HALF_X + 0.08, y, FLOOR - 0.04)], 0.07, "wood")
-    for y in (-HALF_Y, HALF_Y):   # beams along X at the top, a rail at the back
+    for y in (-HALF_Y, HALF_Y):   # beams along X at the top
         part.tube([(-HALF_X - 0.08, y, TOP), (HALF_X + 0.08, y, TOP)], POLE * 0.9, "bamboo", uv_length=0.36)
-    part.tube([(-HALF_X, HALF_Y, RAIL), (HALF_X, HALF_Y, RAIL)], POLE * 0.8, "bamboo", uv_length=0.36)
     for x in (-HALF_X, HALF_X):   # beams along Y at the top and the rails at the sides
         part.tube([(x, -HALF_Y - 0.08, TOP + 0.05), (x, HALF_Y + 0.08, TOP + 0.05)], POLE * 0.9, "bamboo",
                   uv_length=0.36)
         part.tube([(x, -HALF_Y, RAIL), (x, HALF_Y, RAIL)], POLE * 0.8, "bamboo", uv_length=0.36)
         wicker(part, (x, -HALF_Y), (x, HALF_Y), FLOOR, RAIL)
-    wicker(part, (-HALF_X, HALF_Y), (HALF_X, HALF_Y), FLOOR, TOP)
+    # the back: two poles crossed, lashed where they cross, ivy up both; open between them (no wall: the rock is seen
+    # through it, and no cut-out holes for the shadow map, step 24a)
+    low, high = FLOOR + 0.02, TOP - 0.04
+    for sign, dy in ((1, -0.022), (-1, 0.022)):
+        a, b = (-sign * (HALF_X - 0.03), HALF_Y + dy, low), (sign * (HALF_X - 0.03), HALF_Y + dy, high)
+        part.tube([a, b], POLE * 0.85, "bamboo", uv_length=0.36)
+        ivy(part, a, b, POLE * 0.85, seed=60 + 10 * player + sign, turns=1.2, leaves=34.0)
+    part.lash((0, HALF_Y, (low + high) / 2), (0, 1, 0), POLE * 1.5, turns=3)
+    # ivy along the top front beam from the corners, and lianas hanging from the top beams (not in front of the
+    # riders' faces, the crank or the chain)
+    for side in (-1, 1):
+        ivy(part, (side * (HALF_X + 0.02), -HALF_Y, TOP), (side * (HALF_X - 0.42), -HALF_Y, TOP), POLE * 0.9,
+            seed=70 + 10 * player + side, turns=2.0, leaves=40.0, sizes=(0.045, 0.085))
+        ivy(part, (side * HALF_X, -HALF_Y, TOP + 0.05), (side * HALF_X, HALF_Y, TOP + 0.05), POLE * 0.9,
+            seed=75 + 10 * player + side, turns=2.0, leaves=30.0, sizes=(0.045, 0.085))
+    hanging = ((-0.84, -HALF_Y + 0.04, 0.62), (0.86, -HALF_Y + 0.04, 0.66), (-0.7, HALF_Y - 0.04, 0.95),
+               (0.12, HALF_Y - 0.04, 0.6), (0.72, HALF_Y - 0.04, 1.1))
+    for index, (x, y, length) in enumerate(hanging):
+        liana(part, (x, y, TOP - 0.04), length, seed=100 + 10 * player + index)
+    for x in (-HALF_X, HALF_X):   # moss on the logs' ends
+        for y in (-HALF_Y, 0.0, HALF_Y):
+            part.blob((x * 0.96, y * 0.85, FLOOR + 0.02), (0.06, 0.07, 0.035), "moss",
+                      seed=int(200 + 37 * x + 11 * y), bumps=0.35)
     # the mast's cross beams and the mast up to the rotor's hub
     part.tube([(-HALF_X, 0, TOP + 0.05), (HALF_X, 0, TOP + 0.05)], POLE * 0.8, "bamboo", uv_length=0.36)
     part.tube([(0, 0, TOP + 0.04), (0, 0, layout.ROTOR_HUB[2] - 0.05)], 0.05, "wood")
@@ -121,13 +226,21 @@ def body(player):
     pilot_seat(part, leather)
     passenger_chair(part, leather)
     layshaft_hanger(part)
-    banner(part, leather, TOP - 0.02, TOP - 0.12)   # under the top front beam
-    banner(part, leather, FLOOR + 0.04, FLOOR - 0.06)   # over the front log
+    pennants(part, leather)
     for side in (-1, 1):   # tusks on the front corners
         points = [(side * (HALF_X + 0.02 * t), -HALF_Y - 0.04 * t, TOP + 0.05 + 0.2 * t + 0.02 * math.sin(3 * t))
                   for t in (i / 6 for i in range(7))]
         part.tube(points, [0.04 - 0.032 * i / 6 for i in range(7)], "bone", sides=8)
+    inside(part)
     return part
+
+
+def inside(part):
+    """Fails unless the part is in the copter's body (BOX), as the game's test Ugh.Copter.Model wants it."""
+    for vert in part.bm.verts:
+        for c, low, high in zip(vert.co, *BOX):
+            if not low - 1e-4 <= c <= high + 1e-4:
+                raise ValueError(f"{part.name}: {tuple(vert.co)} is out of the body {BOX}")
 
 
 def frame_of(seat, yaw):
@@ -205,23 +318,6 @@ def passenger_chair(part, leather):
         x = -0.12 + 0.08 * index
         part.tube([at((x, 0.12, -0.03)), at((x, 0.18, 0.2)), at((x, 0.16, 0.47))], [0.016, 0.02, 0.014], "bone",
                   sides=8)
-
-
-def banner(part, leather, top, bottom):
-    """A leather banner in front of the cage from `top` down to `bottom`, its lower edge jagged."""
-    columns = 16
-    uv = part.bm.loops.layers.uv.verify()
-    upper, lower = [], []
-    for i in range(columns + 1):
-        x = -HALF_X + 0.08 + (2 * HALF_X - 0.16) * i / columns
-        sag = 0.03 * math.sin(math.pi * i / columns)
-        upper.append(part.bm.verts.new((x, -HALF_Y - 0.075, top)))
-        lower.append(part.bm.verts.new((x, -HALF_Y - 0.08, bottom - sag - (0.04 if i % 2 else 0))))
-    for i in range(columns):
-        face = part.bm.faces.new((lower[i], lower[i + 1], upper[i + 1], upper[i]))
-        face.material_index = part.slot(leather)
-        for loop, coord in zip(face.loops, ((i, 0), (i + 1, 0), (i + 1, 1), (i, 1))):
-            loop[uv].uv = (coord[0] / columns * 2, coord[1] * 0.4)
 
 
 def rotor(player):
@@ -370,6 +466,7 @@ def sling():
 def build():
     kit.clear_scene()
     materials = copter_materials.make(FOLDER, WOOD, STONE)
+    materials.update((made.name, made) for made in vines.materials(FOLDER))   # stem, leaf, moss: ivy and lianas
     parts = [body(1), body(2), rotor(1), rotor(2), shaft(), crank(), drive(), chain_link(), sling()]
     kit.export(os.path.join(FOLDER, "copter.glb"), [part.done(materials) for part in parts])
 

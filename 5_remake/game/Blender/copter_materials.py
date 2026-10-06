@@ -20,7 +20,8 @@ def make(folder, wood_folder, stone_folder):
     fibres = kit.noise(size, 1.5, seed=21, stretch=(12, 1))
     v = (numpy.arange(size)[:, None] + 0.5) / size
     node = numpy.exp(-((v - 0.5) / 0.02) ** 2) * numpy.ones((1, size))
-    colour = kit.colour_ramp(fibres, (0.62, 0.5, 0.26), (0.8, 0.68, 0.38)) * (1 - 0.35 * node[..., None])
+    # green bamboo, freshly cut (step 24b2: the copter greener)
+    colour = kit.colour_ramp(fibres, (0.43, 0.46, 0.22), (0.6, 0.62, 0.33)) * (1 - 0.35 * node[..., None])
     made["bamboo"] = kit.material(
         "bamboo", kit.save_image(folder, "copter_bamboo", colour),
         kit.save_image(folder, "copter_bamboo_normal", kit.normals_from_height(fibres * 0.3 + node, 6), colour=False),
