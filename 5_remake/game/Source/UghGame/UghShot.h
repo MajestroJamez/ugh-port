@@ -47,6 +47,10 @@ struct FUghGameEnd;
  * open water and fall into the sea (FUghDunkPilot) and takes the shot that many seconds after its waterline met the
  * surface (FUghDunks: its splash; negative: before it, as its free fall foretells), the name ending in -dunk<seconds>
  * after the others.
+ * -UghShotDrop=<seconds> (several separated by commas: the level shot once for each) lets the first copter take the
+ * stone on its sling, fly above the first enemy and let it go (FUghDropPilot), and takes the shot that many seconds
+ * after the logic let it fall (the stone tumbling down, bouncing off the enemy), the name ending in -drop<seconds>
+ * after the others.
  * -UghShotEnd gives each level up instead of its shot and saves the card of the game's end in the menu (the name
  * ending in -end after the others); -UghShotScore=<points> makes that game end with so many points (only the picture: a
  * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores
@@ -119,6 +123,7 @@ private:
 		FString Effect;   // the burst it shows (-UghShotEffect), empty none
 		double Fling = -1;   // seconds after a passenger was knocked off (-UghShotFling), -1 none
 		TOptional<double> Dunk;   // seconds after the copter fell into the sea (-UghShotDunk; negative before), none
+		TOptional<double> Drop;   // seconds after the stone was let go (-UghShotDrop), none
 	};
 
 	/**
@@ -152,6 +157,11 @@ private:
 	 * after its waterline met the surface (negative: before, as the free fall foretells it).
 	 */
 	bool Dunk(AUghGameMode& Mode, const ugh_logic_view& View, double Age);
+	/**
+	 * -UghShotDrop: the first copter takes the stone, flies above the first enemy and lets it go (FUghDropPilot); true
+	 * `Age` seconds after the logic let it fall.
+	 */
+	bool Drop(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age);
 	/** Holds pilot 1's logic key `LogicKey` (UGH_LOGIC_KEY_UP, LEFT, RIGHT) or lets it go. */
 	void Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld);
 	void ReleasePedals(AUghGameMode& Mode);
@@ -180,6 +190,11 @@ private:
 	double FlingTime = -1;     // since the passenger was knocked off, -1 not yet
 	TArray<double> Dunks;      // -UghShotDunk
 	FUghDunkPilot DunkPilot;   // of the level being shot
+	TArray<double> Drops;      // -UghShotDrop
+	FUghDropPilot DropPilot;   // of the level being shot
+	double DropTime = -1;      // since the stone was let go, -1 not yet
+	double BounceTime = -1;    // when it bounced off the enemy (seconds after it was let go), -1 not yet
+	bool bFiring = false;      // pilot 1's fire held by Drop
 	bool bSteering[2] = { false, false };   // pilot 1's left and right held by Knock
 	bool bEndShot = false;     // -UghShotEnd
 	bool bEndWanted = false;   // the target was given up: its end is to be shot

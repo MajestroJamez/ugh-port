@@ -81,6 +81,7 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 	TArray<FBubble> Bubbles;
 	const double Surface = UghWater::Surface(Previous, Current, Alpha);
 	Models.Begin();
+	StoneDrops.Begin();
 	for (int32 I = 0; I < Current.entity_count; ++I)
 	{
 		const ugh_logic_entity& E = Current.entities[I];
@@ -114,6 +115,13 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 				Action->Door = 0;
 			}
 		}
+		if (Action && Action->Model == EUghModel::Stone)
+		{
+			// let go, it falls out of the sling
+			const bool bFalling = FCString::Strcmp(Action->Action, TEXT("fall")) == 0;
+			const double Below = StoneDrops.Below(E.index, At.Y, bFalling);
+			Offset += UghShapes::ToWorld(0, Below, 0) - UghShapes::ToWorld(0, 0, 0);
+		}
 		if (Action && Models.Show(this, E, *Action, At, Size, Velocity, Seconds, Offset))
 		{
 			continue;
@@ -129,6 +137,7 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 		}
 	}
 	Models.End();
+	StoneDrops.End();
 	UghShapes::SetShapes(Passengers, PassengerShapes);
 	UghShapes::SetShapes(Enemies, EnemyShapes);
 	UghShapes::SetShapes(BonusItems, BonusShapes);

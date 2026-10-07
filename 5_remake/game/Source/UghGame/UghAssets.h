@@ -61,9 +61,13 @@ namespace UghAssets
 	inline const TCHAR* SkyDusk = TEXT("sky_qwantani_dusk");
 	inline const TCHAR* SkyNight = TEXT("sky_qwantani_night");
 	inline const TCHAR* SkyStorm = TEXT("sky_kloofendal_overcast");
-	/** Made by the scripts of Blender/: the copters' parts, the caveman (rigged, with actions), the stone passenger. */
+	/**
+	 * Made by the scripts of Blender/: the copters' parts, the caveman (rigged, with actions), the stone passenger (the
+	 * slate boulder after Jan's reference, of the texture set dark_rock_02; without it the older lumpy one).
+	 */
 	inline const TCHAR* Copter = TEXT("copter");
 	inline const TCHAR* Caveman = TEXT("caveman");
+	inline const TCHAR* StoneSlate = TEXT("stone_slate");
 	inline const TCHAR* StonePassenger = TEXT("stone_passenger");
 	/** Made by the scripts of Blender/ too: the enemies (rigged, with actions) and the bonus items (a mesh each). */
 	inline const TCHAR* Pterodactyl = TEXT("pterodactyl");
@@ -73,13 +77,11 @@ namespace UghAssets
 	inline const TCHAR* BonusItems = TEXT("bonus_items");
 	/**
 	 * Made by the scripts of Blender/ of local assets (Jan's T-rex and triceratops, scans of the Electric Dreams
-	 * sample): the blower, the walker, the tree and the stone passenger photoreal; where one is missing the frontend
-	 * shows the one above.
+	 * sample): the blower, the walker and the tree photoreal; where one is missing the frontend shows the one above.
 	 */
 	inline const TCHAR* BlowerTrex = TEXT("blower_trex");
 	inline const TCHAR* WalkerTriceratops = TEXT("walker_triceratops");
 	inline const TCHAR* TreeHornbeam = TEXT("tree_hornbeam");
-	inline const TCHAR* StoneBoulder = TEXT("stone_boulder");
 
 	/** The content folder of asset `Id`. */
 	inline FString Folder(const FString& Id) { return FString(ImportedRoot) / Id; }
@@ -101,7 +103,7 @@ namespace UghAssets
 	/** The texture `Name` imported for `Id` (a model's); none (and a log line) when it is missing. */
 	UTexture* Texture(const TCHAR* Id, const TCHAR* Name);
 	/**
-	 * The stone passenger (its origin at its bottom middle; the mesh is named as its asset): StoneBoulder, else
+	 * The stone passenger (its origin at its bottom middle; the mesh is named as its asset): StoneSlate, else
 	 * StonePassenger; none (and log lines) without both.
 	 */
 	UStaticMesh* Stone();

@@ -285,6 +285,13 @@
       "import": ["stone_passenger.glb"]
     },
     {
+      "id": "stone_slate", "kind": "generated", "use": "the stone (the stone passenger: hanging in the sling, dropped, on the seat) after Jan's reference: a boulder of dark blue grey slate in beds of sharp flakes with thin white quartz veins, wet eyes under lids of rock; without it stone_passenger",
+      "page": "Blender/stone_slate.py", "license": "CC0-1.0", "author": "UGH remake (Blender/stone_slate.py), texture dark_rock_02 (Poly Haven)",
+      "path": "generated/stone_slate",
+      "blender": { "script": "Blender/stone_slate.py", "inputs": ["dark_rock_02"], "outputs": ["stone_slate.glb"] },
+      "import": ["stone_slate.glb"]
+    },
+    {
       "id": "pterodactyl", "kind": "generated", "use": "the flyer (rigged; actions fly, fall)",
       "page": "Blender/pterodactyl.py", "license": "CC0-1.0", "author": "UGH remake (Blender/pterodactyl.py)",
       "path": "generated/pterodactyl",
@@ -374,10 +381,10 @@
       "files": ["source/Triceratops/triceratops.fbx", "textures/triceratops_col4.png"]
     },
     {
-      "id": "electricdreams_scans", "kind": "local", "use": "scans of Epic's Electric Dreams sample as OBJ and PNG (UghElectricDreams::ForBlender: a hornbeam sapling, a mossy rock), the tree and the stone passenger are made of them",
+      "id": "electricdreams_scans", "kind": "local", "use": "scans of Epic's Electric Dreams sample as OBJ and PNG (UghElectricDreams::ForBlender: a hornbeam sapling), the tree is made of them",
       "page": "electric-dreams.ps1 (exports them from its copy of the sample)", "license": "Epic-Sample", "author": "Epic Games, Quixel Megascans",
       "path": "electricdreams",
-      "files": ["SM_EuropeanHornbeam_Sapling_03/SM_EuropeanHornbeam_Sapling_03.obj", "SM_EuropeanHornbeam_Sapling_03/Tileable_Albedo.png", "SM_EuropeanHornbeam_Sapling_03/TwoSided_Albedo.png", "SM_MossyForestRock_02/SM_MossyForestRock_02.obj", "SM_MossyForestRock_02/default_material_Albedo.png"]
+      "files": ["SM_EuropeanHornbeam_Sapling_03/SM_EuropeanHornbeam_Sapling_03.obj", "SM_EuropeanHornbeam_Sapling_03/Tileable_Albedo.png", "SM_EuropeanHornbeam_Sapling_03/TwoSided_Albedo.png"]
     },
     {
       "id": "walker_triceratops", "kind": "generated", "use": "the walker from Jan's triceratops, refined (rigged; actions walk, watch, charge, recover, stunned); without it triceratops",
@@ -392,13 +399,6 @@
       "path": "generated/blower_trex",
       "blender": { "script": "Blender/blower_trex.py", "inputs": ["trex_fab"], "outputs": ["blower_trex.glb"] },
       "import": ["blower_trex.glb"]
-    },
-    {
-      "id": "stone_boulder", "kind": "generated", "use": "the stone passenger from a scanned mossy rock with wet eyes under lids of rock; without it stone_passenger",
-      "page": "Blender/stone_boulder.py", "license": "Epic-Sample", "author": "Quixel Megascans (Electric Dreams sample), eyes by the UGH remake (Blender/stone_boulder.py)",
-      "path": "generated/stone_boulder",
-      "blender": { "script": "Blender/stone_boulder.py", "inputs": ["electricdreams_scans"], "outputs": ["stone_boulder.glb"] },
-      "import": ["stone_boulder.glb"]
     },
     {
       "id": "tree_hornbeam", "kind": "generated", "use": "the tree with a face that drops fruit: an old hornbeam of scanned bark and crowns, a face carved into it (rigged; actions sway, shaken); without it fruit_tree",

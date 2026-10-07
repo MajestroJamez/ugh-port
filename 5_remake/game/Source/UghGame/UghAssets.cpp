@@ -107,6 +107,6 @@ UTexture* UghAssets::Texture(const TCHAR* Id, const TCHAR* Name)
 
 UStaticMesh* UghAssets::Stone()
 {
-	UStaticMesh* Scanned = Mesh(StoneBoulder, StoneBoulder);
-	return Scanned ? Scanned : Mesh(StonePassenger, StonePassenger);
+	UStaticMesh* Slate = Mesh(StoneSlate, StoneSlate);
+	return Slate ? Slate : Mesh(StonePassenger, StonePassenger);
 }

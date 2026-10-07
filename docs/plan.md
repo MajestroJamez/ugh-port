@@ -1620,3 +1620,19 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   před, dopad, sloup, pěna, houpání; `sheet-fling-halo.png`). CTest logiky, `6_verification` (163) a 200 testů v UE
   zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 15, 1 % low 11 (opakovaně 14 / 10; bez svatozáře
   14 / 11 - zahřátý notebook, ne krok). Balíček nepřebalen. Další: **krok 25e**.
+- 2026-10-07: krok 25e hotový - herní objekt kámen podle Janovy reference (`docs/visual-concept.md`). Kámen je v logice
+  stojící cestující (vzhled 4): na plošině, ve smyčce pod vrtulníkem, puštěný padá a odrazí se od nepřítele (strom
+  pustí plod), sedí v kabině - všude jeden model `UghAssets::Stone()`. Nový `stone_slate.py` (CC0, `dark_rock_02`;
+  `stone_boulder.py` s mechovým skenem pryč): balvan tmavé modrošedé břidlice s lomovými plochami, vrstvy s ostrými
+  břity rozlámané na šupiny, jemné lístky, bílé křemenné žilky podél vrstev i napříč (čáry ostré až při pečení),
+  matný; podrobný povrch ~400 tisíc trojúhelníků upečený na lehký (kámen s víčky 7,6 tisíc, oči 1,4 tisíc; dřív 40
+  tisíc; dál Nanite), mapy 2048. Oči a víčka z 19h, značení postav 24c beze změny. Na sedadle 0,45 místo 0,32 (oči byly
+  za područkami). Puštěný kámen se dřív objevil v kabině přes pilota (logika ho pouští z bodu shozu v těle): teď
+  `FUghStoneDrops` - začne ve smyčce a k místu logiky dojde během pádu, nikdy nahoru. Autopilot `FUghDropPilot`
+  (cesty po kolizní masce do šířky), `shot.ps1 -Drop <s>`, nový test `Ugh.Drop` (level 1: vezme kámen, pustí nad
+  stromem, kámen se odrazí, vidět ze smyčky dolů). Snímky `Saved\Shots\25e`: `pair-reference.png` (reference /
+  render z Blenderu / ve hře na plošině / ve smyčce), `sheet-drop.png` (puštění 0 / 0,15 / 0,3 / 0,4 dopad s plodem /
+  0,6 s), `1p-01-hanging4-closeup*.png`, `1p-01-cargo4-closeup*.png`, `1p-01-frame66_124.png`. CTest logiky,
+  `6_verification` (163) a 201 testů v UE zelené (4 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch beze změny,
+  fps medián 19, 1 % low 14 (editor, Epic; 25d 15 / 11). Čeká na Jana: posoudit kámen v okně (`play.ps1`) - tón
+  (`stone_slate.py` `TONE`), žilky. Další: přebalit (24f-25e).

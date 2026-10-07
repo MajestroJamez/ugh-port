@@ -68,9 +68,9 @@ namespace UghCopterModel
 	inline const FVector Hanging(0, 0, -116);
 	/**
 	 * When it rides in the cabin (nobody else there), it sits on the passenger's seat this much smaller, looking at the
-	 * camera.
+	 * camera (its eyes over the chair's arms).
 	 */
-	constexpr double SeatedStone = 0.32;
+	constexpr double SeatedStone = 0.45;
 	/**
 	 * The crank turns this way about X for the pilot's action pedal: its left pedal (+X) from the top towards the
 	 * camera (the layout's -Y), the top of the chainring forward; the chain and the sprocket go with it.

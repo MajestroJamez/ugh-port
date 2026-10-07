@@ -98,7 +98,8 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
     mrknutí. Akce jako dřív (`sway` s mrknutím, `shaken`).
   - Kámen (cestující vzhledu 4 i zmenšený na sedadle) je naskenovaný mechem porostlý kámen `MossyForestRock_02`
     (`stone_boulder.py`: z milionu trojúhelníků 40 tisíc, jeho mapy) vtěsnaný do elipsoidu kroku 16, s vlhkýma očima
-    zapuštěnýma do mechové tváře pod těžkými víčky z kamene.
+    zapuštěnýma do mechové tváře pod těžkými víčky z kamene. Od kroku 25e ho nahradil balvan břidlice podle Janovy
+    reference (`stone_slate.py`, viz níže).
   - Pterodaktyl (`pterodactyl.py` znovu): štíhlý pteranodon s hlubokou hrudí, dlouhým zúženým zobákem z rohoviny,
     hřebenem dozadu (červené a okrové pruhy), malýma plazíma očima, blánou křídla od konce prstu ke kotníkům a malou
     přední blánou; kůže a blány upečené (tmavý hřbet, světlé břicho, jemné šupinky a chmýří; blána teplá hnědá,
@@ -753,3 +754,31 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   bez havárie, jedno čáknutí přesně v snímku dopadu uprostřed vrtulníku na hladině, pod vodou a zpět na hladinu,
   houpání až po vynoření, malé, bez skoku, utichne; voda stoupající k vrtulníku a pomalé ponoření nečáknou.
   Snímky `shot.ps1 -Dunk <sekundy od dopadu>` (záporné: před ním), `Saved\Shots\25d`.
+
+## Herní objekt kámen podle Janovy reference (krok 25e)
+
+- Kde všude je: kámen je v logice „stojící cestující“ (vzhled 4) - stojí na plošině, vrtulník ho vezme do smyčky,
+  pustí (`Falling`, padá z bodu shozu vrtulníku), odrazí se od nepřítele, na kterého dopadne (strom pustí plod,
+  ostatní omráčí), nebo jako cestující sedí v kabině. Všude jeden model `UghAssets::Stone()`: postava na plošině, pád
+  a odraz (`FUghFigureModels`, při pádu se kutálí), ve smyčce a zmenšený na sedadle (`AUghCopters`).
+- Model `stone_slate.py` (CC0, z textury `dark_rock_02`; bez ní starý `stone_passenger`): balvan tmavé modrošedé
+  břidlice 1,58 x 0,84 x 1,06 m (sprite 16 x 11 px, elipsoid kroku 16). Podrobný povrch (krychle-koule ~400 tisíc
+  trojúhelníků): hranatý, hrbolatý blok s plochými lomovými plochami, vyšší vlevo, plochá pata; vrstvy po 13 cm
+  (sklon jako celý kámen, `StrataDip`), každá nejvíc venku u paty (ostrý břit stíní vrstvu pod ním), rozlámané na
+  velké nepravidelné šupiny (každá vystupuje jinak, mezi některými prasklina), vrstvy uskakují blok od bloku, na nich
+  jemné lístky po 3 cm; nahoře nižší stupně (malý ostrůvek vrstvy na temeni trčel jako hrot). Upečený na lehký model
+  (kámen s víčky 7,6 tisíc trojúhelníků, oči 1,4 tisíc; dřív 40 tisíc; Nanite ho dál zjednoduší): barva (`dark_rock_02`
+  ze tří stran jako detail na tónu, tmavší ve spárách a prasklinách, světlejší zvětralé pruhy a plochy nahoru),
+  normála (šupiny, lístky, reliéf `dark_rock_02`) a drsnost (matná 0,82, žilky hladší) 2048 px. Bílé křemenné žilky:
+  čtyři podél vrstev (vlní se, přerušované), dvě napříč; jejich pole jsou ve vrcholech, čára se kreslí až při pečení
+  (ostrá, ne čárkovaná podle vrcholů), kolem slabý světlejší lem. Albedo tmavé (~0,035): světla postav (24c) ho ve hře
+  rozjasní na tón reference. Oči a víčka z kamene jako 19h, kámen zůstává ve světelném kanálu postav a v custom depth.
+- Na sedadle větší (0,45 místo 0,32): oči byly za područkami židle.
+- Pád ze smyčky (`FUghStoneDrops`, jen vizuál): logika pouští kámen z bodu shozu uprostřed těla vrtulníku (u pilota),
+  ve smyčce visel o ~16 px níž - vidět teď začne ve smyčce, o to níž, než ho má logika, a rozdíl mizí s tím, jak padá
+  (pryč po 1,5násobku): nikdy nahoru, rovně dolů, při dopadu na nepřítele pod vrtulníkem nejvýš pár px. Dřív se kámen
+  při puštění objevil v kabině přes pilota.
+- Autopilot `FUghDropPilot` (cesty po kolizní masce prohledáváním do šířky, pomalu): vezme kámen, doletí nad prvního
+  nepřítele a pustí ho; `shot.ps1 -Drop <sekundy od puštění>`, test `Ugh.Drop` (level 1: kámen se odrazí od stromu,
+  vidět ze smyčky dolů, nikdy nahoru). Starý `stone_boulder.py` (naskenovaný mechový kámen) a jeho sken
+  `MossyForestRock_02` v `UghElectricDreams::ForBlender` jsou pryč. Snímky `Saved\Shots\25e`.

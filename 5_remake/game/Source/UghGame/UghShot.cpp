@@ -137,6 +137,16 @@ bool FUghShot::Configure()
 			Dunks.Add(FCString::Atod(*Moment));
 		}
 	}
+	FString DropList;
+	if (FParse::Value(CommandLine, TEXT("-UghShotDrop="), DropList, false))
+	{
+		TArray<FString> Moments;
+		DropList.ParseIntoArray(Moments, TEXT(","));
+		for (const FString& Moment : Moments)
+		{
+			Drops.Add(FCString::Atod(*Moment));
+		}
+	}
 	bEndShot = FParse::Param(CommandLine, TEXT("UghShotEnd"));
 	uint32 Score = 0;
 	if (FParse::Value(CommandLine, TEXT("-UghShotScore="), Score))
@@ -192,9 +202,13 @@ bool FUghShot::AddTargets(const FString& List)
 				{
 					for (int32 Dunk = 0; Dunk < FMath::Max(1, Dunks.Num()); ++Dunk)
 					{
-						Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1,
-							Effects.IsEmpty() ? FString() : Effects[Effect], Flings.IsEmpty() ? -1.0 : Flings[Fling],
-							Dunks.IsEmpty() ? TOptional<double>() : Dunks[Dunk] });
+						for (int32 Drop = 0; Drop < FMath::Max(1, Drops.Num()); ++Drop)
+						{
+							Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1,
+								Effects.IsEmpty() ? FString() : Effects[Effect], Flings.IsEmpty() ? -1.0 : Flings[Fling],
+								Dunks.IsEmpty() ? TOptional<double>() : Dunks[Dunk],
+								Drops.IsEmpty() ? TOptional<double>() : Drops[Drop] });
+						}
 					}
 				}
 			}
@@ -312,6 +326,8 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		AtEdge = -1;
 		FlingTime = -1;
 		DunkPilot = FUghDunkPilot();
+		DropPilot = FUghDropPilot();
+		DropTime = BounceTime = -1;
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION && IntroAt)
 	{
@@ -345,18 +361,19 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	{
 		return EAction::None;
 	}
-	const bool bFling = Target.Fling >= 0, bDunk = Target.Dunk.IsSet();
+	const bool bFling = Target.Fling >= 0, bDunk = Target.Dunk.IsSet(), bDrop = Target.Drop.IsSet();
 	const bool bAtEdge = !Edge.IsEmpty() && FlyToEdge(Mode, View, DeltaSeconds);
 	const bool bFlung = bFling && Knock(Mode, View, DeltaSeconds, Target.Fling);
 	const bool bDunked = bDunk && Dunk(Mode, View, *Target.Dunk);
-	if (Edge.IsEmpty() && !bFling && !bDunk)
+	const bool bDropped = bDrop && Drop(Mode, View, DeltaSeconds, *Target.Drop);
+	if (Edge.IsEmpty() && !bFling && !bDunk && !bDrop)
 	{
 		Hover(Mode, View, DeltaSeconds);
 	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
 	HoverFrames.Add(DeltaSeconds);
-	if (bDunk ? !bDunked : bFling ? !bFlung : Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
+	if (bDrop ? !bDropped : bDunk ? !bDunked : bFling ? !bFlung : Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
 	}
@@ -407,7 +424,8 @@ FString FUghShot::NameOf(const FTarget& Target) const
 	const FString Effect = Target.Effect.IsEmpty() ? FString() : TEXT("-") + Target.Effect;
 	const FString Fling = Target.Fling < 0 ? FString() : FString::Printf(TEXT("-fling%g"), Target.Fling);
 	const FString Dunk = Target.Dunk ? FString::Printf(TEXT("-dunk%g"), *Target.Dunk) : FString();
-	return TargetName(Target.Players, Target.Level) + Suffix + Effect + Fling + Dunk +
+	const FString Drop = Target.Drop ? FString::Printf(TEXT("-drop%g"), *Target.Drop) : FString();
+	return TargetName(Target.Players, Target.Level) + Suffix + Effect + Fling + Dunk + Drop +
 		(bEndShot ? TEXT("-end") : TEXT(""));
 }
 
@@ -559,6 +577,10 @@ void FUghShot::ReleasePedals(AUghGameMode& Mode)
 			Hold(Mode, Side == 0 ? UGH_LOGIC_KEY_LEFT : UGH_LOGIC_KEY_RIGHT, false);
 		}
 	}
+	if (bFiring)
+	{
+		Hold(Mode, UGH_LOGIC_KEY_FIRE, false);
+	}
 	if (Steering.IsValid())
 	{
 		Mode.HandleKey(Steering, IE_Released);
@@ -648,9 +670,38 @@ bool FUghShot::Dunk(AUghGameMode& Mode, const ugh_logic_view& View, double Age)
 	return bNow;
 }
 
+bool FUghShot::Drop(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age)
+{
+	const FUghDropKeys Keys = DropPilot.Fly(Mode.GetSimulation().GetLogic(), Mode.GetSimulation().GetPrevious(), View);
+	Hold(Mode, UGH_LOGIC_KEY_UP, Keys.bUp);
+	Hold(Mode, UGH_LOGIC_KEY_LEFT, Keys.bLeft);
+	Hold(Mode, UGH_LOGIC_KEY_RIGHT, Keys.bRight);
+	Hold(Mode, UGH_LOGIC_KEY_FIRE, Keys.bFire);
+	DropTime = DropPilot.HasDropped() ? FMath::Max(DropTime, 0.0) + (DropTime < 0 ? 0 : Seconds) : -1;
+	for (int32 I = 0; DropTime >= 0 && BounceTime < 0 && I < View.entity_count; ++I)
+	{
+		ugh_logic_sprite Info;
+		const ugh_logic_entity& Entity = View.entities[I];
+		if (Entity.kind == UGH_LOGIC_ENTITY_PASSENGER && Entity.sprite >= 0 &&
+			ugh_logic_get_sprite(Mode.GetSimulation().GetLogic(), Entity.sprite, &Info) &&
+			FCStringAnsi::Strcmp(Info.name, "bouncedPassenger") == 0)
+		{
+			BounceTime = DropTime;
+		}
+	}
+	if (DropTime < Age)
+	{
+		return false;
+	}
+	UE_LOG(LogTemp, Display, TEXT("UGH shot: %.2f s after the stone was let go (it bounced at %s)"), DropTime,
+		BounceTime >= 0 ? *FString::Printf(TEXT("%.2f s"), BounceTime) : TEXT("-"));
+	return true;
+}
+
 void FUghShot::Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld)
 {
-	bool& bHolding = LogicKey == UGH_LOGIC_KEY_UP ? bPedalling[0] : bSteering[LogicKey == UGH_LOGIC_KEY_LEFT ? 0 : 1];
+	bool& bHolding = LogicKey == UGH_LOGIC_KEY_UP ? bPedalling[0] : LogicKey == UGH_LOGIC_KEY_FIRE ? bFiring
+		: bSteering[LogicKey == UGH_LOGIC_KEY_LEFT ? 0 : 1];
 	if (bHolding != bHeld)
 	{
 		Mode.HandleKey(Mode.GetProfile().Settings.Keys.KeyOf(0, LogicKey), bHeld ? IE_Pressed : IE_Released);

@@ -6,6 +6,7 @@
 #include "ugh_logic.h"
 #include "UghBubbles.h"
 #include "UghFigureModels.h"
+#include "UghStoneDrop.h"
 #include "UghFigures.generated.h"
 
 class FUghFlings;
@@ -66,4 +67,5 @@ private:
 	UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BubbleCards;   // made as many as needed, hidden when unused
 	UPROPERTY() TMap<int32, TObjectPtr<UTexture2D>> BubbleTextures;   // by the key of their look and side
 	TArray<TOptional<FUghBubbleLook>> BubbleLooks;   // by sprite (LoadBubbles)
+	FUghStoneDrops StoneDrops;   // the stones let go, seen falling from their slings
 };

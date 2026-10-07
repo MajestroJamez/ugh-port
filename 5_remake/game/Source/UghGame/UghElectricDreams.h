@@ -147,12 +147,10 @@ namespace UghElectricDreams
 
 	/**
 	 * What Blender scripts make figures of (the commandlet UghExportElectricDreams exports them from the copy to
-	 * assets/3d/electricdreams/<name>): a hornbeam sapling for the tree with a face (its crown and its bark), a mossy
-	 * rock for the stone passenger.
+	 * assets/3d/electricdreams/<name>): a hornbeam sapling for the tree with a face (its crown and its bark).
 	 */
 	inline const TCHAR* const ForBlender[] = {
-		TEXT("Megascans/3D_Plants/EuropeanHornbeam/Geometry/SimpleWind/SM_EuropeanHornbeam_Sapling_03"),
-		TEXT("Megascans/3D_Assets/MossyForestRock/SM_MossyForestRock_02") };
+		TEXT("Megascans/3D_Plants/EuropeanHornbeam/Geometry/SimpleWind/SM_EuropeanHornbeam_Sapling_03") };
 
 	/** The copy is there (its first asset is; the log says it once when not). */
 	bool IsCopied();

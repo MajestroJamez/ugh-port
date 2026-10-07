@@ -211,3 +211,147 @@ TOptional<double> FUghDunkPilot::UntilSplash(const ugh_logic_view& Previous, con
 	const double Steps = (-Speed + FMath::Sqrt(Speed * Speed + 2 * Gravity * Left)) / Gravity;
 	return Steps / FUghSimulation::TickRate;
 }
+
+namespace
+{
+	/** The name of an entity's sprite ("standingPassenger", "tree.swaying" ...), empty without one. */
+	FString SpriteName(const ugh_logic* Logic, const ugh_logic_entity& Entity)
+	{
+		ugh_logic_sprite Info;
+		return Entity.sprite >= 0 && ugh_logic_get_sprite(Logic, Entity.sprite, &Info) ? UTF8_TO_TCHAR(Info.name)
+			: FString();
+	}
+
+	/** The stone's middle is this far right of its sprite's corner (16 px wide); the drop's hit point this far. */
+	constexpr double StoneMiddle = 8, HitX = 21;
+	/** The enemies are hit in a box this wide from their corner (the logic's one box for every enemy). */
+	constexpr double EnemyWidth = 38;
+}
+
+FUghDropKeys FUghDropPilot::Fly(const ugh_logic* Logic, const ugh_logic_view& Previous, const ugh_logic_view& Current)
+{
+	FUghDropKeys Keys;
+	if (!Logic || Current.copter_count == 0 || Previous.copter_count == 0 || bLost)
+	{
+		return Keys;
+	}
+	const ugh_logic_copter& Copter = Current.copters[0];
+	const FVector2D At = FVector2D(Copter.x, Copter.y) / UghShapes::Subpixels;
+	const FVector2D Speed = FVector2D(Copter.x - Previous.copters[0].x, Copter.y - Previous.copters[0].y) /
+		UghShapes::Subpixels;
+	const bool bHangs = Copter.destination == -1;
+	if (Stage == EStage::ToStone && bHangs)
+	{
+		Stage = EStage::ToEnemy;   // it took the stone: on to the enemy
+		Path.Reset();
+	}
+	if (Stage == EStage::ToEnemy && bFired && !bHangs)
+	{
+		Stage = EStage::Dropped;
+		bDropped = true;
+	}
+	FVector2D Target = At;   // hovering where it is
+	if (Stage != EStage::Dropped)
+	{
+		if (Path.IsEmpty())
+		{
+			TOptional<FIntPoint> Goal;
+			for (int32 I = 0; I < Current.entity_count && !Goal; ++I)
+			{
+				const ugh_logic_entity& Entity = Current.entities[I];
+				const FVector2D Corner = FVector2D(Entity.x, Entity.y) / UghShapes::Subpixels;
+				if (Stage == EStage::ToStone && Entity.kind == UGH_LOGIC_ENTITY_PASSENGER &&
+					SpriteName(Logic, Entity) == TEXT("standingPassenger"))
+				{
+					// right above it, the skids a little into its top
+					Goal = FIntPoint(FMath::RoundToInt32(Corner.X + StoneMiddle - BodyMiddle),
+						FMath::FloorToInt32(Corner.Y) - UghShapes::CopterBodyHeight + Into);
+				}
+				else if (Stage == EStage::ToEnemy && Entity.kind == UGH_LOGIC_ENTITY_ENEMY)
+				{
+					// above it, so that the stone's hit point falls into the middle of its box
+					Enemy = FIntPoint(FMath::FloorToInt32(Corner.X), FMath::FloorToInt32(Corner.Y));
+					Goal = FIntPoint(FMath::RoundToInt32(Corner.X + EnemyWidth / 2 - HitX),
+						FMath::Max(0, Enemy->Y - Above));
+				}
+			}
+			Path = Goal ? Way(Logic, FIntPoint(FMath::FloorToInt32(At.X), FMath::FloorToInt32(At.Y)), *Goal)
+				: TArray<FIntPoint>();
+			Along = 0;
+			if (Path.IsEmpty())
+			{
+				UE_LOG(LogTemp, Error, TEXT("UGH drop pilot: no %s or no way to it"),
+					Stage == EStage::ToStone ? TEXT("stone") : TEXT("enemy"));
+				bLost = true;
+				return Keys;
+			}
+		}
+		// the nearest place of the way a little further on, the target a few places ahead of it
+		int32 Nearest = Along;
+		for (int32 I = Along; I < FMath::Min(Along + 24, Path.Num()); ++I)
+		{
+			if (FVector2D::Distance(At, FVector2D(Path[I])) < FVector2D::Distance(At, FVector2D(Path[Nearest])))
+			{
+				Nearest = I;
+			}
+		}
+		Along = Nearest;
+		Target = FVector2D(Path[FMath::Min(Along + Ahead, Path.Num() - 1)]);
+		const bool bThere = Along + Ahead >= Path.Num() - 1 && FVector2D::Distance(At, Target) < Near &&
+			Speed.Size() < Still;
+		if (Stage == EStage::ToEnemy && (bFired || bThere))
+		{
+			Keys.bFire = true;   // held until the logic took it off the sling
+			bFired = true;
+		}
+	}
+	Keys.bUp = At.Y + Speed.Y * Lead > Target.Y;
+	const double Wanted = FMath::Clamp((Target.X - At.X) * SpeedPerPixel * 2, -MaxSpeed * 0.8, MaxSpeed * 0.8);
+	Keys.bRight = Speed.X < Wanted - SpeedSlack;
+	Keys.bLeft = Speed.X > Wanted + SpeedSlack;
+	return Keys;
+}
+
+TArray<FIntPoint> FUghDropPilot::Way(const ugh_logic* Logic, const FIntPoint& From, const FIntPoint& To)
+{
+	constexpr int32 Left = -16, Right = 304, Top = 0, Bottom = UghShapes::ScreenHeight - OutlineBottom - 2;
+	constexpr int32 Columns = Right - Left + 1, Rows = Bottom - Top + 1;
+	const FSolids Solids(Logic);
+	const auto Free = [&](int32 X, int32 Y)
+	{
+		return Solids.IsFree(X + OutlineLeft - Margin, X + OutlineRight + Margin, Y - Margin,
+			Y + OutlineBottom + Margin);
+	};
+	const auto Index = [](int32 X, int32 Y) { return (Y - Top) * Columns + (X - Left); };
+	const auto Inside = [](int32 X, int32 Y) { return X >= Left && X <= Right && Y >= Top && Y <= Bottom; };
+	if (!Inside(From.X, From.Y) || !Inside(To.X, To.Y) || !Free(To.X, To.Y))
+	{
+		return {};
+	}
+	TArray<int32> Parent;
+	Parent.Init(-1, Columns * Rows);
+	TArray<FIntPoint> Queue = { From };
+	Parent[Index(From.X, From.Y)] = Index(From.X, From.Y);
+	for (int32 Head = 0; Head < Queue.Num() && Parent[Index(To.X, To.Y)] < 0; ++Head)
+	{
+		const FIntPoint Place = Queue[Head];
+		for (int32 DY = -1; DY <= 1; ++DY)
+		{
+			for (int32 DX = -1; DX <= 1; ++DX)
+			{
+				const FIntPoint Next = Place + FIntPoint(DX, DY);
+				if ((DX || DY) && Inside(Next.X, Next.Y) && Parent[Index(Next.X, Next.Y)] < 0 && Free(Next.X, Next.Y))
+				{
+					Parent[Index(Next.X, Next.Y)] = Index(Place.X, Place.Y);
+					Queue.Add(Next);
+				}
+			}
+		}
+	}
+	TArray<FIntPoint> Found;
+	for (int32 At = Index(To.X, To.Y); Parent[At] >= 0 && Parent[At] != At; At = Parent[At])
+	{
+		Found.Insert(FIntPoint(At % Columns + Left, At / Columns + Top), 0);
+	}
+	return Found;
+}
