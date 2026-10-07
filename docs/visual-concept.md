@@ -627,6 +627,9 @@ v rovině hry: postavy > plošiny > skála, v každé náladě a předvolbě.
   0,5-0,6 = nejvýš o polovinu), ne kde je pozadí tmavé už samo (jeskyně). Až za upscalerem (`BL_SceneColorBeforeBloom`):
   před ním ležela svatozář pohybující se postavy na nehybném pozadí, jehož historii TSR/FSR drží - rozmazala se do
   ztracena. Piloti a cestující ve vrtulníku svatozář nemají (vrtulník je vidět sám, šmouha by ho zašpinila).
+  Ztmaví jen to, co leží za postavou (hloubka scény v pixelu není o víc než 25 jednotek blíž než postava; krok 25d):
+  ne vodu před postavou pod hladinou (custom depth ji má, voda ji zakrývá - plavec a odhozený cestující pod vodou měli
+  tmavý pruhovaný lem), ne rostlinu před ní.
 
 ## Let ke kameni plynulý, okraje kamene, měkké okraje (krok 24d)
 
@@ -729,3 +732,24 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   řetězu nejvýš 1,25krát tak daleko jako místo nárazu (+0,5 px u sotva dotčených) a nejvýš 1,1 m, při nárazu nahoře
   spodek dlouhé liány aspoň polovinu a později, nakonec vše v klidu. Snímky `shot.ps1 -Edge left -EdgeY <y>
   -EdgeAfter <s>` (`Saved\Shots\25c`).
+
+## Čáknutí, když vrtulník spadne do vody (krok 25d)
+
+- Logika (`CopterPhysics`): voda není havárie a nestojí život. Když čára ponoru vrtulníku (18 px pod vrškem) projde
+  hladinou, logika ho prudce brzdí (`WATER_BRAKE`: rychlý pád zastaví asi za třetinu sekundy, ~15-20 px pod
+  hladinou), pod vodou nejde šlapat, nadnáší ho (`BUOYANCY`, zrychluje, asi sekunda) až čára ponoru dojde k hladině,
+  tam se zastaví a plave (může vzlétnout, plavec k němu může doplavat; pod vodou a ve vzduchu stojí energie navíc,
+  nic víc). Havaruje jen při tvrdém odrazu od skály - i od dna pod vodou (výbuch, u vody s čáknutím `FUghEffectPlayer`).
+- Vidět (`FUghDunks`, jen vizuál): v tom snímku, kdy čára ponoru (mezi dvěma kroky) dojde k hladině a vrtulník padá
+  aspoň 0,35 px za krok, velké čáknutí `dunk` - sloup vody, koruna kapek, jemné kapky vysoko, tříšť po hladině, pěna
+  na hladině, kruhy (větší, čím rychleji padá), hladina tam 3 s víc vlní a pění (kroužky `UghWater::Rings`).
+  Pod vodou je vrtulník přesně tam, kde ho má logika. Kde se vynoří a zastaví, zpění vodu (`boil`) a houpe se dál
+  rychlostí, kterou vyplaval (nejvýš 1,6 px, utichne za ~2 s); po čáknutí se trochu zakolébá (nejvýš 5°). Houpání
+  končí, jakmile ho logika zvedne z hladiny. Voda vystoupaná k vrtulníku na plošině ani pomalé ponoření nečáknou.
+- Sprška a pěna obou čáknutí (`dunk`, i `plunge` z 25a) svítí jako `Glint` (aditivně): osvětlené průsvitné obláčky
+  byly u vrtulníku daleko od kamery ve stínu jeskyně černé (neviditelné) a u kamery hranaté (fialový čtverec
+  objemového světla). Připraveny předem v černé (`Effects->Stock`), žádný nový shader.
+- Test `Ugh.Dunk` na skutečné logice levelu 1 (autopilot `FUghDunkPilot` doletí nad volnou vodu co nejvýš a pustí):
+  bez havárie, jedno čáknutí přesně v snímku dopadu uprostřed vrtulníku na hladině, pod vodou a zpět na hladinu,
+  houpání až po vynoření, malé, bez skoku, utichne; voda stoupající k vrtulníku a pomalé ponoření nečáknou.
+  Snímky `shot.ps1 -Dunk <sekundy od dopadu>` (záporné: před ním), `Saved\Shots\25d`.

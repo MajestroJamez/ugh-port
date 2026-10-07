@@ -49,6 +49,8 @@ namespace
 	 * any log (levels.ps1, a player's).
 	 */
 	constexpr double SlowPartSeconds = 0.02;
+	/** A copter's splash in the sea starts this far above the surface (pixels). */
+	constexpr double FoamAbove = 0.4;
 	struct FSlowPart
 	{
 		const TCHAR* Name;
@@ -223,11 +225,19 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		Effects->GetPlayer().Order(EUghBurst::Plunge, Splash.Place, Current, Splash.Scale, Splash.Depth);
 	}
+	// the copters falling into the sea: a splash where they meet it, foam where they come up again (a little above
+	// the surface: the foam lying on it at its very height was hidden by the water)
+	Dunks.Show(Previous, Current, Simulation.Alpha(), Seconds);
+	for (const FUghDunkSplash& Splash : Dunks.TakeSplashes())
+	{
+		Effects->GetPlayer().Order(Splash.bSurfacing ? EUghBurst::Boil : EUghBurst::Dunk,
+			Splash.Place - FVector2D(0, FoamAbove), Current, Splash.Scale);
+	}
 	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
 	Background->SetWater(Surface);
 	SeaStack->SetWater(Surface);
 	// the open sea all along (no switch)
-	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface, &Flings), true);
+	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface, &Flings, Dunks.Stirs(Surface)), true);
 	Falls->SetWater(Surface);
 	Water->SetFalls(Falls->Feet(Surface));
 	Rain->Show(Current, Surface);
@@ -237,7 +247,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	TArray<FTransform> ClayRiders;
 	{
 		FSlowPart Part{ TEXT("copters") };
-		Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders);
+		Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders, &Dunks);
 	}
 	{
 		FSlowPart Part{ TEXT("figures") };
@@ -370,7 +380,8 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 		FSlowPart Part{ TEXT("people stocked") };
 		Figures->Stock();
 		Copters->Stock();
-		Effects->Stock({ EUghBurst::Plunge });   // (a flung passenger's splash, FUghFlings)
+		// (a flung passenger's splash, FUghFlings; a copter falling into the sea and coming up, FUghDunks)
+		Effects->Stock({ EUghBurst::Plunge, EUghBurst::Dunk, EUghBurst::Boil });
 	}
 }
 

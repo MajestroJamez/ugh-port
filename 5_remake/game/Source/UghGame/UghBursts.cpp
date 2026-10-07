@@ -99,17 +99,58 @@ namespace
 			.Spread = 1.2f, .Gravity = -30, .Drag = 2, .Size = 16, .Box = { 20, 10, 10 }, .Color = Gold,
 			.Strength = 4 } };
 
-	/** A body falling from high into the water (a flung passenger): a crown of drops, a column of spray, rings. */
+	/**
+	 * A body falling from high into the water (a flung passenger): a crown of drops, a column of spray, rings. The spray
+	 * catches the light (Glint): lit, its puffs took the blocky light of the translucency's volume (a lilac square).
+	 */
 	const FPart PlungeParts[] = {
 		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 140, .Life = 1.1f, .Stagger = 0.08f, .Speed = 760,
 			.Spread = 0.35f, .Gravity = Fall, .Drag = 0.3f, .Size = 7, .Stretch = 1.5f, .Box = { 20, 10, 2 },
 			.Color = Water, .Strength = 0.9f },
-		{ .Count = 26, .Life = 1.5f, .Stagger = 0.12f, .Speed = 380, .Spread = 0.25f, .Lift = 0.9f, .Gravity = 500,
-			.Drag = 1.2f, .Size = 30, .Grow = 3, .Spin = 0.5f, .Box = { 15, 10, 4 }, .Color = Foam, .Strength = 0.7f },
-		{ .Count = 18, .Life = 1.2f, .Stagger = 0.1f, .Speed = 220, .Spread = 1.2f, .Lift = 0.4f, .Gravity = 300,
-			.Drag = 2, .Size = 26, .Grow = 3, .Spin = 0.5f, .Box = { 25, 10, 4 }, .Color = Foam, .Strength = 0.6f },
-		{ .Shape = EShape::Ring, .Mode = EMode::Flat, .Count = 4, .Life = 2.2f, .Stagger = 0.45f, .Size = 60, .Grow = 5,
-			.Color = Foam, .Strength = 0.7f } };
+		{ .Blend = EBlend::Glint, .Count = 26, .Life = 1.5f, .Stagger = 0.12f, .Speed = 380, .Spread = 0.25f, .Lift = 0.9f,
+			.Gravity = 500, .Drag = 1.2f, .Size = 30, .Grow = 3, .Spin = 0.5f, .Box = { 15, 10, 4 }, .Color = Foam,
+			.Strength = 0.3f },
+		{ .Blend = EBlend::Glint, .Count = 18, .Life = 1.2f, .Stagger = 0.1f, .Speed = 220, .Spread = 1.2f, .Lift = 0.4f,
+			.Gravity = 300, .Drag = 2, .Size = 26, .Grow = 3, .Spin = 0.5f, .Box = { 25, 10, 4 }, .Color = Foam,
+			.Strength = 0.22f },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Ring, .Mode = EMode::Flat, .Count = 4, .Life = 2.2f, .Stagger = 0.45f,
+			.Size = 60, .Grow = 5, .Color = Foam, .Strength = 0.8f } };
+
+	/**
+	 * A copter falling into the water (FUghDunks; its body some 2 m wide): a column of water shooting up and falling
+	 * back, a crown of drops thrown out all round, fine drops high up, spray rolling over the surface, foam lying on it,
+	 * rings running out. The spray and the foam catch the light (Glint): a copter falls in at the stone, in the slab of
+	 * the play, as far from the camera as the cave's shade - lit there, a translucent puff was black against it (the
+	 * plunge of a flung passenger is near the camera).
+	 */
+	const FPart DunkParts[] = {
+		{ .Blend = EBlend::Glint, .Count = 50, .Life = 2, .Stagger = 0.12f, .Speed = 1000, .Spread = 0.14f, .Lift = 1,
+			.Gravity = 900, .Drag = 0.6f, .Size = 60, .Grow = 3, .Spin = 0.4f, .Box = { 60, 15, 6 }, .Color = Foam,
+			.Strength = 0.3f },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 260, .Life = 1.6f, .Stagger = 0.08f, .Speed = 1100,
+			.Spread = 0.6f, .Gravity = Fall, .Drag = 0.3f, .Size = 9, .Stretch = 1.5f, .Box = { 100, 16, 3 },
+			.Color = Water, .Strength = 1 },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 100, .Life = 1.9f, .Stagger = 0.15f, .Speed = 1400,
+			.Spread = 0.15f, .Gravity = Fall, .Drag = 0.5f, .Size = 6, .Stretch = 1.2f, .Box = { 50, 12, 3 },
+			.Color = Water, .Strength = 0.9f },
+		{ .Blend = EBlend::Glint, .Count = 34, .Life = 1.8f, .Stagger = 0.12f, .Speed = 600, .Spread = 1.4f,
+			.Lift = 0.35f, .Gravity = 200, .Drag = 2, .Size = 55, .Grow = 3.5f, .Spin = 0.5f, .Box = { 100, 16, 4 },
+			.Color = Foam, .Strength = 0.22f },
+		{ .Blend = EBlend::Glint, .Mode = EMode::Flat, .Count = 24, .Life = 3.6f, .Stagger = 0.25f, .Speed = 240,
+			.Spread = 1, .Lift = 0, .Drag = 1.5f, .Size = 80, .Grow = 2.5f, .Spin = 0.3f, .Box = { 110, 40, 0 },
+			.Color = Foam, .Strength = 0.9f },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Ring, .Mode = EMode::Flat, .Count = 5, .Life = 3.2f, .Stagger = 0.6f,
+			.Size = 160, .Grow = 5, .Color = Foam, .Strength = 1 } };
+	/** Foam boiling up where a copter comes up again (FUghDunks): foam on the water, a few drops, a ring (as Dunk). */
+	const FPart BoilParts[] = {
+		{ .Blend = EBlend::Glint, .Mode = EMode::Flat, .Count = 12, .Life = 2.4f, .Stagger = 0.3f, .Speed = 130,
+			.Spread = 1, .Lift = 0, .Drag = 1.5f, .Size = 55, .Grow = 2.5f, .Spin = 0.3f, .Box = { 70, 20, 0 },
+			.Color = Foam, .Strength = 0.8f },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 40, .Life = 0.8f, .Stagger = 0.3f, .Speed = 350,
+			.Spread = 0.6f, .Gravity = Fall, .Drag = 0.5f, .Size = 6, .Stretch = 1, .Box = { 70, 10, 2 },
+			.Color = Water, .Strength = 0.8f },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Ring, .Mode = EMode::Flat, .Count = 2, .Life = 2.4f, .Stagger = 0.4f,
+			.Size = 110, .Grow = 4, .Color = Foam, .Strength = 0.9f } };
 
 	/** In the order of EUghBurst. */
 	const FBurst Bursts[] = {
@@ -126,7 +167,9 @@ namespace
 		{ TEXT("leaves"), LeafParts, false, {}, 20, 1.2, ERest::Air },
 		{ TEXT("celebration"), CelebrationParts, false, { Gold, 10, 1.f }, 30, 0.6, ERest::Air },
 		{ TEXT("rustle"), RustleParts, false, {}, 20, 0.8, ERest::Air, -150 },
-		{ TEXT("plunge"), PlungeParts, false, {}, 24, 0.35, ERest::Water } };
+		{ TEXT("plunge"), PlungeParts, false, {}, 24, 0.35, ERest::Water },
+		{ TEXT("dunk"), DunkParts, false, {}, 45, 0.4, ERest::Water },
+		{ TEXT("boil"), BoilParts, false, {}, 25, 0.4, ERest::Water } };
 	static_assert(UE_ARRAY_COUNT(Bursts) == int32(EUghBurst::Count));
 }
 

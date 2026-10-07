@@ -118,13 +118,13 @@ bool AUghCopters::LoadModels()
 }
 
 void AUghCopters::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
-	TArray<FTransform>& OutClayRiders)
+	TArray<FTransform>& OutClayRiders, const FUghDunks* Dunks)
 {
 	const bool bPlay = Current.phase == UGH_LOGIC_PHASE_PLAY && Current.level_id >= 0;
 	const ugh_logic_view& From = UghBetween::From(Previous, Current);
 	if (Models.IsEmpty())
 	{
-		ShowClay(From, Current, Alpha, OutClayRiders);
+		ShowClay(From, Current, Alpha, OutClayRiders, Dunks);
 		return;
 	}
 	for (int32 Player = 0; Player < Models.Num(); ++Player)
@@ -135,15 +135,20 @@ void AUghCopters::Show(const ugh_logic_view& Previous, const ugh_logic_view& Cur
 			continue;
 		}
 		const ugh_logic_copter& To = Current.copters[Player];
-		ShowModel(Models[Player], Player < From.copter_count ? From.copters[Player] : To, To, Alpha, Seconds);
+		ShowModel(Models[Player], Player < From.copter_count ? From.copters[Player] : To, To, Alpha, Seconds,
+			Dunks ? Dunks->Of(Player) : FUghCopterBob());
 	}
 }
 
 void AUghCopters::ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From, const ugh_logic_copter& To,
-	double Alpha, double Seconds)
+	double Alpha, double Seconds, const FUghCopterBob& Bob)
 {
 	const FVector2D At = UghBetween::Position(From.x, From.y, To.x, To.y, Alpha);
-	Parts.Body->SetWorldLocation(UghShapes::ToWorld(At.X + CopterMiddle, At.Y + UghShapes::CopterBodyHeight, 0));
+	// afloat it bobs and rocks (FUghDunks) about the middle of its waterline
+	const FVector Pivot = UghShapes::ToWorld(At.X + CopterMiddle, At.Y + FUghDunks::Waterline - Bob.Lift, 0);
+	const FQuat Rock(FVector::YAxisVector, Bob.Roll);
+	const FVector Bottom = UghShapes::ToWorld(At.X + CopterMiddle, At.Y + UghShapes::CopterBodyHeight - Bob.Lift, 0);
+	Parts.Body->SetWorldLocationAndRotation(Pivot + Rock.RotateVector(Bottom - Pivot), Rock);
 	Parts.Spin.Update(To.rotor_sprite, Seconds);
 	Parts.Rotor->SetRelativeRotation(FRotator(0, 360 * Parts.Spin.RotorTurn(), 0));
 	// the crank, the chain and the sprocket on the layshaft (Ratio times the crank's turns: the rotor's)
@@ -215,7 +220,7 @@ void AUghCopters::HideModel(FUghCopterParts& Parts)
 }
 
 void AUghCopters::ShowClay(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-	TArray<FTransform>& OutRiders)
+	TArray<FTransform>& OutRiders, const FUghDunks* Dunks)
 {
 	const bool bPlay = Current.phase == UGH_LOGIC_PHASE_PLAY && Current.level_id >= 0;
 	TArray<FTransform> RotorBoxes;
@@ -226,7 +231,8 @@ void AUghCopters::ShowClay(const ugh_logic_view& Previous, const ugh_logic_view&
 		{
 			const ugh_logic_copter& C = Current.copters[Player];
 			const ugh_logic_copter& P = Player < Previous.copter_count ? Previous.copters[Player] : C;
-			const FVector2D At = UghBetween::Position(P.x, P.y, C.x, C.y, Alpha);
+			const FVector2D At = UghBetween::Position(P.x, P.y, C.x, C.y, Alpha) -
+				FVector2D(0, Dunks ? Dunks->Of(Player).Lift : 0.0);
 			Body.Add(UghShapes::Box(At.X + UghShapes::CopterBodyLeft, At.Y + RotorHeight,
 				UghShapes::CopterBodyRight - UghShapes::CopterBodyLeft + 1, UghShapes::CopterBodyHeight - RotorHeight,
 				FigureDepth, FigureThickness));

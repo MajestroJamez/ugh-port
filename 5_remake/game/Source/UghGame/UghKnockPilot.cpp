@@ -1,6 +1,7 @@
 #include "UghKnockPilot.h"
 
 #include "UghShapes.h"
+#include "UghSimulation.h"
 
 namespace
 {
@@ -79,4 +80,134 @@ FUghPilotKeys FUghKnockPilot::Fly(const ugh_logic* Logic, const ugh_logic_view& 
 	Keys.bRight = Speed.X < Wanted - SpeedSlack;
 	Keys.bLeft = Speed.X > Wanted + SpeedSlack;
 	return Keys;
+}
+
+namespace
+{
+	/** The solid pixels of the screen counted up and left of each (a summed-area table): a box's in four looks. */
+	struct FSolids
+	{
+		static constexpr int32 W = UghShapes::ScreenWidth + 1, H = UghShapes::ScreenHeight + 1;
+		TArray<int32> Sums;
+
+		explicit FSolids(const ugh_logic* Logic)
+		{
+			Sums.Init(0, W * H);
+			for (int32 Row = 1; Row < H; ++Row)
+			{
+				for (int32 Column = 1; Column < W; ++Column)
+				{
+					Sums[Row * W + Column] = (ugh_logic_solid(Logic, Column - 1, Row - 1) ? 1 : 0) +
+						Sums[(Row - 1) * W + Column] + Sums[Row * W + Column - 1] - Sums[(Row - 1) * W + Column - 1];
+				}
+			}
+		}
+
+		/** Nothing solid in the columns `Left` .. `Right` and rows `Top` .. `Bottom` (pixels; outside the screen nothing). */
+		bool IsFree(int32 Left, int32 Right, int32 Top, int32 Bottom) const
+		{
+			Left = FMath::Max(Left, 0);
+			Right = FMath::Min(Right, W - 2) + 1;
+			Top = FMath::Max(Top, 0);
+			Bottom = FMath::Min(Bottom, H - 2) + 1;
+			return Left >= Right || Top >= Bottom ||
+				Sums[Bottom * W + Right] - Sums[Top * W + Right] - Sums[Bottom * W + Left] + Sums[Top * W + Left] == 0;
+		}
+	};
+
+	/** The copter's outline across (its corner's columns + these) and down (rows), pixels (the logic's CopterShape). */
+	constexpr int32 OutlineLeft = 5, OutlineRight = 25, OutlineBottom = 19;
+	/** The waterline below its top (CopterShape::WATERLINE); gravity, pixels a step a step (the logic's GRAVITY). */
+	constexpr int32 Waterline = 18;
+	constexpr double Gravity = 27.0 / 64 / 32;
+	/** It holds its height within this many pixels while it goes across. */
+	constexpr double Level = 4;
+}
+
+void FUghDunkPilot::Plan(const ugh_logic* Logic, const ugh_logic_view& View)
+{
+	bPlanned = true;
+	const FIntPoint At(FMath::FloorToInt32(double(View.copters[0].x) / UghShapes::Subpixels),
+		FMath::FloorToInt32(double(View.copters[0].y) / UghShapes::Subpixels));
+	const int32 Water = View.water_level / UghShapes::Subpixels;
+	const int32 Bottom = Water + Below;
+	const FSolids Solids(Logic);
+	// the highest place to let go (the biggest splash), the nearest of those
+	int32 Best = TNumericLimits<int32>::Max();
+	for (int32 X = -16; X <= 304; ++X)
+	{
+		const int32 Left = X + OutlineLeft - Margin, Right = X + OutlineRight + Margin;
+		for (int32 Top = 2; Water - Top - Waterline >= LeastFall; ++Top)
+		{
+			// clear from there down to under the water, the way across at that height and up or down to it
+			if (Solids.IsFree(Left, Right, Top, Bottom) &&
+				Solids.IsFree(FMath::Min(X, At.X) + OutlineLeft - 1, FMath::Max(X, At.X) + OutlineRight + 1,
+					Top - int32(Level), Top + OutlineBottom + int32(Level)) &&
+				Solids.IsFree(At.X + OutlineLeft, At.X + OutlineRight, FMath::Min(Top, At.Y) - int32(Level),
+					FMath::Max(Top, At.Y) + OutlineBottom))
+			{
+				const int32 Score = Top * 1000 + FMath::Abs(X - At.X);
+				if (Score < Best)
+				{
+					Best = Score;
+					Place = FIntPoint(X, Top);
+				}
+				break;
+			}
+		}
+	}
+}
+
+FUghPilotKeys FUghDunkPilot::Fly(const ugh_logic* Logic, const ugh_logic_view& Previous, const ugh_logic_view& Current)
+{
+	FUghPilotKeys Keys;
+	if (!Logic || Current.copter_count == 0 || Previous.copter_count == 0)
+	{
+		return Keys;
+	}
+	if (!bPlanned)
+	{
+		Plan(Logic, Current);
+	}
+	if (!Place)
+	{
+		return Keys;
+	}
+	const ugh_logic_copter& Copter = Current.copters[0];
+	const FVector2D At = FVector2D(Copter.x, Copter.y) / UghShapes::Subpixels;
+	const FVector2D Speed = FVector2D(Copter.x - Previous.copters[0].x, Copter.y - Previous.copters[0].y) /
+		UghShapes::Subpixels;
+	const FVector2D Target(Place->X, Place->Y);
+	if (FMath::Abs(At.X - Target.X) < Near && FMath::Abs(At.Y - Target.Y) < Level)
+	{
+		bDropped = true;   // let go: it falls
+	}
+	if (bDropped && At.Y + Waterline >= Current.water_level / double(UghShapes::Subpixels))
+	{
+		return Keys;   // in the water: nothing more
+	}
+	// falling it still steers to stay above the place (the keys across do not hold it up)
+	Keys.bUp = !bDropped && At.Y + Speed.Y * Lead > Target.Y;
+	const double Across = bDropped || FMath::Abs(At.Y - Target.Y) < Level ? Target.X : At.X;
+	const double Wanted = FMath::Clamp((Across - At.X) * SpeedPerPixel, -MaxSpeed, MaxSpeed);
+	Keys.bRight = Speed.X < Wanted - SpeedSlack;
+	Keys.bLeft = Speed.X > Wanted + SpeedSlack;
+	return Keys;
+}
+
+TOptional<double> FUghDunkPilot::UntilSplash(const ugh_logic_view& Previous, const ugh_logic_view& Current)
+{
+	if (Current.copter_count == 0 || Previous.copter_count == 0)
+	{
+		return {};
+	}
+	const double Speed = double(Current.copters[0].y - Previous.copters[0].y) / UghShapes::Subpixels;
+	const double Left = double(Current.water_level - Current.copters[0].y) / UghShapes::Subpixels - Waterline;
+	if (Speed <= 0 || Left < 0)
+	{
+		return {};
+	}
+	// v n + g n^2 / 2 = Left
+	const double Steps = (-Speed + FMath::Sqrt(Speed * Speed + 2 * Gravity * Left)) / Gravity;
+	return Steps / FUghSimulation::TickRate;
 }

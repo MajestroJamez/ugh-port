@@ -29,3 +29,36 @@ public:
 	static FUghPilotKeys Fly(const ugh_logic* Logic, const ugh_logic_view& Previous, const ugh_logic_view& Current,
 		bool bKnocked);
 };
+
+/**
+ * Flies copter 0 over open water and lets it fall into the sea (a shot of its splash and its test, FUghDunks): plans
+ * once where - the highest place (the biggest splash; the nearest of those) with nothing solid from there down to Below
+ * pixels under the surface (its body and Margin either side) and the way there clear -, goes up or down to that
+ * height, across to it and lets go: it falls by itself, steering only to stay above the place (the keys across do not
+ * hold it up). Only for a shot (FUghShot -UghShotDunk) and the test Ugh.Dunk: no player flies so.
+ */
+class FUghDunkPilot
+{
+public:
+	/** Clear this many pixels either side of its body, this far under the surface (it dives about 20 px). */
+	static constexpr int32 Margin = 6, Below = 30;
+	/** A fall shorter than this (pixels to the water) is no splash worth a look: another column. */
+	static constexpr int32 LeastFall = 40;
+	/** It lets go within this many pixels of the place (falling it steers on to stay above it). */
+	static constexpr double Near = 2;
+
+	/** The keys to hold after `Current` (the view of the step before: `Previous`) of `Logic`. */
+	FUghPilotKeys Fly(const ugh_logic* Logic, const ugh_logic_view& Previous, const ugh_logic_view& Current);
+	/** It has let go: the copter falls. */
+	bool HasDropped() const { return bDropped; }
+	/** The place it lets go at (its corner, pixels), none before it planned or when there is none. */
+	TOptional<FIntPoint> GetPlace() const { return Place; }
+	/** Seconds until copter 0's waterline reaches the surface falling freely, none when it is not falling above it. */
+	static TOptional<double> UntilSplash(const ugh_logic_view& Previous, const ugh_logic_view& Current);
+
+private:
+	void Plan(const ugh_logic* Logic, const ugh_logic_view& View);
+
+	bool bPlanned = false, bDropped = false;
+	TOptional<FIntPoint> Place;
+};

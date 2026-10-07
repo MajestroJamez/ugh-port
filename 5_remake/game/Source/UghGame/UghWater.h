@@ -41,10 +41,10 @@ namespace UghWater
 	/**
 	 * What swims or floats at the surface `Surface` (pixels) in `View` - passengers in the water, copters on it: its
 	 * place on the surface (world) and how much it stirs it (w); at most MaxRings. A flung passenger (`Flings`) stirs
-	 * it where it is seen.
+	 * it where it is seen. `Churns` (the water churning where a copter fell in, FUghDunks::Stirs) come first.
 	 */
 	TArray<FVector4> Rings(const ugh_logic_view& View, const FUghSprites& Sprites, double Surface,
-		const FUghFlings* Flings = nullptr);
+		const FUghFlings* Flings = nullptr, TConstArrayView<FVector4> Churns = {});
 }
 
 /**

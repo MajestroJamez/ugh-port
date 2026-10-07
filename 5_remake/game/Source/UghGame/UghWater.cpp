@@ -42,9 +42,16 @@ TOptional<FTransform> UghWater::Box(double Surface, bool bOpenSea)
 }
 
 TArray<FVector4> UghWater::Rings(const ugh_logic_view& View, const FUghSprites& Sprites, double Surface,
-	const FUghFlings* Flings)
+	const FUghFlings* Flings, TConstArrayView<FVector4> Churns)
 {
 	TArray<FVector4> Rings;
+	for (const FVector4& Churn : Churns)
+	{
+		if (Rings.Num() < MaxRings)
+		{
+			Rings.Add(Churn);
+		}
+	}
 	auto Stir = [&](double Left, double Right, double Top, double Bottom, float Strength, double Depth = 0)
 	{
 		if (Rings.Num() < MaxRings && Top < Surface && Surface <= Bottom + 1)

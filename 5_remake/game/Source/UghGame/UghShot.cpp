@@ -127,6 +127,16 @@ bool FUghShot::Configure()
 			Flings.Add(FCString::Atod(*Moment));
 		}
 	}
+	FString DunkList;
+	if (FParse::Value(CommandLine, TEXT("-UghShotDunk="), DunkList, false))
+	{
+		TArray<FString> Moments;
+		DunkList.ParseIntoArray(Moments, TEXT(","));
+		for (const FString& Moment : Moments)
+		{
+			Dunks.Add(FCString::Atod(*Moment));
+		}
+	}
 	bEndShot = FParse::Param(CommandLine, TEXT("UghShotEnd"));
 	uint32 Score = 0;
 	if (FParse::Value(CommandLine, TEXT("-UghShotScore="), Score))
@@ -180,8 +190,12 @@ bool FUghShot::AddTargets(const FString& List)
 			{
 				for (int32 Fling = 0; Fling < FMath::Max(1, Flings.Num()); ++Fling)
 				{
-					Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1,
-						Effects.IsEmpty() ? FString() : Effects[Effect], Flings.IsEmpty() ? -1.0 : Flings[Fling] });
+					for (int32 Dunk = 0; Dunk < FMath::Max(1, Dunks.Num()); ++Dunk)
+					{
+						Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1,
+							Effects.IsEmpty() ? FString() : Effects[Effect], Flings.IsEmpty() ? -1.0 : Flings[Fling],
+							Dunks.IsEmpty() ? TOptional<double>() : Dunks[Dunk] });
+					}
 				}
 			}
 		}
@@ -297,6 +311,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		HoverY[0] = HoverY[1] = -1;
 		AtEdge = -1;
 		FlingTime = -1;
+		DunkPilot = FUghDunkPilot();
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION && IntroAt)
 	{
@@ -330,17 +345,18 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	{
 		return EAction::None;
 	}
-	const bool bFling = Target.Fling >= 0;
+	const bool bFling = Target.Fling >= 0, bDunk = Target.Dunk.IsSet();
 	const bool bAtEdge = !Edge.IsEmpty() && FlyToEdge(Mode, View, DeltaSeconds);
 	const bool bFlung = bFling && Knock(Mode, View, DeltaSeconds, Target.Fling);
-	if (Edge.IsEmpty() && !bFling)
+	const bool bDunked = bDunk && Dunk(Mode, View, *Target.Dunk);
+	if (Edge.IsEmpty() && !bFling && !bDunk)
 	{
 		Hover(Mode, View, DeltaSeconds);
 	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
 	HoverFrames.Add(DeltaSeconds);
-	if (bFling ? !bFlung : Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
+	if (bDunk ? !bDunked : bFling ? !bFlung : Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
 	}
@@ -390,7 +406,9 @@ FString FUghShot::NameOf(const FTarget& Target) const
 {
 	const FString Effect = Target.Effect.IsEmpty() ? FString() : TEXT("-") + Target.Effect;
 	const FString Fling = Target.Fling < 0 ? FString() : FString::Printf(TEXT("-fling%g"), Target.Fling);
-	return TargetName(Target.Players, Target.Level) + Suffix + Effect + Fling + (bEndShot ? TEXT("-end") : TEXT(""));
+	const FString Dunk = Target.Dunk ? FString::Printf(TEXT("-dunk%g"), *Target.Dunk) : FString();
+	return TargetName(Target.Players, Target.Level) + Suffix + Effect + Fling + Dunk +
+		(bEndShot ? TEXT("-end") : TEXT(""));
 }
 
 FUghShot::EAction FUghShot::TakeShot(const FString& Name)
@@ -608,6 +626,26 @@ bool FUghShot::Knock(AUghGameMode& Mode, const ugh_logic_view& View, double Seco
 	UE_LOG(LogTemp, Display, TEXT("UGH shot: %.2f s after the knock (the splash at %s)"), FlingTime,
 		Splashed ? *FString::Printf(TEXT("%.2f s"), *Splashed) : TEXT("-"));
 	return true;
+}
+
+bool FUghShot::Dunk(AUghGameMode& Mode, const ugh_logic_view& View, double Age)
+{
+	const ugh_logic_view& Previous = Mode.GetSimulation().GetPrevious();
+	const FUghPilotKeys Keys = DunkPilot.Fly(Mode.GetSimulation().GetLogic(), Previous, View);
+	Hold(Mode, UGH_LOGIC_KEY_UP, Keys.bUp);
+	Hold(Mode, UGH_LOGIC_KEY_LEFT, Keys.bLeft);
+	Hold(Mode, UGH_LOGIC_KEY_RIGHT, Keys.bRight);
+	const TOptional<double> Since = Mode.GetDunks().Age();
+	const TOptional<double> Until = DunkPilot.HasDropped() ? FUghDunkPilot::UntilSplash(Previous, View)
+		: TOptional<double>();
+	const bool bNow = Since ? *Since >= Age : Age < 0 && Until && *Until <= -Age;
+	if (bNow)
+	{
+		UE_LOG(LogTemp, Display, TEXT("UGH shot: the copter in the sea since %s (the splash in %s)"),
+			Since ? *FString::Printf(TEXT("%.2f s"), *Since) : TEXT("-"),
+			Until ? *FString::Printf(TEXT("%.2f s"), *Until) : TEXT("-"));
+	}
+	return bNow;
 }
 
 void FUghShot::Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld)

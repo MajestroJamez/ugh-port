@@ -1609,3 +1609,14 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   v převisu). CTest logiky, `6_verification` (163) a 199 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze
   změny, fps medián 18, 1 % low 12 (editor, Epic). Balíček nepřebalen. Čeká na Jana: zahrát (po přebalení) - náraz do
   liány nahoře, uprostřed, dole. Další: **krok 25d**.
+- 2026-10-07: krok 25d hotový - čáknutí, když vrtulník spadne do vody (`docs/visual-concept.md`). Logika: voda není
+  havárie ani ztráta života - vrtulník se pod hladinou prudce zabrzdí (~15-20 px), vyplave a zastaví se s čárou ponoru
+  na hladině; havaruje jen tvrdým odrazem od skály či dna. Vizuál `FUghDunks` (logika beze změny): v snímku, kdy čára
+  ponoru dojde k hladině, velké čáknutí `dunk` (sloup, koruna kapek, tříšť, pěna, kruhy, hladina 3 s zčeřená), pod vodou
+  přesně podle logiky, po vynoření pěna `boil` a houpání (nejvýš 1,6 px, utichne) a kolébání; připraveno předem v černé.
+  Sprška `dunk` i `plunge` (25a) svítí aditivně - osvětlené průsvitné obláčky byly daleko od kamery černé a u ní hranaté
+  (fialový čtverec). Svatozář (24c) ztmaví jen to, co je za postavou (hloubka scény) - pod vodou už žádný tmavý lem.
+  Test `Ugh.Dunk` (autopilot `FUghDunkPilot`), `shot.ps1 -Dunk <s>`; snímky `Saved\Shots\25d` (`sheet-dunk.png`: těsně
+  před, dopad, sloup, pěna, houpání; `sheet-fling-halo.png`). CTest logiky, `6_verification` (163) a 200 testů v UE
+  zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 15, 1 % low 11 (opakovaně 14 / 10; bez svatozáře
+  14 / 11 - zahřátý notebook, ne krok). Balíček nepřebalen. Další: **krok 25e**.

@@ -6,6 +6,7 @@
 #include "ugh_logic.h"
 #include "UghCaveman.h"
 #include "UghCopterModel.h"
+#include "UghDunk.h"
 #include "UghRotorSpin.h"
 #include "UghCopters.generated.h"
 
@@ -59,10 +60,11 @@ public:
 
 	/**
 	 * Shows the copters between `Previous` and `Current` (Alpha 0 .. 1), `Seconds` after the last frame; none outside
-	 * the play. Without the models, the riders go to `OutClayRiders` (boxes of the clay passengers).
+	 * the play. Without the models, the riders go to `OutClayRiders` (boxes of the clay passengers). A copter afloat
+	 * bobs and rocks as `Dunks` say (FUghDunks).
 	 */
 	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
-		TArray<FTransform>& OutClayRiders);
+		TArray<FTransform>& OutClayRiders, const FUghDunks* Dunks = nullptr);
 	/** Makes spare riders ahead (while a level is built in the black): none is made in the play (FUghCaveman). */
 	void Stock();
 
@@ -72,11 +74,11 @@ protected:
 private:
 	bool LoadModels();
 	void ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From, const ugh_logic_copter& To, double Alpha,
-		double Seconds);
+		double Seconds, const FUghCopterBob& Bob);
 	void ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copter, double Seconds, double Velocity);
 	void HideModel(FUghCopterParts& Parts);
 	void ShowClay(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-		TArray<FTransform>& OutRiders);
+		TArray<FTransform>& OutRiders, const FUghDunks* Dunks);
 
 	UPROPERTY() FUghCaveman Caveman;
 	FUghCopterChain Chain;

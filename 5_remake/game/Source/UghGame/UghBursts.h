@@ -20,6 +20,8 @@ enum class EUghBurst : uint8
 	Celebration,  // the level done: petals and glints, a flash
 	Rustle,       // a few leaves off the plants at the stone's edges a copter bumps into (AUghFringe; no event)
 	Plunge,       // a body falling from high into the water: drops, a column of spray, rings (FUghFlings)
+	Dunk,         // a copter falling into the water: a column and a crown of water, drops, foam, rings (FUghDunks)
+	Boil,         // a copter coming up again: foam boiling up, a few drops, a ring (FUghDunks)
 	Count
 };
 

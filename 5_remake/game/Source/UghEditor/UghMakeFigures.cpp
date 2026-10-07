@@ -92,7 +92,7 @@ bool UUghMakeAssetsCommandlet::MakeFigureHalo(UMaterial* Material)
 		{ UghMaterials::RadiusParameter, Scalar(Material, UghMaterials::RadiusParameter, HaloRadius) },
 		{ UghMaterials::DarkenParameter, Scalar(Material, UghMaterials::DarkenParameter, 0.5f) },
 		{ TEXT("Color"), Scene(PPI_PostProcessInput0) },
-		{ TEXT("Figures"), Scene(PPI_CustomDepth) } });
+		{ TEXT("Figures"), Scene(PPI_CustomDepth) }, { TEXT("Depth"), Scene(PPI_SceneDepth) } });
 	if (!Halo)
 	{
 		return false;

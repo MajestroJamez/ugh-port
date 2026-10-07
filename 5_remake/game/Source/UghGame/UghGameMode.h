@@ -5,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "UghCameraLog.h"
 #include "UghControls.h"
+#include "UghDunk.h"
 #include "UghFigureActions.h"
 #include "UghFling.h"
 #include "UghIntro.h"
@@ -87,6 +88,8 @@ public:
 	const FUghIntro& GetIntro() const { return Intro; }
 	/** The passengers knocked off their pads, flung into the sea. */
 	const FUghFlings& GetFlings() const { return Flings; }
+	/** The copters falling into the sea. */
+	const FUghDunks& GetDunks() const { return Dunks; }
 	/** The help of the keys is wanted (F1 or a gamepad's Y in a game). */
 	bool IsHelpWanted() const { return bHelp; }
 	/** The folder of the game's data; empty before the game starts. */
@@ -130,6 +133,7 @@ private:
 	FUghSprites Sprites;
 	FUghFigureActions FigureActions;
 	FUghFlings Flings;
+	FUghDunks Dunks;
 	FUghLevelArt LevelArt;
 	FUghPasswords Passwords;
 	FUghProfile Profile;
