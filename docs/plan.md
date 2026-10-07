@@ -1635,4 +1635,10 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   0,6 s), `1p-01-hanging4-closeup*.png`, `1p-01-cargo4-closeup*.png`, `1p-01-frame66_124.png`. CTest logiky,
   `6_verification` (163) a 201 testů v UE zelené (4 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch beze změny,
   fps medián 19, 1 % low 14 (editor, Epic; 25d 15 / 11). Čeká na Jana: posoudit kámen v okně (`play.ps1`) - tón
-  (`stone_slate.py` `TONE`), žilky. Další: přebalit (24f-25e).
+  (`stone_slate.py` `TONE`), žilky. Přebaleno (kroky 24f-25e): `pso.ps1` (8 běhů, nová PSO cache), balíček
+  `5_remake\game\Packaged\Windows\UghGame.exe` (4,18 GB), zip `Packaged\UghGame-Windows.zip` (3,36 GB); `levels.ps1
+  -Quick -Package` 0 chyb, arch v pořádku. `perf.ps1` (zahřátý notebook po hodině balení, 3 běhy; medián / 1 % low /
+  nejpomalejší): Low 41-47 / 24-29 / 20-38, Medium 25 / 16-17 / 13, High 13 / 9-10 / 7, Epic 9 / 6-8 / 5-7 (24f: 59/38/41,
+  46/27/33, 24/15/14, 14/11/11). Není to kroky 25a-25e: rychlá sada Medium 1920x1080 v editoru hned po sobě - kód 24f 28
+  fps (1 % low 16), kód 25e 26 (16); je to teplo notebooku (README hry: Performance). Čeká na Jana: zahrát balíček
+  (`play.ps1`), změřit znovu na chladném notebooku. Další: hotovo (krok 25).

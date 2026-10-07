@@ -91,6 +91,11 @@ third slower than cool), frames per second - the median of the levels, the 1 % l
 | High | 20 | 10 | 13 | 24 | 15 | 14 |
 | Epic | 12 | 8 | 6 | 14 | 11 | 11 |
 
+After step 25e (2026-10-07, three runs after packaging, the notebook warmer than ever: Low 41-47, 1 % low 24-29;
+Medium 25 / 16-17, slowest 13; High 13 / 9-10, slowest 7; Epic 9 / 6-8, slowest 5-7) the package measured slower, but
+not by the steps 25a-25e: the quick set at Medium and 1920x1080 in the editor right after, step 24f's code 28 fps
+(1 % low 16), step 25e's 26 (1 % low 16) - the warmth of the notebook; compare on a cool notebook again.
+
 (Before: step 24e, 2.5 s a level.) Step 24f found: low drew at two thirds of the screen like epic - FSR sets the
 resolution by code from its own mode, above the preset's (`r.FidelityFX.FSR.QualityMode` now goes with the preset);
 Alt+Enter put the engine's scalability back to epic (`UghGraphics::ApplyQuality` sets the engine's user settings

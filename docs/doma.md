@@ -6,7 +6,7 @@ a modely z Fabu/Sketchfabu nejsou naše a nikam se nenahrávají.
 
 ## Nejrychlejší cesta: hotový zip z notebooku
 
-1. Na notebooku je po kroku 24f `5_remake\game\Packaged\UghGame-Windows.zip` (3,4 GB, bez `.pdb`). Přenes ho domů
+1. Na notebooku je po kroku 25e `5_remake\game\Packaged\UghGame-Windows.zip` (3,4 GB, bez `.pdb`; kroky 24f-25e). Přenes ho domů
    na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
 2. Spusť `UghGame.exe`. Při prvním startu bez profilu hra sama vybere kvalitu podle grafiky: na RTX (DLSS) **Epic +
    DLSS**, na integrované grafice Low, jinak High (v logu `UGH recommended quality ...`). Volba se uloží do
