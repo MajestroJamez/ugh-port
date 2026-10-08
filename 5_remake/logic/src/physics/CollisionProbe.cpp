@@ -28,6 +28,15 @@ std::optional<Fixed> CollisionProbe::stopOnTheWay(const world::copter::Copter& c
     }
 }
 
+std::optional<int> CollisionProbe::clearance(const world::copter::Copter& copter, Axis axis, int direction,
+                                            int most) const {
+    const int x = copter.motion().pixelX() + CopterShape::OUTLINE_LEFT, y = copter.motion().pixelY();
+    const int dx = axis == Axis::Horizontal ? direction : 0, dy = axis == Axis::Vertical ? direction : 0;
+    for (int moved = 1; moved <= most; moved++)
+        if (hits(x + moved * dx, y + moved * dy)) return moved - 1;
+    return std::nullopt;
+}
+
 bool CollisionProbe::hits(int x, int y) const {
     for (CopterShape::Point point : CopterShape::OUTLINE)
         if (level_.solid(x + point.x, y + point.y)) return true;

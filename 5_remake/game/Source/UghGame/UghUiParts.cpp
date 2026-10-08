@@ -6,6 +6,7 @@
 #include "Rendering/SlateRenderer.h"
 #include "UghUiState.h"
 #include "UghUiStyle.h"
+#include "UghWarning.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -202,6 +203,30 @@ int32 SUghPopups::OnPaint(const FPaintArgs& Args, const FGeometry& Geometry, con
 		const FVector2f Corner = At - FVector2f(TextSize.X / 2, TextSize.Y) * Scale;
 		FSlateDrawElement::MakeText(Elements, Layer, Geometry.ToPaintGeometry(TextSize, FSlateLayoutTransform(Scale, Corner)),
 			Text, Font, ESlateDrawEffect::None, UghUiStyle::Amber.CopyWithNewOpacity(1 - Age * Age * Age));
+	}
+	return Layer;
+}
+
+int32 SUghWarnings::OnPaint(const FPaintArgs& Args, const FGeometry& Geometry, const FSlateRect& Culling,
+	FSlateWindowElementList& Elements, int32 Layer, const FWidgetStyle& Style, bool bParentEnabled) const
+{
+	const TSharedRef<FSlateFontMeasure> Measure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+	const FVector2f View = FVector2f(Geometry.GetLocalSize());
+	for (const FUghUiWarning& Warning : State->Warnings)
+	{
+		const int32 Loudness = FMath::Clamp(Warning.Loudness, 1, UghWarning::Loudest);
+		if (!UghWarning::IsLit(Loudness, Warning.Age))
+		{
+			continue;
+		}
+		// bigger and redder the louder, its bottom over the copter
+		const FSlateFontInfo Font = UghUiStyle::Display(40.f + 12.f * Loudness, 4);
+		const FString Text = FString::ChrN(Loudness, TEXT('!'));
+		const FVector2f TextSize = FVector2f(Measure->Measure(Text, Font));
+		const FVector2f Corner = FVector2f(Warning.Where) * View - FVector2f(TextSize.X / 2, TextSize.Y);
+		const FLinearColor Color = FMath::Lerp(UghUiStyle::Amber, UghUiStyle::Ember, (Loudness - 1) / 2.f);
+		FSlateDrawElement::MakeText(Elements, Layer, Geometry.ToPaintGeometry(TextSize, FSlateLayoutTransform(Corner)),
+			Text, Font, ESlateDrawEffect::None, Color.CopyWithNewOpacity(State->Shown));
 	}
 	return Layer;
 }

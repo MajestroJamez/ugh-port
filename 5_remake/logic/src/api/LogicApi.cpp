@@ -12,6 +12,8 @@
 #include "data/ugd/DataFileReader.hpp"
 #include "events/EventQueue.hpp"
 #include "game/Game.hpp"
+#include "physics/CopterDanger.hpp"
+#include "physics/CopterPhysics.hpp"
 #include "world/copter/CopterShape.hpp"
 
 struct ugh_logic {
@@ -54,6 +56,9 @@ static_assert(ugh::units::Fixed::fromPixels(1).raw() == UGH_LOGIC_SUBPIXELS);
 static_assert(ugh::world::copter::CopterShape::BODY_LEFT == UGH_LOGIC_COPTER_BODY_LEFT &&
               ugh::world::copter::CopterShape::BODY_RIGHT == UGH_LOGIC_COPTER_BODY_RIGHT &&
               ugh::world::copter::CopterShape::BODY_HEIGHT == UGH_LOGIC_COPTER_BODY_HEIGHT);
+
+// a copter's top speed
+static_assert(ugh::physics::CopterPhysics::TOP_SPEED.raw() == UGH_LOGIC_COPTER_TOP_SPEED);
 
 // the words of the random numbers
 constexpr size_t SEED_WORDS = std::tuple_size_v<ugh::world::session::RandomNumbers::Words>;
@@ -164,6 +169,18 @@ void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view) {
     view->multiplier = session.score().multiplier();
     view->score = session.score().points();
     if (game.levelLoaded()) ugh::api::viewLevel(game, *view);
+}
+
+int ugh_logic_get_copter_danger(const ugh_logic* logic, int player, ugh_logic_copter_danger* danger) {
+    *danger = ugh_logic_copter_danger{};
+    if (!logic->started || !logic->game.levelLoaded()) return 0;
+    const ugh::world::Level& level = logic->game.level();
+    if (player < 0 || player >= level.copters().count()) return 0;
+    const ugh::physics::CopterDanger d =
+        ugh::physics::CopterDanger::of(level, logic->game.session().crashLimit(), level.copters()[player]);
+    *danger = ugh_logic_copter_danger{d.across.speed.raw(), d.upDown.speed.raw(), d.crashLimit, d.across.impact,
+                                      d.upDown.impact, d.across.rock ? 1 : 0, d.upDown.rock ? 1 : 0};
+    return 1;
 }
 
 int ugh_logic_pad_count(const ugh_logic* logic) {

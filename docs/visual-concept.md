@@ -844,3 +844,24 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   rozlišením sběru, cena jako dřív (průchod běžel i předtím).
 - `shot.ps1 -Rush left|right|down -RushY <px> -RushAfter <s>` (autopilot: na výšku, pak co nejrychleji vlevo, vpravo
   nebo střemhlav dolů), `-Difficulty`; `pso.ps1` má let vlevo (Epic, Medium). Test `Ugh.MotionBlur`.
+
+## Varování: vykřičníky při nebezpečné rychlosti (krok 27b)
+
+- Práh přesně z logiky: `CopterPhysics` při odrazu od kolizní masky spočte náraz z rychlosti (`impactOf`: půl
+  rychlosti zpět, krát dva - rychlost zaokrouhlená na sudou, vpravo a dolů nahoru, vlevo a nahoru dolů) a náraz
+  ≥ limitu obtížnosti je havárie. Limity originálu: lehká 3100, střední 2300, těžká 1380 (jednotky 1/64 z 1/32 px za
+  snímek; nejvyšší rychlost 6144 = 3 px za snímek). Vpravo / dolů havaruje rychlost od limitu - 1, vlevo / nahoru od
+  limitu. Platí stejně vodorovně i svisle (podlaha, plošina při tvrdém přistání, skalní strop). Bez nárazu: okraje
+  obrazovky (vrtulník se zastaví, i horní okraj s převisem z 24d), voda (25d: zabrzdí, neodráží se).
+- Logika beze změny chování, jen čtení: `physics::CopterDanger` (rychlost, náraz a zda je v tom směru skála před
+  okrajem obrazovky; dolů skála nad hladinou, nebo pod ní na dráze, kde ji voda ještě nezabrzdila pod limit; pod
+  vodou nahoru jen k hladině) a C API `ugh_logic_get_copter_danger`. `bounce` počítá náraz toutéž funkcí; replaye
+  stejné.
+- Frontend `UghWarning`: nad vrtulníkem `!` od limitu, `!!` od třetiny cesty k nejvyšší rychlosti, `!!!` od dvou
+  třetin, jantarová až červená, větší a rychleji blikající čím hlasitější (2,5 / 4 / 6 Hz); pod limitem nic, nad
+  vodou a k okrajům nic. Kreslí HUD (`SUghWarnings`), mizí s prolínáním hry.
+- Testy: CTest logiky (`CopterDangerTest`: na každé obtížnosti rychlost limit - 4 .. limit + 3 vpravo, vlevo, dolů,
+  nahoru do skály - danger říká havárii přesně tehdy, kdy ji logika udělá; okraje a hluboká voda bez nebezpečí, mělká
+  ano), `Ugh.Warning` (skutečná logika levelu 1 přes C API na každé obtížnosti: rozjezd na dosažitelnou rychlost těsně
+  pod a těsně nad prahem, doběh do skály - varování právě když havaruje; strop obrazovky, moře bez varování, střemhlav
+  na zem varováno).

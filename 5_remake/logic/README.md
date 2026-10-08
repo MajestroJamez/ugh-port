@@ -51,7 +51,7 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 | `world/scenery/` | the level around the entities: `Pad` (its index, who waits on it), `Water`, `Rain` with its `Raindrop`s, `Screen` (the edges past which a thing is gone) |
 | `world/copter/` | `Copter` (its player, and its parts `Motion`, `Controls`, `Rotor`, `Cabin` with its `Cargo`; the `Pad` it stands on), `CopterShape` (its door, skids, body, outline, waterline - the one place of the copter's geometry), `Copters` (and what the entities ask about them, as `Copter*`) |
 | `world/` | `Level` (the world of the level being played: `Copters`, `Pad`s, water, rain, `Energy`, `Fade`, `Delivery`; how an attempt ends: `passengerFinished`, `crash`, `fadeOut`), `PlayContext` |
-| `physics/` | `CopterPhysics` (one frame of a copter's flight), `CollisionProbe` (a copter against the background), `TouchBox` (a copter against a sprite), `Ballistics` (anything thrown that falls) |
+| `physics/` | `CopterPhysics` (one frame of a copter's flight), `CopterDanger` (what its speed would cost if it hit something now: read only, the frontend's warning), `CollisionProbe` (a copter against the background), `TouchBox` (a copter against a sprite), `Ballistics` (anything thrown that falls) |
 | `bonuses/` | the bonus items: `BonusSlots`, `BonusItem`, their states `Falling` and `Lying` |
 | `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `PassengerForm` (its kind on land or in the water), `RouteProgress`, `PickupWait` (waiting for a copter and calling it), `Ride`, `Swim`; `OnPickupPad` the base of the states on the pickup pad), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`, `Stun` (a walker or a blower stunned); `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
@@ -168,7 +168,7 @@ text of the error).
 | change where a copter's door, skids, body or waterline are | `src/world/copter/CopterShape.hpp` |
 | change the size of the screen | `src/data/levels/ScreenSize.hpp`: the collision mask, `world::scenery::Screen` (where a thing is gone), the rain (its width and `Rain::DROPS`) follow it; the limits of a copter's flight are its own (`src/physics/CopterPhysics.cpp`) |
 | change what ends an attempt (a crash, Esc, the last passenger) | `src/world/Level.cpp` (`crash`, `fadeOut`, `passengerFinished`) |
-| change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`, the background: `ugh_logic_pad`, `ugh_logic_solid`, the names of the sprites: `ugh_logic_get_sprite`), `src/api/LogicApi.cpp` and `src/api/LevelView.cpp` |
+| change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`, the background: `ugh_logic_pad`, `ugh_logic_solid`, the names of the sprites: `ugh_logic_get_sprite`, a copter's danger: `ugh_logic_get_copter_danger`), `src/api/LogicApi.cpp` and `src/api/LevelView.cpp` |
 | change how the score multiplier works | `src/world/session/Score.hpp` |
 | change what a passenger does on its pickup pad every frame (the water, a copter flying into it) | `src/passengers/route/OnPickupPad.cpp` |
 

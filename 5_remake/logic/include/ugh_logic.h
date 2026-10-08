@@ -171,6 +171,30 @@ typedef struct {
 /** Fills `view` with the state after the last step. */
 UGH_LOGIC_API void ugh_logic_get_view(const ugh_logic* logic, ugh_logic_view* view);
 
+/** A copter flies no faster than this, across or up and down (ugh_logic_copter_danger.speed_x, speed_y). */
+enum { UGH_LOGIC_COPTER_TOP_SPEED = 6144 };
+
+/**
+ * What a copter's speed would cost if it hit something now (ugh_logic_get_copter_danger). A bounce off the background
+ * (its collision mask: a wall, a floor or a pad, a ceiling of rock) whose impact reaches crash_limit crashes the
+ * copter - a life lost. The edges of the screen stop a copter without a bounce and the water brakes it: no crash.
+ */
+typedef struct {
+    int speed_x, speed_y;     /* 1/64 of 1/32 px a frame, right and down positive */
+    int crash_limit;          /* a bounce this hard or harder crashes (by the difficulty: easy, medium, hard) */
+    int impact_x, impact_y;   /* how hard a bounce at that speed would be, across and up or down */
+    int rock_x, rock_y;       /* 1: rock lies ahead that way, a bounce at that speed would come from it (before the
+                                 edge of the screen across and up; down before the water's surface, or under it within
+                                 the way the water brakes the copter from a crash); 0: none, or no speed */
+} ugh_logic_copter_danger;
+
+/**
+ * Fills `danger` for the copter of `player` (0 or 1) in the level being played: it crashes into what lies ahead along
+ * an axis when rock_ and impact_ >= crash_limit there. Only reads (the state does not change); 0 when there is no such
+ * copter.
+ */
+UGH_LOGIC_API int ugh_logic_get_copter_danger(const ugh_logic* logic, int player, ugh_logic_copter_danger* danger);
+
 /**
  * The screen of a level in pixels, and the positions of the view: 1/32 px. A copter's body (what a sprite touches)
  * is from BODY_LEFT to BODY_RIGHT across and BODY_HEIGHT high, in pixels from its top left corner.

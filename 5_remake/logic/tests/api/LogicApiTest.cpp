@@ -151,3 +151,27 @@ TEST(the_c_api_names_the_sprites_of_the_entities) {
     CHECK_EQUAL(0, ugh_logic_get_sprite(logic, 218, &info));   // a rotor
     ugh_logic_destroy(logic);
 }
+
+TEST(the_c_api_shows_a_copters_danger_at_the_crash_limit_of_the_difficulty) {
+    char err[200] = "";
+    ugh_logic* logic = ugh_logic_create(ugh::test::dataPath().c_str(), err, sizeof err);
+    CHECK(logic != nullptr);
+    if (!logic) return;
+    ugh_logic_copter_danger danger;
+    CHECK_EQUAL(0, ugh_logic_get_copter_danger(logic, 0, &danger));   // no game yet
+    const int limits[] = {3100, 2300, 1380};   // easy, medium, hard: the original's
+    for (int difficulty = 0; difficulty < 3; difficulty++) {
+        ugh_logic_settings settings;
+        ugh_logic_default_settings(&settings);
+        settings.difficulty = difficulty;
+        CHECK_EQUAL(1, ugh_logic_new_game(logic, &settings));
+        for (int frame = 0; frame < 9; frame++) ugh_logic_step(logic);   // level 1 is loaded
+        CHECK_EQUAL(1, ugh_logic_get_copter_danger(logic, 0, &danger));
+        CHECK_EQUAL(0, ugh_logic_get_copter_danger(logic, 1, &danger));   // one player
+        CHECK_EQUAL(1, ugh_logic_get_copter_danger(logic, 0, &danger));
+        CHECK_EQUAL(limits[difficulty], danger.crash_limit);
+        CHECK_EQUAL(0, danger.speed_x);   // at its start
+        CHECK_EQUAL(0, danger.rock_x);
+    }
+    ugh_logic_destroy(logic);
+}

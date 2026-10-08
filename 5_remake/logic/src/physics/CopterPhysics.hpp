@@ -18,8 +18,26 @@ class CopterPhysics {
 public:
     explicit CopterPhysics(const world::PlayContext& context) : context_(context) {}
 
+    /** No copter flies faster, across or up and down (1/64 Fixed per frame). */
+    static constexpr units::Speed TOP_SPEED = units::Speed::fromRaw(6144);
+    /** How far a copter can go (its top left corner): it stops there, no bounce. */
+    static constexpr units::Fixed LEFT_EDGE = units::Fixed::fromPixels(-16), RIGHT_EDGE = units::Fixed::fromPixels(304);
+    static constexpr units::Fixed TOP_EDGE = units::Fixed::fromRaw(-608), BOTTOM_EDGE = units::Fixed::fromRaw(6112);
+    /** Under water a copter sinking slows down by this much a frame. */
+    static constexpr units::Speed WATER_BRAKE = units::Speed::fromRaw(193);
+
     /** One frame of the copter's flight. */
     void fly(world::copter::Copter& copter);
+
+    /**
+     * How hard a bounce at `speed` is: the speed it had, as the original computes it from the half it bounces back with
+     * (an odd speed down or to the right one more, up or to the left one less). A bounce this hard as the session's
+     * crash limit or harder crashes the copter.
+     */
+    static constexpr int impactOf(units::Speed speed) {
+        const int impact = ((-speed) >> 1).raw() * 2;
+        return impact < 0 ? -impact : impact;
+    }
 
 private:
     /** Where the copter is against the water surface. */

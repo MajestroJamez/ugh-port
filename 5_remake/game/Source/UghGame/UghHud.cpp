@@ -5,12 +5,14 @@
 #include "Engine/GameViewportClient.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
+#include "UghBetween.h"
 #include "UghEffects.h"
 #include "UghGameMode.h"
 #include "UghShapes.h"
 #include "UghUi.h"
 #include "UghUiState.h"
 #include "UghUiStyle.h"
+#include "UghWarning.h"
 
 namespace
 {
@@ -104,6 +106,37 @@ void AUghHud::Update(const AUghGameMode& Mode, double Seconds)
 		{
 			Shown.Popups.Add({ FVector2D(At.X / Canvas->ClipX, At.Y / Canvas->ClipY), Popup.Points,
 				float(Popup.Age / AUghEffects::PopupSeconds) });
+		}
+	}
+	UpdateWarnings(Mode, Seconds);
+}
+
+void AUghHud::UpdateWarnings(const AUghGameMode& Mode, double Seconds)
+{
+	FUghUiState& Shown = *State;
+	Shown.Warnings.Reset();
+	const FUghSimulation& Simulation = Mode.GetSimulation();
+	const ugh_logic_view& Current = Simulation.GetCurrent();
+	const ugh_logic_view& From = UghBetween::From(Simulation.GetPrevious(), Current);
+	const bool bPlay = !Mode.IsInMenu() && Current.phase == UGH_LOGIC_PHASE_PLAY && Current.level_id >= 0;
+	for (int32 Player = 0; Player < UE_ARRAY_COUNT(WarningAge); ++Player)
+	{
+		// the logic's verdict on the copter now, over it where it is drawn
+		const int32 Loudness = bPlay && Player < Current.copter_count
+			? UghWarning::Of(Simulation.GetLogic(), Player) : 0;
+		WarningAge[Player] = Loudness == 0 ? -1 : WarningAge[Player] < 0 ? 0 : WarningAge[Player] + Seconds;
+		if (Loudness == 0 || Canvas->ClipX <= 0 || Canvas->ClipY <= 0)
+		{
+			continue;
+		}
+		const ugh_logic_copter& To = Current.copters[Player];
+		const ugh_logic_copter& Was = Player < From.copter_count ? From.copters[Player] : To;
+		const FVector2D Corner = UghBetween::Position(Was.x, Was.y, To.x, To.y, Simulation.Alpha());
+		const FVector At = Project(UghShapes::ToWorld(Corner.X +
+			(UghShapes::CopterBodyLeft + UghShapes::CopterBodyRight + 1) / 2.0, Corner.Y - UghWarning::Above, 0));
+		if (At.Z > 0)
+		{
+			Shown.Warnings.Add({ FVector2D(At.X / Canvas->ClipX, At.Y / Canvas->ClipY), Loudness, WarningAge[Player] });
 		}
 	}
 }

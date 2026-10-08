@@ -14,14 +14,14 @@ using Axis = CollisionProbe::Axis;
 using world::copter::CopterShape;
 
 // speeds in 1/64 Fixed per frame; accelerations per frame
-constexpr Speed MAX_SPEED = Speed::fromRaw(6144);
+constexpr Speed MAX_SPEED = CopterPhysics::TOP_SPEED;
 constexpr Speed WIND_PUSH = Speed::fromRaw(32);     // sideways, with the wind
 constexpr Speed WIND_DOWN = Speed::fromRaw(16);     // and down
 constexpr Speed STEER = Speed::fromRaw(63);         // the left or right key
 constexpr Speed GRAVITY = Speed::fromRaw(27);
 constexpr Speed DIVE = Speed::fromRaw(70);          // the down key
 constexpr Speed LIFT = Speed::fromRaw(70);          // the up key
-constexpr Speed WATER_BRAKE = Speed::fromRaw(193);  // sinking in the water
+constexpr Speed WATER_BRAKE = CopterPhysics::WATER_BRAKE;  // sinking in the water
 constexpr Speed BUOYANCY = Speed::fromRaw(21);      // floating up in the water
 
 // effort (it spins the rotor) and energy, per frame
@@ -30,8 +30,8 @@ constexpr int FLYING_COST = 1, PEDAL_COST = 3;
 constexpr int OFF_SURFACE_COST = 2;   // in the air (not on a pad) or under water: not floating on the surface
 
 // how far a copter can go (its top left corner)
-constexpr Fixed LEFT_EDGE = Fixed::fromPixels(-16), RIGHT_EDGE = Fixed::fromPixels(304);
-constexpr Fixed TOP_EDGE = Fixed::fromRaw(-608), BOTTOM_EDGE = Fixed::fromRaw(6112);
+constexpr Fixed LEFT_EDGE = CopterPhysics::LEFT_EDGE, RIGHT_EDGE = CopterPhysics::RIGHT_EDGE;
+constexpr Fixed TOP_EDGE = CopterPhysics::TOP_EDGE, BOTTOM_EDGE = CopterPhysics::BOTTOM_EDGE;
 
 }  // namespace
 
@@ -188,9 +188,9 @@ void CopterPhysics::checkCrash(const world::copter::Copter& copter) {
 }
 
 int CopterPhysics::bounce(Speed& speed) {
+    const int impact = impactOf(speed);
     speed = (-speed) >> 1;
-    int impact = speed.raw() << 1;
-    return impact < 0 ? -impact : impact;
+    return impact;
 }
 
 }  // namespace ugh::physics

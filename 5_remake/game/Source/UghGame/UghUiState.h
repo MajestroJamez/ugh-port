@@ -15,6 +15,14 @@ struct FUghUiPopup
 	float Age = 0;     // a part of its time, 0 .. 1
 };
 
+/** The warning over a copter flying fast enough to crash (UghWarning). */
+struct FUghUiWarning
+{
+	FVector2D Where;     // over the copter: a part of the view across and down, 0 .. 1
+	int32 Loudness = 0;  // 1 .. UghWarning::Loudest
+	double Age = 0;      // seconds since it began: its blinking
+};
+
 /** A stone of the level selection on the screen: its number shown on it. */
 struct FUghUiIsle
 {
@@ -89,6 +97,7 @@ struct FUghUiState
 	double NoticeAge = 1e9;
 	float NoticeLevel = -1;
 	TArray<FUghUiPopup> Popups;
+	TArray<FUghUiWarning> Warnings;
 
 	/** The pictures of the screen (UghStoneArt). */
 	TSharedPtr<const UghUiStyle::FPictures> Pictures;

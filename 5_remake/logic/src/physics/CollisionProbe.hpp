@@ -30,6 +30,13 @@ public:
     std::optional<units::Fixed> stopOnTheWay(const world::copter::Copter& copter, Axis axis, units::Fixed from,
                                              units::Fixed to) const;
 
+    /**
+     * How many whole pixels the copter can move along `axis` from where it is (`direction` 1: right or down, -1: left
+     * or up) before a point of its outline would be in something solid, looking at most `most` pixels far; nothing when
+     * the way is clear so far. Every pixel on the way is probed, either way (only a look ahead, not the move).
+     */
+    std::optional<int> clearance(const world::copter::Copter& copter, Axis axis, int direction, int most) const;
+
 private:
     const world::Level& level_;
 

@@ -1705,3 +1705,19 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   (`sheet-blur.png`: před / po pomalu, rychle vlevo, střemhlav; `1p-01-rushleft1.2.png`, `-vis` vizualizace). CTest logiky,
   `6_verification` (163) a 205 testů v UE zelené (4 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch beze změny,
   fps medián 19, 1 % low 15 (editor, Epic; po 26 20 / 16). Balíček nepřebalen (krok 28). Další: **krok 27b**.
+- 2026-10-08: krok 27b hotový - vykřičníky nad vrtulníkem při nebezpečné rychlosti (`docs/visual-concept.md`, README
+  hry a logiky). Práh z logiky: náraz odrazu od masky (`CopterPhysics::impactOf`, rychlost zaokrouhlená na sudou) ≥
+  limit obtížnosti = havárie: lehká 3100, střední 2300, těžká 1380 (nejvyšší rychlost 6144); vpravo a dolů havaruje
+  od limitu - 1, vlevo a nahoru od limitu, svisle i vodorovně stejně (zeď, podlaha a plošina, skalní strop). Okraje
+  obrazovky (i horní z 24d) a voda (25d) nárazem nejsou - tam se nevaruje. Logika jen čte: `physics::CopterDanger`
+  (rychlost, náraz, skála v tom směru - dolů nad hladinou nebo pod ní na brzdné dráze) a C API
+  `ugh_logic_get_copter_danger`, `bounce` počítá náraz stejnou funkcí; replaye beze změny. Frontend `UghWarning`:
+  `!` od limitu, `!!` od třetiny cesty k nejvyšší rychlosti, `!!!` od dvou třetin, blikání 2,5 / 4 / 6 Hz
+  (`ugh.Warning.Blink 0` pro snímky), kreslí HUD. Testy: CTest `CopterDangerTest` (každá obtížnost, limit - 4 .. + 3
+  ve všech čtyřech směrech: varování přesně když logika havaruje; okraje, hluboká voda ne, mělká ano), API test
+  limitů, `Ugh.Warning` (skutečný level 1 na každé obtížnosti: rychlost těsně pod a nad prahem vpravo i vlevo do skály,
+  strop obrazovky, moře na těžké, střemhlav na zem). Snímky `Saved\Shots\27b` (`sheet-warning.png`: střemhlav ! / !! /
+  !!!, vpravo do skály, lehká a těžká, vlevo k okraji nic, moře nic; `1p-01-rushdown0.66-medium.png` z kamery hry).
+  CTest logiky, `6_verification` (163) a 206 testů v UE zelené (2 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch
+  beze změny, fps medián 18, 1 % low 15 (editor, Epic). Balíček nepřebalen (krok 28; `pso.ps1` má let vlevo).
+  Další: **krok 28**.

@@ -49,6 +49,7 @@ void SUghPlayScreen::Construct(const FArguments& Args)
 	[
 		SNew(SOverlay)
 		+ SOverlay::Slot()[ SNew(SUghPopups).State(State) ]
+		+ SOverlay::Slot()[ SNew(SUghWarnings).State(State) ]
 		+ SOverlay::Slot()
 		[
 			// the status fades with the play (FUghUiState::Shown: none but in the play)

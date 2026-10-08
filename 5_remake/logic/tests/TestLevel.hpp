@@ -20,7 +20,8 @@ namespace ugh::test {
  */
 class TestLevel {
 public:
-    explicit TestLevel(int waterRow = 190, data::levels::Wind wind = data::levels::Wind::None);
+    explicit TestLevel(int waterRow = 190, data::levels::Wind wind = data::levels::Wind::None,
+                       data::Difficulty difficulty = data::Difficulty::Medium);
 
     /** A solid pixel in the mask (before start()). */
     void solid(int x, int y);

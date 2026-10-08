@@ -80,3 +80,23 @@ public:
 private:
 	TSharedPtr<const FUghUiState> State;
 };
+
+/**
+ * The warnings over the copters flying fast enough to crash (FUghUiState::Warnings, UghWarning): !, !! or !!! over each,
+ * amber to red the louder, blinking.
+ */
+class SUghWarnings : public SLeafWidget
+{
+public:
+	SLATE_BEGIN_ARGS(SUghWarnings) {}
+		SLATE_ARGUMENT(TSharedPtr<const FUghUiState>, State)
+	SLATE_END_ARGS()
+
+	void Construct(const FArguments& Args) { State = Args._State; }
+	virtual FVector2D ComputeDesiredSize(float) const override { return FVector2D::ZeroVector; }
+	virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& Geometry, const FSlateRect& Culling,
+		FSlateWindowElementList& Elements, int32 Layer, const FWidgetStyle& Style, bool bParentEnabled) const override;
+
+private:
+	TSharedPtr<const FUghUiState> State;
+};
