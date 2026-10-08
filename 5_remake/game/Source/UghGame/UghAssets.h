@@ -85,6 +85,11 @@ namespace UghAssets
 
 	/** The content folder of asset `Id`. */
 	inline FString Folder(const FString& Id) { return FString(ImportedRoot) / Id; }
+	/**
+	 * Every id above, once: what the frontend may ask for. The package cooks only their folders (UghCookList); an
+	 * asset of Assets.json not here (a texture only the Blender scripts read) stays out of it.
+	 */
+	UGHGAME_API TArray<const TCHAR*> All();
 	/** The static meshes imported for `Ids` (each one's in the order of their names); a missing one is logged. */
 	TArray<UStaticMesh*> Meshes(TConstArrayView<const TCHAR*> Ids);
 	/** The static mesh `Name` imported for `Id`; none (and a log line) when it is missing. */

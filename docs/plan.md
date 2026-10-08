@@ -1721,3 +1721,22 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   CTest logiky, `6_verification` (163) a 206 testů v UE zelené (2 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch
   beze změny, fps medián 18, 1 % low 15 (editor, Epic). Balíček nepřebalen (krok 28; `pso.ps1` má let vlevo).
   Další: **krok 28**.
+- 2026-10-09: krok 28 hotový - menší balíček bez viditelné změny (README hry: Performance > Size, `docs/doma.md`). Komprese
+  Oodle už byla (Kraken 4), teď úroveň 7. Do cooku jde jen to, co hra načítá podle cesty (`UghCookList` v
+  `UghEditorModule.cpp`: složky id z nového `UghAssets::All`, `UghElectricDreams::All` bez `ForBlender`, MetaHumani - a co
+  to odkazuje), ne celé složky (`DirectoriesToAlwaysCook` jen `Generated` a tvary enginu): pryč 11 nepoužitých importů
+  (starý kámen, textury jen pro Blender). DeadTree, ButtressRoot, DryRiverBed a MossyForestBoulder nepoužité nejsou -
+  odkazují je použité materiály, zůstaly. Pluginy MetaHuman Live Link a NNE denoiser vařily celé obsahy (trackery
+  obličeje 553 MB, denoiser path traceru 98 MB; hra je nepoužívá): `DirectoriesToNeverCook`. Textury světa a postav
+  nejvýš 1024 (`Config/DefaultDeviceProfiles.ini`; oblohy do skupiny Skybox v `UghImportAssets`, plameny Effects v
+  `UghMakeFlames` - beze změny): obrazovka má ~60 px na metr, streamer chtěl skoro všude nejvýš 1024, běh s o dva mipy
+  menšími texturami i balíček s limitem dal snímky v šumu dvou stejných běhů (rychlá sada, lety, close-upy, souostroví;
+  `Saved\Shots\28`). Zip je Shipping (`package.ps1` bez `-NoZip` stejný cook znovu jako Shipping do
+  `Packaged\Shipping\Windows`: bez debug DLL DLSS/Streamline, profil v `%LOCALAPPDATA%\UghGame\Saved`), snímky stejné jako
+  Development; Development (`Packaged\Windows`) dál pro `play.ps1`, `levels.ps1 -Package`, `perf.ps1`, `pso.ps1`.
+  Velikost: pak 3048 -> 889 MB, balíček bez `.pdb` 3,77 -> 1,30 GB (Development 1,66 GB), zip 3,37 -> 1,09 GB.
+  `pso.ps1` (12 běhů, 571 stabilních PSO). `levels.ps1 -Quick -Package` 0 chyb, arch stejný jako z editoru.
+  `perf.ps1` (zahřátý): Low 57 / 1 % low 38 / nejpomalejší 37, Medium 43 / 24 / 26, High 16 / 12 / 8, Epic 11 / 9 / 8.
+  CTest logiky, `6_verification` (163) a 206 testů v UE zelené (3 s varováním enginu). Čeká na Jana: zip na RTX
+  5060 Ti (DLSS, frame generation v Shipping).
+  Další: hotovo (krok 28).

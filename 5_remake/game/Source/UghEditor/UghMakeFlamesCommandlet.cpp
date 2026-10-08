@@ -86,6 +86,8 @@ namespace
 		Texture->SRGB = true;
 		Texture->CompressionSettings = TC_Default;
 		Texture->NeverStream = true;   // all its mips at once: a card shows a small part of it close up
+		// an effect's flipbook: not of the world's textures, which the package caps (Config/DefaultDeviceProfiles.ini)
+		Texture->LODGroup = TEXTUREGROUP_Effects;
 		Texture->PostEditChange();
 		Texture->MarkPackageDirty();
 		const FString File = FPackageName::LongPackageNameToFilename(Path, FPackageName::GetAssetPackageExtension());

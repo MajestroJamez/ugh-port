@@ -53,6 +53,28 @@ namespace
 	}
 }
 
+TArray<const TCHAR*> UghAssets::All()
+{
+	TArray<const TCHAR*> Ids;
+	const TConstArrayView<const TCHAR*> Lists[] = { Grasses, Flowers, Rocks, Bushes, Plants, CliffSets };
+	for (const TConstArrayView<const TCHAR*> List : Lists)
+	{
+		Ids.Append(List.GetData(), List.Num());
+	}
+	Ids.Append({ Fern, Stump, Palm, Campfire, Bones, Totem, Hut, Vines, Signs, Torch, BridgeWood, SkyDay, SkyEvening,
+		SkyDusk, SkyNight, SkyStorm, Copter, Caveman, StoneSlate, StonePassenger, Pterodactyl, Triceratops, Blower,
+		FruitTree, BonusItems, BlowerTrex, WalkerTriceratops, TreeHornbeam });
+	TArray<const TCHAR*> Once;
+	for (const TCHAR* Id : Ids)
+	{
+		if (!Once.ContainsByPredicate([&](const TCHAR* Each) { return FCString::Strcmp(Each, Id) == 0; }))
+		{
+			Once.Add(Id);
+		}
+	}
+	return Once;
+}
+
 TArray<UStaticMesh*> UghAssets::Meshes(TConstArrayView<const TCHAR*> Ids)
 {
 	TArray<UStaticMesh*> Meshes;

@@ -109,6 +109,14 @@ int32 UUghImportAssetsCommandlet::Main(const FString& Params)
 			++Failed;
 		}
 	}
+	for (const FUghManifestAsset& Asset : Assets)
+	{
+		if (Asset.Kind == TEXT("hdri") && !SetSkyGroup(UghAssets::Folder(Asset.Id)))
+		{
+			UE_LOG(LogUghImportAssets, Error, TEXT("FAILED to save the sky %s"), *Asset.Id);
+			++Failed;
+		}
+	}
 	UE_LOG(LogUghImportAssets, Display, TEXT("%d imported, %d up to date, %d not downloaded, %d failed"),
 		Imported, Current, Skipped, Failed);
 	return Failed == 0 ? 0 : 1;
@@ -190,6 +198,27 @@ TArray<UObject*> UUghImportAssetsCommandlet::ImportFile(const FString& File, con
 		return {};
 	}
 	return Objects;
+}
+
+bool UUghImportAssetsCommandlet::SetSkyGroup(const FString& Folder)
+{
+	IAssetRegistry& Registry = FAssetRegistryModule::GetRegistry();
+	Registry.ScanPathsSynchronous({ Folder });
+	TArray<FAssetData> Found;
+	Registry.GetAssetsByPath(FName(*Folder), Found, true);
+	bool bChanged = false;
+	for (const FAssetData& Data : Found)
+	{
+		UTexture* Texture = Data.IsInstanceOf(UTexture::StaticClass()) ? Cast<UTexture>(Data.GetAsset()) : nullptr;
+		if (Texture && Texture->LODGroup != TEXTUREGROUP_Skybox)
+		{
+			Texture->LODGroup = TEXTUREGROUP_Skybox;
+			Texture->PostEditChange();
+			Texture->MarkPackageDirty();
+			bChanged = true;
+		}
+	}
+	return !bChanged || SaveFolder(Folder);
 }
 
 bool UUghImportAssetsCommandlet::SaveFolder(const FString& Folder)

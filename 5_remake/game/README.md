@@ -51,7 +51,7 @@ silent and logs it):
 | `shot.ps1` | starts a level from the menu by itself without a window, lets the copters hover (the log says the frame rate meanwhile) and saves `Saved\Shots\<mode>-<NN>.png`: `-Level <n>` (from 1), `-Team`, `-At <seconds>` later, `-Commands "<cvar> <value>"` to try a setting, `-Cargo <look>` the copters shown with a passenger of that look in the cabin (1 .. 4: 4 the stone, smaller; `-Hanging` below instead; only the picture, the autopilot never picks one up), `-Land` the copters coming down slowly instead of hovering until they stand on the ground below (with `-At 8`; the name then ends in `-landed` after the cargo), `-Bubbles` every passenger shown with a speech bubble (each the next of the data's; only the picture), `-CloseUp` framing the copters, `-Frame <left>,<top>,<width>,<height>` that part of the screen (pixels: a look at the figures; the name then ends in `-cargo<look>` or `-hanging<look>`, `-bubbles`, `-closeup`, `-frame<left>_<top>`), `-Look campfire|torch` the first campfire (torch) of the level close up (with `-Frame` that part from its middle; the name ends in `-campfire` / `-torch` before `-frame...`), `-Intro <seconds>` the flight to the sea stack at the start of the level that many seconds into it instead (4.5: its end, the game's camera; later: that much after its end, the caption still shown; the name ends in `-intro<seconds>`), `-Fling <seconds>` the first copter knocking the first passenger on land off its pad, shot that many seconds after the knock (several separated by commas, one shot each; the name ends in `-fling<seconds>`), `-Dunk <seconds>` the first copter flown over open water and let fall into the sea, shot that many seconds after its waterline met the surface (negative: before it; several separated by commas, one shot each; the name ends in `-dunk<seconds>`), `-Drop <seconds>` the first copter taking the stone on its sling, flying above the first enemy and letting it go, shot that many seconds after the logic let it fall (tumbling down, bouncing off the enemy; several separated by commas, one shot each; the name ends in `-drop<seconds>`), `-Rush left|right|down` the first copter climbing or sinking to the height `-RushY` (40 px), then flying that way as fast as it can - sideways keeping its height, down diving - and shot `-RushAfter` seconds after it began (several separated by commas, one shot each; the name ends in `-rush<way><seconds>`: a look at its motion blur and the warning over it - steady with `-Commands "ugh.Warning.Blink 0"`), `-Difficulty 0|1|2` the game at easy, medium (the default) or hard, `-Edge left|right|top` the first copter flown into that edge of the screen (beside it at the height `-EdgeY`, the top pedalling up) and shot `-EdgeAfter` seconds after it got there (the soft edges' plants bent; the name ends in `-edge<edge>`), `-Effect <bursts>` a burst of the events (names of `UghBursts.cpp` separated by commas, or `all`; one shot each, the name ending in `-<burst>`) held by the first copter - beside it in the air, on the ground or the water under it - and framed around it, `-EffectAge <seconds>` into it (a burst of an event earning points with its score rising), `-End` the level given up instead and the card of the game's end shot (the name ends in `-end`; `-Score <points>` that game ended with so many, a high score showing its name being typed), `-Menu` the title screen first too (`menu.png`), `-Screens settings,controls,scores` those screens of the menu first too (`<screen>.png`; `-Commands "r.SetRes 1920x1080w"` for 1080 lines), `-Isles over:<seconds>,choose,approach:<seconds>,arrive` the level selection on the way to the level (the autopilot skips it otherwise) shot at those moments - into the flight over the archipelago, the cursor moved by its keys onto the level's stone, into the flight to it, its end before black - (the names end in `-isles-over2`, `-isles-choose`, `-isles-approach1.5`, `-isles-arrive`), then the level as ever (the frame times while choosing in the log), `-Profile <file>` a profile instead of the defaults (with `-Screens scores`, `-Score` or `-Isles` a sample with high scores and levels done); the shots show the screen (the menu, the HUD) |
 | `levels.ps1` | `-Quick` after a step: 12 levels showing every mood and feature (one player 1, 3, 6, 8, 12, 23, 36, 43, 62, the team's 1, 21, 54) on one sheet `Saved\Shots\Levels\levels-quick.png` (about 3 minutes); without it every level of both modes in one run (about half an hour: once a day at night or before a milestone), then the contact sheets `Saved\Shots\Levels\levels-1p.png` and `levels-team.png` (and the menu's `menu.png`): does every level look right? At the end the frame rates of the shots (median, slowest, fastest; the frame times: the levels' 1 % low - the frame rate of the slowest 1 % of the frames of the copters' hover -, the hitches over 50 ms once a level is seen and the slowest frame; also `fps.txt` by the shots) and the errors the game logged; a hitch is logged as it comes (`UGH shot: a hitch`), a part of the game's frame over 20 ms too (`UGH slow: <part>`, in any log). `-Levels team:1-81` others, `-Package` the packaged game instead of the editor, `-Profile <file>` a profile (a quality preset), `-Commands` console commands, `-Tag <name>` into `Saved\Shots\Levels-<name>` |
 | `play.ps1` | the game in a window: the packaged game (cooked, its PSO cache: smooth) when there is one - it says when the package is older than the last build -, else or with `-Editor` the editor's game mode (its shaders compiled while it plays: it stutters); both with the profile `Saved\UghProfile.json` and the log `Saved\Logs\UghPlay.log` |
-| `package.ps1` | the game for Windows (Development, DirectX 12 only) in `Packaged\Windows`, everything it uses cooked - the materials and flames of `Content\Generated`, the imports of `Content\Imported`, the copies of `Content\External` (the Electric Dreams assets; the four MetaHumans with the engine's plugins they need) - with the data of `assets\` next to it (the logic's data, the sprites, the levels, the sounds, the fonts of `assets\3d\googlefonts` with their licenses), and a zip without `.pdb` (`Packaged\UghGame-Windows.zip`; for your own use only, never uploaded: the data and the third-party assets are not ours to share); the sizes at the end. UAT needs `::1` in `NO_PROXY` (the script adds it) |
+| `package.ps1` | the game for Windows (DirectX 12 only) in `Packaged\Windows` (Development: its log and console, what `levels.ps1 -Package`, `perf.ps1` and `pso.ps1` read), cooked: the materials and flames of `Content\Generated` whole, of the imports and of the copies in `Content\External` only what the game loads by path (`UghCookList` in `UghEditorModule.cpp`: the ids of `UghAssets::All`, the Electric Dreams assets of `UghElectricDreams::All`, the four MetaHumans) and what that references - not the face trackers of MetaHuman Animator nor the path tracer's denoiser, which their plugins cook whole -, the world's textures at most 2048 texels a side (`Config\DefaultDeviceProfiles.ini`), Oodle Kraken at level 7; with the data of `assets\` next to it (the logic's data, the sprites, the levels, the sounds, the fonts of `assets\3d\googlefonts` with their licenses). Without `-NoZip` also the game to play elsewhere: the same cook staged again as Shipping in `Packaged\Shipping\Windows` (no log, no console, no debug overlays of DLSS and Streamline; its profile in `%LOCALAPPDATA%\UghGame\Saved`) and its zip without `.pdb` (`Packaged\UghGame-Windows.zip`; for your own use only, never uploaded: the data and the third-party assets are not ours to share); the sizes at the end. UAT needs `::1` in `NO_PROXY` (the script adds it) |
 | `pso.ps1` | the bundled PSO cache (about an hour): packages, lets the packaged game play by itself with `-logPSO` in a few runs - the menu and its screens, the quick set of levels, the flight to the sea stack in every mood, the bursts of the events by day and at night, the card of a game's end, the level selection of both modes, at the preset Low the quick set, the flights, the bursts and the level selection again, a few levels at Medium -, expands the recordings with the cook's stable shader keys into `Build\Windows\PipelineCaches` and packages again |
 | `perf.ps1` | the frame rate of the packaged game at each quality preset (Low, Medium, High, Epic) without a window: the quick set at 1920x1080 with a profile of the preset, 2 s of the copters' hover a level (longer: the wind of a storm blows them into the edge first), a table in `Saved\Shots\perf.txt` of the frame rates and the frame times (the 1 % low, the hitches; see Performance below); `-Presets`, `-Resolution`, `-At`. Compare on a notebook warm alike: a warm one is about a third slower |
 
@@ -72,7 +72,8 @@ resolution, the window, the volumes (all, the music, the effects), the flight to
 Enter waits for a key and binds it, a key bound elsewhere swaps places, Backspace clears, Defaults); Esc goes back. The
 end of a game goes back to the menu, which shows how it ended until a key; a score among the mode's ten best first asks
 for a name (typed, or turned letter by letter with Up and Down), then shows the high scores. Everything is kept in
-`Saved\UghProfile.json` (of the packaged game too).
+`Saved\UghProfile.json` (of the packaged game too; the Shipping game of the zip keeps it in
+`%LOCALAPPDATA%\UghGame\Saved`).
 
 Keys in a game (the defaults; Settings > Controls changes them): arrows fly, Right Ctrl or Space fires (pilot 2 of the
 team mode: W A S D, Left Ctrl - S, not the original's Z, which is Y on a Czech keyboard); Esc gives the game up, any key
@@ -102,6 +103,10 @@ Medium 25 / 16-17, slowest 13; High 13 / 9-10, slowest 7; Epic 9 / 6-8, slowest 
 not by the steps 25a-25e: the quick set at Medium and 1920x1080 in the editor right after, step 24f's code 28 fps
 (1 % low 16), step 25e's 26 (1 % low 16) - the warmth of the notebook; compare on a cool notebook again.
 
+After step 28 (2026-10-09, the smaller package with the steps 26-27b, warm after two hours of packaging and the PSO
+recording): Low 57, 1 % low 38, slowest 37; Medium 43 / 24 / 26; High 16 / 12 / 8; Epic 11 / 9 / 8 - near step 24f's
+at Low and Medium, above step 25e's everywhere (the notebook's warmth decides most of such differences).
+
 (Before: step 24e, 2.5 s a level.) Step 24f found: low drew at two thirds of the screen like epic - FSR sets the
 resolution by code from its own mode, above the preset's (`r.FidelityFX.FSR.QualityMode` now goes with the preset);
 Alt+Enter put the engine's scalability back to epic (`UghGraphics::ApplyQuality` sets the engine's user settings
@@ -116,6 +121,44 @@ of its flight (the flight settles until the frames are short, `FUghIntro`). `pla
 editor's game mode compiles shaders while it plays. A first start without a profile picks the preset by the GPU
 (`UghGraphics::RecommendedQuality`): Epic with DLSS on an RTX (the trial on an RTX 5060 Ti: about 150 fps, about 450
 with frame generation), Low on an integrated GPU, High otherwise.
+
+### Size
+
+Step 28 (MB; before: step 25e's package, Development; after: the Shipping game of the zip, `Packaged\Shipping\Windows`;
+the pak by `UnrealPak -List`):
+
+| Part | Before | After |
+|---|---|---|
+| Electric Dreams textures | 1064 | 95 |
+| Electric Dreams meshes and materials | 267 | 252 |
+| imported 3D assets (without the skies) | 494 | 124 |
+| skies | 129 | 122 |
+| MetaHumans | 248 | 115 |
+| MetaHuman Animator's face trackers | 553 | 0 |
+| the path tracer's neural denoiser | 98 | 0 |
+| shaders | 179 | 166 |
+| engine content, materials, flames | 16 | 15 |
+| **pak** | **3048** | **889** |
+| game executable | 324 | 164 |
+| DLSS and Streamline DLLs | 285 | 116 |
+| FSR DLLs | 66 | 66 |
+| engine binaries, other | 102 | 63 |
+| game data (`assets\`: sounds, sprites, logic) | 31 | 31 |
+| **package without `.pdb`** | **3856** | **1327** |
+| `.pdb` (stays on the notebook) | 409 | 255 |
+| **zip** | **3446** | **1118** |
+
+What went: whole folders cooked - the Electric Dreams copy, `Content\Imported` (11 imports the game no longer loads:
+the older stone, textures only Blender scripts read) and the plugins' own (`DirectoriesToAlwaysCook` of MetaHuman
+Live Link and of the NNE denoiser); now the cook gets the packages the game loads by path (`UghCookList`) and what
+they reference, and never the trackers and the denoiser (`DirectoriesToNeverCook`). The textures of the world and the
+characters at most 1024 a side (the scans were 4096 and 8192): the screen shows about 60 pixels a metre at 1920x1080,
+the streamer asked for at most 1024 of nearly every texture, and the quick set, the flights, the close-ups and the
+level selection look the same - a run with two mips less of every streamed texture changed nothing beyond the noise
+of two runs alike, so did the package with the cap (`Saved\Shots\28`: before and after shot by shot, crops side by side); the skies and the flames
+are not capped (their own texture groups). The zip is the Shipping build (no log, no console, no debug DLLs of DLSS
+and Streamline), its shots the same as the Development build's; Oodle Kraken at level 7 (the same speed to read).
+The Development package (`Packaged\Windows`, measured by the scripts) is 1697 MB without `.pdb`.
 
 ## Modules
 

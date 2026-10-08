@@ -37,6 +37,12 @@ private:
 	 * one could not be saved.
 	 */
 	static bool SaveFolder(const FString& Folder);
+	/**
+	 * Puts the textures of the sky in the content folder `Folder` in the skybox's texture group (saved when changed):
+	 * not of the world's textures, which the package caps (Config/DefaultDeviceProfiles.ini); false when one could not
+	 * be saved.
+	 */
+	static bool SetSkyGroup(const FString& Folder);
 	/** What the import of the asset depends on: its files (names, sizes, times) and the version of this import. */
 	static FString Fingerprint(const FUghManifestAsset& Asset);
 };

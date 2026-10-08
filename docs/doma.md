@@ -6,11 +6,11 @@ a modely z Fabu/Sketchfabu nejsou naše a nikam se nenahrávají.
 
 ## Nejrychlejší cesta: hotový zip z notebooku
 
-1. Na notebooku je po kroku 25e `5_remake\game\Packaged\UghGame-Windows.zip` (3,4 GB, bez `.pdb`; kroky 24f-25e). Přenes ho domů
-   na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
-2. Spusť `UghGame.exe`. Při prvním startu bez profilu hra sama vybere kvalitu podle grafiky: na RTX (DLSS) **Epic +
-   DLSS**, na integrované grafice Low, jinak High (v logu `UGH recommended quality ...`). Volba se uloží do
-   `UghGame\Saved\UghProfile.json`, jakmile cokoli změníš v Settings.
+1. Na notebooku je po kroku 28 `5_remake\game\Packaged\UghGame-Windows.zip` (1,1 GB, rozbalený 1,3 GB; kroky
+   24f-28). Přenes ho domů na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
+2. Spusť `UghGame.exe`. Je to Shipping build (bez logu a konzole, menší). Při prvním startu bez profilu hra sama
+   vybere kvalitu podle grafiky: na RTX (DLSS) **Epic + DLSS**, na integrované grafice Low, jinak High. Volba se
+   uloží do `%LOCALAPPDATA%\UghGame\Saved\UghProfile.json`, jakmile cokoli změníš v Settings.
 3. **Frame generation**: Settings > Frame generation (2x / 3x / 4x - RTX 50 umí až 4x), nebo ve hře klávesa **G**.
    Upscaler přepíná **U** (DLSS / FSR / TSR). Zkušební průchod 2026-10-02 dal na RTX 5060 Ti ~150 fps bez a ~450 fps
    s frame generation.
@@ -65,9 +65,16 @@ Testy: `test.ps1` (UE), `5_remake\logic\build.ps1`, `6_verification\build.ps1`.
 powershell -ExecutionPolicy Bypass -File C:\Users\<ty>\IdeaProjects\UGH\5_remake\game\pso.ps1
 ```
 
-`pso.ps1` zabalí hru, nechá ji bez okna odehrát menu, let ke kameni, rychlou sadu levelů, efekty a předvolby Low
-a Medium s `-logPSO`, z nahrávky udělá PSO cache a zabalí znovu (asi 1 h). Jen balíček bez nové cache:
-`package.ps1` (`-NoZip` bez zipu). Výsledek `5_remake\game\Packaged\Windows\UghGame.exe` a zip vedle.
+`pso.ps1` zabalí hru, nechá ji bez okna odehrát menu, let ke kameni, rychlou sadu levelů, efekty, výběr levelu,
+rychlý let a předvolby Low a Medium s `-logPSO`, z nahrávky udělá PSO cache a zabalí znovu (asi 1 h). Jen balíček
+bez nové cache: `package.ps1` (`-NoZip` bez zipu). Výsledek: `5_remake\game\Packaged\Windows\UghGame.exe`
+(Development: log, konzole - pro `play.ps1`, `levels.ps1 -Package`, `perf.ps1`) a hra na hraní jinde
+`Packaged\Shipping\Windows\UghGame.exe` (Shipping, stejný cook) se zipem `Packaged\UghGame-Windows.zip` (bez `.pdb`).
+
+Velikost (krok 28): do balíčku jde jen to, co hra opravdu načítá (`UghCookList`), ne celé složky Electric Dreams,
+nepoužité importy ani obličejové trackery MetaHuman Animatoru a denoiser path traceru (650 MB, pluginy je vařily
+celé); textury světa a postav nejvýš 1024 (`Config\DefaultDeviceProfiles.ini`, kamera hry je daleko - beze změny
+na snímcích), oblohy a plameny beze změny; Oodle Kraken úroveň 7; Shipping bez debug DLL DLSS/Streamline.
 
 ## Měření
 
@@ -77,7 +84,7 @@ a Medium s `-logPSO`, z nahrávky udělá PSO cache a zabalí znovu (asi 1 h). J
   zahřátý notebook (zahřátý je asi o třetinu pomalejší).
 - `levels.ps1 -Package` - všech 150 levelů ze zabalené hry s archy snímků (asi půl hodiny).
 
-## Co čeká na tvoje posouzení (kroky 13-24)
+## Co čeká na tvoje posouzení (kroky 13-28)
 
 Všechno v okně (`play.ps1`, tj. zabalená hra, nebo `UghGame.exe` ze zipu):
 
@@ -104,3 +111,5 @@ Všechno v okně (`play.ps1`, tj. zabalená hra, nebo `UghGame.exe` ze zipu):
 14. **Výkon na notebooku** (24f): zahrát `play.ps1` na Low - je to plynulé? Vzhled Low: bez tmavé svatozáře kolem
     postav, moře bez odrazů enginu (dřív bílé), rozlišení se samo snižuje, když notebook nestíhá. Medium: ohně bez
     stínů.
+15. **Menší balíček** (28): zip je teď Shipping build (na notebooku ověřený jen s FSR - snímky stejné jako
+    Development); doma na RTX 5060 Ti ověřit DLSS, frame generation 2x-4x a že textury nikde nevypadají měkčeji.
