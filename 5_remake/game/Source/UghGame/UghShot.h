@@ -10,6 +10,7 @@ class AUghGameMode;
 class FUghMenu;
 class FUghPasswords;
 struct FUghGameEnd;
+struct FUghHighScores;
 
 /**
  * -UghShot=<folder> [-UghShotLevels=<list>] [-UghShotAt=<seconds>] [-UghShotMenu]: the game takes screenshots by
@@ -51,6 +52,11 @@ struct FUghGameEnd;
  * stone on its sling, fly above the first enemy and let it go (FUghDropPilot), and takes the shot that many seconds
  * after the logic let it fall (the stone tumbling down, bouncing off the enemy), the name ending in -drop<seconds>
  * after the others.
+ * -UghShotIsles=<moments> opens the level selection (FUghIsles; the autopilot skips it otherwise) for each level and
+ * takes shots on the way to it (separated by commas: over:<seconds> into the flight over the archipelago, choose -
+ * the cursor moved by its keys onto the level's stone, the camera at rest -, approach:<seconds> into the flight to the
+ * stone, arrive its end before black), each named -isles-<moment> after the others (over2, choose, approach1.5,
+ * arrive); then the level plays and is shot as ever. The password is typed only for a level the profile has locked.
  * -UghShotEnd gives each level up instead of its shot and saves the card of the game's end in the menu (the name
  * ending in -end after the others); -UghShotScore=<points> makes that game end with so many points (only the picture: a
  * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores
@@ -98,6 +104,9 @@ public:
 	FString GetEffect() const { return Next < Targets.Num() ? Targets[Next].Effect : FString(); }
 	TOptional<double> GetEffectAge() const { return EffectAge; }
 
+	/** The level selection is shot (-UghShotIsles): the menu opens it. */
+	bool WantsIsles() const { return !IslesShots.IsEmpty(); }
+
 	/** A frame longer than this is a hitch (seconds). */
 	static constexpr double HitchSeconds = 0.05;
 
@@ -107,6 +116,8 @@ public:
 private:
 	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 4, ScreenShotAfter = 1, EndShotAfter = 1,
 		AfterShot = 0.5, LevelTimeLimit = 60;
+	/** The level selection is chosen in at least this long (seconds): its frame rate measured meanwhile. */
+	static constexpr double ChooseAtLeast = 2;
 	/** The speech bubbles are looked for among the sprites below this one. */
 	static constexpr int32 BubbleSearch = 1000;
 	/** A close-up shows this many pixels around the copters. */
@@ -138,8 +149,21 @@ private:
 	void LogFrames(const ugh_logic_view& View) const;
 	/** The next key that opens the menu's screen of -UghShotScreens (settings, controls, scores); none when it shows. */
 	static FKey ScreenKey(const FUghMenu& Menu, const FString& Screen);
-	/** The next key that turns the menu into the target's game. */
-	FKey MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FTarget& Target) const;
+	/**
+	 * The next key that turns the menu into the target's game (with the level selection: its password only when the
+	 * profile's `Scores` have the level locked).
+	 */
+	FKey MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FUghHighScores& Scores,
+		const FTarget& Target) const;
+	/** A shot of the level selection on the way to a level (-UghShotIsles). */
+	struct FIslesShot
+	{
+		FString Name;      // over2, choose, approach1.5, arrive
+		uint8 Stage = 0;   // FUghIsles::EStage
+		double At = 0;     // seconds into it; Choose: once at rest on the target, the end of the approach: -1
+	};
+	/** In the level selection: its shots, the cursor's keys to the target's stone, Enter there. */
+	EAction IslesTick(AUghGameMode& Mode, const FTarget& Target, double Seconds);
 	/** The copters hover: pedal while below the height they had when the level was fully shown. */
 	void Hover(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds);
 	/**
@@ -196,6 +220,10 @@ private:
 	double BounceTime = -1;    // when it bounced off the enemy (seconds after it was let go), -1 not yet
 	bool bFiring = false;      // pilot 1's fire held by Drop
 	bool bSteering[2] = { false, false };   // pilot 1's left and right held by Knock
+	TArray<FIslesShot> IslesShots;   // -UghShotIsles
+	TArray<FIslesShot> IslesLeft;    // of the target being shot
+	double IslesKeyTime = 0;         // since the cursor's last key
+	TArray<float> IslesFrames;       // the frame times over the archipelago (choosing)
 	bool bEndShot = false;     // -UghShotEnd
 	bool bEndWanted = false;   // the target was given up: its end is to be shot
 	TOptional<uint32> EndScore;   // -UghShotScore

@@ -30,6 +30,12 @@ namespace UghMeshes
 	 * is set as the editor's build would (a package's texture streaming wants it).
 	 */
 	UStaticMesh* FromDescription(UObject* Outer, FMeshDescription& Description, FName Slot);
+	/**
+	 * The same of several descriptions, its levels of detail (the first the finest), each drawn while the mesh's
+	 * bounds fill at least `ScreenSizes` of the screen (the first 1).
+	 */
+	UStaticMesh* FromDescriptions(UObject* Outer, const TArray<const FMeshDescription*>& Descriptions, FName Slot,
+		const TArray<float>& ScreenSizes);
 
 	/** A quad standing upright, facing the camera: its middle, size, its own numbers (the second UV). */
 	struct FQuad

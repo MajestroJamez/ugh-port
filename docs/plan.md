@@ -603,6 +603,41 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   Jan: „dej ho i do koptéry“ - nový kámen i jako kamenný cestující (stojící i sedící v kabině), oči z 19h zachovat.
 - Hotovo když: snímky zblízka vedle reference, kámen pod vrtulníkem, pád a dopad; testy beze změny.
 
+## Krok 26 - Výběr levelu: přílet k souostroví kamenů (Jan 2026-10-08)
+
+- Po titulní obrazovce (podle režimu: jeden hráč 69 levelů, team 81) kamera nad mořem se všemi kameny levelů jako
+  souostrovím (pořadí čitelné, čísla na kamenech). Barva podle postupu: hotové zeleně, aktuální (poslední dosažený)
+  žlutě, nehotové červeně. Hráč vybere kámen (klávesy/gamepad, kurzor přeskakuje mezi kameny) a kamera k němu přiletí
+  stejně plynule jako let z 24d, pak začne level. Libovolná klávesa animaci přeskočí. Vybrat jde jen hotový nebo
+  aktuální kámen (Jan); červené jsou vidět, ale zamčené (heslo z menu je dál odemyká jako v originále).
+- Start levelu přes logiku beze změny (cesta hesla); postup (hotové levely) ukládat do profilu vedle hesla posledního
+  levelu. Levné: kameny daleko jako jednoduché LOD/instance, žádný hitch (předem v černé).
+- Hotovo když: snímky souostroví (začátek, výběr, přílet), test výběru a startu levelu, autopilot beze změny.
+
+## Krok 27 - Motion blur rychlého vrtulníku (Jan 2026-10-08)
+
+- Když vrtulník letí rychle, rozmazání pohybem (vrtulník, piloti, liány kolem); v klidu a pomalu ostré. Per-object
+  motion blur (velocity buffer) se silou podle rychlosti z logiky, kamera a pozadí bez rozmazání (kamera hry stojí).
+  Vrtule může mít vlastní rozmazání otáček. Funguje s TSR/FSR/DLSS; na Low levné nebo vypnuté.
+- Hotovo když: snímky pomalu / rychle vodorovně / pád, fps beze změny.
+
+### Krok 27b - Varování: vykřičníky při nebezpečné rychlosti
+
+- Když vrtulník letí tak rychle, že by náraz do zdi / země / stropu stál život, nad ním vykřičníky (sílí s rychlostí,
+  např. ! / !! / !!!, blikání), pod prahem nic. Práh vzít přesně z logiky (rychlost nárazu, kdy je crash vs. odraz),
+  včetně závislosti na **obtížnosti** a směru (svisle / vodorovně, strop podle 24d bez ztráty života, voda podle 25d
+  bez ztráty života - tam nevarovat). Logika beze změny: jen čtení prahu a rychlosti přes C API (případně nová
+  čtecí funkce bez vlivu na stav), replays stejné.
+- Hotovo když: test pro každou obtížnost - varování se ukáže právě nad prahem crashe z logiky (pod ním ne), snímky.
+
+## Krok 28 - Menší balíček (Jan 2026-10-08)
+
+- 4,2 GB (zip 3,4 GB) je moc: pak bez komprese (`package.ps1` bez `-compressed`/Oodle), textury v plném 4K/8K
+  (herní kamera je daleko - omezit max. velikost při cooku podle skupin textur), celé složky Electric Dreams i
+  nepoužité skeny (~300 MB: ButtressRoot, DryRiverBed, DeadTree, MossyForestBoulder, IcelandicQuarryRock - ověřit),
+  Development build (Shipping, `.pdb` lokálně dál), DLSS knihovny dvakrát. Cíl 1-1,5 GB bez viditelné změny.
+- Hotovo když: nový balíček s PSO cache, velikosti před/po, arch rychlé sady ze zabaleného beze změny, fps beze změny.
+
 ## Průběžně
 
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
@@ -1642,3 +1677,19 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   46/27/33, 24/15/14, 14/11/11). Není to kroky 25a-25e: rychlá sada Medium 1920x1080 v editoru hned po sobě - kód 24f 28
   fps (1 % low 16), kód 25e 26 (16); je to teplo notebooku (README hry: Performance). Čeká na Jana: zahrát balíček
   (`play.ps1`), změřit znovu na chladném notebooku. Další: hotovo (krok 25).
+- 2026-10-08: krok 26 hotový - výběr levelu nad souostrovím kamenů (`docs/visual-concept.md`, README hry). PLAY otevře
+  výběr (`FUghIsles`, `SUghIslesScreen`): kamera vzlétne z titulky nad kámen levelu a za něj nad souostroví
+  (`AUghArchipelago`), kámen na level režimu (69 / 81 podle `levels.json`), řady po 9 vinoucí se cestou, číslo nad
+  každým kamenem, barva hotový zelená / dosažený (nejdál) a level napsaného hesla žlutá / zamčený červená. Šipky,
+  d-pad: kurzor po kamenech, kamera klouže; Enter (A) jen na zeleném či žlutém - let ke kameni (rozjezd z místa do
+  rychlosti a místa, kde začíná let levelu 19e/24d, do černé), pak start levelu cestou hesla (logika beze změny) a jeho
+  let; na červeném hláška, heslo z menu ho otevře; Esc (B) zpět; libovolná klávesa zrychlí oba lety. Spline, rychlost
+  a zrychlení klávesou z `FUghIntro` vyjmuté do `UghFlight` (společné). Postup: `done` u každého režimu v
+  `Saved\UghProfile.json` vedle `lastLevel`, starý profil bere levely před `lastLevel` jako hotové. Kameny: 3 tvary
+  břidlice se 3 LOD (32 / 7,4 / 1,8 tis. trojúhelníků), HISM, postavené při startu v černé (~0,55 s), jinak schované.
+  Autopilot výběr přeskakuje (`-UghShotIsles` ho střílí, `-UghNoIsles` vypne), `pso.ps1` má nové běhy (Epic oba režimy,
+  Low). Nové testy `Ugh.Isles.Progress`, `.Layout`, `.Pick`; snímky `Saved\Shots\26` (`1p-12-isles-over3.png`
+  přehled, `-choose`, `-approach1.5`, `-arrive`, `team-41-isles-*`, start levelu `1p-12`, `team-41`). CTest logiky,
+  `6_verification` (163) a 204 testů v UE zelené (4 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch beze změny,
+  fps medián 20, 1 % low 16 (editor, Epic); výběr v editoru medián 26 ms. Balíček nepřebalen (krok 28). Čeká na Jana:
+  zahrát výběr v okně (`play.ps1 -Editor`, balíček ho ještě nemá).

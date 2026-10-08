@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UghFlight.h"
 
 /** Where the camera is (the world), which way it looks and how wide (degrees across, the engine's field of view). */
 struct FUghCameraPose
@@ -57,27 +58,30 @@ public:
 	 */
 	void Hurry();
 	/** No flight (back to the menu). */
-	void Stop() { bFlying = false; }
-	bool IsFlying() const { return bFlying; }
+	void Stop() { Clock.Stop(); }
+	bool IsFlying() const { return Clock.IsRunning(); }
 	/** Seconds of the flight so far (Duration at its end). */
-	double GetTime() const { return Time; }
+	double GetTime() const { return Clock.GetTime(); }
 	/** How much of the scene shows, 0 .. 1: from black as it starts. */
 	double Shown() const { return FMath::Clamp(Faded / FadeIn, 0.0, 1.0); }
 
 	/** The camera now on the way to `End` (the game's camera) over the sea's surface at the world's `SeaZ`. */
-	FUghCameraPose Pose(const FUghCameraPose& End, double SeaZ) const { return At(End, SeaZ, Time); }
+	FUghCameraPose Pose(const FUghCameraPose& End, double SeaZ) const { return At(End, SeaZ, GetTime()); }
 	/** The camera `Time` seconds into the flight to `End`: `End` itself from Duration on. */
 	static FUghCameraPose At(const FUghCameraPose& End, double SeaZ, double Time);
 
+	/** How its speed changes (UghFlight): at full speed from the start (it starts in black), braking from 0.35 on. */
+	static constexpr UghFlight::FProfile Profile{ 0, 0.35 };
+
+	/**
+	 * The way to the end over the sea at the world's `SeaZ` (UghFlight::FWay): low over the waves, a swerve to the right
+	 * and back, rising at the end; its points and the end's place.
+	 */
+	static TArray<FVector> Waypoints(const FUghCameraPose& End, double SeaZ);
+
 private:
-	double Time = 0;
+	FUghFlightClock Clock{ Duration, HurrySeconds, Profile };
 	double Faded = 0;   // seconds since it began to show
-	bool bHurried = false;
-	double Hurried = 0, HurryFrom = 0;   // seconds since the key, the flight's time then
-	/** The rest of the way after the key: the coefficients of its quintic (bHurryAlong), else of its clock (Hurry). */
-	double Hurry0 = 0, Hurry1 = 0, Hurry2 = 0, Hurry3 = 0, Hurry4 = 0, Hurry5 = 0;
-	bool bHurryAlong = false;
 	int32 Settled = 0;   // short frames held still so far
 	int32 Held = 0;      // frames held still so far
-	bool bFlying = false;
 };

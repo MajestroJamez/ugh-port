@@ -782,3 +782,47 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   nepřítele a pustí ho; `shot.ps1 -Drop <sekundy od puštění>`, test `Ugh.Drop` (level 1: kámen se odrazí od stromu,
   vidět ze smyčky dolů, nikdy nahoru). Starý `stone_boulder.py` (naskenovaný mechový kámen) a jeho sken
   `MossyForestRock_02` v `UghElectricDreams::ForBlender` jsou pryč. Snímky `Saved\Shots\25e`.
+
+## Výběr levelu: souostroví kamenů (krok 26)
+
+- Po titulce PLAY (Enter, gamepad A) neotevře hned hru, ale výběr (`FUghIsles`, obrazovka `SUghIslesScreen`): kamera
+  vzlétne z titulky nad kámen s levelem a za ním nad otevřené moře, kde je každý level režimu jeden kámen souostroví
+  (`AUghArchipelago`; jeden hráč 69, tým 81 - podle `assets/levels.json`, test `Ugh.Menu`). Kameny v řadách po 9 od
+  kamene titulky ven na moře (190 m od sebe, řady 320 m), cesta se vine: první řada zleva doprava, další nad ní
+  zprava doleva - pořadí čte číslo na každém kameni (tabulka nad vlajkou, v UI promítnutá, dál menší). Barva postupu
+  na tabulce i na vlajce na vrcholu: hotový zeleně, aktuální (nejdál dosažený: poslední hra režimu nebo za nejdál
+  hotovým) a level napsaného hesla žlutě, ostatní červeně a zamčené. Level 1 je otevřený vždy (originál na něj heslo
+  nechce).
+- Ovládání jako menu kroku 22: šipky / d-pad / levá páčka - vlevo a vpravo po řadě a na konci řady dál po cestě,
+  nahoru a dolů na nejbližší kámen další řady; kamera klouže za kurzorem (kriticky tlumená pružina, bez skoku a
+  překmitu). Enter (A) na zeleném či žlutém kameni: let ke kameni; na červeném nic, jen hláška „Level N is locked: its
+  password in the menu opens it“. Esc (B) zpět na titulku přes černou (0,3 s ven, 0,3 s dovnitř). Jakákoli klávesa
+  zrychlí let nad souostrovím i let ke kameni na 0,6 s (stejný hladký dojezd jako 24d).
+- Lety (`UghFlight`: přirozený kubický spline a rychlost z kroku 24d, teď společné s `FUghIntro`, který se jen
+  přestěhoval; nový je rozjezd z místa: rychlost roste jako smootherstep): let nad souostrovím 7 s z kamery titulky
+  přes kámen titulky (vysoko nad jeho džunglí) a vyhlídku nad celým souostrovím (všechna čísla) dolů ke kurzoru, kde
+  zabrzdí do kamery výběru. Let ke kameni z kamery výběru z místa až na rychlost, kterou začíná let levelu (FUghIntro,
+  ~90 m/s; 2,5-5,5 s podle dráhy), do místa 220 m před vybraným kamenem stejným směrem a výškou nad vlnami, jakými let
+  levelu začíná před kamenem levelu (kámen souostroví je asi poloviční, takže z poloviční vzdálenosti vypadá stejně
+  velký); posledních 0,3 s do černé. Pak se v černé spustí hra cestou hesla (`FUghSimulation::NewGame` s prvním levelem,
+  logika beze změny), postaví level a jeho let (19e/24d) jde z černé dál - jeden let, brzdí se až u kamene levelu.
+- Postup v profilu (`FUghHighScores`, `Saved\UghProfile.json`): u každého režimu vedle `lastLevel` pole `done`
+  (hotové levely od 0; level je hotový, když hra pokračuje z něj na další, poslední při „ALL LEVELS DONE“). Starý
+  profil bez `done` se načte a levely před `lastLevel` se berou jako hotové. Autopilot profil nikdy neukládá.
+- Kameny: tři tvary (`FUghIsleField`, štíhlé věže břidlice 52-76 m nad mořem, zúžené nahoru, kupole s bouli, vrstvy
+  se šupinami, lomy, žlábky, zářez vln; pod hladinou se rychle zužují - jinak by je otevřené moře, které nemá dno a
+  nezrcadlí podle úhlu, ukazovalo jako tyrkysové sukně), materiál čela kamene (`M_UghCliff` jako `AUghSeaStack`), tři
+  úrovně detailu (32 / 7,4 / 1,8 tisíc trojúhelníků; přepnutí podle velikosti na obrazovce 0,3 a 0,12), instance
+  v `UHierarchicalInstancedStaticMeshComponent` (výběr LOD a ořez po shlucích), vlajky a tyče jako instance krychle
+  a válce z plastelíny. Postaví se při startu hry v černé (~0,5 s), registrované, ale schované (pipeline předem),
+  ukážou se jen při výběru a schovají se, jakmile začne hra. Pohled shora je tmavší (moře shora zrcadlí málo oblohy):
+  expozice -0,2 EV místo -0,8 venku, let ke kameni přejde na -0,8 letu levelu.
+- Autopilot (`shot.ps1`, `levels.ps1`, `pso.ps1`) výběr přeskakuje (PLAY hraje rovnou), kromě `-UghShotIsles`;
+  `-UghNoIsles` ho vypne i ve hře. `shot.ps1 -Isles over:<s>,choose,approach:<s>,arrive` (vzorový profil s postupem:
+  jeden hráč hotovo 1-22, tým 1-40; heslo napíše jen u zamčeného levelu; kurzor dojde klávesami), pak hraje level jako
+  vždy. Testy `Ugh.Isles.Progress` (uložení a načtení, starý profil, barvy), `Ugh.Isles.Layout` (kameny v otevřeném
+  moři za kamenem titulky, od sebe, vinoucí se cesta, kamera výběru a konec letu ke kameni mimo kameny, konec letu
+  nízko jako začátek letu levelu) a `Ugh.Isles.Pick` (PLAY otevře výběr, kurzor na dosaženém, šipky a d-pad, červený
+  zamčený s hláškou, zelený letí a spustí právě ten level - stejnou hru jako jeho heslo, logika hraje ten level -,
+  heslo otevře červený, klávesa zrychlí oba lety, konec letu = začátek letu levelu, Esc / B zpět přes černou; let nad
+  souostrovím plynulý, vysoko nad kamenem titulky, zastaví).

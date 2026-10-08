@@ -14,7 +14,7 @@ struct FUghUiState;
  * Puts the screen of UghUi (SUghScreen: the menu, the status of the play, the captions, the help, the end of a game)
  * into the game's viewport once the game mode has started (its fonts are in the game's data, its pictures carved by
  * UghStoneArt), and every frame takes what it shows from the game (FUghUiState): the menu, the logic's view, the
- * scores earned projected where they were earned (AUghEffects), when the help shows (F1, and at the first level),
+ * scores earned projected where they were earned (AUghEffects), the numbers of the level selection's stones on them, when the help shows (F1, and at the first level),
  * a setting just changed (the volume, the upscaler).
  */
 UCLASS()
@@ -37,6 +37,8 @@ private:
 	void UpdateNotice(const AUghGameMode& Mode, double Seconds);
 	/** The menu's screens, the profile's settings and high scores. */
 	void UpdateScreens(const AUghGameMode& Mode);
+	/** The level selection: its stones in view projected (their numbers), the cursor's, a notice. */
+	void UpdateIsles(const AUghGameMode& Mode);
 
 	TSharedPtr<FUghUiState> State;
 	TSharedPtr<SWidget> Screen;

@@ -8,6 +8,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "UghArchipelago.h"
 #include "UghAssets.h"
 #include "UghBackground.h"
 #include "UghCampfire.h"
@@ -94,6 +95,12 @@ void AUghGameMode::StartPlay()
 	ApplySettings();
 	GAreScreenMessagesEnabled = false;   // the engine's messages: the log has them, the screen is the game's
 	bIntro = FUghIntro::bFlies && !FParse::Param(FCommandLine::Get(), TEXT("UghNoIntro"));
+	// the level selection (the autopilot only shooting it); its stones made now, in the black
+	Menu.SetIsles(!FParse::Param(FCommandLine::Get(), TEXT("UghNoIsles")) && (!bShooting || Shot.WantsIsles()));
+	if (Menu.IsIslesOn())
+	{
+		Archipelago->Make();   // (it logs how long)
+	}
 
 	Assets = AssetsDir();
 	const FString LevelsPath = Assets / UghJson::LevelsFile;
@@ -136,6 +143,7 @@ void AUghGameMode::BuildStage()
 	Water = World->SpawnActor<AUghWater>();
 	Falls = World->SpawnActor<AUghFalls>();
 	SeaStack = World->SpawnActor<AUghSeaStack>();
+	Archipelago = World->SpawnActor<AUghArchipelago>();
 	Fringe = World->SpawnActor<AUghFringe>();
 	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
@@ -156,6 +164,15 @@ void AUghGameMode::BuildStage()
 void AUghGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	if (bInMenu && Simulation.IsLoaded())
+	{
+		// the level selection: its flights, its glide; the chosen level starts once its stone is flown to
+		if (const TOptional<FUghGameChoice> Chosen =
+			Menu.AdvanceIsles(DeltaSeconds, AUghStage::Play(AUghStage::ViewportAspect()), SeaZ))
+		{
+			StartGame(*Chosen, FKey());
+		}
+	}
 	if (!bInMenu)
 	{
 		{
@@ -236,6 +253,11 @@ void AUghGameMode::ShowFrame(double Seconds)
 	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
 	Background->SetWater(Surface);
 	SeaStack->SetWater(Surface);
+	// the archipelago of the level selection while it is open (behind the menu)
+	const FUghIsles& Isles = Menu.GetIsles();
+	const bool bIsles = bMenuView && Isles.IsOpen();
+	Archipelago->Show(bIsles ? &Isles : nullptr);
+	Archipelago->SetWater(Surface);
 	// the open sea all along (no switch)
 	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface, &Flings, Dunks.Stirs(Surface)), true);
 	Falls->SetWater(Surface);
@@ -277,7 +299,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	if (bMenuView)
 	{
-		Shown = 1;
+		Shown = Isles.Shown();   // (black at the end of the flight to a stone, going back to the title)
 	}
 	// the stone's jungle: in the flight until it is out of its view, behind the menu; not in the play, which does not see
 	// it (thousands of swaying plants) - in black at once, else a few kinds a frame
@@ -292,10 +314,11 @@ void AUghGameMode::ShowFrame(double Seconds)
 	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook, ShotAround) : TOptional<FBox2D>();
 	const FUghCameraPose Game = CloseUp ? AUghStage::Fit(*CloseUp, AUghStage::ViewportAspect())
 		: AUghStage::Play(AUghStage::ViewportAspect());
-	const double SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
+	SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
 	const FUghCameraPose Pose = Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
-		: bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game;
+		: bIsles ? Isles.GetPose() : bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game;
 	Stage->SetCamera(Pose);
+	CameraPose = Pose;
 	CameraLog.Record(Seconds, Pose, Current.phase, Intro);
 }
 
@@ -432,15 +455,11 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 	switch (Menu.HandleKey(MenuKey))
 	{
 	case FUghMenu::EAction::Play:
-		if (Simulation.NewGame(Menu.GetChoice()))
-		{
-			Speaker->GetPlayer().OnNewGame();
-			bInMenu = false;
-			StartKey = Key;
-			IntroLevel = -1;
-			Playing = Menu.GetChoice();
-			Controls.Reset();
-		}
+		StartGame(Menu.GetChoice(), Key);
+		break;
+	case FUghMenu::EAction::Isles:
+		// over the archipelago from the title's camera; the stone behind the menu stays as it is (no level built)
+		Menu.OpenIsles(CameraPose, UghMenuView::StoneMiddle(), SeaZ);
 		break;
 	case FUghMenu::EAction::Quit:
 		Quit();
@@ -450,7 +469,8 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 		SaveProfile();
 		break;
 	default:
-		if (Menu.GetChoice() != Previewed)
+		// (not the cursor of the level selection: it would build a level a key)
+		if (Menu.GetScreen() != FUghMenu::EScreen::Isles && Menu.GetChoice() != Previewed)
 		{
 			Previewed = Menu.GetChoice();
 			Simulation.Preview(Previewed);
@@ -459,10 +479,31 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 	}
 }
 
+void AUghGameMode::StartGame(const FUghGameChoice& Choice, const FKey& Key)
+{
+	if (!Simulation.NewGame(Choice))
+	{
+		return;
+	}
+	Speaker->GetPlayer().OnNewGame();
+	bInMenu = false;
+	StartKey = Key;
+	IntroLevel = -1;
+	Playing = Choice;
+	PlayedLevel = Choice.FirstLevel;
+	Controls.Reset();
+	UE_LOG(LogTemp, Display, TEXT("UGH new game: %s, level %d"), Choice.Players == 2 ? TEXT("team") : TEXT("one player"),
+		Choice.FirstLevel + 1);
+}
+
 void AUghGameMode::OpenMenu()
 {
 	const ugh_logic_view& View = Simulation.GetCurrent();
 	FUghGameEnd End{ Playing, View.level, View.score, Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE };
+	if (End.bAllDone && Profile.Scores.SetDone(Playing.Players, View.level))
+	{
+		SaveProfile();   // the last level done too
+	}
 	if (bShooting)
 	{
 		Shot.DressEnd(End);

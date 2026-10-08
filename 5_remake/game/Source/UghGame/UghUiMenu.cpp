@@ -1,5 +1,6 @@
 #include "UghUiMenu.h"
 
+#include "UghUiIsles.h"
 #include "UghUiParts.h"
 #include "UghUiScores.h"
 #include "UghUiSettings.h"
@@ -39,7 +40,8 @@ void SUghMenuScreen::Construct(const FArguments& Args)
 		[
 			SNew(SBox).WidthOverride(1250).Visibility_Lambda([this]
 				{
-					return UghUiParts::ShownIf(!State->bShowingEnd && State->MenuScreen != EScreen::Scores);
+					return UghUiParts::ShownIf(!State->bShowingEnd && State->MenuScreen != EScreen::Scores &&
+						State->MenuScreen != EScreen::Isles);
 				})
 			[
 				SNew(SImage).Image(&State->Pictures->Fade)
@@ -65,6 +67,7 @@ void SUghMenuScreen::Construct(const FArguments& Args)
 			SNew(SUghControlsScreen).State(State).Visibility(Showing(EScreen::Controls))
 		]
 		+ SOverlay::Slot()[ SNew(SUghScoresScreen).State(State).Visibility(Showing(EScreen::Scores)) ]
+		+ SOverlay::Slot()[ SNew(SUghIslesScreen).State(State).Visibility(Showing(EScreen::Isles)) ]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)[ EndCard() ]
 	];
 }

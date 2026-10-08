@@ -64,9 +64,20 @@ void AUghGameMode::SaveProfile()
 void AUghGameMode::NoteLevel(const ugh_logic_view& View)
 {
 	const bool bReached = View.level > Playing.FirstLevel && View.level < Passwords.LevelCount(Playing.Players);
+	bool bChanged = false;
 	if (bReached && View.level != Profile.Scores.LastLevel(Playing.Players))
 	{
 		Profile.Scores.SetLastLevel(Playing.Players, View.level);
+		bChanged = true;
+	}
+	// the game went on from the level played: it is done (the level selection shows it green)
+	if (View.level_id >= 0 && PlayedLevel >= 0 && View.level > PlayedLevel)
+	{
+		bChanged |= Profile.Scores.SetDone(Playing.Players, PlayedLevel);
+		PlayedLevel = View.level;
+	}
+	if (bChanged)
+	{
 		SaveProfile();
 	}
 }

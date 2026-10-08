@@ -1,5 +1,6 @@
 #include "UghSurfaceNets.h"
 
+#include "UghArchipelago.h"
 #include "UghRockField.h"
 #include "UghStackField.h"
 
@@ -101,3 +102,6 @@ void UghSurfaceNets::Build(const TGrid& Grid, TArray<FVector>& OutPoints, TArray
 
 template void UghSurfaceNets::Build<FUghRockField>(const FUghRockField&, TArray<FVector>&, TArray<FUghNetQuad>&);
 template void UghSurfaceNets::Build<FUghStackField>(const FUghStackField&, TArray<FVector>&, TArray<FUghNetQuad>&);
+template void UghSurfaceNets::Build<TUghIsleGrid<1>>(const TUghIsleGrid<1>&, TArray<FVector>&, TArray<FUghNetQuad>&);
+template void UghSurfaceNets::Build<TUghIsleGrid<2>>(const TUghIsleGrid<2>&, TArray<FVector>&, TArray<FUghNetQuad>&);
+template void UghSurfaceNets::Build<TUghIsleGrid<4>>(const TUghIsleGrid<4>&, TArray<FVector>&, TArray<FUghNetQuad>&);

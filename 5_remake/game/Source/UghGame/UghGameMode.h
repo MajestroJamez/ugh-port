@@ -19,6 +19,7 @@
 #include "UghUpscaler.h"
 #include "UghGameMode.generated.h"
 
+class AUghArchipelago;
 class AUghBackground;
 class AUghCampfire;
 class AUghTorches;
@@ -44,16 +45,18 @@ class AUghWater;
  * (AUghEffects); the end of a game goes back to the menu, which shows how it ended (and takes a high score's name).
  * Each level has its mood (UghMood); its first caption shows the camera flying over the sea to the stone the level is
  * carved into (FUghIntro). Behind the menu the camera swings slowly around that stone (UghMenuView), the level the menu
- * would start carved into it. No map: the scene is built here. The profile (FUghProfile: the settings, the high scores,
- * the levels the last games got to) is read at the start, put into the engine (UghGraphics, FUghUpscaler, the sounds'
+ * would start carved into it; PLAY opens the level selection (FUghIsles): the camera flies over an archipelago of the
+ * mode's levels (AUghArchipelago), a stone is chosen and flown to, its level starts. No map: the scene is built here.
+ * The profile (FUghProfile: the settings, the high scores, the levels the last games got to and done) is read at the start, put into the engine (UghGraphics, FUghUpscaler, the sounds'
  * volumes) and saved whenever it changes. Keys of the frontend: in a game U the next upscaler, G the frame generation,
  * F1 (a gamepad's Y) the help of the keys; everywhere Page Up and Page Down the volume.
  *
  * -UghAssets=<folder> reads the data from elsewhere than assets/ (of the package, else of the repository).
  * -UghProfile=<file> keeps the profile elsewhere than Saved/UghProfile.json.
  * -UghShot=<folder>: the game plays by itself for screenshots (FUghShot) with the default profile (or the one of
- * -UghProfile), which it never saves, and the window as it is. -UghNoIntro: a level starts without the flight to the
- * stone (FUghIntro, AUghSeaStack).
+ * -UghProfile), which it never saves, and the window as it is; PLAY starts the game at once (no level selection) but
+ * for a shot of it (FUghShot::WantsIsles). -UghNoIntro: a level starts without the flight to the stone (FUghIntro,
+ * AUghSeaStack). -UghNoIsles: PLAY starts the game at once, without the level selection (FUghIsles, AUghArchipelago).
  */
 UCLASS()
 class AUghGameMode : public AGameModeBase
@@ -123,10 +126,15 @@ private:
 	void ApplySettings();
 	/** Saves the profile (not the autopilot). */
 	void SaveProfile();
-	/** A level the game got to by playing (not where it started): the last one of the mode in the profile. */
+	/**
+	 * A level the game got to by playing (not where it started): the last one of the mode in the profile; the level it
+	 * went on from done (the level selection's green).
+	 */
 	void NoteLevel(const ugh_logic_view& View);
 	/** Back to the menu after a game: how it ended, the level of the menu's choice behind it. */
 	void OpenMenu();
+	/** A new game as chosen (the menu's PLAY, the level selection's stone); `Key` started it (its release is no key). */
+	void StartGame(const FUghGameChoice& Choice, const FKey& Key);
 	void Quit();
 
 	FUghSimulation Simulation;
@@ -160,6 +168,9 @@ private:
 	bool bIntro = false;        // the levels may start with the flight (FUghIntro::bFlies, not -UghNoIntro)
 	int32 IntroLevel = -1;      // the level (of the mode) of the last flight in this game
 	bool bIntroScene = false;   // since its flight began until the play is fully shown: the scene is not black
+	FUghCameraPose CameraPose;  // the camera of the last frame
+	double SeaZ = 0;            // the sea's surface of the last frame (the world)
+	int32 PlayedLevel = -1;     // the level of the mode being played (when the game goes on from it, it is done)
 
 	UPROPERTY() TObjectPtr<AUghStage> Stage;
 	UPROPERTY() TObjectPtr<AUghBackground> Background;
@@ -167,6 +178,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghWater> Water;
 	UPROPERTY() TObjectPtr<AUghFalls> Falls;
 	UPROPERTY() TObjectPtr<AUghSeaStack> SeaStack;
+	UPROPERTY() TObjectPtr<AUghArchipelago> Archipelago;
 	UPROPERTY() TObjectPtr<AUghFringe> Fringe;
 	UPROPERTY() TObjectPtr<AUghRain> Rain;
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;

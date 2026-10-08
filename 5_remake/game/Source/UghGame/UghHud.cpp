@@ -17,6 +17,8 @@ namespace
 	constexpr float FullEnergy = UGH_LOGIC_FULL_ENERGY;
 	/** How fast the help comes and goes (its share a second). */
 	constexpr double HelpRate = 4;
+	/** A stone's number shows this far (units) over its top (its flag), whole up to this far from the camera. */
+	constexpr double NumberAbove = 1800, NumberNear = 60000;
 }
 
 void AUghHud::DrawHUD()
@@ -72,6 +74,7 @@ void AUghHud::Update(const AUghGameMode& Mode, double Seconds)
 	Shown.bShowingEnd = Menu.IsShowingEnd();
 	Shown.LastGame = Menu.GetLastGame();
 	UpdateScreens(Mode);
+	UpdateIsles(Mode);
 	Shown.Upscaler = Mode.GetUpscaler().Describe();
 
 	const ugh_logic_view& View = Mode.GetSimulation().GetCurrent();
@@ -167,4 +170,58 @@ void AUghHud::UpdateScreens(const AUghGameMode& Mode)
 	Shown.Highlight = Menu.GetHighlight();
 	Shown.NameEntry = Menu.GetNameEntry();
 	Shown.NewRank = Menu.GetNewRank();
+}
+
+void AUghHud::UpdateIsles(const AUghGameMode& Mode)
+{
+	FUghUiState& Shown = *State;
+	const FUghIsles& Isles = Mode.GetMenu().GetIsles();
+	Shown.Isles.Reset();
+	using EStage = FUghIsles::EStage;
+	const EStage Stage = Isles.GetStage();
+	const double Time = Isles.GetStageTime(), Duration = Isles.GetStageDuration();
+	// the numbers come as the flight over the archipelago nears its end, go as the flight to a stone begins
+	Shown.IslesShown = !Mode.IsInMenu() ? 0.f
+		: Stage == EStage::Arrive ? float(FMath::SmoothStep(0.3, 0.55, Duration > 0 ? Time / Duration : 1.0))
+		: Stage == EStage::Choose ? 1.f
+		: Stage == EStage::Approach ? float(1 - FMath::SmoothStep(0.0, 0.6, Time))
+		: Stage == EStage::Leave ? float(1 - FMath::Clamp(Time / FUghIsles::FadeSeconds, 0.0, 1.0)) : 0.f;
+	if (Shown.IslesShown <= 0 || !Canvas || Canvas->ClipX <= 0 || Canvas->ClipY <= 0)
+	{
+		return;
+	}
+	const FVector Eye = Isles.GetPose().Location;
+	const TArray<FUghIslePlace>& Places = Isles.GetPlaces();
+	for (int32 Level = 0; Level < Places.Num(); ++Level)
+	{
+		// over its flag
+		const FVector Top = FUghIsles::Top(Places[Level]) + FVector(0, 0, NumberAbove);
+		const FVector At = Project(Top);
+		const FVector2D Where(At.X / Canvas->ClipX, At.Y / Canvas->ClipY);
+		if (At.Z <= 0 || Where.X < -0.05 || Where.X > 1.05 || Where.Y < -0.05 || Where.Y > 1.05)
+		{
+			continue;
+		}
+		const float Size = FMath::Clamp(float(NumberNear / FMath::Max(FVector::Dist(Eye, Top), 1.0)), 0.4f, 1.f);
+		Shown.Isles.Add({ Where, Size, Level, Isles.GetState(Level), Level == Isles.GetCursor() });
+	}
+	// the far ones first (the near ones over them), the cursor's last
+	Shown.Isles.Sort([](const FUghUiIsle& A, const FUghUiIsle& B)
+	{
+		return A.bCursor != B.bCursor ? B.bCursor : A.Size < B.Size;
+	});
+	const int32 Players = Isles.GetPlayers();
+	const FUghPasswords& Passwords = Mode.GetPasswords();
+	Shown.IslesCursor = Isles.GetCursor();
+	Shown.IslesCursorState = Isles.GetState(Isles.GetCursor());
+	Shown.IslesPassword = Shown.IslesCursor < Passwords.LevelCount(Players) ? Passwords.Get(Players, Shown.IslesCursor)
+		: FString();
+	Shown.IslesCount = Isles.GetCount();
+	Shown.IslesDone = 0;
+	for (int32 Level = 0; Level < Isles.GetCount(); ++Level)
+	{
+		Shown.IslesDone += Isles.GetState(Level) == EUghIsle::Done ? 1 : 0;
+	}
+	Shown.IslesNotice = Isles.GetNotice();
+	Shown.IslesNoticeAge = Isles.GetNoticeAge();
 }

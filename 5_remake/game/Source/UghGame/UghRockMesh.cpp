@@ -97,6 +97,30 @@ UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer) const
 		return nullptr;
 	}
 	FMeshDescription Description;
+	Describe(Description);
+	return UghMeshes::FromDescription(Outer, Description, SlotName);
+}
+
+UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer, const TArray<const FUghRockMesh*>& Lods,
+	const TArray<float>& ScreenSizes)
+{
+	TArray<FMeshDescription> Descriptions;
+	Descriptions.SetNum(Lods.Num());
+	TArray<const FMeshDescription*> Pointers;
+	for (int32 Lod = 0; Lod < Lods.Num(); ++Lod)
+	{
+		if (Lods[Lod]->Vertices.IsEmpty())
+		{
+			return nullptr;
+		}
+		Lods[Lod]->Describe(Descriptions[Lod]);
+		Pointers.Add(&Descriptions[Lod]);
+	}
+	return Pointers.IsEmpty() ? nullptr : UghMeshes::FromDescriptions(Outer, Pointers, SlotName, ScreenSizes);
+}
+
+void FUghRockMesh::Describe(FMeshDescription& Description) const
+{
 	FStaticMeshAttributes Attributes(Description);
 	Attributes.Register();
 	Description.ReserveNewVertices(Vertices.Num());
@@ -130,7 +154,6 @@ UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer) const
 		Description.CreateTriangle(Group, { Instances[Triangles[Index]], Instances[Triangles[Index + 1]],
 			Instances[Triangles[Index + 2]] });
 	}
-	return UghMeshes::FromDescription(Outer, Description, SlotName);
 }
 
 FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, const FVector& Outward)

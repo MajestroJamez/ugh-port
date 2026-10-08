@@ -84,6 +84,9 @@ FUghMenu::EAction FUghMenu::HandleKey(const FKey& Key)
 		Screen = EScreen::Title;   // any key
 		Highlight.Reset();
 		return EAction::None;
+	case EScreen::Isles:
+		Isles.HandleKey(Key);   // (it closes going back, AdvanceIsles)
+		return EAction::None;
 	default:
 		return HandleTitleKey(Key);
 	}
@@ -130,7 +133,7 @@ FUghMenu::EAction FUghMenu::HandleTitleKey(const FKey& Key)
 	}
 	if (Key == EKeys::Enter)
 	{
-		return IsPasswordKnown() ? EAction::Play : EAction::None;
+		return !IsPasswordKnown() ? EAction::None : bIslesOn ? EAction::Isles : EAction::Play;
 	}
 	if (Key == EKeys::Up || Key == EKeys::Down)
 	{
@@ -175,6 +178,10 @@ int32 FUghMenu::PasswordLevel() const
 
 FUghGameChoice FUghMenu::GetChoice() const
 {
+	if (Screen == EScreen::Isles)
+	{
+		return { Players, Difficulty, Isles.GetCursor() };
+	}
 	return { Players, Difficulty, Password.IsEmpty() ? 0 : FMath::Max(PasswordLevel(), 0) };
 }
 
@@ -182,4 +189,32 @@ const TCHAR* FUghMenu::DifficultyName(int32 Difficulty)
 {
 	static const TCHAR* const Names[DifficultyCount] = { TEXT("Easy"), TEXT("Medium"), TEXT("Hard") };
 	return Names[FMath::Clamp(Difficulty, 0, DifficultyCount - 1)];
+}
+
+void FUghMenu::OpenIsles(const FUghCameraPose& From, const FVector& Home, double SeaZ, bool bFlight)
+{
+	const int32 Typed = Password.IsEmpty() ? INDEX_NONE : PasswordLevel();
+	Isles.Open(Players, Passwords.LevelCount(Players), Profile.Scores, Typed, From, Home, SeaZ, bFlight);
+	Screen = EScreen::Isles;
+}
+
+TOptional<FUghGameChoice> FUghMenu::AdvanceIsles(double Seconds, const FUghCameraPose& Game, double SeaZ)
+{
+	Isles.Advance(Seconds, Game, SeaZ);
+	if (Screen != EScreen::Isles)
+	{
+		return {};
+	}
+	if (Isles.IsArrived())
+	{
+		const FUghGameChoice Chosen{ Players, Difficulty, Isles.GetCursor() };
+		Isles.Close();
+		Screen = EScreen::Title;
+		return Chosen;
+	}
+	if (!Isles.IsOpen())
+	{
+		Screen = EScreen::Title;   // gone back
+	}
+	return {};
 }

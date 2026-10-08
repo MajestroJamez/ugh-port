@@ -15,6 +15,16 @@ struct FUghUiPopup
 	float Age = 0;     // a part of its time, 0 .. 1
 };
 
+/** A stone of the level selection on the screen: its number shown on it. */
+struct FUghUiIsle
+{
+	FVector2D Where;   // a part of the view across and down, 0 .. 1
+	float Size = 1;    // how big its number shows (by how near it is), 0 .. 1
+	int32 Level = 0;   // from 0
+	EUghIsle State = EUghIsle::Locked;
+	bool bCursor = false;
+};
+
 /**
  * What the screen (UghUi) shows of the game, taken every frame by AUghHud: the menu and its screens (the settings, the
  * keys, the high scores), the status of the play, its caption, the help, a setting just changed, the scores rising. The
@@ -53,6 +63,16 @@ struct FUghUiState
 	TOptional<TPair<int32, int32>> Highlight;   // the high scores' new entry: the mode's players, its place
 	TOptional<FUghNameEntry> NameEntry;   // a high score's name being typed after a game
 	int32 NewRank = INDEX_NONE;
+
+	// the level selection (FUghIsles)
+	TArray<FUghUiIsle> Isles;        // the stones in view, far ones first
+	float IslesShown = 0;            // how much of its screen shows (not in the flights' ends), 0 .. 1
+	int32 IslesCursor = 0;           // the cursor's level, from 0
+	EUghIsle IslesCursorState = EUghIsle::Locked;
+	FString IslesPassword;           // of the cursor's level
+	int32 IslesDone = 0, IslesCount = 0;
+	FString IslesNotice;             // why Enter did nothing
+	double IslesNoticeAge = 1e9;
 
 	// the play (the logic's view)
 	int32 Phase = 0;   // UGH_LOGIC_PHASE_...

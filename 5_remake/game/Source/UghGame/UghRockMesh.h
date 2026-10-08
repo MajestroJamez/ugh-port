@@ -7,6 +7,7 @@
 #include "UghSurfaceNets.h"
 
 class UStaticMesh;
+struct FMeshDescription;
 
 /**
  * The rock of the level being played, a smooth cliff with its cave: the surface of FUghRockField (UghSurfaceNets) in
@@ -46,10 +47,15 @@ public:
 	 * so its shadows and ray tracing are built once, not every frame. None when empty.
 	 */
 	UStaticMesh* ToStaticMesh(UObject* Outer) const;
+	/** Meshes of the same surface, finer to coarser, as one static mesh with them as its levels of detail (UghMeshes). */
+	static UStaticMesh* ToStaticMesh(UObject* Outer, const TArray<const FUghRockMesh*>& Lods,
+		const TArray<float>& ScreenSizes);
 	/** The large patches at a point (pixels), 0 .. 1 over metres (the vertex colours' alpha). */
 	static double Patches(const FVector& Point);
 
 private:
+	/** Its vertices and triangles into `Description` (one material slot). */
+	void Describe(FMeshDescription& Description) const;
 	/** The colour of a vertex at `Point` (pixels) whose surface faces `Outward`. */
 	static FColor Shade(const FUghRockField& Field, const FVector& Point, const FVector& Outward);
 };

@@ -35,6 +35,17 @@ int32 FUghHighScores::Insert(int32 Players, const FEntry& Entry)
 	return Rank;
 }
 
+bool FUghHighScores::SetDone(int32 Players, int32 Level)
+{
+	TArray<int32>& Levels = DoneLevels[ModeOf(Players)];
+	if (Level < 0 || Level >= MaxLevels || IsDone(Players, Level))
+	{
+		return false;
+	}
+	Levels.Insert(Level, Algo::LowerBound(Levels, Level));
+	return true;
+}
+
 FString FUghHighScores::Today()
 {
 	return FDateTime::Now().ToString(TEXT("%Y-%m-%d"));
@@ -59,6 +70,12 @@ TSharedRef<FJsonObject> FUghHighScores::ToJson() const
 		TSharedRef<FJsonObject> Fields = MakeShared<FJsonObject>();
 		Fields->SetArrayField(TEXT("best"), Entries);
 		Fields->SetNumberField(TEXT("lastLevel"), LastLevels[Mode]);
+		TArray<TSharedPtr<FJsonValue>> Done;
+		for (const int32 Level : DoneLevels[Mode])
+		{
+			Done.Add(MakeShared<FJsonValueNumber>(Level));
+		}
+		Fields->SetArrayField(TEXT("done"), Done);
 		Json->SetObjectField(ModeFields[Mode], Fields);
 	}
 	Json->SetStringField(TEXT("lastName"), LastName);
@@ -79,7 +96,27 @@ FUghHighScores FUghHighScores::FromJson(const FJsonObject& Json)
 		}
 		int32 LastLevel = -1;
 		(*Fields)->TryGetNumberField(TEXT("lastLevel"), LastLevel);
-		Scores.LastLevels[Mode] = FMath::Max(LastLevel, -1);
+		Scores.LastLevels[Mode] = FMath::Clamp(LastLevel, -1, MaxLevels - 1);
+		const TArray<TSharedPtr<FJsonValue>>* Done = nullptr;
+		if ((*Fields)->TryGetArrayField(TEXT("done"), Done))
+		{
+			for (const TSharedPtr<FJsonValue>& Value : *Done)
+			{
+				double Level = -1;
+				if (Value->TryGetNumber(Level) && Level == FMath::RoundToDouble(Level))
+				{
+					Scores.SetDone(Mode + 1, int32(Level));
+				}
+			}
+		}
+		else
+		{
+			// a profile before the level selection: the levels before the one its last game got to were done
+			for (int32 Level = 0; Level < Scores.LastLevels[Mode]; ++Level)
+			{
+				Scores.SetDone(Mode + 1, Level);
+			}
+		}
 		const TArray<TSharedPtr<FJsonValue>>* Entries = nullptr;
 		if (!(*Fields)->TryGetArrayField(TEXT("best"), Entries))
 		{
@@ -114,7 +151,8 @@ bool FUghHighScores::operator==(const FUghHighScores& Other) const
 {
 	for (int32 Mode = 0; Mode < Modes; ++Mode)
 	{
-		if (Tables[Mode] != Other.Tables[Mode] || LastLevels[Mode] != Other.LastLevels[Mode])
+		if (Tables[Mode] != Other.Tables[Mode] || LastLevels[Mode] != Other.LastLevels[Mode] ||
+			DoneLevels[Mode] != Other.DoneLevels[Mode])
 		{
 			return false;
 		}

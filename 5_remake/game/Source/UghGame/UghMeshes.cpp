@@ -2,6 +2,7 @@
 
 #include "Engine/StaticMesh.h"
 #include "MeshDescription.h"
+#include "StaticMeshResources.h"
 #include "StaticMeshAttributes.h"
 
 UStaticMesh* UghMeshes::Build(UObject* Outer, const TArray<FVertex>& Vertices, const TArray<int32>& Triangles)
@@ -65,6 +66,12 @@ UStaticMesh* UghMeshes::Quads(UObject* Outer, const TArray<FQuad>& Quads)
 
 UStaticMesh* UghMeshes::FromDescription(UObject* Outer, FMeshDescription& Description, FName Slot)
 {
+	return FromDescriptions(Outer, { &Description }, Slot, { 1.f });
+}
+
+UStaticMesh* UghMeshes::FromDescriptions(UObject* Outer, const TArray<const FMeshDescription*>& Descriptions,
+	FName Slot, const TArray<float>& ScreenSizes)
+{
 	UStaticMesh* Mesh = NewObject<UStaticMesh>(Outer);
 	FStaticMaterial Material(nullptr, Slot);
 	Material.UVChannelData = FMeshUVChannelInfo(1.f);
@@ -73,6 +80,11 @@ UStaticMesh* UghMeshes::FromDescription(UObject* Outer, FMeshDescription& Descri
 	Params.bFastBuild = true;
 	Params.bCommitMeshDescription = false;
 	Params.bMarkPackageDirty = false;
-	Mesh->BuildFromMeshDescriptions({ &Description }, Params);
+	Mesh->BuildFromMeshDescriptions(Descriptions, Params);
+	// (the build gives each level 0.75 of the one before; the screen sizes wanted instead)
+	for (int32 Lod = 1; Lod < Descriptions.Num() && Lod < ScreenSizes.Num() && Mesh->GetRenderData(); ++Lod)
+	{
+		Mesh->GetRenderData()->ScreenSize[Lod].Default = ScreenSizes[Lod];
+	}
 	return Mesh;
 }

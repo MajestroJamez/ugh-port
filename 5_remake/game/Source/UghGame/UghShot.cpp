@@ -147,6 +147,43 @@ bool FUghShot::Configure()
 			Drops.Add(FCString::Atod(*Moment));
 		}
 	}
+	FString IslesList;
+	if (FParse::Value(CommandLine, TEXT("-UghShotIsles="), IslesList, false))
+	{
+		TArray<FString> Moments;
+		IslesList.ParseIntoArray(Moments, TEXT(","));
+		for (const FString& Moment : Moments)
+		{
+			FString Kind, Seconds;
+			if (!Moment.Split(TEXT(":"), &Kind, &Seconds))
+			{
+				Kind = Moment;
+			}
+			const double When = FCString::Atod(*Seconds);
+			using EStage = FUghIsles::EStage;
+			if (Kind == TEXT("over") && !Seconds.IsEmpty())
+			{
+				IslesShots.Add({ FString::Printf(TEXT("over%g"), When), uint8(EStage::Arrive), When });
+			}
+			else if (Kind == TEXT("choose"))
+			{
+				IslesShots.Add({ Kind, uint8(EStage::Choose), 0 });
+			}
+			else if (Kind == TEXT("approach") && !Seconds.IsEmpty())
+			{
+				IslesShots.Add({ FString::Printf(TEXT("approach%g"), When), uint8(EStage::Approach), When });
+			}
+			else if (Kind == TEXT("arrive"))
+			{
+				IslesShots.Add({ Kind, uint8(EStage::Approach), -1 });
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("UGH shot: -UghShotIsles wants over:<s>, choose, approach:<s>, arrive, not %s"),
+					*Moment);
+			}
+		}
+	}
 	bEndShot = FParse::Param(CommandLine, TEXT("UghShotEnd"));
 	uint32 Score = 0;
 	if (FParse::Value(CommandLine, TEXT("-UghShotScore="), Score))
@@ -293,16 +330,30 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		return EAction::None;
 	}
 	if (!bShotTaken &&
-		(TargetTime > LevelTimeLimit || Target.Level >= Mode.GetPasswords().LevelCount(Target.Players)))
+		(TargetTime > LevelTimeLimit * (WantsIsles() ? 2 : 1) ||
+		Target.Level >= Mode.GetPasswords().LevelCount(Target.Players)))
 	{
 		UE_LOG(LogTemp, Error, TEXT("UGH shot: no screenshot of %s"), *TargetName(Target.Players, Target.Level));
 		bShotTaken = true;   // give it up
 		return EAction::None;
 	}
+	if (Mode.IsInMenu() && Mode.GetMenu().GetScreen() == FUghMenu::EScreen::Isles)
+	{
+		return IslesTick(Mode, Target, DeltaSeconds);
+	}
 	if (Mode.IsInMenu())
 	{
-		Tap(Mode, MenuKey(Mode.GetMenu(), Mode.GetPasswords(), Target));
+		IslesLeft = IslesShots;   // (the target's, from its start)
+		Tap(Mode, MenuKey(Mode.GetMenu(), Mode.GetPasswords(), Mode.GetProfile().Scores, Target));
 		return EAction::None;
+	}
+	if (!IslesLeft.IsEmpty() && Mode.GetMenu().IsIslesOn())
+	{
+		for (const FIslesShot& Missed : IslesLeft)
+		{
+			UE_LOG(LogTemp, Error, TEXT("UGH shot: no shot of the level selection %s"), *Missed.Name);
+		}
+		IslesLeft.Reset();
 	}
 	if (bShotTaken)
 	{
@@ -526,7 +577,66 @@ void FUghShot::DressEnd(FUghGameEnd& End) const
 	End.Score = EndScore.Get(End.Score);
 }
 
-FKey FUghShot::MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FTarget& Target) const
+FUghShot::EAction FUghShot::IslesTick(AUghGameMode& Mode, const FTarget& Target, double Seconds)
+{
+	using EStage = FUghIsles::EStage;
+	const FUghIsles& Isles = Mode.GetMenu().GetIsles();
+	const EStage Stage = Isles.GetStage();
+	const double Time = Isles.GetStageTime();
+	const int32 Cursor = Isles.GetCursor(), Wanted = FMath::Clamp(Target.Level, 0, Isles.GetCount() - 1);
+	const bool bThere = Cursor == Wanted && Isles.IsSettled();
+	// the shots of this moment
+	for (int32 Index = 0; Index < IslesLeft.Num(); ++Index)
+	{
+		const FIslesShot& Shot = IslesLeft[Index];
+		const bool bDue = uint8(Stage) == Shot.Stage && (Stage == EStage::Choose ? bThere
+			: Shot.At < 0 ? Time >= Isles.GetStageDuration() - FUghIsles::FadeSeconds : Time >= Shot.At);
+		if (bDue)
+		{
+			const FString Name = NameOf(Target) + TEXT("-isles-") + Shot.Name;
+			UE_LOG(LogTemp, Display, TEXT("UGH shot: the level selection at %.2f s, the cursor on level %d"), Time,
+				Cursor + 1);
+			IslesLeft.RemoveAt(Index);
+			return TakeShot(Name);
+		}
+	}
+	if (Stage != EStage::Choose)
+	{
+		return EAction::None;   // a flight goes on
+	}
+	IslesLeft.RemoveAll([](const FIslesShot& Shot) { return Shot.Stage == uint8(EStage::Arrive); });
+	IslesFrames.Add(Seconds);
+	IslesKeyTime += Seconds;
+	if (Cursor != Wanted && IslesKeyTime >= CaptionKeyEvery)
+	{
+		// the cursor's keys to the target's stone: to its row, then along it
+		const FUghIslePlace& Here = Isles.GetPlaces()[Cursor];
+		const FUghIslePlace& To = Isles.GetPlaces()[Wanted];
+		const FKey Key = To.Row != Here.Row ? (To.Row > Here.Row ? EKeys::Up : EKeys::Down)
+			: To.Column > Here.Column ? EKeys::Right : EKeys::Left;
+		Tap(Mode, Key);
+		IslesKeyTime = 0;
+	}
+	else if (bThere && Isles.GetStageTime() >= ChooseAtLeast)
+	{
+		// the frame times over the archipelago (choosing; the flight over it shot by shot is not steady)
+		TArray<float> Sorted = IslesFrames;
+		Sorted.Sort();
+		if (!Sorted.IsEmpty())
+		{
+			UE_LOG(LogTemp, Display,
+				TEXT("UGH shot frames: the level selection, %d frames, median %.1f ms, slowest %.1f ms, %d hitches"),
+				Sorted.Num(), Sorted[Sorted.Num() / 2] * 1000, Sorted.Last() * 1000,
+				Algo::CountIf(Sorted, [](float Frame) { return Frame > HitchSeconds; }));
+		}
+		IslesFrames.Reset();
+		Tap(Mode, EKeys::Enter);   // fly there
+	}
+	return EAction::None;
+}
+
+FKey FUghShot::MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, const FUghHighScores& Scores,
+	const FTarget& Target) const
 {
 	if (Menu.GetScreen() != FUghMenu::EScreen::Title || Menu.GetNameEntry())
 	{
@@ -540,8 +650,11 @@ FKey FUghShot::MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, con
 	{
 		return Menu.GetRow() == FUghMenu::ERow::Players ? EKeys::Right : EKeys::Up;
 	}
-	// the first level needs no password
-	const FString Wanted = Target.Level == 0 ? FString() : Passwords.Get(Target.Players, Target.Level);
+	// the first level needs no password; nor one the level selection has open
+	const int32 Count = Passwords.LevelCount(Target.Players);
+	const bool bOpen = Menu.IsIslesOn() &&
+		FUghIsles::StateOf(Scores, Target.Players, Target.Level, Count) != EUghIsle::Locked;
+	const FString Wanted = Target.Level == 0 || bOpen ? FString() : Passwords.Get(Target.Players, Target.Level);
 	const FString& Typed = Menu.GetPassword();
 	if (Typed == Wanted)
 	{
