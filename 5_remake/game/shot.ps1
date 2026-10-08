@@ -25,7 +25,10 @@
 # name ends in -dunk<seconds>, e.g. 1p-08-dunk0.2), -Drop <seconds>: the first copter takes the stone on its sling, flies
 # above the first enemy and lets it go, the shot taken that many seconds after the logic let it fall (tumbling down,
 # bouncing off the enemy; several separated by commas, one shot each; the name ends in -drop<seconds>, e.g.
-# 1p-01-drop0.3), -End: the level given up instead and the card of the game's end in the menu shot (the name ends in
+# 1p-01-drop0.3), -Rush left|right|down: the first copter climbs to the height -RushY pixels (40 without it), then flies that
+# way as fast as it can (sideways keeping its height, down diving), the shot taken -RushAfter seconds after it began (several
+# separated by commas, one shot each; the name ends in -rush<way><seconds>, e.g. 1p-01-rushright1.2), -Difficulty 0|1|2:
+# the game at easy, medium (the default) or hard, -End: the level given up instead and the card of the game's end in the menu shot (the name ends in
 # -end; -Score <points>: the game ended with so many points, a high score shows its name being typed), -Menu: the
 # title screen first too (menu.png), -Screens settings,controls,scores: those screens of the menu first too
 # (<screen>.png). The game's profile is the defaults, or -Profile <file> (a JSON of FUghProfile);
@@ -39,7 +42,7 @@
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$Land,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
-    [string]$EffectAge = '', [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
+    [string]$EffectAge = '', [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Rush = '', [string]$RushAfter = '1', [int]$RushY = -1, [int]$Difficulty = -1, [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
     [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '', [string]$Isles = '',
     [int]$TimeoutSeconds = 300)
 
@@ -141,6 +144,9 @@ if ($EffectAge) { $arguments += " -UghShotEffectAge=$EffectAge" }
 if ($Fling) { $arguments += " -UghShotFling=$Fling" }
 if ($Dunk) { $arguments += " -UghShotDunk=$Dunk" }
 if ($Drop) { $arguments += " -UghShotDrop=$Drop" }
+if ($Rush) { $arguments += " -UghShotRush=$Rush -UghShotRushAfter=$RushAfter" }
+if ($RushY -ge 0) { $arguments += " -UghShotRushY=$RushY" }
+if ($Difficulty -ge 0) { $arguments += " -UghShotDifficulty=$Difficulty" }
 if ($End) { $arguments += ' -UghShotEnd' }
 if ($Menu) { $arguments += ' -UghShotMenu' }
 if ($Score -gt 0) { $arguments += " -UghShotScore=$Score" }
@@ -150,7 +156,7 @@ if ($Profile) { $arguments += " `"-UghProfile=$Profile`"" }
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
 # the shots the game says it took (one a burst), else the one
 $shots = @($shot)
-if (($Effect -or $Fling -or $Dunk -or $Drop -or $Isles) -and (Test-Path $log)) {
+if (($Effect -or $Fling -or $Dunk -or $Drop -or $Rush -or $Isles) -and (Test-Path $log)) {
     $shots = @(Select-String -Path $log -Pattern 'UGH shot (.+\.png)$' | ForEach-Object { $_.Matches[0].Groups[1].Value })
 }
 if ($Menu) { $shots += $menuShot }
@@ -159,6 +165,7 @@ $wanted = if ($Effect -eq 'all') { 1 } elseif ($Effect) { $Effect.Split(',').Cou
 if ($Fling) { $wanted *= $Fling.Split(',').Count }
 if ($Dunk) { $wanted *= $Dunk.Split(',').Count }
 if ($Drop) { $wanted *= $Drop.Split(',').Count }
+if ($Rush) { $wanted *= $RushAfter.Split(",").Count }
 if ($Isles) { $wanted += $Isles.Split(',').Count }
 $missing = @($shots | Where-Object { -not (Test-Path $_) })
 if ($code -ne 0 -or $shots.Count -lt $wanted -or $missing.Count -gt 0) {

@@ -312,8 +312,11 @@ void AUghGameMode::ShowFrame(double Seconds)
 		}
 	}
 	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook, ShotAround) : TOptional<FBox2D>();
-	const FUghCameraPose Game = CloseUp ? AUghStage::Fit(*CloseUp, AUghStage::ViewportAspect())
+	FUghCameraPose Game = CloseUp ? AUghStage::Fit(*CloseUp, AUghStage::ViewportAspect())
 		: AUghStage::Play(AUghStage::ViewportAspect());
+	// the camera of the play stands still: what moves blurs, the more the faster the copters fly (FUghMotionBlur)
+	MotionBlur.Update(Previous, Current, Seconds);
+	Game.MotionBlur = MotionBlur.GetAmount();
 	SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
 	const FUghCameraPose Pose = Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
 		: bIsles ? Isles.GetPose() : bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game;

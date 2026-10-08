@@ -826,3 +826,21 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   zamčený s hláškou, zelený letí a spustí právě ten level - stejnou hru jako jeho heslo, logika hraje ten level -,
   heslo otevře červený, klávesa zrychlí oba lety, konec letu = začátek letu levelu, Esc / B zpět přes černou; let nad
   souostrovím plynulý, vysoko nad kamenem titulky, zastaví).
+
+## Motion blur rychlého vrtulníku (krok 27)
+
+- Rozmazání pohybem je enginové po pixelech z velocity bufferu (`FUghMotionBlur`); běží před upscalerem (TSR, FSR,
+  DLSS chtějí stejné rychlosti), takže funguje se všemi. Kamera hry stojí: rozmaže se jen to, co se hýbe - vrtulník
+  s pilotem, pasažérem a kamenem ve smyčce, točící se vrtule a kliky, trochu chodící a odhození lidé. Pozadí má
+  rychlost nulovou (vizualizace `ShowFlag.VisualizeMotionBlur`: jen vrtulník; listí okrajů a tráva se houpou WPO
+  o zlomky pixelu - rychlost potřebuje TSR, rozmazání neznatelné).
+- Síla (`MotionBlurAmount`, závěrka jako díl snímku při 30 fps enginu) podle rychlosti nejrychlejšího vrtulníku
+  v logice (pixely za poslední krok logiky, nejvýš 3): do 1 px za krok 0,3 (visí, pomalu - ostrý, rozmazání je délka
+  pohybu krát síla; vrtule se točí nejvýš ~5 otáček/s a z kamery je skoro z boku, vlastní kotouč netřeba), k 2,75 px
+  smootherstep až 0,75 (silnější přes 0,75 už pilot v kabině nebyl k poznání), náběh 0,1 s; ve snímku, kdy vrtulník
+  skočí (nový pokus), nic (žádná šmouha přes obrazovku). Dřív stále enginových 0,5.
+- Lety ke kameni (24d) a nad souostrovím (26) mají dál svých 0,2 (tam letí kamera, pozadí se rozmazat má, stejný
+  průchod - nic navíc). Low bez rozmazání (škálovatelnost enginu `r.MotionBlurQuality 0`), Medium s polovičním
+  rozlišením sběru, cena jako dřív (průchod běžel i předtím).
+- `shot.ps1 -Rush left|right|down -RushY <px> -RushAfter <s>` (autopilot: na výšku, pak co nejrychleji vlevo, vpravo
+  nebo střemhlav dolů), `-Difficulty`; `pso.ps1` má let vlevo (Epic, Medium). Test `Ugh.MotionBlur`.

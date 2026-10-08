@@ -1693,3 +1693,15 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   `6_verification` (163) a 204 testů v UE zelené (4 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch beze změny,
   fps medián 20, 1 % low 16 (editor, Epic); výběr v editoru medián 26 ms. Balíček nepřebalen (krok 28). Čeká na Jana:
   zahrát výběr v okně (`play.ps1 -Editor`, balíček ho ještě nemá).
+- 2026-10-08: krok 27 hotový - motion blur rychlého vrtulníku (`docs/visual-concept.md`, README hry). Enginové rozmazání
+  po pixelech z velocity bufferu (před upscalerem: TSR, FSR i DLSS), kamera hry stojí, takže se rozmaže jen vrtulník
+  s pilotem, pasažérem a kamenem ve smyčce (vizualizace `ShowFlag.VisualizeMotionBlur`: rychlost má jen vrtulník,
+  houpající se listí okrajů zlomky pixelu). Síla `FUghMotionBlur` podle rychlosti nejrychlejšího vrtulníku v logice
+  (pixely za krok): do 1 px 0,3 (visí, pomalu - ostrý), do 2,75 px smootherstep k 0,75 (víc už pilot nebyl k poznání),
+  náběh 0,1 s, ve snímku skoku (nový pokus) nic; dřív stále 0,5. Vrtule vlastní kotouč nepotřebuje (~5 otáček/s, z kamery
+  skoro z boku). Lety 24d a 26 mají dál svých 0,2 (letí tam kamera; stejný průchod). Low bez rozmazání (škálovatelnost
+  enginu), Medium poloviční rozlišení sběru - cena jako dřív. Autopilot `shot.ps1 -Rush left|right|down -RushY -RushAfter`
+  a `-Difficulty`; `pso.ps1` nový let (Epic, Medium). Nový test `Ugh.MotionBlur`. Snímky `Saved\Shots\27`
+  (`sheet-blur.png`: před / po pomalu, rychle vlevo, střemhlav; `1p-01-rushleft1.2.png`, `-vis` vizualizace). CTest logiky,
+  `6_verification` (163) a 205 testů v UE zelené (4 s varováním enginu). `levels.ps1 -Quick` 0 chyb, arch beze změny,
+  fps medián 19, 1 % low 15 (editor, Epic; po 26 20 / 16). Balíček nepřebalen (krok 28). Další: **krok 27b**.

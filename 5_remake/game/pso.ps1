@@ -3,7 +3,8 @@
 #   2. the packaged game plays by itself without a window (-UghShot, -RenderOffscreen) with -logPSO, in a few runs
 #      (Passes): the menu and its screens, the quick set of levels.ps1 (every mood, rising water, storms, the team),
 #      the flight to the sea stack in each mood, the bursts of the events by day and at night, the card of a game's
-#      end with a high score, the level selection over the archipelago (its flights, choosing; both modes), the quick
+#      end with a high score, the level selection over the archipelago (its flights, choosing; both modes), a copter
+#      flying fast (its motion blur; at Medium too), the quick
 #      set, the flights, the bursts and the level selection at the preset Low and a few levels at Medium
 #      (their shaders differ: no volumetric fog, no halo, the sea without reflections)
 #   3. ShaderPipelineCacheTools expands the recorded PSOs with the keys into Build\Windows\PipelineCaches
@@ -33,13 +34,16 @@ $Passes = @(
     '-UghShotLevels=1p:1,1p:6 -UghShotEffect=all',
     '-UghShotLevels=1p:3 -UghShotEnd -UghShotScore=5000',
     '-UghShotLevels=1p:1,team:1 -UghShotIsles=over:2,over:4,choose,approach:1,arrive',
+    # a copter flying fast: its motion blur (FUghMotionBlur); at medium too (half-resolution blur)
+    '-UghShotLevels=1p:1 -UghShotRush=left -UghShotRushY=60 -UghShotRushAfter=0.3,1.2',
     # low and medium (their shaders differ: no volumetric fog, no halo, the sea without reflections, no fire shadows):
     # every mood and the team at low (the notebook's preset), its flights and bursts too; a few levels at medium
     "-UghShotLevels=$UghQuickLevels -UghShotAt=2 `"-UghProfile=$low`"",
     "-UghShotLevels=1p:1,1p:3,1p:6,1p:23,1p:43 -UghShotIntro=4.4 `"-UghProfile=$low`"",
     "-UghShotLevels=1p:1,1p:6 -UghShotEffect=all `"-UghProfile=$low`"",
     "-UghShotLevels=1p:1 -UghShotIsles=over:2,over:4,choose,approach:1,arrive `"-UghProfile=$low`"",
-    "-UghShotLevels=1p:1,1p:6,1p:43,team:21 -UghShotAt=2 `"-UghProfile=$medium`""
+    "-UghShotLevels=1p:1,1p:6,1p:43,team:21 -UghShotAt=2 `"-UghProfile=$medium`"",
+    "-UghShotLevels=1p:1 -UghShotRush=left -UghShotRushY=60 -UghShotRushAfter=1.2 `"-UghProfile=$medium`""
 )
 
 # an old cache would go into this cook too (and break it when the shaders changed)

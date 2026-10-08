@@ -11,6 +11,7 @@
 #include "UghIntro.h"
 #include "UghLevelArt.h"
 #include "UghMenu.h"
+#include "UghMotionBlur.h"
 #include "UghPasswords.h"
 #include "UghProfile.h"
 #include "UghShot.h"
@@ -142,6 +143,7 @@ private:
 	FUghFigureActions FigureActions;
 	FUghFlings Flings;
 	FUghDunks Dunks;
+	FUghMotionBlur MotionBlur;   // of the play: the copters blur the more the faster they fly
 	FUghLevelArt LevelArt;
 	FUghPasswords Passwords;
 	FUghProfile Profile;

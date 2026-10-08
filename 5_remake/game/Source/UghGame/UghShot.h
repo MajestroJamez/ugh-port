@@ -52,6 +52,12 @@ struct FUghHighScores;
  * stone on its sling, fly above the first enemy and let it go (FUghDropPilot), and takes the shot that many seconds
  * after the logic let it fall (the stone tumbling down, bouncing off the enemy), the name ending in -drop<seconds>
  * after the others.
+ * -UghShotRush=left|right|down with -UghShotRushAfter=<seconds> (several separated by commas: the level shot once for
+ * each) lets the first copter climb to the height -UghShotRushY (pixels, else 40), then fly that way as fast as it can
+ * - sideways steering and pedalling to keep its height, down diving -, and takes the shot that many seconds after it
+ * began, the name ending in -rush<way><seconds> after the others: a look at the copter fast (FUghMotionBlur), at the
+ * warning over it.
+ * -UghShotDifficulty=<0 .. 2> plays at that difficulty (easy, medium, hard; else the menu's medium).
  * -UghShotIsles=<moments> opens the level selection (FUghIsles; the autopilot skips it otherwise) for each level and
  * takes shots on the way to it (separated by commas: over:<seconds> into the flight over the archipelago, choose -
  * the cursor moved by its keys onto the level's stone, the camera at rest -, approach:<seconds> into the flight to the
@@ -124,6 +130,8 @@ private:
 	static constexpr double CloseUpMargin = 12;
 	/** A hanging passenger reaches this many pixels below the body (the stone passenger, 1 px below it, 11 px high). */
 	static constexpr double HangingBelow = 12;
+	/** -UghShotRush: the copter holds its height by where it will be this many steps on. */
+	static constexpr int32 RushLookAhead = 8;
 	/** -UghShotLand: the height the copters hover at goes down this fast (pixels a second). */
 	static constexpr double LandSpeed = 12;
 
@@ -135,6 +143,7 @@ private:
 		double Fling = -1;   // seconds after a passenger was knocked off (-UghShotFling), -1 none
 		TOptional<double> Dunk;   // seconds after the copter fell into the sea (-UghShotDunk; negative before), none
 		TOptional<double> Drop;   // seconds after the stone was let go (-UghShotDrop), none
+		TOptional<double> Rush;   // seconds after the copter began to rush (-UghShotRush), none
 	};
 
 	/**
@@ -186,7 +195,12 @@ private:
 	 * `Age` seconds after the logic let it fall.
 	 */
 	bool Drop(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age);
-	/** Holds pilot 1's logic key `LogicKey` (UGH_LOGIC_KEY_UP, LEFT, RIGHT) or lets it go. */
+	/**
+	 * -UghShotRush: the first copter climbs to RushY, then rushes that way (sideways keeping its height, down diving);
+	 * true `Age` seconds after it began.
+	 */
+	bool RushOn(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age);
+	/** Holds pilot 1's logic key `LogicKey` (UGH_LOGIC_KEY_UP, DOWN, LEFT, RIGHT, FIRE) or lets it go. */
 	void Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld);
 	void ReleasePedals(AUghGameMode& Mode);
 	static void Tap(AUghGameMode& Mode, const FKey& Key);
@@ -218,7 +232,13 @@ private:
 	FUghDropPilot DropPilot;   // of the level being shot
 	double DropTime = -1;      // since the stone was let go, -1 not yet
 	double BounceTime = -1;    // when it bounced off the enemy (seconds after it was let go), -1 not yet
+	FString Rush;              // -UghShotRush: left, right, down
+	TArray<double> Rushes;     // -UghShotRushAfter
+	double RushY = 40;         // -UghShotRushY
+	double RushTime = -1;      // since the copter began to rush, -1 not yet
+	int32 Difficulty = -1;     // -UghShotDifficulty, -1 the menu's
 	bool bFiring = false;      // pilot 1's fire held by Drop
+	bool bDiving = false;      // pilot 1's down held by RushOn
 	bool bSteering[2] = { false, false };   // pilot 1's left and right held by Knock
 	TArray<FIslesShot> IslesShots;   // -UghShotIsles
 	TArray<FIslesShot> IslesLeft;    // of the target being shot

@@ -147,6 +147,28 @@ bool FUghShot::Configure()
 			Drops.Add(FCString::Atod(*Moment));
 		}
 	}
+	if (FParse::Value(CommandLine, TEXT("-UghShotRush="), Rush))
+	{
+		if (Rush != TEXT("left") && Rush != TEXT("right") && Rush != TEXT("down"))
+		{
+			UE_LOG(LogTemp, Error, TEXT("UGH shot: -UghShotRush wants left, right or down, not %s"), *Rush);
+			Rush.Reset();
+		}
+		FString RushList = TEXT("1");
+		FParse::Value(CommandLine, TEXT("-UghShotRushAfter="), RushList, false);
+		FParse::Value(CommandLine, TEXT("-UghShotRushY="), RushY);
+		TArray<FString> Moments;
+		RushList.ParseIntoArray(Moments, TEXT(","));
+		for (const FString& Moment : Moments)
+		{
+			Rushes.Add(Rush.IsEmpty() ? 0 : FCString::Atod(*Moment));
+		}
+		if (Rush.IsEmpty())
+		{
+			Rushes.Reset();
+		}
+	}
+	FParse::Value(CommandLine, TEXT("-UghShotDifficulty="), Difficulty);
 	FString IslesList;
 	if (FParse::Value(CommandLine, TEXT("-UghShotIsles="), IslesList, false))
 	{
@@ -241,10 +263,15 @@ bool FUghShot::AddTargets(const FString& List)
 					{
 						for (int32 Drop = 0; Drop < FMath::Max(1, Drops.Num()); ++Drop)
 						{
-							Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1,
-								Effects.IsEmpty() ? FString() : Effects[Effect], Flings.IsEmpty() ? -1.0 : Flings[Fling],
-								Dunks.IsEmpty() ? TOptional<double>() : Dunks[Dunk],
-								Drops.IsEmpty() ? TOptional<double>() : Drops[Drop] });
+							for (int32 Moment = 0; Moment < FMath::Max(1, Rushes.Num()); ++Moment)
+							{
+								Targets.Add({ Mode == TEXT("team") ? 2 : 1, Level - 1,
+									Effects.IsEmpty() ? FString() : Effects[Effect],
+									Flings.IsEmpty() ? -1.0 : Flings[Fling],
+									Dunks.IsEmpty() ? TOptional<double>() : Dunks[Dunk],
+									Drops.IsEmpty() ? TOptional<double>() : Drops[Drop],
+									Rushes.IsEmpty() ? TOptional<double>() : Rushes[Moment] });
+							}
 						}
 					}
 				}
@@ -379,6 +406,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		DunkPilot = FUghDunkPilot();
 		DropPilot = FUghDropPilot();
 		DropTime = BounceTime = -1;
+		RushTime = -1;
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION && IntroAt)
 	{
@@ -413,18 +441,21 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		return EAction::None;
 	}
 	const bool bFling = Target.Fling >= 0, bDunk = Target.Dunk.IsSet(), bDrop = Target.Drop.IsSet();
+	const bool bRush = Target.Rush.IsSet();
 	const bool bAtEdge = !Edge.IsEmpty() && FlyToEdge(Mode, View, DeltaSeconds);
 	const bool bFlung = bFling && Knock(Mode, View, DeltaSeconds, Target.Fling);
 	const bool bDunked = bDunk && Dunk(Mode, View, *Target.Dunk);
 	const bool bDropped = bDrop && Drop(Mode, View, DeltaSeconds, *Target.Drop);
-	if (Edge.IsEmpty() && !bFling && !bDunk && !bDrop)
+	const bool bRushed = bRush && RushOn(Mode, View, DeltaSeconds, *Target.Rush);
+	if (Edge.IsEmpty() && !bFling && !bDunk && !bDrop && !bRush)
 	{
 		Hover(Mode, View, DeltaSeconds);
 	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
 	HoverFrames.Add(DeltaSeconds);
-	if (bDrop ? !bDropped : bDunk ? !bDunked : bFling ? !bFlung : Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
+	if (bRush ? !bRushed : bDrop ? !bDropped : bDunk ? !bDunked : bFling ? !bFlung
+		: Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
 	}
@@ -476,7 +507,8 @@ FString FUghShot::NameOf(const FTarget& Target) const
 	const FString Fling = Target.Fling < 0 ? FString() : FString::Printf(TEXT("-fling%g"), Target.Fling);
 	const FString Dunk = Target.Dunk ? FString::Printf(TEXT("-dunk%g"), *Target.Dunk) : FString();
 	const FString Drop = Target.Drop ? FString::Printf(TEXT("-drop%g"), *Target.Drop) : FString();
-	return TargetName(Target.Players, Target.Level) + Suffix + Effect + Fling + Dunk + Drop +
+	const FString Rushed = Target.Rush ? FString::Printf(TEXT("-rush%s%g"), *Rush, *Target.Rush) : FString();
+	return TargetName(Target.Players, Target.Level) + Suffix + Effect + Fling + Dunk + Drop + Rushed +
 		(bEndShot ? TEXT("-end") : TEXT(""));
 }
 
@@ -650,6 +682,12 @@ FKey FUghShot::MenuKey(const FUghMenu& Menu, const FUghPasswords& Passwords, con
 	{
 		return Menu.GetRow() == FUghMenu::ERow::Players ? EKeys::Right : EKeys::Up;
 	}
+	if (Difficulty >= 0 && Menu.GetChoice().Difficulty != Difficulty)
+	{
+		using ERow = FUghMenu::ERow;
+		return Menu.GetRow() == ERow::Difficulty ? (Menu.GetChoice().Difficulty < Difficulty ? EKeys::Right : EKeys::Left)
+			: Menu.GetRow() == ERow::Players ? EKeys::Down : EKeys::Up;
+	}
 	// the first level needs no password; nor one the level selection has open
 	const int32 Count = Passwords.LevelCount(Target.Players);
 	const bool bOpen = Menu.IsIslesOn() &&
@@ -693,6 +731,10 @@ void FUghShot::ReleasePedals(AUghGameMode& Mode)
 	if (bFiring)
 	{
 		Hold(Mode, UGH_LOGIC_KEY_FIRE, false);
+	}
+	if (bDiving)
+	{
+		Hold(Mode, UGH_LOGIC_KEY_DOWN, false);
 	}
 	if (Steering.IsValid())
 	{
@@ -811,10 +853,47 @@ bool FUghShot::Drop(AUghGameMode& Mode, const ugh_logic_view& View, double Secon
 	return true;
 }
 
+bool FUghShot::RushOn(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age)
+{
+	if (View.copter_count == 0)
+	{
+		return false;
+	}
+	const ugh_logic_copter& Copter = View.copters[0];
+	const bool bDown = Rush == TEXT("down"), bLeft = Rush == TEXT("left");
+	// to its height first (pedalling below it), then that way: sideways pedalling to keep the height, down diving
+	// (once there nearly at rest)
+	const ugh_logic_view& Previous = Mode.GetSimulation().GetPrevious();
+	const int32 Climb = Previous.copter_count > 0 ? Copter.y - Previous.copters[0].y : 0;
+	if (RushTime < 0 && FMath::Abs(Copter.y - RushY * UghShapes::Subpixels) <= 3 * UghShapes::Subpixels &&
+		FMath::Abs(Climb) <= UghShapes::Subpixels / 4)
+	{
+		RushTime = 0;
+		UE_LOG(LogTemp, Display, TEXT("UGH shot: the copter rushes %s from %d,%d"), *Rush, Copter.x, Copter.y);
+	}
+	else if (RushTime >= 0)
+	{
+		RushTime += Seconds;
+	}
+	const bool bRushing = RushTime >= 0;
+	// (pedalling where it will be a few steps on: no swinging up and down about the height)
+	const bool bLow = Copter.y + RushLookAhead * Climb > RushY * UghShapes::Subpixels;
+	Hold(Mode, UGH_LOGIC_KEY_UP, bRushing && bDown ? false : bLow);
+	Hold(Mode, UGH_LOGIC_KEY_DOWN, bRushing && bDown);
+	Hold(Mode, UGH_LOGIC_KEY_LEFT, bRushing && !bDown && bLeft);
+	Hold(Mode, UGH_LOGIC_KEY_RIGHT, bRushing && !bDown && !bLeft);
+	if (RushTime < Age)
+	{
+		return false;
+	}
+	UE_LOG(LogTemp, Display, TEXT("UGH shot: %.2f s into the rush, the copter at %d,%d"), RushTime, Copter.x, Copter.y);
+	return true;
+}
+
 void FUghShot::Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld)
 {
 	bool& bHolding = LogicKey == UGH_LOGIC_KEY_UP ? bPedalling[0] : LogicKey == UGH_LOGIC_KEY_FIRE ? bFiring
-		: bSteering[LogicKey == UGH_LOGIC_KEY_LEFT ? 0 : 1];
+		: LogicKey == UGH_LOGIC_KEY_DOWN ? bDiving : bSteering[LogicKey == UGH_LOGIC_KEY_LEFT ? 0 : 1];
 	if (bHolding != bHeld)
 	{
 		Mode.HandleKey(Mode.GetProfile().Settings.Keys.KeyOf(0, LogicKey), bHeld ? IE_Pressed : IE_Released);
