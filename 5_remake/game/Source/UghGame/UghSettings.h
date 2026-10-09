@@ -1,4 +1,4 @@
-// What the player set: the graphics, the sound, the flight, the keys.
+// What the player set: the graphics, the sound, the flight, the camera's shake, the keys.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -13,8 +13,8 @@ enum class EUghUpscaler : uint8 { Dlss, Fsr, Tsr };
  * The settings of the game (the menu's screen Settings, saved with the profile, FUghProfile): the quality preset
  * (UghGraphics: the engine's scalability groups and the heavy features of the diorama), the upscaler and the DLSS frame
  * generation (FUghUpscaler), the resolution and the window mode (none: as the engine started - the desktop's, the
- * command line's), the volumes (all, the music, the effects), the flight to the stone at a level's start, the pilots'
- * keys (FUghKeyBindings).
+ * command line's), the volumes (all, the music, the effects), the flight to the stone at a level's start, the camera
+ * shaken by an impact, the pilots' keys (FUghKeyBindings).
  */
 struct FUghSettings
 {
@@ -29,6 +29,7 @@ struct FUghSettings
 	int32 WindowMode = -1;   // EWindowMode::Type; -1: as the engine started
 	int32 Volume = 100, Music = 100, Effects = 100;   // percent
 	bool bIntro = true;   // the flight to the stone at a level's start
+	bool bShake = true;   // the camera shaken a little by an impact (FUghImpacts)
 	FUghKeyBindings Keys = FUghKeyBindings::Defaults();
 
 	static const TCHAR* QualityName(int32 Quality);

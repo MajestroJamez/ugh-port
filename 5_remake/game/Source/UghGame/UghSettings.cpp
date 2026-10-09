@@ -69,6 +69,7 @@ TSharedRef<FJsonObject> FUghSettings::ToJson() const
 	Json->SetNumberField(TEXT("music"), Music);
 	Json->SetNumberField(TEXT("effects"), Effects);
 	Json->SetBoolField(TEXT("intro"), bIntro);
+	Json->SetBoolField(TEXT("cameraShake"), bShake);
 	Json->SetObjectField(TEXT("keys"), Keys.ToJson());
 	return Json;
 }
@@ -101,6 +102,7 @@ FUghSettings FUghSettings::FromJson(const FJsonObject& Json)
 	ReadVolume(Json, TEXT("music"), Settings.Music);
 	ReadVolume(Json, TEXT("effects"), Settings.Effects);
 	Json.TryGetBoolField(TEXT("intro"), Settings.bIntro);
+	Json.TryGetBoolField(TEXT("cameraShake"), Settings.bShake);   // (an older profile: on)
 	const TSharedPtr<FJsonObject>* Keys = nullptr;
 	if (Json.TryGetObjectField(TEXT("keys"), Keys))
 	{

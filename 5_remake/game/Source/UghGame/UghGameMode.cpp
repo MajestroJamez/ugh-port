@@ -249,6 +249,10 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		Effects->GetPlayer().Order(Splash.bSurfacing ? EUghBurst::Boil : EUghBurst::Dunk,
 			Splash.Place - FVector2D(0, FoamAbove), Current, Splash.Scale);
+		if (!Splash.bSurfacing)
+		{
+			Impacts.OnDunk(Splash.Player, Splash.Scale);
+		}
 	}
 	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
 	Background->SetWater(Surface);
@@ -283,6 +287,10 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		FSlowPart Part{ TEXT("fringe") };
 		Fringe->Show(Previous, Current, Simulation.Alpha(), Seconds, Effects->GetPlayer());
+		for (const FUghEdgeBumps::FBump& Bump : Fringe->TakeBumps())
+		{
+			Impacts.OnBump(Bump.Player, Bump.Speed, Bump.Edge == 2);
+		}
 	}
 	{
 		FSlowPart Part{ TEXT("effects") };
@@ -318,8 +326,23 @@ void AUghGameMode::ShowFrame(double Seconds)
 	MotionBlur.Update(Previous, Current, Seconds);
 	Game.MotionBlur = MotionBlur.GetAmount();
 	SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
-	const FUghCameraPose Pose = Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
+	FUghCameraPose Pose = Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
 		: bIsles ? Isles.GetPose() : bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game;
+	// an impact shakes the play's camera a little (in the screen's plane), rumbles its pilot's gamepad
+	Impacts.Advance(Seconds);
+	if (!Intro.IsFlying() && !bMenuView)
+	{
+		const FVector2D Shake = Impacts.Offset();
+		Pose.Location += Pose.Rotation.RotateVector(FVector(0, Shake.X, Shake.Y));
+		if (bShooting && Impacts.IsShaking())
+		{
+			UE_LOG(LogTemp, Display, TEXT("UGH shake: %.2f %.2f units"), Shake.X, Shake.Y);   // (a look at it)
+		}
+	}
+	for (int32 Pilot = 0; Pilot < FUghImpacts::Pilots; ++Pilot)
+	{
+		Pads.Set(Pilot, Impacts.Rumble(Pilot));
+	}
 	Stage->SetCamera(Pose);
 	CameraPose = Pose;
 	CameraLog.Record(Seconds, Pose, Current.phase, Intro);
@@ -517,6 +540,7 @@ void AUghGameMode::OpenMenu()
 	bInMenu = true;
 	Intro.Stop();
 	Effects->Clear();
+	Impacts.Reset();
 	bIntroScene = false;
 	Previewed = Menu.GetChoice();
 	Simulation.Preview(Previewed);
@@ -531,6 +555,10 @@ void AUghGameMode::PlayEvents()
 {
 	UghEvents::Play(Simulation.GetEvents(), Simulation.GetPrevious(), Simulation.GetCurrent(), Speaker->GetPlayer(),
 		Effects->GetPlayer(), &Flings);
+	for (const ugh_logic_event& Event : Simulation.GetEvents())
+	{
+		Impacts.OnEvent(Event);   // a crash, a stone on an enemy: the camera shaken, a pad rumbling
+	}
 }
 
 void AUghGameMode::HoldShotEffect(const ugh_logic_view& View)

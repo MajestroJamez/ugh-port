@@ -1830,3 +1830,17 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   (163) a 200 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 13, 1 % low 10 (editor,
   Epic; zahřátý notebook - A/B ve stejném sezení: kód před krokem 11 / 8, po něm 13 / 10; 27b 18 / 15). Balíček
   nepřebalen (konec kroku 29). Další: **krok 29c**.
+- 2026-10-09: krok 29c hotový - pocit z nárazu (`docs/visual-concept.md`, README hry). `FUghImpacts` (jen dekorace,
+  logika beze změny): havárie, kámen na nepříteli (omráčení či odraz od stromu, cítí pilot, který kámen pustil), pád
+  vrtulníku do moře (`FUghDunks`, podle rychlosti) a náraz do okraje (`FUghEdgeBumps`, vyňato z `AUghFringe`, i bez
+  rostlin). Otřes kamery hry tlumený kmit v rovině obrazovky ve směru nárazu: havárie 12 jednotek (1,2 px originálu),
+  kámen 5, moře 6, okraj 3,5, součet nejvýš 16, utichne do ~0,5 s; ne v letech. Settings > Game > Camera shake
+  (`FUghSettings::bShake`, profil `cameraShake`, starý profil zapnuto); autopilot snímků stojí, `shot.ps1 -Shake` se
+  třese (log `UGH shake`). Vibrace gamepadu toho pilota (havárie 0,9 / 0,45 s ... okraj 0,3 / 0,15 s) přes XInput
+  přímo (`FUghPads`: pilot 1 první připojený pad, pilot 2 druhý; engine by kvůli `DeviceMappingPolicy=3` vibroval jen
+  naposledy použitým). Nové testy `Ugh.Impact.Feel`, `Ugh.Impact.Level` (skutečná logika levelu 1: vznášení nic,
+  střemhlav havárie, kámen na strom, moře jednou, okraj vlevo a nahoře), rozšířené `Ugh.Settings.SaveLoad` a `.Menu`.
+  Snímky `Saved\Shots\29c` (`settings.png` s řádkem, `1p-01-dunk*-shake/-still.png`, logy otřesu). CTest logiky,
+  `6_verification` (163) a 204 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 13, 1 % low
+  9 (editor, Epic, zahřátý notebook; 29a 13 / 10). Skutečný gamepad tu není - čeká na Jana (vibrace dvou padů).
+  Balíček nepřebalen (konec kroku 29). Další: **krok 29f**.

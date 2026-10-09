@@ -8,7 +8,7 @@ namespace
 {
 	const TCHAR* const Labels[FUghSettingsMenu::RowCount] = { TEXT("Quality"), TEXT("Upscaler"),
 		TEXT("Frame generation"), TEXT("Resolution"), TEXT("Window"), TEXT("Volume"), TEXT("Music"), TEXT("Effects"),
-		TEXT("Flight to the stone"), TEXT("Controls"), TEXT("Back") };
+		TEXT("Flight to the stone"), TEXT("Camera shake"), TEXT("Controls"), TEXT("Back") };
 
 	const TCHAR* const QualityHints[FUghSettings::QualityLevels] = {
 		TEXT("The fastest (a third to half resolution, kept at 60 fps): the sky's light, the sun's shadows, plain hair"),
@@ -122,6 +122,7 @@ bool FUghSettingsMenu::Change(int32 Direction, FUghSettings& Settings, const FUg
 	case ERow::Music: Settings.Music = StepVolume(Settings.Music, Direction); break;
 	case ERow::Effects: Settings.Effects = StepVolume(Settings.Effects, Direction); break;
 	case ERow::Intro: Settings.bIntro = !Settings.bIntro; break;
+	case ERow::Shake: Settings.bShake = !Settings.bShake; break;
 	default: break;
 	}
 	return !(Settings == Before);
@@ -151,6 +152,7 @@ FString FUghSettingsMenu::ValueOf(ERow Row, const FUghSettings& Settings, const 
 	case ERow::Music: return FString::Printf(TEXT("%d %%"), Settings.Music);
 	case ERow::Effects: return FString::Printf(TEXT("%d %%"), Settings.Effects);
 	case ERow::Intro: return Settings.bIntro ? TEXT("On") : TEXT("Off");
+	case ERow::Shake: return Settings.bShake ? TEXT("On") : TEXT("Off");
 	default: return FString();
 	}
 }
@@ -183,6 +185,8 @@ FString FUghSettingsMenu::HintOf(ERow Row, const FUghSettings& Settings, const F
 	case ERow::Music: return TEXT("The original's music in the menu and the levels");
 	case ERow::Effects: return TEXT("The original's sounds of the game");
 	case ERow::Intro: return TEXT("At each level's start the camera flies over the sea to the stone it is carved into");
+	case ERow::Shake:
+		return TEXT("A crash, a stone on an enemy, a fall into the sea, a bump into the edge shake the camera a little");
 	case ERow::Controls: return TEXT("The pilots' keys and the gamepads");
 	default: return TEXT("Back to the title");
 	}

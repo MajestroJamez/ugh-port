@@ -153,6 +153,46 @@ private:
 };
 
 /**
+ * The copters' bumps into the edges of the screen (UghFringe::LeftEdge, RightEdge, TopEdge: the logic just stops a
+ * copter there), frame by frame between the logic's views: a copter reaching an edge at BumpSpeed pixels a second into
+ * it or faster bumps it once, again only once it left it. The soft edges' plants shake (AUghFringe), the camera and
+ * the pilot's gamepad feel it (FUghImpacts).
+ */
+class FUghEdgeBumps
+{
+public:
+	static constexpr double BumpSpeed = 12;
+	/** A bump: whose copter, which edge (0 left, 1 right, 2 top), how fast into it (pixels a second). */
+	struct FBump
+	{
+		int32 Player;
+		int32 Edge;
+		double Speed;
+	};
+
+	/** The frame `Seconds` after the last one between the views (Alpha); nothing outside the play. */
+	void See(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds);
+	/** Where copter `Player` is seen now (its top left corner, pixels), none outside the play. */
+	TOptional<FVector2D> At(int32 Player) const
+	{
+		return Player >= 0 && Player < UE_ARRAY_COUNT(Seen) ? Seen[Player].At : TOptional<FVector2D>();
+	}
+	/** The bumps of this frame. */
+	TConstArrayView<FBump> GetBumps() const { return Bumps; }
+
+private:
+	/** A copter as it was seen last: where, how fast (pixels a second), at which edges. */
+	struct FCopterSeen
+	{
+		TOptional<FVector2D> At;
+		FVector2D Velocity = FVector2D::ZeroVector;
+		bool bAtEdge[3] = { false, false, false };   // left, right, top
+	};
+	FCopterSeen Seen[2];
+	TArray<FBump> Bumps;
+};
+
+/**
  * The soft edges (UghFringe): the scanned plants of the Electric Dreams sample (lianas, ferns, roots, bushes, creepers;
  * a liana of Blender's vines.py without them, the rest then absent), instanced. A copter near them pushes them away -
  * swaying as hanging chains (FUghFringeSway), each plant turned and moved instance by instance (no material of the
@@ -173,6 +213,8 @@ public:
 	 */
 	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
 		FUghEffectPlayer& Effects);
+	/** The copters' bumps into the edges since the last call (FUghImpacts; also without the plants). */
+	TArray<FUghEdgeBumps::FBump> TakeBumps() { return MoveTemp(Bumped); }
 
 protected:
 	virtual void BeginPlay() override;
@@ -185,19 +227,12 @@ private:
 		int32 Instance = INDEX_NONE;
 		FTransform Rest;
 	};
-	/** A copter as the fringe saw it last: where (its top left corner, pixels), how fast (pixels a second). */
-	struct FCopterSeen
-	{
-		TOptional<FVector2D> At;
-		FVector2D Velocity = FVector2D::ZeroVector;
-		bool bAtEdge[3] = { false, false, false };   // left, right, top
-		double Quiet = 0;   // seconds since its last leaves
-	};
-
 	TArray<FUghFringePlant> Plants;
 	TArray<FShown> Shown;
 	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Components;
-	FCopterSeen Seen[2];
+	FUghEdgeBumps Edges;
+	double Quiet[2] = { 0, 0 };   // seconds since a copter's last leaves
+	TArray<FUghEdgeBumps::FBump> Bumped;
 	FUghFringeSway Sway;
 	bool bStill = true;   // nothing bends
 };

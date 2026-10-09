@@ -125,11 +125,11 @@ namespace
 		HoldDamping = 0.8, MostStep = 1.0 / 240;
 	constexpr int32 ShortSegments = 3;
 	/**
-	 * A copter's bump into an edge: from this speed (pixels a second) it shakes the plants it touches (pixels a second for
-	 * a pixel a second, at most), a few leaves fall (the burst Rustle, at most every LeavesEvery seconds a copter);
-	 * while it is in them they shiver (pixels a second, a second).
+	 * A copter's bump into an edge (FUghEdgeBumps) shakes the plants it touches (pixels a second for a pixel a second, at
+	 * most), a few leaves fall (the burst Rustle, at most every LeavesEvery seconds a copter); while it is in them they
+	 * shiver (pixels a second, a second).
 	 */
-	constexpr double BumpSpeed = 12, BumpKick = 0.2, MostKick = 15, LeavesEvery = 0.7, Shiver = 80;
+	constexpr double BumpKick = 0.2, MostKick = 15, LeavesEvery = 0.7, Shiver = 80;
 	/** Below this a chain is at rest (pixels, pixels a second); a frame this long at most (seconds). */
 	constexpr double RestOffset = 0.01, RestSpeed = 0.02, LongestFrame = 0.1;
 }
@@ -569,18 +569,11 @@ void AUghFringe::BeginPlay()
 	UE_LOG(LogTemp, Display, TEXT("UGH fringe: %d plants, %d models"), Plants.Num(), Components.Num());
 }
 
-void AUghFringe::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
-	FUghEffectPlayer& Effects)
+void FUghEdgeBumps::See(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds)
 {
-	if (Shown.IsEmpty() || Seconds <= 0)
-	{
-		return;
-	}
-	// the copters now: where they reach, a bump into an edge
+	Bumps.Reset();
 	const bool bPlay = Current.phase == UGH_LOGIC_PHASE_PLAY && Current.level_id >= 0;
 	const ugh_logic_view& From = UghBetween::From(Previous, Current);
-	TArray<FBox2D, TInlineAllocator<2>> Reaches;
-	TArray<double, TInlineAllocator<2>> Bumps;   // pixels a second into an edge, 0 none
 	for (int32 Player = 0; Player < UE_ARRAY_COUNT(Seen); ++Player)
 	{
 		FCopterSeen& Copter = Seen[Player];
@@ -592,36 +585,67 @@ void AUghFringe::Show(const ugh_logic_view& Previous, const ugh_logic_view& Curr
 		const ugh_logic_copter& To = Current.copters[Player];
 		const ugh_logic_copter& Was = Player < From.copter_count ? From.copters[Player] : To;
 		const FVector2D At = UghBetween::Position(Was.x, Was.y, To.x, To.y, Alpha);
-		const FVector2D Velocity = Copter.At ? (At - *Copter.At) / Seconds : FVector2D::ZeroVector;
+		const FVector2D Velocity = Copter.At && Seconds > 0 ? (At - *Copter.At) / Seconds : FVector2D::ZeroVector;
 		const bool bEdges[3] = { At.X <= UghFringe::LeftEdge + 0.01, At.X >= UghFringe::RightEdge - 0.01,
 			At.Y <= UghFringe::TopEdge + 0.01 };
 		const double Into[3] = { -Copter.Velocity.X, Copter.Velocity.X, -Copter.Velocity.Y };
-		const FVector2D Places[3] = { FVector2D(UghFringe::LeftEdge + UghFringe::ReachLeft - 2, At.Y + 8),
-			FVector2D(UghFringe::RightEdge + UghFringe::ReachRight + 2, At.Y + 8),
-			FVector2D(At.X + 16, UghFringe::TopEdge + 1) };
-		double Bump = 0;
-		Copter.Quiet += Seconds;
 		for (int32 Edge = 0; Edge < 3; ++Edge)
 		{
 			if (bEdges[Edge] && !Copter.bAtEdge[Edge] && Copter.At && Into[Edge] >= BumpSpeed)
 			{
-				Bump = FMath::Max(Bump, Into[Edge]);
 				UE_LOG(LogTemp, Display, TEXT("UGH fringe: copter %d into the %s edge at %.0f px/s"), Player + 1,
 					Edge == 0 ? TEXT("left") : Edge == 1 ? TEXT("right") : TEXT("top"), Into[Edge]);
-				if (Copter.Quiet >= LeavesEvery)
-				{
-					Effects.Order(EUghBurst::Rustle, Places[Edge], Current, FMath::Clamp(Into[Edge] / 60, 0.6, 1.3));
-					Copter.Quiet = 0;
-				}
+				Bumps.Add({ Player, Edge, Into[Edge] });
 			}
 			Copter.bAtEdge[Edge] = bEdges[Edge];
 		}
 		Copter.Velocity = FMath::Lerp(Copter.Velocity, Velocity, FMath::Min(Seconds * 20, 1.0));
 		Copter.At = At;
-		Reaches.Add(UghFringe::Reach(At));
+	}
+}
+
+void AUghFringe::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
+	FUghEffectPlayer& Effects)
+{
+	if (Seconds <= 0)
+	{
+		return;
+	}
+	// the copters now: where they reach, a bump into an edge (felt also without the plants: FUghImpacts)
+	Edges.See(Previous, Current, Alpha, Seconds);
+	TArray<FBox2D, TInlineAllocator<2>> Reaches;
+	TArray<double, TInlineAllocator<2>> Bumps;   // pixels a second into an edge, 0 none
+	for (int32 Player = 0; Player < UE_ARRAY_COUNT(Quiet); ++Player)
+	{
+		Quiet[Player] += Seconds;
+		const TOptional<FVector2D> At = Edges.At(Player);
+		if (!At)
+		{
+			Quiet[Player] = 0;
+			continue;
+		}
+		double Bump = 0;
+		for (const FUghEdgeBumps::FBump& Each : Edges.GetBumps())
+		{
+			if (Each.Player != Player)
+			{
+				continue;
+			}
+			Bump = FMath::Max(Bump, Each.Speed);
+			Bumped.Add(Each);
+			const FVector2D Places[3] = { FVector2D(UghFringe::LeftEdge + UghFringe::ReachLeft - 2, At->Y + 8),
+				FVector2D(UghFringe::RightEdge + UghFringe::ReachRight + 2, At->Y + 8),
+				FVector2D(At->X + 16, UghFringe::TopEdge + 1) };
+			if (!Shown.IsEmpty() && Quiet[Player] >= LeavesEvery)
+			{
+				Effects.Order(EUghBurst::Rustle, Places[Each.Edge], Current, FMath::Clamp(Each.Speed / 60, 0.6, 1.3));
+				Quiet[Player] = 0;
+			}
+		}
+		Reaches.Add(UghFringe::Reach(*At));
 		Bumps.Add(Bump);
 	}
-	if (bStill && Reaches.IsEmpty())
+	if (Shown.IsEmpty() || (bStill && Reaches.IsEmpty()))
 	{
 		return;
 	}

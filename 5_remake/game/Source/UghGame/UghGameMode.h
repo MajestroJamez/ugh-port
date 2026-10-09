@@ -8,10 +8,12 @@
 #include "UghDunk.h"
 #include "UghFigureActions.h"
 #include "UghFling.h"
+#include "UghImpacts.h"
 #include "UghIntro.h"
 #include "UghLevelArt.h"
 #include "UghMenu.h"
 #include "UghMotionBlur.h"
+#include "UghPads.h"
 #include "UghPasswords.h"
 #include "UghProfile.h"
 #include "UghShot.h"
@@ -144,6 +146,8 @@ private:
 	FUghFlings Flings;
 	FUghDunks Dunks;
 	FUghMotionBlur MotionBlur;   // of the play: the copters blur the more the faster they fly
+	FUghImpacts Impacts;         // a crash, a stone on an enemy, a fall into the sea, a bump: the camera shaken, a pad rumbling
+	FUghPads Pads;
 	FUghLevelArt LevelArt;
 	FUghPasswords Passwords;
 	FUghProfile Profile;

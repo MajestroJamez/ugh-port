@@ -19,5 +19,9 @@ public class UghGame : ModuleRules
 			"RHI",   // the GPU, for the quality a computer starts with (UghGraphics)
 			"DLSSBlueprint", "StreamlineDLSSGBlueprint"   // the upscalers (plugins DLSS, Streamline; FSR needs no code)
 		});
+		if (Target.IsInPlatformGroup(UnrealPlatformGroup.Windows))
+		{
+			AddEngineThirdPartyPrivateStaticDependencies(Target, "XInput");   // each pilot's gamepad rumbling (FUghPads)
+		}
 	}
 }

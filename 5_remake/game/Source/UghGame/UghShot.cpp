@@ -125,6 +125,7 @@ bool FUghShot::Configure()
 		EffectAt = FVector2D(FCString::Atod(*AtNumbers[0]), FCString::Atod(*AtNumbers[1]));
 		Suffix += FString::Printf(TEXT("-at%.0f_%.0f"), EffectAt->X, EffectAt->Y);
 	}
+	bShake = FParse::Param(CommandLine, TEXT("UghShotShake"));
 	bWide = FParse::Param(CommandLine, TEXT("UghShotWide"));
 	if (bWide)
 	{

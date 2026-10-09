@@ -886,3 +886,22 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
 - Snímky z herní kamery: `shot.ps1 -Effect all -Wide` (`-UghShotWide`: bez detailního záběru), `-EffectAt x,y`
   (efekt na místě obrazovky). `Saved\Shots\29a-before` a `29a-t3` (den ve stínu jeskyně level 1, slunce level 3,
   noc level 6, výřezy `sheet-1p0N.png`), detaily `29a-closeup`, kouř po 1 s `29a-smoke`.
+
+## Pocit z nárazu (krok 29c)
+
+- `FUghImpacts` (jen dekorace, logika beze změny): havárie (událost logiky), kámen na nepříteli (omráčení nebo odraz
+  od stromu - cítí ho pilot, který kámen pustil), pád vrtulníku do moře (`FUghDunks`, síla podle rychlosti) a náraz
+  do okraje obrazovky (`FUghEdgeBumps`, vyňato z `AUghFringe`, funguje i bez rostlin; síla podle rychlosti).
+- Otřes kamery: tlumený kmit v rovině obrazovky ve směru nárazu (u okraje do strany, nahoře a ve vodě svisle, menší
+  kmit napříč), začne z klidu. Havárie 12 jednotek (1,2 px obrazovky originálu) 13 Hz, utichne za ~0,5 s; kámen 5,
+  moře 6 (× rychlost), okraj 3,5; součet nejvýš 16 jednotek - herní pohled zůstává čitelný. Jen kamera hry (ne lety),
+  vypínatelné: Settings > Game > Camera shake (`FUghSettings::bShake`, v profilu `cameraShake`, starý profil zapnuto).
+  Autopilot snímků stojí, s `shot.ps1 -Shake` se třese (log `UGH shake`).
+- Vibrace: motory gamepadu toho pilota (velký a malý 0,6), havárie 0,9 na 0,45 s, kámen 0,5 / 0,22 s, moře 0,55 /
+  0,35 s, okraj 0,3 / 0,15 s, doznívají. `FUghPads` je nastavuje přes XInput přímo (pilot 1 první připojený gamepad,
+  pilot 2 druhý jako `FUghControls`), jen při změně: silová zpětná vazba enginu umí jen naposledy použitý gamepad,
+  protože všechny gamepady patří jednomu hráči (`input.DeviceMappingPolicy=3`, krok 22).
+- Testy `Ugh.Impact.Feel` (každý náraz: kamera z klidu, nejvýš 16, utichne, jen pad svého pilota, pořadí síly,
+  ostatní události nic, vypnutý otřes - kamera stojí, pad vibruje) a `Ugh.Impact.Level` (skutečná logika levelu 1:
+  vznášení nic, střemhlav na zem havárie, kámen na strom, pád do moře jednou, okraj vlevo a nahoře po bumpu, pomalu
+  ani setrváním ne), `Ugh.Settings.SaveLoad` a `.Menu` (řádek Camera shake, uložení, starý profil).

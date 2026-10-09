@@ -49,6 +49,8 @@ void AUghGameMode::ApplySettings()
 		UghGraphics::ApplyDisplay(Settings);
 	}
 	Speaker->GetPlayer().SetVolumes(Settings.Volume, Settings.Music, Settings.Effects);
+	// (the autopilot's shots stand still unless they want the shake, -UghShotShake)
+	Impacts.SetShake(Settings.bShake && (!bShooting || Shot.WantsShake()));
 	Applied = Settings;
 }
 

@@ -114,6 +114,8 @@ public:
 	/** Where the burst is held instead of by the first copter (-UghShotEffectAt, pixels); from the game's camera. */
 	const TOptional<FVector2D>& GetEffectAt() const { return EffectAt; }
 	bool IsWide() const { return bWide; }
+	/** The camera shaken by an impact in the shots (-UghShotShake; else they stand still). */
+	bool WantsShake() const { return bShake; }
 
 	/** The level selection is shot (-UghShotIsles): the menu opens it. */
 	bool WantsIsles() const { return !IslesShots.IsEmpty(); }
@@ -231,6 +233,7 @@ private:
 	TOptional<double> EffectAge;   // -UghShotEffectAge
 	TOptional<FVector2D> EffectAt;  // -UghShotEffectAt
 	bool bWide = false;        // -UghShotWide
+	bool bShake = false;       // -UghShotShake
 	TArray<double> Flings;     // -UghShotFling
 	double FlingTime = -1;     // since the passenger was knocked off, -1 not yet
 	TArray<double> Dunks;      // -UghShotDunk
