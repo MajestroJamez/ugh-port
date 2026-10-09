@@ -17,11 +17,15 @@ namespace
 	const FLinearColor GhostColor(0.5f, 0.82f, 1.f);
 	constexpr float GhostOpacity = 0.5f;
 
-	/** A part: movable, no collision, no shadow, nothing of it in Lumen, the distance fields or the ray traced scene. */
+	/**
+	 * A part: movable, no collision, no shadow, nothing of it in Lumen, the distance fields or the ray traced scene. Not
+	 * drawn by Nanite (its fallback mesh instead): Nanite draws no translucency, the material would be invalid there.
+	 */
 	UStaticMeshComponent* AddPart(AActor* Owner, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& At,
 		UMaterialInterface* Material)
 	{
 		UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(Owner);
+		Part->bDisallowNanite = true;
 		Part->SetStaticMesh(Mesh);
 		Part->SetMobility(EComponentMobility::Movable);
 		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
