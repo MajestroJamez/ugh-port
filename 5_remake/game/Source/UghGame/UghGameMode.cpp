@@ -397,6 +397,7 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	Dressing->Show(Pieces);
 	UE_LOG(LogTemp, Display, TEXT("UGH mood: %s"), Mood.Name);
 	Stage->SetMood(Mood, View.wind);
+	Effects->SetShade(Mood.Shade);
 	Water->SetWeather(View.wind, Stage->SunDirection(), Mood.Caustics);
 	Water->SetSky(UghAssets::Texture(Mood.Sky), Mood.SkySeen);
 	Rain->Build(View.level_id < 0 ? nullptr : Logic, View.level_id, View.wind);
@@ -539,9 +540,12 @@ void AUghGameMode::HoldShotEffect(const ugh_logic_view& View)
 	{
 		return;
 	}
-	const FVector2D Place = Effects->GetPlayer().ShotPlace(*Burst, View);
+	const FVector2D Place = Effects->GetPlayer().ShotPlace(*Burst, View, Shot.GetEffectAt());
 	const UghBursts::FBurst& Shown = UghBursts::Get(*Burst);
 	Effects->Hold(*Burst, Place, View, Shot.GetEffectAge().Get(Shown.ShotAge));
-	ShotLook = Place;
-	ShotAround = Shown.Extent;
+	if (!Shot.IsWide())
+	{
+		ShotLook = Place;   // framed around it (else the game's camera)
+		ShotAround = Shown.Extent;
+	}
 }

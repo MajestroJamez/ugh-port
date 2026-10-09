@@ -243,9 +243,9 @@ FUghEffectOrder FUghEffectPlayer::OrderAt(EUghBurst Burst, const FVector2D& Plac
 	return Order;
 }
 
-FVector2D FUghEffectPlayer::ShotPlace(EUghBurst Burst, const ugh_logic_view& View) const
+FVector2D FUghEffectPlayer::ShotPlace(EUghBurst Burst, const ugh_logic_view& View, const TOptional<FVector2D>& At) const
 {
-	const FBox2D Body = View.copter_count > 0 ? BodyOf(View.copters[0])
+	const FBox2D Body = At ? FBox2D(*At, *At) : View.copter_count > 0 ? BodyOf(View.copters[0])
 		: FBox2D(UghShapes::Screen().GetCenter(), UghShapes::Screen().GetCenter());
 	const FVector2D Middle = Body.GetCenter();
 	switch (UghBursts::Get(Burst).Rest)
@@ -255,7 +255,8 @@ FVector2D FUghEffectPlayer::ShotPlace(EUghBurst Burst, const ugh_logic_view& Vie
 	case UghBursts::ERest::Ground:
 		return FVector2D(Middle.X, FloorUnder(FVector2D(Middle.X, Body.Max.Y), View));
 	default:
-		return Middle + FVector2D(Middle.X < UghShapes::ScreenWidth / 2 ? ShotAside : -ShotAside, -ShotAbove);
+		return At ? Middle
+			: Middle + FVector2D(Middle.X < UghShapes::ScreenWidth / 2 ? ShotAside : -ShotAside, -ShotAbove);
 	}
 }
 

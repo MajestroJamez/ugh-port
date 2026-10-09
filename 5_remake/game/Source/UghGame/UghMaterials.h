@@ -66,6 +66,7 @@ namespace UghMaterials
 	inline const TCHAR* ScaleParameter = TEXT("Scale");
 	inline const TCHAR* FloorParameter = TEXT("Floor");
 	inline const TCHAR* ShapeParameter = TEXT("Shape");
+	inline const TCHAR* AmbientParameter = TEXT("Ambient");
 
 	/** Plasticine: the figures. Parameter Color. */
 	inline const TCHAR* Clay = TEXT("/Game/Generated/M_UghClay");
@@ -180,8 +181,10 @@ namespace UghMaterials
 	 * turned to the camera (slowly turning by Spin), 1 lying flat, 2 tumbling (Spin rad/s); Scale scales it all. Its
 	 * look is Shape (UghBursts::EShape), Color; nothing under WaterLevel.
 	 * The shader code is Source/UghEditor/Shaders/UghBurst.hlsl, UghBurstLook.hlsl. Three blends:
-	 * Burst translucent and lit (dust, smoke, spray: Opacity), Bits cut out, lit, tumbling with their light (debris,
-	 * leaves, feathers, shells: Roughness), Glint additive light (fire, sparks, glints: Intensity).
+	 * Burst translucent and lit (dust, smoke, spray: Opacity) - each puff a soft ball (UghBurstBall.hlsl) in the lights
+	 * reaching it and the shade's light Ambient (a colour as the exposure shows it, FUghMood::Shade) -, Bits cut out,
+	 * lit, tumbling with their light (debris, leaves, feathers, shells: Roughness), Glint additive light (fire, sparks,
+	 * glints: Intensity).
 	 */
 	inline const TCHAR* Burst = TEXT("/Game/Generated/M_UghBurst");
 	inline const TCHAR* Bits = TEXT("/Game/Generated/M_UghBits");

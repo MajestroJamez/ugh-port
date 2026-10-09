@@ -638,6 +638,79 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   Development build (Shipping, `.pdb` lokálně dál), DLSS knihovny dvakrát. Cíl 1-1,5 GB bez viditelné změny.
 - Hotovo když: nový balíček s PSO cache, velikosti před/po, arch rychlé sady ze zabaleného beze změny, fps beze změny.
 
+## Krok 29 - Další vylepšení (Jan 2026-10-09: „udělej všechno“)
+
+Pořadí: 29a+29c, 29f+29g, 29d, 29b, 29e, nakonec balení (`pso.ps1`, Shipping zip). Logika a pravidla beze změny.
+
+### Krok 29a - Viditelné efekty kroku 20
+
+- Kouř, prach, starší `splash` a další výbuchy s osvětlenými průsvitnými obláčky jsou z herní kamery skoro
+  neviditelné (černé ve stínu jeskyně / fialový čtverec zblízka - viz 25d). Opravit u zdroje pro všechny efekty.
+
+### Krok 29c - Pocit z nárazu
+
+- Krátký otřes kamery (malý, tlumený, vypínatelný v Settings) a vibrace gamepadu při crashi, dopadu kamene na
+  nepřítele, čáknutí do vody, nárazu do okraje; síla podle události.
+
+### Krok 29f - Replaye: uložení po levelu, automaticky nejlepší, formát ke sdílení
+
+- Po konci levelu (karta konce) volba „Save replay“; automaticky se ukládá nejlepší replay každého levelu a režimu
+  (kritérium: nejvyšší skóre levelu, při rovnosti nejkratší čas). Přehrání z menu (High scores / výběr levelu).
+- Formát `.ughr`: malý, textový nebo binární s textovým obalem, sdílitelný (soubor i krátký řetězec ke zkopírování,
+  např. base64url s kontrolním součtem): hlavička (verze formátu, hash/verze logiky, režim, obtížnost, level, heslo,
+  RNG stav/seed, jméno, skóre, čas, datum), vstupy po ticích komprimované (RLE změn kláves). Přehrání je
+  deterministické přes logiku; nesoulad verze logiky ohlásit. Vztah k `UGR 1` (golden replays) - sdílet kód, kde
+  to dává smysl. Import ze schránky / ze souboru.
+- Hotovo když: test uložit → načíst → přehrát dá stejné skóre a stav, poškozený/cizí soubor odmítnut.
+
+### Krok 29g - Duch nejlepšího průletu
+
+- V levelu poloprůhledný „duch“ vrtulníku z nejlepšího replaye (29f), vypínatelný v Settings; deterministicky
+  z logiky v druhé instanci, levné (bez postav ve vysoké kvalitě), nezasahuje do hry.
+
+### Krok 29d - Živí cestující
+
+- Čekající přešlapují / netrpělivě mávají, když vrtulník letí blízko nízko uhýbají / kryjí se, po doručení radost.
+  Jen animace podle stavů logiky, pozice beze změny.
+
+### Krok 29b - Zvuk prostředí
+
+- Ambient moře (vlny podle počasí), džungle (ptáci, hmyz; noc jinak), vítr a déšť v bouři, praskání ohňů a loučí
+  (3D, podle vzdálenosti), šplouchání (25a, 25d), šustění lián (24d). Zdroje CC0 bez účtů nebo syntéza; mixer
+  (hudba / efekty / prostředí - nový posuvník v Settings). Agent nikdy nepouští zvuk nahlas (testy přes
+  analýzu bufferu / -nosound).
+
+### Krok 29e - Zbylé hitche na Low
+
+- 1 % low na Low ~38 fps a hitche 50-160 ms (24f): najít příčinu (Insights, první použití, streaming, GC) a odstranit.
+
+## Krok 30 - Grafika (Jan 2026-10-09: „přidej všechno“)
+
+Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změny; každé zlepšení levné na Low (24f).
+
+### Krok 30a - Tvar skály: vrstvy a převisy místo kvádrů
+
+- Z herní kamery čelo levelu působí jako zeď z hranatých kvádrů podle dlaždicové mřížky originálu. Rozbít hrany
+  a plochy do zvlněných vrstev břidlice (24e), převisů a odlomených bloků; kolizní hrana přesně stejná (test).
+
+### Krok 30b - Plošiny a trávníky
+
+- Rovné zelené pruhy nahradit: tráva přerůstající přes hranu, kameny, hlína, pestřejší barvy a výšky, vyšlapané
+  cestičky k jeskyním. Postavy dál čitelné (24c).
+
+### Krok 30c - Hloubka jeskyní
+
+- Mlha v jeskyních, paprsky světla vchody, teplé světlo ohňů hlouběji uvnitř, aby jeskyně nebyly jen černé díry.
+
+### Krok 30d - Mokrá skála u vody a odraz
+
+- Tmavší lesklý pruh mokré skály nad hladinou, který stoupá a klesá s vodou z logiky; odraz levelu v moři (levný
+  na Low).
+
+### Krok 30e - Stín vrtulníku
+
+- Měkký stín vrtulníku na plošině a skále pod ním (výška čitelná, pomůže přistání), i na Low.
+
 ## Průběžně
 
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
@@ -1740,3 +1813,20 @@ Jan zahrál level 1. Kroky 24a-24d jdou postupně (sdílejí build a editor), ka
   CTest logiky, `6_verification` (163) a 206 testů v UE zelené (3 s varováním enginu). Čeká na Jana: zip na RTX
   5060 Ti (DLSS, frame generation v Shipping).
   Další: hotovo (krok 28).
+- 2026-10-09: krok 29a hotový - viditelné efekty kroku 20 (`docs/visual-concept.md`, README hry). Příčina: obláčky
+  `M_UghBurst` (prach, kouř, tříšť, pěna) jsou průsvitné a osvětlené dopředně - slunce se stínem, ohně a záblesky
+  na pixel, nepřímé světlo jen z objemu průsvitnosti Lumenu, který končí 80 m od kamery; herní kamera je 113 m daleko
+  (25b), takže ve stínu jeskyně obláček nedostal žádné světlo (černý), u kamery (detail, let) hrubé buňky objemu
+  (hranatý fialový čtverec), a čtverec s pevnou normálou svítil jako stěna. Oprava u zdroje (`UghMakeEffects.cpp`,
+  `UghBurstBall.hlsl`): obláček je měkká koule (ze strany slunce, ohně, záblesku jasnější), specular 0, světlo stínu
+  dává nálada `FUghMood::Shade` (jak expozice ukazuje bílou ve stínu: den ~0,9, noc 0,22-0,4 modrá) jako emise přes
+  `EyeAdaptationInverse` - stejné v každé vzdálenosti i na Low bez Lumenu. Kouř výbuchu šedohnědý (albedo 0,17), ve
+  stínu šedý, nesvítí. Voda všech efektů (kapky, tříšť, pěna, kroužky: `splash`, `surf`, `plunge`, `dunk`, `boil`)
+  zase osvětlená - obejití z 25d (aditivní `Glint`, v noci svítilo bíle) pryč; `Glint` jen oheň, jiskry, třpyt. Prach
+  a dopad hustší (34 / 28 obláčků, kryjí 0,7). `shot.ps1 -Wide` (z herní kamery), `-EffectAt x,y`. Snímky
+  `Saved\Shots\29a-t3` (všech 16 efektů z herní kamery: level 1 den ve stínu jeskyně, 3 na slunci, 6 noc; výřezy
+  `sheet-1p01.png`, `sheet-1p03.png`, `sheet-1p06.png`), před `29a-before`, noc voda před/po `29a-cmp3\zz.png`,
+  detaily `29a-closeup\sheet-closeup.png` (bez čtverců), kouř po 1 s `29a-smoke`. CTest logiky, `6_verification`
+  (163) a 200 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 13, 1 % low 10 (editor,
+  Epic; zahřátý notebook - A/B ve stejném sezení: kód před krokem 11 / 8, po něm 13 / 10; 27b 18 / 15). Balíček
+  nepřebalen (konec kroku 29). Další: **krok 29c**.

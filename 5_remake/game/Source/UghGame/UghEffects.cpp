@@ -187,6 +187,7 @@ FUghBurstShown* AUghEffects::Start(const FUghEffectOrder& Order)
 	for (int32 Part = 0; Part < Each.Parts.Num(); ++Part)
 	{
 		SetPart(Each.Materials[Part], Burst.Parts[Part], Order, Floor, bLoop);
+		Each.Materials[Part]->SetVectorParameterValue(UghMaterials::AmbientParameter, Shade);
 		Each.Materials[Part]->SetScalarParameterValue(UghMaterials::ElapsedParameter, 0.f);
 		Each.Materials[Part]->SetScalarParameterValue(UghMaterials::WaterLevelParameter, WaterZ);
 		Each.Parts[Part]->SetWorldLocation(Where);

@@ -39,7 +39,9 @@ struct FUghHighScores;
  * -frame...: a look at the soft edges (AUghFringe). -UghShotEffect=<bursts> (names of UghBursts separated by commas, or
  * all) shoots each level once for each burst, held by the first copter when the play begins (beside it in the air, on
  * the ground or the water under it) -UghShotEffectAge seconds into it (else its ShotAge) and framed around it, the name
- * ending in -<burst> after the others: a look at the bursts of the events (AUghEffects), which come from no event then.
+ * ending in -<burst> after the others: a look at the bursts of the events (AUghEffects), which come from no event then;
+ * -UghShotEffectAt=<x>,<y> holds it at that place of the screen instead (pixels; the ground under it, the water below
+ * it), the name ending in -at<x>_<y> before -<burst>; -UghShotWide shows it from the game's camera (-wide), not framed.
  * -UghShotFling=<seconds> (several separated by commas: the level shot once for each) lets the first copter knock the
  * first passenger on land off its pad (FUghKnockPilot) and takes the shot that many seconds after the logic knocked it
  * into the water (FUghFlings: flung towards the camera, its splash), the name ending in -fling<seconds> after the
@@ -109,6 +111,9 @@ public:
 	/** The burst (UghBursts) the level being shot shows held (-UghShotEffect), empty for none; how far into it. */
 	FString GetEffect() const { return Next < Targets.Num() ? Targets[Next].Effect : FString(); }
 	TOptional<double> GetEffectAge() const { return EffectAge; }
+	/** Where the burst is held instead of by the first copter (-UghShotEffectAt, pixels); from the game's camera. */
+	const TOptional<FVector2D>& GetEffectAt() const { return EffectAt; }
+	bool IsWide() const { return bWide; }
 
 	/** The level selection is shot (-UghShotIsles): the menu opens it. */
 	bool WantsIsles() const { return !IslesShots.IsEmpty(); }
@@ -224,6 +229,8 @@ private:
 	FKey Steering;             // the key it holds to fly there
 	TArray<FString> Effects;   // -UghShotEffect
 	TOptional<double> EffectAge;   // -UghShotEffectAge
+	TOptional<FVector2D> EffectAt;  // -UghShotEffectAt
+	bool bWide = false;        // -UghShotWide
 	TArray<double> Flings;     // -UghShotFling
 	double FlingTime = -1;     // since the passenger was knocked off, -1 not yet
 	TArray<double> Dunks;      // -UghShotDunk

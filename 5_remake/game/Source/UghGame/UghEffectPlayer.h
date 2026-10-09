@@ -103,8 +103,11 @@ public:
 	TOptional<FBox2D> Find(const ugh_logic_view& View, int32 Kind, int32 Index) const;
 	/** An order of `Burst` at `Place` in `View` (its floor, its facing), for a shot (FUghShot) or an event. */
 	FUghEffectOrder OrderAt(EUghBurst Burst, const FVector2D& Place, const ugh_logic_view& View) const;
-	/** Where a shot shows `Burst` in `View`: by the first copter, on the ground or the water under it (UghBursts::ERest). */
-	FVector2D ShotPlace(EUghBurst Burst, const ugh_logic_view& View) const;
+	/**
+	 * Where a shot shows `Burst` in `View`: by the first copter (or `At`, pixels), on the ground or the water under it
+	 * (UghBursts::ERest).
+	 */
+	FVector2D ShotPlace(EUghBurst Burst, const ugh_logic_view& View, const TOptional<FVector2D>& At = {}) const;
 
 private:
 	/** The place of `Anchor` for `Event` in `View`; none without its entity and copter. */

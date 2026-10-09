@@ -14,7 +14,9 @@
 # at the start of the level that many seconds into it instead (4.5: its end, the game's camera; later: that much after
 # its end, the caption still shown; the name ends in -intro<seconds>, e.g. -intro0.3), -Effect <bursts>: a burst of the
 # events (names of UghBursts.cpp separated by commas, or all) held by the first copter, framed around it, one shot each
-# (the name ends in -<burst>, e.g. 1p-01-explosion), -EffectAge <seconds> into it (else its own moment), -Edge
+# (the name ends in -<burst>, e.g. 1p-01-explosion), -EffectAge <seconds> into it (else its own moment), -EffectAt
+# <x>,<y> held at that place of the screen instead (pixels; on the ground under it, the water below it; the name ends
+# in -at<x>_<y>), -Wide seen from the game's camera, not framed (-wide), -Edge
 # left|right|top: the first copter flies into that edge of the screen (beside it at the height -EdgeY pixels, 20 without
 # it; the top pedalling up) and the shot is taken -EdgeAfter seconds (0.25) after it got there: the plants of the soft
 # edges bent (the name ends in -edge<edge> after -frame...), -Fling <seconds>: the first copter knocks the first
@@ -42,7 +44,7 @@
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$Land,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
-    [string]$EffectAge = '', [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Rush = '', [string]$RushAfter = '1', [int]$RushY = -1, [int]$Difficulty = -1, [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
+    [string]$EffectAge = '', [string]$EffectAt = '', [switch]$Wide, [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Rush = '', [string]$RushAfter = '1', [int]$RushY = -1, [int]$Difficulty = -1, [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
     [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '', [string]$Isles = '',
     [int]$TimeoutSeconds = 300)
 
@@ -141,6 +143,8 @@ if ($EdgeY -ge 0) { $arguments += " -UghShotEdgeY=$EdgeY" }
 if ($Intro) { $arguments += " -UghShotIntro=$Intro" }
 if ($Effect) { $arguments += " -UghShotEffect=$Effect" }
 if ($EffectAge) { $arguments += " -UghShotEffectAge=$EffectAge" }
+if ($EffectAt) { $arguments += " -UghShotEffectAt=$EffectAt" }
+if ($Wide) { $arguments += ' -UghShotWide' }
 if ($Fling) { $arguments += " -UghShotFling=$Fling" }
 if ($Dunk) { $arguments += " -UghShotDunk=$Dunk" }
 if ($Drop) { $arguments += " -UghShotDrop=$Drop" }

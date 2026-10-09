@@ -46,6 +46,12 @@ struct FUghMood
 	 */
 	float FigureFill;
 	float Halo;
+	/**
+	 * The light in the shade of the cave as the exposure shows it (linear, what a white surface there looks like): the
+	 * puffs of the bursts take it (UghMaterials::Burst) besides the sun, the fires and the flashes reaching them - the
+	 * engine's indirect light of translucency does not reach the play, 113 m from its camera.
+	 */
+	FLinearColor Shade;
 };
 
 namespace UghMood

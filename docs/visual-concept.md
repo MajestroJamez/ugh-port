@@ -553,9 +553,9 @@ mají být skutečné vchody do jeskyně, ne díra do skály.
 - Niagara ne (binární assety z editoru): efekty jsou jako déšť kroku 19 sítě drobných čtverečků, které hýbe
   a kreslí materiál na GPU (`UghBurst.hlsl`, `UghBurstLook.hlsl`): částice vyletí z krabice do kužele, brzdí ji
   vzduch, padá (nebo stoupá), kolébá se, převrací se a leží na zemi pod sebou; pod hladinou zmizí. Tři materiály:
-  `M_UghBurst` (průsvitný, osvětlený: prach, kouř, tříšť, kroužky na vodě), `M_UghBits` (vyříznutý, osvětlený,
-  převrací se i se světlem: třísky, listí, peří, mušle, okvětní lístky), `M_UghGlint` (světlo: oheň výbuchu, jiskry,
-  třpyt, kapky). Za snímek se nastaví jen čas; od každého efektu nejvýš 3 naráz (nejstarší ustoupí), dvě světla
+  `M_UghBurst` (průsvitný, osvětlený: prach, kouř, voda - kapky, tříšť, pěna, kroužky; světlo viz krok 29a),
+  `M_UghBits` (vyříznutý, osvětlený, převrací se i se světlem: třísky, listí, peří, mušle, okvětní lístky),
+  `M_UghGlint` (světlo: oheň výbuchu, jiskry, třpyt). Za snímek se nastaví jen čas; od každého efektu nejvýš 3 naráz (nejstarší ustoupí), dvě světla
   záblesků bez stínů, body za zaplacení a omráčení stoupají jako text (HUD).
 - Efekty (`UghBursts.cpp`): šplouchnutí, příboj u kamene při popisku (vidět z letu), výbuch (ohnivé jazyky,
   kouř, třísky, jiskry, záblesk), prach, mušlové peníze, třpyt (u bonusu barva podle druhu), peří, proud vzduchu pod
@@ -747,9 +747,9 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   Pod vodou je vrtulník přesně tam, kde ho má logika. Kde se vynoří a zastaví, zpění vodu (`boil`) a houpe se dál
   rychlostí, kterou vyplaval (nejvýš 1,6 px, utichne za ~2 s); po čáknutí se trochu zakolébá (nejvýš 5°). Houpání
   končí, jakmile ho logika zvedne z hladiny. Voda vystoupaná k vrtulníku na plošině ani pomalé ponoření nečáknou.
-- Sprška a pěna obou čáknutí (`dunk`, i `plunge` z 25a) svítí jako `Glint` (aditivně): osvětlené průsvitné obláčky
-  byly u vrtulníku daleko od kamery ve stínu jeskyně černé (neviditelné) a u kamery hranaté (fialový čtverec
-  objemového světla). Připraveny předem v černé (`Effects->Stock`), žádný nový shader.
+- Sprška a pěna obou čáknutí (`dunk`, i `plunge` z 25a) svítily jako `Glint` (aditivně), protože osvětlené
+  průsvitné obláčky byly z herní kamery černé; od kroku 29a jsou zase osvětlené (opraveno u zdroje, v noci už
+  nesvítí). Připraveny předem v černé (`Effects->Stock`), žádný nový shader.
 - Test `Ugh.Dunk` na skutečné logice levelu 1 (autopilot `FUghDunkPilot` doletí nad volnou vodu co nejvýš a pustí):
   bez havárie, jedno čáknutí přesně v snímku dopadu uprostřed vrtulníku na hladině, pod vodou a zpět na hladinu,
   houpání až po vynoření, malé, bez skoku, utichne; voda stoupající k vrtulníku a pomalé ponoření nečáknou.
@@ -865,3 +865,24 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   ano), `Ugh.Warning` (skutečná logika levelu 1 přes C API na každé obtížnosti: rozjezd na dosažitelnou rychlost těsně
   pod a těsně nad prahem, doběh do skály - varování právě když havaruje; strop obrazovky, moře bez varování, střemhlav
   na zem varováno).
+
+## Viditelné efekty kroku 20 (krok 29a)
+
+- Příčina: obláčky efektů (`M_UghBurst`: prach, kouř, voda) jsou průsvitné a osvětlené dopředným světlem
+  (`TLM_SurfacePerPixelLighting`): slunce se stínem, ohně a záblesky na pixel, nepřímé světlo ale jen z objemu
+  průsvitnosti Lumenu, který končí 80 m od kamery (`r.Lumen.TranslucencyVolume.EndDistanceFromCamera` 8000) - herní
+  kamera je 113 m daleko (25b). Ve stínu jeskyně tak obláček nedostal žádné světlo (černý, neviditelný), u kamery
+  (detail, let) dostal hrubé buňky objemu (hranatý fialový čtverec oblohy). Navíc čtverec s pevnou normálou svítil
+  jako stěna obrácená ke kameře.
+- Oprava u zdroje (`UghMakeEffects.cpp`, `UghBurstBall.hlsl`): obláček je měkká koule (normála podle místa na
+  čtverci a jeho natočení), takže je ze strany světla - slunce, ohně dole, záblesku - jasnější; specular 0. Světlo
+  stínu přidává sám: `FUghMood::Shade` (jak expozice nálady ukazuje bílou plochu ve stínu jeskyně: den 0,85-1,
+  večer teplejší, soumrak 0,5-0,65, noc 0,22-0,4 modrá, bouře 0,65-0,78) jako emise přes `EyeAdaptationInverse`
+  (stejná na všech předvolbách, i Low bez Lumenu, a v každé vzdálenosti kamery). Kouř zůstává kouřem: šedohnědý
+  (albedo 0,17), neosvětlený nesvítí, od ohně výbuchu se zbarví.
+- Voda je osvětlená jako prach (kapky, tříšť, pěna, kroužky šplouchnutí, příboje, `plunge`, `dunk`, `boil`), aditivní
+  `Glint` jen pro skutečné světlo (oheň, jiskry, třpyt): v noci voda nesvítí, jen se leskne v měsíci a ohni. Prach
+  a dopad omráčeného hustší (34 a 28 obláčků, kryjí 0,7), prach poryvu 0,5.
+- Snímky z herní kamery: `shot.ps1 -Effect all -Wide` (`-UghShotWide`: bez detailního záběru), `-EffectAt x,y`
+  (efekt na místě obrazovky). `Saved\Shots\29a-before` a `29a-t3` (den ve stínu jeskyně level 1, slunce level 3,
+  noc level 6, výřezy `sheet-1p0N.png`), detaily `29a-closeup`, kouř po 1 s `29a-smoke`.

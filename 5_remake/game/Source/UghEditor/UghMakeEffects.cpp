@@ -5,6 +5,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialExpressionCameraPositionWS.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
+#include "Materials/MaterialExpressionEyeAdaptationInverse.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
 #include "UghMaterialNodes.h"
 #include "UghMaterials.h"
@@ -19,6 +20,7 @@ namespace
 		UMaterialExpression* Seed = nullptr;
 		UMaterialExpression* AgeLife = nullptr;
 		UMaterialExpression* Spin = nullptr;
+		UMaterialExpression* Mode = nullptr;
 		UMaterialExpression* Move = nullptr;   // the world position offset
 		UMaterialExpression* Look = nullptr;   // the colour and the cover (alpha)
 		UMaterialExpression* Color = nullptr;
@@ -44,6 +46,7 @@ namespace
 			return Nodes;
 		}
 		Nodes.Spin = Scalar(Material, UghMaterials::SpinParameter, 0.f);
+		Nodes.Mode = Scalar(Material, UghMaterials::ModeParameter, 0.f);
 		const FString Spin = ShaderCode(TEXT("UghBurstSpin.hlsl")), Motion = ShaderCode(TEXT("UghBurst.hlsl"));
 		Nodes.Move = Spin.IsEmpty() || Motion.IsEmpty() ? nullptr : Custom(Material, Spin + Motion, CMOT_Float3, {
 			{ TEXT("Position"), Add<UMaterialExpressionWorldPosition>(Material) },
@@ -60,7 +63,7 @@ namespace
 			{ UghMaterials::SizeParameter, Scalar(Material, UghMaterials::SizeParameter, 10.f) },
 			{ UghMaterials::GrowParameter, Scalar(Material, UghMaterials::GrowParameter, 1.f) },
 			{ UghMaterials::StretchParameter, Scalar(Material, UghMaterials::StretchParameter, 0.f) },
-			{ UghMaterials::ModeParameter, Scalar(Material, UghMaterials::ModeParameter, 0.f) },
+			{ UghMaterials::ModeParameter, Nodes.Mode },
 			{ UghMaterials::FlutterParameter, Scalar(Material, UghMaterials::FlutterParameter, 0.f) },
 			{ UghMaterials::SpinParameter, Nodes.Spin },
 			{ UghMaterials::BoxParameter, Vector(Material, UghMaterials::BoxParameter, FLinearColor::Black) },
@@ -92,18 +95,40 @@ namespace
 
 bool UUghMakeAssetsCommandlet::MakeBurst(UMaterial* Material)
 {
+	// The lights reaching each pixel (the sun and its shadow, the fires, a flash), a puff lit as a ball (UghBurstBall),
+	// and the shade's light the mood gives (Ambient, as the exposure shows it). Not the engine's indirect light of
+	// translucency: its volume ends 80 m from the camera, the play's camera is 113 m away (a puff in the shade was
+	// black) and near it its cells are coarse (a blocky square of the sky's tint).
 	Material->BlendMode = BLEND_Translucent;
 	Material->SetShadingModel(MSM_DefaultLit);
 	Material->TranslucencyLightingMode = TLM_SurfacePerPixelLighting;
 	Material->TwoSided = true;
+	Material->bTangentSpaceNormal = false;   // the ball's normal is the world's
 	const FBurstNodes Nodes = BurstNodes(Material);
 	if (!Nodes.IsMade())
 	{
 		return false;
 	}
+	const FString Ball = ShaderCode(TEXT("UghBurstBall.hlsl"));
+	UMaterialExpression* Normal = Ball.IsEmpty() ? nullptr
+		: Custom(Material, ShaderCode(TEXT("UghBurstSpin.hlsl")) + Ball, CMOT_Float3, {
+			{ TEXT("UV"), Coordinates(Material, 0) }, { TEXT("Seed"), Nodes.Seed }, { TEXT("AgeLife"), Nodes.AgeLife },
+			{ UghMaterials::SpinParameter, Nodes.Spin }, { UghMaterials::ModeParameter, Nodes.Mode },
+			{ TEXT("ToCamera"), Add<UMaterialExpressionCameraVectorWS>(Material) } });
+	UMaterialExpressionEyeAdaptationInverse* Exposed = Add<UMaterialExpressionEyeAdaptationInverse>(Material);
+	if (!Normal || !Exposed)
+	{
+		return false;
+	}
+	UMaterialExpression* Color = OfLook(Material, Nodes, TEXT("return Look.rgb * Color;"), CMOT_Float3);
+	// the shade's light: as the exposure shows it, so the light of the scene (scene-referred)
+	Exposed->LightValueInput.Connect(0, Vector(Material, UghMaterials::AmbientParameter, FLinearColor(0.3f, 0.3f, 0.3f)));
+	Exposed->AlphaInput.Connect(0, Constant(Material, 1.f));
 	UMaterialEditingLibrary::ConnectMaterialProperty(Nodes.Move, TEXT(""), MP_WorldPositionOffset);
-	UMaterialEditingLibrary::ConnectMaterialProperty(
-		OfLook(Material, Nodes, TEXT("return Look.rgb * Color;"), CMOT_Float3), TEXT(""), MP_BaseColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Color, TEXT(""), MP_BaseColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Normal, TEXT(""), MP_Normal);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Times(Material, Color, Exposed), TEXT(""), MP_EmissiveColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.f), TEXT(""), MP_Specular);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 1.f), TEXT(""), MP_Roughness);
 	UMaterialEditingLibrary::ConnectMaterialProperty(OfLook(Material, Nodes, TEXT("return Look.a * Opacity;"),
 		CMOT_Float1, UghMaterials::OpacityParameter, 0.5f), TEXT(""), MP_Opacity);

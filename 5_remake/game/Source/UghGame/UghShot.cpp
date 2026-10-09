@@ -117,6 +117,19 @@ bool FUghShot::Configure()
 	{
 		EffectAge = Age;
 	}
+	FString AtText;
+	TArray<FString> AtNumbers;
+	if (FParse::Value(CommandLine, TEXT("-UghShotEffectAt="), AtText, false) &&
+		AtText.ParseIntoArray(AtNumbers, TEXT(",")) == 2)
+	{
+		EffectAt = FVector2D(FCString::Atod(*AtNumbers[0]), FCString::Atod(*AtNumbers[1]));
+		Suffix += FString::Printf(TEXT("-at%.0f_%.0f"), EffectAt->X, EffectAt->Y);
+	}
+	bWide = FParse::Param(CommandLine, TEXT("UghShotWide"));
+	if (bWide)
+	{
+		Suffix += TEXT("-wide");
+	}
 	FString FlingList;
 	if (FParse::Value(CommandLine, TEXT("-UghShotFling="), FlingList, false))
 	{

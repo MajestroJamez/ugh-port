@@ -73,6 +73,8 @@ public:
 	void Clear();
 	/** Makes one of each of `Bursts` ahead, hidden (while a level is built in the black: none made in the play). */
 	void Stock(TConstArrayView<EUghBurst> Bursts);
+	/** The light in the shade (FUghMood::Shade) the puffs of the bursts started from now on take. */
+	void SetShade(const FLinearColor& InShade) { Shade = InShade; }
 
 	TConstArrayView<FPopup> GetPopups() const { return Popups; }
 
@@ -101,4 +103,5 @@ private:
 	TArray<FFlashing> Flashes;
 	TArray<FPopup> Popups;
 	float WaterZ = -1e6f;   // the world's z of the water's surface
+	FLinearColor Shade = FLinearColor(0.3f, 0.3f, 0.3f);
 };
