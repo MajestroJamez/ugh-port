@@ -952,3 +952,24 @@ zůstává přesně maska (`Ugh.Rock`), mění se jen to, co je před deskou a z
   strany) ne: místo pro palmy, chýše a liány (liána teď navíc musí viset ze skály nad sebou, `FUghPlacer::Settle`).
 - **Útesy vzadu** (`AUghCliffDressing`): tón 0,27/0,30/0,36 místo 0,5/0,56/0,66 - světlé skeny v jeskyních stály
   jako vlastní zeď světlých kvádrů; teď tmavé jako břidlice kolem (jeden kámen).
+
+## Plošiny a trávníky (krok 30b)
+
+Plošiny byly z herní kamery rovné jednolité zelené pruhy: textura trávy na plochách nahoru a pruh 2-8 px pod hranou
+na čele. Teď (`FUghTurf`, `UghCliff.hlsl`, `M_UghTurf` / `UghTurf.hlsl`):
+
+- **Tráva přes hranu** je geometrie: karty stébel (3 stébla na kartě 1,5 px, karta každých 0,8-1,4 px) zakořeněné
+  na horní ploše čela těsně před deskou hry, přes hranu ke kameře a dolů po čele, k špičce dál od skály; každá jinak
+  dlouhá (1,2-6,5 px po trsech), stébla jinak dlouhá, široká, nakloněná a světlá. Nikdy nad povrchem plošiny (nezakryjí
+  nohy postav ani plochu, kam přistává vrtulník) a jen před skálou masky, nikdy před vzduchem, kudy se létá: karta visí
+  jen tak daleko, kam pod celou její šířkou sahá skála (test `Ugh.Turf` pro všech 150 levelů). Ne pod vodou na začátku
+  levelu, ne kde přes hranu teče potok. Jedna statická síť na level (~400 karet), bez stínů a ray tracingu - levné na
+  každé kvalitě.
+- **Čelo pod hranou** už není textura trávy (ta se na svislé ploše natahovala do pruhu), ale tmavší zemina s kořeny
+  a kameny pod převisem trávy, dole mech; okraj trávy na zaoblené hraně roztřepený (jazyky, prameny).
+- **Barvy**: tráva po skvrnách svěží, olivová a suchá (stejný šum v materiálu skály i stébel), světlejší a tmavší;
+  holá místa hlíny na plochách nahoru; v hlíně ležící kameny (šedohnědé, každý jinak tmavý, tmavý lem).
+- **Vyšlapané cestičky** ke vchodům do jeskyní: maska přes obrazovku (`FUghTurf::MakePaths`, v alfě kresby pro
+  materiál skály) podél římsy pod každým vchodem - plná 8 px od jeho středu, pak slábne (dalších 10-22 px), od 5 řádků
+  nad hranou (plošina, podlaha jeskyně) po 3 pod ní (vyšlapaná hrana): udusaná světlejší hlína s kameny místo trávy,
+  stébla tam kratší, kde je vyšlapáno, žádná.

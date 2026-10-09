@@ -43,6 +43,7 @@
 #include "UghSpeaker.h"
 #include "UghStage.h"
 #include "UghStreams.h"
+#include "UghTurf.h"
 #include "UghWater.h"
 #include "UnrealClient.h"
 
@@ -448,7 +449,12 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	Field.CarveChannels(Streams);
 	FUghRockMesh Rock;
 	Rock.Build(Field);
-	Background->Build(Rock, Art);
+	FUghTurf Turf;
+	if (View.level_id >= 0)
+	{
+		Turf.Build(Logic, Field, WaterRow, Streams);
+	}
+	Background->Build(Rock, Art, &Turf);
 	Signs->Show(Background->ShowsArt() ? TArray<FUghPadSign>() : PadSigns, Sprites);   // else the drawing shows them
 	Falls->Show(Streams);
 	const double Started = FPlatformTime::Seconds();

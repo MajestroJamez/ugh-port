@@ -90,6 +90,12 @@ namespace UghMaterials
 	inline const TCHAR* const CliffLayers[] = { TEXT("Rock"), TEXT("Stone"), TEXT("Grass"), TEXT("Moss"), TEXT("Soil") };
 	inline const TCHAR* const CliffMaps[] = { BaseColorParameter, NormalParameter, RoughnessParameter, HeightParameter };
 	/**
+	 * The turf's grass hanging over the rock's edges (FUghTurf): cards of blades drawn by the shader (masked, two-sided,
+	 * Source/UghEditor/Shaders/UghTurf.hlsl), coloured like the cliff's grass where it is (lush, olive, dry by the
+	 * same patches), its vertex colours a card's seed, how far along it and how trodden.
+	 */
+	inline const TCHAR* Turf = TEXT("/Game/Generated/M_UghTurf");
+	/**
 	 * The water (Single Layer Water: the engine draws what is behind it through as much water as the view crosses,
 	 * refracted, and the surface's reflections with Lumen): on its surface (what faces up) swells and chop drifting
 	 * with the wind, the rings of what floats (vector parameters RingParameters: xyz its place on the surface, w how

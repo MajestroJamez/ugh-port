@@ -1951,3 +1951,15 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   `Levels-30a-before`, `Levels-30a-after` (12 levelů celých, 0 chyb, fps medián 17 / 1 % low 13 jako před). Síť skály
   stejně velká (~403 tis. trojúhelníků, ~140 ms) - na Low beze změny. CTest logiky, `6_verification` (324) a 214 testů
   v UE zelené. Balíček nepřebalen. Další: **krok 30b**.
+- 2026-10-09: krok 30b hotový - plošiny a trávníky (`docs/visual-concept.md`, krok 30b). `FUghTurf`: tráva přes hranu
+  jako geometrie - karty stébel (`M_UghTurf`, `UghTurf.hlsl`: 3 stébla na kartu, maskovaná, každé jinak dlouhé, široké,
+  nakloněné a světlé) zakořeněné na horní ploše čela, přes hranu a dolů po čele 1,2-6,5 px po trsech; nikdy nad povrchem
+  (nohy postav, plocha přistání) a jen před skálou masky, nikdy před vzduchem (karta visí jen tak daleko, kam pod celou
+  šířkou sahá skála), ne pod vodou ani u potoka; jedna statická síť (~380 karet na level), bez stínů a RT. Materiál skály:
+  čelo pod hranou už ne natažená textura trávy, ale tmavší zemina s kořeny a kameny, okraj trávy roztřepený; tráva po
+  skvrnách svěží / olivová / suchá (stejný šum ve stéblech), holá místa hlíny, v hlíně kameny; vyšlapané cestičky ke
+  vchodům do jeskyní (`FUghTurf::MakePaths`, maska v alfě kresby): udusaná hlína s kameny, stébla kratší / žádná. Test
+  `Ugh.Turf` (150 levelů: stébla jen před deskou nad skálou masky, ne na vyšlapané cestě, deterministicky; cestička
+  u každého vchodu - 700). Snímky `Saved\Shots\30b` (`1p-03-crop-before/after.png`, `1p-03-frame85_105-after.png`).
+  CTest logiky, `6_verification` (324) a 216 testů v UE zelené. Arch rychlé sady až po 30e. Balíček nepřebalen.
+  Další: **krok 30e**.

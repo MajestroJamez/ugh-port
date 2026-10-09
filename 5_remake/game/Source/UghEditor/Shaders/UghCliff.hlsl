@@ -1,7 +1,8 @@
 // The cliff's surface (UghMaterials::Cliff): the body of the custom node of M_UghCliff, which UghMakeAssets reads from
 // this file. Its inputs: Position (world, cm), VertexNormal (world), ScreenUV (the screen of the original, 0 .. 1),
 // Shade the vertex colour (r how open the surface is, g how deep behind the slab of the play, b how near below a top
-// edge of the rock, a its large patches), Art the drawing of the level (softened), WaterLevel (the world's z of the
+// edge of the rock, a its large patches), Art the drawing of the level (softened; its alpha 1 - the paths trodden to the
+// cave entrances, FUghTurf), WaterLevel (the world's z of the
 // water's surface, cm) and for each layer (Rock, Stone, Grass, Moss, Soil) its maps <Layer>BaseColor, <Layer>Normal,
 // <Layer>Roughness (green), <Layer>Height (its relief: the channels of <Layer>HeightMask) and <Layer>Size (metres one
 // texture covers). It returns the base colour; CliffNormal (world), CliffRough and CliffOcclusion are its other
@@ -13,7 +14,8 @@
 // wall) and blended by the way the surface faces, only the projections and layers that count are sampled. The layers:
 // grass on what faces up and along the top edges of the face, moss here and there - hanging below the grass, in deep
 // crevices, in a few of the large patches, where the drawing is green, on the little ledges and slopes, on deep floors
-// and in the wet -; soil in the crevices of what faces up; else the slate (rock and stone, the same scanned plates at
+// and in the wet -; soil in the crevices of what faces up, under the grass's ragged edge, in bare patches and on the
+// paths, stones lying in it; the grass lush, olive or dry by its patches (step 30b); else the slate (rock and stone, the same scanned plates at
 // two sizes; the rock's at two scales the large patches choose between, so that its tiles do not repeat visibly); where
 // two meet, the higher relief of the two wins (height blend). The slate is greyed to a dark blue grey (darker than the
 // figures, so that they stand out of it), each of its beds its own shade and its flakes along them too, dark seams
@@ -61,7 +63,10 @@ float2 dxX = ddx(uvX), dyX = ddy(uvX), dxY = ddx(uvY), dyY = ddy(uvY), dxZ = ddx
 	[branch] if (w.z > 0) { float2 t = UGH_SAMPLE(T, Z, K, O).xy * 2 - 1; R += w.z * (t.x * uZ + t.y * vZ); }
 
 // what the drawing says: green (grass, vines), warm (its rock) or grey (its cave walls), and how light
-float3 art = Texture2DSampleLevel(Art, View.MaterialTextureBilinearClampedSampler, ScreenUV, 0).rgb;
+float4 artA = Texture2DSampleLevel(Art, View.MaterialTextureBilinearClampedSampler, ScreenUV, 0);
+float3 art = artA.rgb;
+// its alpha: 1 - the paths trodden to the cave entrances (FUghTurf)
+float path = 1 - artA.a;
 float lum = max(dot(art, float3(0.3, 0.59, 0.11)), 0.02);
 float green = saturate((art.g - max(art.r, art.b)) / lum * 4);
 float warm = saturate((art.r - art.b) / lum * 2.5);
@@ -77,12 +82,29 @@ float mossy = max(max(0.7 * smoothstep(0.45, 0.12, open) * (1 - back),
 	smoothstep(0.45, 0.75, n.z) * smoothstep(0.45, 0.7, 1 - patches) * 0.8),
 	smoothstep(0.72, 0.84, 1 - patches) * 0.8);
 
+// the turf (step 30b): the grass's patches lush, olive and dry (the same as FUghTurf's blades, UghTurf.hlsl), its edge
+// over the face ragged - tongues hanging further here, less there, in strands - with a band of earth and roots under
+// it; bare patches of earth on the tops; on the paths trodden to the cave entrances bare packed soil, the edge worn
+float q1, q2, ragged, strands, bare;
+UGH_NOISE(float2(m.x * 0.45, m.z * 0.35) + 3.7, q1);
+UGH_NOISE(float2(m.x * 1.9, m.z * 1.3) + 11.3, q2);
+UGH_NOISE(float2(m.x * 3.1, m.z * 0.7) + 23.1, ragged);
+UGH_NOISE(float2(m.x * 23, m.z * 1.5) + 5.9, strands);
+UGH_NOISE(float2(m.x * 2.3, m.y * 2.3) + 31.7, bare);
+float dry = saturate(smoothstep(0.3, 0.8, 0.7 * q1 + 0.3 * q2) + 0.4 * path);
+float edge = lip + 0.35 * (ragged - 0.5) + 0.18 * (strands - 0.5) + 0.3 * (patches - 0.5);
+float grassLip = smoothstep(0.42, 0.55, edge) * (1 - smoothstep(0.2, 0.7, path)) * smoothstep(0.3, 0.6, n.z);
+float tops = smoothstep(0.75, 0.92, n.z);
+float worn = smoothstep(0.15, 0.6, path) * max(tops, smoothstep(0.1, 0.3, lip));
+float bareTop = smoothstep(0.66, 0.78, bare) * tops * (1 - deep);
+float soilBand = saturate(max(smoothstep(0.22, 0.36, edge + 0.15 * (ragged - 0.5)) * (1 - grassLip), worn) + bareTop);
+
 // the layers' shares: Rock, Stone, Grass, Moss, Soil
 float W[5];
-W[2] = max(smoothstep(0.75, 0.92, n.z) * (1 - 0.6 * deep), smoothstep(0.3, 0.65, lip + 0.3 * (patches - 0.5)));
+W[2] = max(tops * (1 - 0.6 * deep) * (1 - worn) * (1 - bareTop), grassLip);
 W[3] = saturate(max(max(max(green * 0.8, smoothstep(0.3, 0.7, n.z) * deep), mossy),
-	max(smoothstep(0.0, 0.25, lip), wet * smoothstep(0.55, 0.75, patches))) - W[2]);
-W[4] = smoothstep(0.45, 0.75, n.z + 0.25 * (1 - open)) * saturate(1 - W[2] - W[3]) * 0.8;
+	max(smoothstep(0.0, 0.25, lip), wet * smoothstep(0.55, 0.75, patches))) - W[2] - soilBand);
+W[4] = max(smoothstep(0.45, 0.75, n.z + 0.25 * (1 - open)) * 0.8, soilBand) * saturate(1 - W[2] - W[3]);
 float rest = saturate(1 - W[2] - W[3] - W[4]);
 W[1] = rest * saturate(max(1 - warm, back) + 0.8 * smoothstep(0.5, 0.72, patches));
 W[0] = rest - W[1];
@@ -134,9 +156,18 @@ float3 nn;
 }
 [branch] if (W[1] > 0) { UGH_MAPS(Stone, 1 / StoneSize, 0, W[1], slate) }
 #define UGH_LAYER(I, Layer) [branch] if (W[I] > 0) { UGH_MAPS(Layer, 1 / Layer##Size, 0, W[I], base) }
-UGH_LAYER(2, Grass)
+// the grass lush, olive or dry by its patches, lighter and darker; the soil of a path packed, paler
+float3 grassColor = 0, soilColor = 0;
+[branch] if (W[2] > 0) { UGH_MAPS(Grass, 1 / GrassSize, 0, W[2], grassColor) }
+{
+	float grassLum = dot(grassColor, float3(0.3, 0.59, 0.11));
+	float3 olive = grassLum * float3(1.4, 1.25, 0.5), straw = grassLum * float3(2.3, 1.7, 0.65);
+	grassColor = dry < 0.5 ? lerp(grassColor, olive, dry * 2) : lerp(olive, straw, dry * 2 - 1);
+	base += grassColor * lerp(0.75, 1.2, q2);
+}
 UGH_LAYER(3, Moss)
-UGH_LAYER(4, Soil)
+[branch] if (W[4] > 0) { UGH_MAPS(Soil, 1 / SoilSize, 0, W[4], soilColor) }
+base += soilColor * lerp(1, float3(1.3, 1.2, 1.05), worn) * lerp(1, 0.55, saturate(lip * 1.5) * (1 - tops) * (1 - worn));
 // the slate's finer plates on all of it
 float rockShare = (W[0] + W[1]) / sum;
 [branch] if (rockShare > 0.05)
@@ -199,6 +230,20 @@ rough /= sum;
 	base += (W[0] + W[1]) * tone;
 }
 base /= sum;
+// stones lying in the earth (of the band under the grass, the bare patches, the paths): a few in each cell of 14 cm,
+// grey brown, each its own shade, a dark rim
+{
+	float soilShare = W[4] / sum;
+	float2 cellAt = float2(m.x, lerp(m.z, m.y, saturate(n.z))) * 7;
+	float2 cell = floor(cellAt), inCell = frac(cellAt) - 0.5;
+	float2 middle = (float2(UGH_HASH(cell + 1.7), UGH_HASH(cell + 5.3)) - 0.5) * 0.4;
+	float hp = UGH_HASH(cell + 0.37);
+	float radius = lerp(0.14, 0.38, hp) * step(0.4, UGH_HASH(cell + 9.1));
+	float d = length(inCell - middle);
+	float stone = smoothstep(radius, radius * 0.75, d) * smoothstep(0.15, 0.5, soilShare);
+	float rim = smoothstep(radius * 1.3, radius, d) * (1 - stone) * smoothstep(0.15, 0.5, soilShare);
+	base = lerp(base * (1 - 0.45 * rim), float3(0.085, 0.08, 0.072) * lerp(0.55, 1.5, hp), stone);
+}
 // large patches lighter and darker, warmer and greyer
 base *= lerp(0.85, 1.15, patches) * lerp(float3(0.98, 0.99, 1.02), float3(1.02, 1.0, 0.98), patches);
 // crevices of the rock and hollows of the relief darker

@@ -6,7 +6,9 @@
 #include "UghBackground.generated.h"
 
 class FUghRockMesh;
+class FUghTurf;
 class UMaterialInstanceDynamic;
+class UMaterialInterface;
 class UStaticMeshComponent;
 class UTexture2D;
 
@@ -14,7 +16,8 @@ class UTexture2D;
  * The diorama of the level being played: the cliff with its cave (FUghRockMesh) in the cliff's material (the imported
  * rock, grass, moss and soil steered by the original's drawing; without them the drawing's colours, the boards with
  * the pads' numbers among them), the cliff going on beyond the screen (its shadow beyond its mesh); the rock is wet at
- * the water (AUghWater) and under it. The pads' boards are AUghSigns'.
+ * the water (AUghWater) and under it; its turf (FUghTurf: the paths trodden to the cave entrances, the grass hanging
+ * over the edges in M_UghTurf). The pads' boards are AUghSigns'.
  */
 UCLASS()
 class AUghBackground : public AActor
@@ -24,8 +27,8 @@ class AUghBackground : public AActor
 public:
 	AUghBackground();
 
-	/** Shows the rock of a level (empty: none), `Art` its drawing (FUghLevelArt). */
-	void Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art);
+	/** Shows the rock of a level (empty: none), `Art` its drawing (FUghLevelArt), its `Turf` (none: no turf). */
+	void Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, const FUghTurf* Turf = nullptr);
 	/** The rock shows the drawing's colours (the cliff's surfaces are missing), the pads' boards among them. */
 	bool ShowsArt() const { return !bCliff; }
 	/** The water's surface, pixels from the top of the screen: the rock is wet there and under it. */
@@ -55,6 +58,8 @@ private:
 
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Rock;   // of the level shown, none before one
 	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> RockMaterial;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Blades;   // the turf's grass over the edges, none without it
+	UPROPERTY() TObjectPtr<UMaterialInterface> BladesMaterial;
 	UPROPERTY() TObjectPtr<UTexture2D> RockArt;
 	bool bCliff = false;   // RockMaterial is the cliff's (else the drawing's colours)
 };

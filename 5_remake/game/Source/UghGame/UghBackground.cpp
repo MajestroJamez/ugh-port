@@ -5,12 +5,14 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Texture2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/PackageName.h"
 #include "UghAssets.h"
 #include "UghElectricDreams.h"
 #include "UghMaterials.h"
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghTexture.h"
+#include "UghTurf.h"
 
 namespace
 {
@@ -69,6 +71,9 @@ void AUghBackground::BeginPlay()
 	{
 		RockMaterial = UghShapes::Material(this, UghMaterials::Rock);
 	}
+	// the turf's blades (UghMakeAssets makes it; none before build.ps1)
+	const FString Turf = UghMaterials::Turf;
+	BladesMaterial = LoadObject<UMaterialInterface>(nullptr, *(Turf + TEXT(".") + FPackageName::GetShortName(Turf)));
 	AddShroud();
 }
 
@@ -175,12 +180,15 @@ bool AUghBackground::SetImportedLayer(UMaterialInstanceDynamic* Cliff, int32 Lay
 	return true;
 }
 
-void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art)
+void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, const FUghTurf* Turf)
 {
-	if (Rock)
+	for (TObjectPtr<UStaticMeshComponent>* Part : { &Rock, &Blades })
 	{
-		Rock->DestroyComponent();   // a static one: a new one for the new mesh
-		Rock = nullptr;
+		if (*Part)
+		{
+			(*Part)->DestroyComponent();   // a static one: a new one for the new mesh
+			*Part = nullptr;
+		}
 	}
 	UStaticMesh* RockMesh = Mesh.ToStaticMesh(this);
 	if (!RockMesh)
@@ -188,7 +196,17 @@ void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art)
 		return;
 	}
 	// the cliff takes the drawing's areas, the drawing's colours on their own its pixels
-	RockArt = UghTexture::Create(this, Width, Height, bCliff ? Soften(Art) : Art, false);
+	TArray<FColor> Shown = bCliff ? Soften(Art) : Art;
+	if (bCliff)
+	{
+		// the cliff's alpha: 255 - the paths trodden to the cave entrances (bare soil there)
+		const bool bPaths = Turf && Turf->GetPaths().Num() == Shown.Num();
+		for (int32 Index = 0; Index < Shown.Num(); ++Index)
+		{
+			Shown[Index].A = bPaths ? 255 - Turf->GetPaths()[Index] : 255;
+		}
+	}
+	RockArt = UghTexture::Create(this, Width, Height, Shown, false);
 	RockMaterial->SetTextureParameterValue(UghMaterials::ArtParameter, RockArt);
 	Rock = NewObject<UStaticMeshComponent>(this);
 	Rock->SetMobility(EComponentMobility::Static);
@@ -198,6 +216,27 @@ void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art)
 	Rock->SetupAttachment(RootComponent);
 	Rock->RegisterComponent();
 	AddInstanceComponent(Rock);
+	// the grass hanging over the edges: static, no shadows, no ray tracing (cheap at any quality)
+	UStaticMesh* BladesMesh = Turf && BladesMaterial ? Turf->GetBlades().ToStaticMesh(this) : nullptr;
+	if (BladesMesh)
+	{
+		Blades = NewObject<UStaticMeshComponent>(this);
+		Blades->SetMobility(EComponentMobility::Static);
+		Blades->SetStaticMesh(BladesMesh);
+		Blades->SetMaterial(0, BladesMaterial);
+		Blades->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Blades->SetCastShadow(false);
+		Blades->bVisibleInRayTracing = false;
+		Blades->bAffectDistanceFieldLighting = false;
+		Blades->SetupAttachment(RootComponent);
+		Blades->RegisterComponent();
+		AddInstanceComponent(Blades);
+	}
+	if (Turf)
+	{
+		UE_LOG(LogTemp, Display, TEXT("UGH turf: %d cards of grass%s"), Turf->CardCount(),
+			Blades ? TEXT("") : TEXT(" (not shown: no M_UghTurf, run build.ps1)"));
+	}
 }
 
 void AUghBackground::SetWater(double Surface)

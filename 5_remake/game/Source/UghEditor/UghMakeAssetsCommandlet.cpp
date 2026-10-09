@@ -106,6 +106,7 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	};
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
+		{ UghMaterials::Turf, &MakeTurf },
 		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Sprite, &MakeSprite }, { UghMaterials::Ghost, &MakeGhost },
 		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky },
 		{ UghMaterials::Rain, &MakeRain }, { UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop },
@@ -178,6 +179,26 @@ bool UUghMakeAssetsCommandlet::MakeCliff(UMaterial* Material)
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffNormal"), MP_Normal);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffRough"), MP_Roughness);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Cliff, TEXT("CliffOcclusion"), MP_AmbientOcclusion);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeTurf(UMaterial* Material)
+{
+	Material->BlendMode = BLEND_Masked;
+	Material->TwoSided = true;
+	Material->OpacityMaskClipValue = 0.5f;
+	UMaterialExpressionCustom* Turf = Custom(Material, ShaderCode(TEXT("UghTurf.hlsl")), CMOT_Float3, {
+		{ TEXT("UV"), Coordinates(Material, 0) },
+		{ TEXT("Shade"), WithAlpha(Material, Add<UMaterialExpressionVertexColor>(Material)) },
+		{ TEXT("Position"), Add<UMaterialExpressionWorldPosition>(Material) } },
+		{ { TEXT("TurfMask"), CMOT_Float1 }, { TEXT("TurfRough"), CMOT_Float1 } });
+	if (!Turf)
+	{
+		return false;
+	}
+	UMaterialEditingLibrary::ConnectMaterialProperty(Turf, TEXT("return"), MP_BaseColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Turf, TEXT("TurfMask"), MP_OpacityMask);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Turf, TEXT("TurfRough"), MP_Roughness);
 	return true;
 }
 
