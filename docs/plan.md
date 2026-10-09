@@ -1883,3 +1883,20 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   `1p-06-ghost.png` v noci, `settings.png`). CTest logiky, `6_verification` (324) a 208 testů v UE zelené.
   `levels.ps1 -Quick` 0 chyb, arch beze změny (duch tam není), fps medián 15, 1 % low 11, hned znovu 11 / 9 - notebook
   se hřeje (29f ve stejném sezení 19 / 14). Balíček nepřebalen. Další: **krok 29d**.
+- 2026-10-09: krok 29d hotový - živí cestující (`docs/visual-concept.md`). Jen animace: `FUghLively` v `AUghFigures`
+  mění jméno akce osoby na zemi, místo, směr, snímky a dveře zůstávají podle spritu logiky. Čekající stojí a rozhlíží se
+  (`idle` MetaHumanů = klip Creatoru s přešlapováním + pohled doleva a doprava), vrtulník blízko (72 px) - mává (`wave`,
+  aspoň 1 s), vrtulník blízko a nízko (tělo do 20 px vedle, spodek pod 14 px nad hlavou a nad nohama, aspoň 0,5 px za
+  krok; přistálý vedle ne) - krčí se a kryje si hlavu (nová akce `duck`, aspoň 0,7 s), doručený (znovu ukázaný chodící
+  po jízdě schovaný) jde prvních 1,6 s s rukama nahoře (nová `cheer`: nohy chůze na snímcích spritu - logika ho pouští
+  hned, proto radost za chůze). Akce MetaHumanů `metahumans.ps1 -Actions` (nové: jen akce, bez Epic účtu), jeskynní
+  muž `caveman_actions.py` (`fetch-assets.ps1 -Only caveman`), předem v assetech, nic se nevyrábí za hry. Testy
+  `Ugh.Figures.Lively.States` (každá situace, výdrž, mávání logiky, radost a pak chůze, voda a kámen beze změny, místo
+  vždy jako bez toho), `Ugh.Figures.Lively.Level` (skutečná logika levelu 1, `FUghKnockPilot`: čeká, mává od kroku 294,
+  krčí se od 329, sražen 358; místo každý krok podle logiky), `Ugh.Figures.People` (`duck` níž s rukama nad hlavou,
+  `cheer` ruce nahoře). `shot.ps1 -Lively idle|wave|duck|joy`; `replay_check --levels --write <složka>` zapíše replaye
+  pokusů ze zlatých replayů (`.ughr`) - všechny mají 0 bodů (po posledním zásahu pilota nikdo nedoručí), snímek radosti
+  proto chybí (joy jen s `-Watch` replaye s doručením, např. Janova nejlepšího). Snímky `Saved\Shots\29d`
+  (`1p-01-duck.png`, `1p-01-wave.png`, `1p-01-idle.png`). CTest logiky a `6_verification` (324) a 210 testů v UE
+  zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 12, 1 % low 9 (editor, Epic, po buildech a testech
+  zahřátý; 29g 15 / 11). Balíček nepřebalen. Další: **krok 29b**.

@@ -1,14 +1,15 @@
 """The actions of the game's MetaHumans (metahumans.py, EUghCaveAction): for each character an animation per action
 on its body (/Game/External/MetaHumans/<name>/Actions/AS_<action>), each a loop, made for that body's proportions:
 
-- idle and walk: MetaHuman Creator's standing idle and walk loop (its optional content), of the walk one stride in
-  place,
+- idle and walk: MetaHuman Creator's standing idle (looking about over it) and walk loop (its optional content), of
+  the walk one stride in place; cheer that stride with both arms up (walking off delivered),
 - the others posed here (no clips for them): wave (calling a copter with both arms over the head), sit (in the
   cabin, hands on the knees), pedal (the copter's crank, holding its handles), hang (from a rope by both hands),
-  tread, swim and fall (in the water), flail (flung through the air into the sea, windmilling the arms).
+  tread, swim and fall (in the water), flail (flung through the air into the sea, windmilling the arms), duck
+  (crouched, the forearms over the head: a copter flying low by him).
 
 Where an action has its origin is as the caveman's (Blender/caveman_actions.py): on the ground between the feet
-(idle, walk, wave), the seat (sit, pedal), where the hands hold the rope (hang), the water's surface with the chin
+(idle, walk, wave, duck, cheer), the seat (sit, pedal), where the hands hold the rope (hang), the water's surface with the chin
 just above it (tread, swim, fall, flail). The copter's crank and handles are copter_layout.py's in the copter's scale: the
 game shows a MetaHuman as high as a walking passenger's sprite (metahuman_poses.PERSON). The figures face +Y, their
 left is +X.
@@ -32,7 +33,8 @@ CHARACTERS = ("Pilot", "Man", "Woman", "Grandpa")
 LOCOMOTION = "/MetaHumanCharacter/Optional/Animation/UEFNAnimPreset/Locomotion"
 # the clips sampled: the action, the clip, whether only its first stride
 SAMPLED = {"idle": (f"{LOCOMOTION}/AS_MH_Neutral_Stand_Idle_Loop", False),
-           "walk": (f"{LOCOMOTION}/AS_MH_Neutral_Walk_Loop_F", True)}
+           "walk": (f"{LOCOMOTION}/AS_MH_Neutral_Walk_Loop_F", True),
+           "cheer": (f"{LOCOMOTION}/AS_MH_Neutral_Walk_Loop_F", True)}
 FPS = 30
 REPORT = os.path.join(unreal.Paths.project_saved_dir(), "Logs", "UghMetaHumanActions.txt")
 

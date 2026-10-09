@@ -5,6 +5,7 @@
 #include "InputCoreTypes.h"
 #include "ugh_logic.h"
 #include "UghKnockPilot.h"
+#include "UghLively.h"
 
 class AUghGameMode;
 class FUghMenu;
@@ -76,6 +77,11 @@ struct FUghHighScores;
  * watches that replay instead of playing levels and saves <folder>/watch-<mode>-<NN>.png `At` seconds after its play is
  * fully shown, then quits. -UghShotGhost=<file>: the ghost (FUghGhost) flies that replay in its level and mode instead
  * of the best one kept.
+ * -UghShotLively=idle|wave|duck|joy (FUghLively) takes the shot once a passenger on land shows that a while (a duck a
+ * quarter of a second) instead, framed around it, the name ending in -<state> after the others: wave and duck with
+ * the first copter flying into the first passenger on land (FUghKnockPilot: it waves at it coming, ducks before it
+ * is knocked off), idle with the copters hovering; joy (a passenger delivered walking off glad) only watching a replay
+ * of a level played (-UghShotWatch, instead of `At`).
  *
  * The frame times (perf.ps1): with the frame rate of a level's hover it logs its frames' median, 1 % low (the frame
  * rate of the slowest 1 % of its frames) and slowest frame, and the slowest frame and the hitches (frames over
@@ -135,6 +141,10 @@ public:
 
 	/** A look at a decoration (-UghShotLook) shows this many pixels around its middle. */
 	static constexpr double LookAround = 16;
+	/** A lively passenger (-UghShotLively) is shot showing it this long (a duck: this long), this many pixels around. */
+	static constexpr double LivelyAfter = 0.4, DuckAfter = 0.25, LivelyAround = 24;
+	/** What the passengers' shot waits for (-UghShotLively), none. */
+	const TOptional<EUghLively>& GetLively() const { return Lively; }
 
 private:
 	static constexpr double CaptionKeyEvery = 0.3, MenuShotAfter = 4, ScreenShotAfter = 1, EndShotAfter = 1,
@@ -202,6 +212,8 @@ private:
 	 * `Age` seconds after the logic knocked it into the water (the shot).
 	 */
 	bool Knock(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age);
+	/** -UghShotLively: a passenger on land has shown that long enough for its shot (FUghLively). */
+	bool LivelyShown(const AUghGameMode& Mode) const;
 	/**
 	 * -UghShotDunk: the first copter flies over open water and falls into the sea (FUghDunkPilot); true `Age` seconds
 	 * after its waterline met the surface (negative: before, as the free fall foretells it).
@@ -268,6 +280,7 @@ private:
 	TArray<float> IslesFrames;       // the frame times over the archipelago (choosing)
 	bool bEndShot = false;     // -UghShotEnd
 	bool bEndWanted = false;   // the target was given up: its end is to be shot
+	TOptional<EUghLively> Lively;   // -UghShotLively
 	TOptional<uint32> EndScore;   // -UghShotScore
 	TArray<FString> Screens;   // -UghShotScreens still to be shot
 	FString SaveReplay;        // -UghShotSaveReplay

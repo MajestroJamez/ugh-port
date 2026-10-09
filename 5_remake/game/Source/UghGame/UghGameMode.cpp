@@ -308,6 +308,15 @@ void AUghGameMode::ShowFrame(double Seconds)
 		FSlowPart Part{ TEXT("figures") };
 		Figures->Show(Previous, Current, Simulation.Alpha(), Seconds, Sprites, FigureActions, ClayRiders, &Flings);
 	}
+	if (bShooting && Shot.GetLively())
+	{
+		// framed around the passenger lively as the shot wants (kept once seen)
+		if (const TOptional<FUghLively::FSeen> Seen = Figures->GetLively().Longest(*Shot.GetLively()))
+		{
+			ShotLook = Seen->Middle;
+			ShotAround = FUghShot::LivelyAround;
+		}
+	}
 	if (bShooting)
 	{
 		HoldShotEffect(Current);
@@ -614,6 +623,11 @@ void AUghGameMode::OpenMenu()
 	bIntroScene = false;
 	Previewed = Menu.GetChoice();
 	Simulation.Preview(Previewed);
+}
+
+const FUghLively& AUghGameMode::GetLively() const
+{
+	return Figures->GetLively();
 }
 
 void AUghGameMode::Quit()

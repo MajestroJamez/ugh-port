@@ -5,9 +5,10 @@
 # Data", Fab / Epic Games Launcher) and the editor logged in to an Epic account (the face rig and the skin textures come
 # from Epic's cloud). The editor runs without a window. Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\metahumans.ps1
-# -All makes the characters again (else only the missing ones; the actions always). Run build.ps1 before. Without
+# -All makes the characters again (else only the missing ones; the actions always), -Actions only the actions (the
+# characters there; no Epic account needed). Run build.ps1 before. Without
 # the MetaHumans the game shows the caveman of Blender\caveman.py.
-param([switch]$All)
+param([switch]$All, [switch]$Actions)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -29,10 +30,12 @@ function Invoke-UghPython([string]$Exe, [string]$Arguments, [string]$Report, [st
     if ($lines[-1] -ne 'OK') { Write-Host "FAILED: $What, see $Report" -ForegroundColor Red; exit 1 }
 }
 
-$script = Join-Path $PSScriptRoot 'Python\metahumans.py'
-$flag = if ($All) { ' -UghAll' } else { '' }
-Invoke-UghPython $UeEditor "-ExecutePythonScript=`"$script`" -RenderOffscreen$flag -abslog=`"$logs\UghMetaHumans.log`"" `
-    (Join-Path $logs 'UghMetaHumans.txt') 'the MetaHumans'
+if (-not $Actions) {
+    $script = Join-Path $PSScriptRoot 'Python\metahumans.py'
+    $flag = if ($All) { ' -UghAll' } else { '' }
+    Invoke-UghPython $UeEditor "-ExecutePythonScript=`"$script`" -RenderOffscreen$flag -abslog=`"$logs\UghMetaHumans.log`"" `
+        (Join-Path $logs 'UghMetaHumans.txt') 'the MetaHumans'
+}
 $script = Join-Path $PSScriptRoot 'Python\metahuman_actions.py'
 Invoke-UghPython $UeEditorCmd "-run=pythonscript `"-script=$script`" -abslog=`"$logs\UghMetaHumanActions.log`"" `
     (Join-Path $logs 'UghMetaHumanActions.txt') 'their actions'

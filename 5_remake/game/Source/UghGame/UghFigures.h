@@ -6,6 +6,7 @@
 #include "ugh_logic.h"
 #include "UghBubbles.h"
 #include "UghFigureModels.h"
+#include "UghLively.h"
 #include "UghStoneDrop.h"
 #include "UghFigures.generated.h"
 
@@ -19,8 +20,9 @@ class UTexture2D;
  * The figures of the level besides the copters (AUghCopters) in the slab of the play: the passengers, the enemies and
  * the bonus items as the models of the Blender scripts doing what their sprites say (FUghFigureModels,
  * FUghFigureActions), plasticine shapes where a model is not imported; a passenger's speech bubble is a card with
- * its sharp picture (UghBubbles: the pad it wants to go to, a question). Drawn between the views of two steps of the
- * logic (UghBetween). The raindrops are AUghRain's.
+ * its sharp picture (UghBubbles: the pad it wants to go to, a question). A person on land is lively (FUghLively: looks
+ * about, waves at a copter near, ducks under one flying low, walks off glad when delivered) where its sprite says. Drawn
+ * between the views of two steps of the logic (UghBetween). The raindrops are AUghRain's.
  */
 UCLASS()
 class AUghFigures : public AActor
@@ -42,6 +44,8 @@ public:
 	void LoadBubbles(const ugh_logic* Logic, int32 SpriteCount);
 	/** Makes spare passengers ahead (while a level is built in the black): none is made in the play (FUghCaveman). */
 	void Stock();
+	/** What the passengers on land show besides their sprites (waving, ducking, glad: FUghLively). */
+	const FUghLively& GetLively() const { return Lively; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -68,4 +72,5 @@ private:
 	UPROPERTY() TMap<int32, TObjectPtr<UTexture2D>> BubbleTextures;   // by the key of their look and side
 	TArray<TOptional<FUghBubbleLook>> BubbleLooks;   // by sprite (LoadBubbles)
 	FUghStoneDrops StoneDrops;   // the stones let go, seen falling from their slings
+	FUghLively Lively;           // the passengers on land waving, ducking, glad (their actions only)
 };

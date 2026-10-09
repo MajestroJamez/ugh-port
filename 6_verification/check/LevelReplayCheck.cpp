@@ -154,4 +154,11 @@ void LevelReplayCheck::playCut(const std::string& path) {
     if (!file.error().empty()) report_.unreadable(file.error());
 }
 
+std::vector<LevelReplayCheck::Shared> LevelReplayCheck::texts() const {
+    std::vector<Shared> result;
+    for (const Cut& cut : cut_)
+        result.push_back({cut.tick, cut.recording.points, record::ReplayText::write(cut.recording)});
+    return result;
+}
+
 }  // namespace ugh::check

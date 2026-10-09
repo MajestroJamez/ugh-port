@@ -2,6 +2,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 #include <vector>
 
 #include "check/ReplayCheck.hpp"
@@ -30,6 +31,14 @@ public:
     /** Plays the file into the report; how many replays of attempts it played: `played()`. */
     void run(const std::string& path);
     int played() const { return static_cast<int>(cut_.size()); }
+    /** A replay of an attempt it played: the golden replay's tick it starts at, its points, as a player shares it. */
+    struct Shared {
+        long long tick;
+        uint32_t points;
+        std::string text;
+    };
+    /** The replays of attempts it played. */
+    std::vector<Shared> texts() const;
 
 private:
     /** An attempt of the golden replay: the tick its step started it in, and what it started from. */

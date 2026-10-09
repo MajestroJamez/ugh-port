@@ -55,6 +55,20 @@ bool FUghShot::Configure()
 	bBubbles = FParse::Param(CommandLine, TEXT("UghShotBubbles"));
 	bCloseUp = FParse::Param(CommandLine, TEXT("UghShotCloseUp"));
 	FParse::Value(CommandLine, TEXT("-UghShotLook="), Look);
+	FString LivelyText;
+	if (FParse::Value(CommandLine, TEXT("-UghShotLively="), LivelyText))
+	{
+		const TCHAR* const States[] = { TEXT("idle"), TEXT("wave"), TEXT("duck"), TEXT("joy") };
+		for (int32 State = 0; State < UE_ARRAY_COUNT(States); ++State)
+		{
+			if (LivelyText == States[State])
+			{
+				Lively = static_cast<EUghLively>(int32(EUghLively::Idle) + State);
+				Suffix += TEXT("-") + LivelyText;
+			}
+		}
+		UE_CLOG(!Lively, LogTemp, Error, TEXT("UGH shot: no lively state %s (idle, wave, duck, joy)"), *LivelyText);
+	}
 	FString FrameText;
 	TArray<FString> Numbers;
 	if (FParse::Value(CommandLine, TEXT("-UghShotFrame="), FrameText, false) &&
@@ -475,14 +489,20 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	const bool bDunked = bDunk && Dunk(Mode, View, *Target.Dunk);
 	const bool bDropped = bDrop && Drop(Mode, View, DeltaSeconds, *Target.Drop);
 	const bool bRushed = bRush && RushOn(Mode, View, DeltaSeconds, *Target.Rush);
-	if (Edge.IsEmpty() && !bFling && !bDunk && !bDrop && !bRush)
+	// a passenger waving at the copter flying into it, ducking before the knock (never shot by the knock's time)
+	const bool bKnocking = !bFling && Lively && (*Lively == EUghLively::Wave || *Lively == EUghLively::Duck);
+	if (bKnocking)
+	{
+		Knock(Mode, View, DeltaSeconds, UE_BIG_NUMBER);
+	}
+	if (Edge.IsEmpty() && !bFling && !bDunk && !bDrop && !bRush && !bKnocking)
 	{
 		Hover(Mode, View, DeltaSeconds);
 	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
 	HoverFrames.Add(DeltaSeconds);
-	if (bRush ? !bRushed : bDrop ? !bDropped : bDunk ? !bDunked : bFling ? !bFlung
+	if (Lively ? !LivelyShown(Mode) : bRush ? !bRushed : bDrop ? !bDropped : bDunk ? !bDunked : bFling ? !bFlung
 		: Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
@@ -651,7 +671,8 @@ FUghShot::EAction FUghShot::WatchTick(AUghGameMode& Mode, double Seconds)
 			UE_LOG(LogTemp, Error, TEXT("UGH shot: cannot watch %s: %s"), *WatchFile, Replay ? TEXT("refused") : *Error);
 			return EAction::Quit;
 		}
-		WatchName = FString::Printf(TEXT("watch-%s"), *TargetName(Replay->Players(), Replay->Level()));
+		WatchName = FString::Printf(TEXT("watch-%s"), *TargetName(Replay->Players(), Replay->Level())) +
+			(Lively ? Suffix : FString());
 		PhaseTime = 0;
 		return EAction::None;
 	}
@@ -668,7 +689,7 @@ FUghShot::EAction FUghShot::WatchTick(AUghGameMode& Mode, double Seconds)
 	// `At` seconds after the play is fully shown
 	const ugh_logic_view& View = Mode.GetSimulation().GetCurrent();
 	PhaseTime = View.phase == UGH_LOGIC_PHASE_PLAY && View.fade >= UghShapes::FadeShown ? PhaseTime + Seconds : 0;
-	if (PhaseTime < At)
+	if (Lively ? !LivelyShown(Mode) : PhaseTime < At)
 	{
 		return EAction::None;
 	}
@@ -984,4 +1005,16 @@ TSharedPtr<FUghReplay> FUghShot::LoadGhost() const
 	TSharedPtr<FUghReplay> Replay = FFileHelper::LoadFileToArray(Bytes, *GhostFile) ? FUghReplay::Read(Bytes, Error) : nullptr;
 	UE_CLOG(!Replay, LogTemp, Error, TEXT("UGH shot: no ghost %s: %s"), *GhostFile, *Error);
 	return Replay;
+}
+
+bool FUghShot::LivelyShown(const AUghGameMode& Mode) const
+{
+	const TOptional<FUghLively::FSeen> Seen = Mode.GetLively().Longest(*Lively);
+	if (!Seen || Seen->Seconds < (*Lively == EUghLively::Duck ? DuckAfter : LivelyAfter))
+	{
+		return false;
+	}
+	UE_LOG(LogTemp, Display, TEXT("UGH shot: a passenger at %s lively (%d) for %.2f s"), *Seen->Middle.ToString(),
+		int32(*Lively), Seen->Seconds);
+	return true;
 }

@@ -82,6 +82,7 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 	const double Surface = UghWater::Surface(Previous, Current, Alpha);
 	Models.Begin();
 	StoneDrops.Begin();
+	Lively.Begin();
 	for (int32 I = 0; I < Current.entity_count; ++I)
 	{
 		const ugh_logic_entity& E = Current.entities[I];
@@ -115,6 +116,10 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 				Action->Door = 0;
 			}
 		}
+		else if (Action && E.kind == UGH_LOGIC_ENTITY_PASSENGER)
+		{
+			Lively.Apply(Previous, Current, Alpha, Seconds, E, P, At, Size, *Action);   // (the action only)
+		}
 		if (Action && Action->Model == EUghModel::Stone)
 		{
 			// let go, it falls out of the sling
@@ -138,6 +143,7 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 	}
 	Models.End();
 	StoneDrops.End();
+	Lively.End();
 	UghShapes::SetShapes(Passengers, PassengerShapes);
 	UghShapes::SetShapes(Enemies, EnemyShapes);
 	UghShapes::SetShapes(BonusItems, BonusShapes);
@@ -184,6 +190,7 @@ void AUghFigures::Clear()
 {
 	Models.Begin();
 	Models.End();
+	Lively.Reset();
 	for (UInstancedStaticMeshComponent* Shapes : { Passengers, Enemies, BonusItems })
 	{
 		UghShapes::SetShapes(Shapes, {});

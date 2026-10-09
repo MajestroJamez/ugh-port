@@ -11,7 +11,9 @@ origin is:
   copter with both arms over the head,
 - tread, swim, fall: in the water (the origin at its surface, his chin just above it): treading water, swimming
   forward (his head up), falling or sinking with the arms up,
-- flail: flung off a pad through the air into the sea, windmilling his arms (the origin as fall's).
+- flail: flung off a pad through the air into the sea, windmilling his arms (the origin as fall's),
+- duck, cheer: on the ground as idle; duck crouches under a copter flying low by him, the forearms over his head,
+  cheer walks as walk with both arms up (delivered, glad to be home).
 """
 import math
 
@@ -220,8 +222,37 @@ def flail(t):
     return pose
 
 
+def duck(t):
+    """Ducking under a copter flying low by him: crouched on bent knees (the feet where they stand), bent forward, the
+    head down, the forearms crossed over it; trembling a little."""
+    pose = Pose()
+    pose.move["pelvis"] = head_of("pelvis") + Vector((0, 0.04, -0.15 + 0.004 * math.sin(6 * t)))
+    pose.turn["pelvis"] = turn(x=0.3)
+    pose.turn["chest"] = turn(x=0.45, y=0.03 * math.sin(2 * t))
+    pose.turn["head"] = turn(x=0.35, z=0.1 * math.sin(t))
+    for side, name in sides():
+        pose.reach[f"thigh.{name}"] = ((side * 0.13, 0.0, 0.075), (side * 0.25, -1, 0))
+        pose.aim[f"foot.{name}"] = Vector((side * 0.15, -1, -0.3))
+        pose.reach[f"upperarm.{name}"] = ((-side * 0.03, -0.3, 0.84), (side * 1, -0.8, 0))
+        pose.aim[f"hand.{name}"] = Vector((-side * 1, -0.2, 0.2))
+    return pose
+
+
+def cheer(t):
+    """Glad to be home, walking off (walk's two steps): both arms up over the head, the fists pumping once a step,
+    looking up."""
+    pose = walk(t)
+    pose.turn["head"] = turn(x=-0.2, z=0.1 * math.sin(t))
+    pump = 0.5 + 0.5 * math.cos(2 * t)
+    for side, name in sides():
+        pose.reach[f"upperarm.{name}"] = ((side * 0.25, -0.04, 0.98 + 0.08 * pump), (side * 1, 0.2, -0.3))
+        pose.aim[f"hand.{name}"] = Vector((side * 0.2, -0.1, 1))
+    return pose
+
+
 ACTIONS = {"idle": (idle, 48), "sit": (sit, 48), "pedal": (pedal, 24), "hang": (hang, 48), "walk": (walk, 24),
-           "wave": (wave, 24), "tread": (tread, 48), "swim": (swim, 36), "fall": (fall, 24), "flail": (flail, 28)}
+           "wave": (wave, 24), "tread": (tread, 48), "swim": (swim, 36), "fall": (fall, 24), "flail": (flail, 28),
+           "duck": (duck, 28), "cheer": (cheer, 24)}
 
 
 def make(armature):

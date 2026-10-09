@@ -76,8 +76,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUghPeopleTest, "Ugh.Figures.People",
 /**
  * Each MetaHuman's actions put him where the game wants him, in the people's height (the game's units): standing on
  * the ground and in the slab of the play, sitting on the seat, pedalling the copter's crank holding its handles,
- * hanging from where his hands hold, in the water with his head at the surface, flung windmilling his arms. His
- * leaves cover his hips from the belt to the thighs (and the woman's chest).
+ * hanging from where his hands hold, in the water with his head at the surface, flung windmilling his arms, ducking
+ * on the ground shielding his head, walking off with his arms up. His leaves cover his hips from the belt to the thighs
+ * (and the woman's chest).
  */
 bool FUghPeopleTest::RunTest(const FString& Parameters)
 {
@@ -105,14 +106,14 @@ bool FUghPeopleTest::RunTest(const FString& Parameters)
 		for (int32 Sample = 0; Sample < Samples; ++Sample)
 		{
 			const double Fraction = double(Sample) / Samples;
-			for (const EUghCaveAction Action : { Idle, Walk, Wave })
+			for (const EUghCaveAction Action : { Idle, Walk, Wave, Duck, Cheer })
 			{
 				const double Ground = FMath::Min(At(Action, Feet[0], Fraction).Z, At(Action, Feet[1], Fraction).Z);
 				Check(Ground > 0 && Ground < 12, TEXT("stands on the ground"), Action, FVector(0, 0, Ground));
 				for (const FName Bone : { Head, Hands[0], Hands[1], Feet[0], Feet[1] })
 				{
 					// one walks to a side, looking 20 degrees towards the camera (UghFigurePlace)
-					const FVector Joint = (Action == Walk ? FRotator(0, 70, 0) : FRotator::ZeroRotator)
+					const FVector Joint = (Action == Walk || Action == Cheer ? FRotator(0, 70, 0) : FRotator::ZeroRotator)
 						.RotateVector(At(Action, Bone, Fraction));
 					Check(FMath::Abs(Joint.Y) < Slab, TEXT("stays in the slab of the play"), Action, Joint);
 				}
@@ -130,6 +131,18 @@ bool FUghPeopleTest::RunTest(const FString& Parameters)
 					FMath::IsNearlyEqual(Foot.X, Sign * UghCopterModel::PedalSpread, Near), TEXT("pedals"), Pedal, Foot);
 				const FVector Holding = At(Hang, Hands[Side], Fraction);
 				Check(Holding.Size() < 2 * Near, TEXT("holds the rope"), Hang, Holding);
+			}
+			// ducking: a fifth lower than standing, the hands over the head; cheering: the hands high over it
+			const FVector Ducked = At(Duck, Head, Fraction);
+			Check(Ducked.Z < At(Idle, Head, Fraction).Z - 0.18 * UghFigurePlace::PersonHeight, TEXT("ducks"), Duck,
+				Ducked);
+			for (int32 Side = 0; Side < 2; ++Side)
+			{
+				const FVector Shield = At(Duck, Hands[Side], Fraction) - Ducked;
+				Check(Shield.Z > 0 && FVector2D(Shield.X, Shield.Y).Size() < 0.15 * UghFigurePlace::PersonHeight,
+					TEXT("shields his head"), Duck, Shield);
+				const FVector Up = At(Cheer, Hands[Side], Fraction) - At(Cheer, Head, Fraction);
+				Check(Up.Z > 0.1 * UghFigurePlace::PersonHeight, TEXT("has his arms up"), Cheer, Up);
 			}
 			for (const EUghCaveAction Action : { Tread, Fall, Flail })
 			{

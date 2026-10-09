@@ -1,11 +1,14 @@
 // replay_check: the logic against golden replays "UGR 1" (4_test_data/verify/build/replays).
 //
-//   replay_check [--continue] [--levels] <ugh-data.ugd> <replay.ugr> ...
+//   replay_check [--continue] [--levels [--write <folder>]] <ugh-data.ugd> <replay.ugr> ...
 //
 // --levels: the replays of a level (.ughr) cut out of each golden replay at its attempts, played again on a resumed
-// game, against it (LevelReplayCheck).
+// game, against it (LevelReplayCheck); --write puts each into the folder as text (<replay>-<tick>.ughr: a replay
+// of a level the game watches, e.g. shot.ps1 -Watch).
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <string>
 
 #include "check/LevelReplayCheck.hpp"
@@ -17,11 +20,14 @@
 int main(int argc, char** argv) {
     ugh::check::ReplayCheck::Options options;
     bool levels = false;
+    std::string folder;
     int i = 1;
     for (; i < argc && std::strncmp(argv[i], "--", 2) == 0; i++) {
         std::string option = argv[i];
         if (option == "--continue") {
             options.continueAfterMismatch = true;
+        } else if (option == "--write" && i + 1 < argc) {
+            folder = argv[++i];
         } else if (option == "--levels") {
             levels = true;
         } else {
@@ -30,7 +36,8 @@ int main(int argc, char** argv) {
         }
     }
     if (argc - i < 2) {
-        std::fprintf(stderr, "usage: replay_check [--continue] [--levels] <ugh-data.ugd> <replay.ugr> ...\n");
+        std::fprintf(stderr,
+                     "usage: replay_check [--continue] [--levels [--write <folder>]] <ugh-data.ugd> <replay.ugr> ...\n");
         return 2;
     }
     std::string error;
@@ -51,6 +58,15 @@ int main(int argc, char** argv) {
             ugh::check::LevelReplayCheck check(*data, keys, report);
             check.run(argv[r]);
             std::printf("%d replays of attempts\n", check.played());
+            for (const auto& [tick, points, text] : check.texts()) {
+                if (folder.empty()) break;
+                const std::string name =
+                    std::filesystem::path(argv[r]).stem().string() + "-" + std::to_string(tick) + ".ughr";
+                std::ofstream out(std::filesystem::path(folder) / name, std::ios::binary);
+                out << text;
+                ok = ok && static_cast<bool>(out);
+                std::printf("%s: %u points\n", name.c_str(), static_cast<unsigned>(points));
+            }
         } else {
             ugh::check::ReplayCheck(*data, keys, options, report).run(argv[r]);
         }

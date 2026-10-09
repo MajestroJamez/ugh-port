@@ -905,3 +905,30 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   ostatní události nic, vypnutý otřes - kamera stojí, pad vibruje) a `Ugh.Impact.Level` (skutečná logika levelu 1:
   vznášení nic, střemhlav na zem havárie, kámen na strom, pád do moře jednou, okraj vlevo a nahoře po bumpu, pomalu
   ani setrváním ne), `Ugh.Settings.SaveLoad` a `.Menu` (řádek Camera shake, uložení, starý profil).
+
+## Živí cestující (krok 29d)
+
+- Jen animace (`FUghLively` v `AUghFigures`), logika ani místo postavy beze změny: sprite logiky dál určuje pozici,
+  směr pohledu, snímky chůze a dveře, mění se jen jméno akce. Rozhoduje se z pohledů logiky (vrtulníky mezi dvěma
+  kroky, cestující znovu ukázaný po jízdě schovaný ve vrtulníku = doručený).
+- Čekající na plošině (`standing`) stojí a rozhlíží se: akce `idle` MetaHumanů je dál klip Creatoru (přešlapování
+  z nohy na nohu) a přes něj se za 10 s smyčky podívá doleva a doprava, ramena se trochu stočí (na koncích smyčky
+  rovně - klip navazuje). Jeskynní muž se rozhlížel už dřív.
+- Vrtulník blízko (střed těla do 72 px, pustí za 88 px) - netrpělivě mává (akce `wave`, stejná jako u logiky, když
+  vrtulník odletí bez něj), mávání trvá aspoň 1 s.
+- Vrtulník letí blízko a nízko (tělo do 20 px vedle, spodek níž než 14 px nad hlavou a aspoň 3 px nad nohama - na
+  plošině vedle přistál, nekrčí se -, rychlost aspoň 0,5 px za krok) - přikrčí se a kryje si hlavu předloktími (nová
+  akce `duck`: pokrčená kolena, nohy na místě, záda v předklonu, hlava dolů, chvění), aspoň 0,7 s. Krčí se i při
+  mávání logiky.
+- Doručený (chůze ze dveří vrtulníku k jeskyni) jde prvních 1,6 s s rukama nahoře a pumpuje pěstmi (nová akce
+  `cheer`: nohy klipu chůze, drží se snímků spritu jako chůze), pak chodí normálně. Logika ho pouští hned, proto radost
+  za chůze, ne na místě.
+- Akce MetaHumanů znovu `metahumans.ps1 -Actions` (jen akce, editor bez okna), jeskynní muž `fetch-assets.ps1 -Only
+  caveman` a `build.ps1` (import). Žádná nová postava ani rig, akce předem v assetech - nic za hry.
+- Testy `Ugh.Figures.Lively.States` (každá situace: daleko stojí, blízko mává, blízko a nízko se krčí, stojící / přistálý
+  vrtulník ne, výdrž mávání a krčení, mávání logiky zůstane, doručený jásá 1,6 s a pak chodí, ze dveří jeskyně ne, ve
+  vodě a kámen beze změny; místo vždy jako bez toho), `Ugh.Figures.Lively.Level` (skutečná logika levelu 1, vrtulník
+  `FUghKnockPilot` letí do cestujícího: čeká, mává, před sražením se krčí; místo každý krok podle logiky) a
+  `Ugh.Figures.People` (`duck`: o pětinu níž, ruce nad hlavou; `cheer`: ruce nad hlavou, na zemi, v desce hry).
+  `shot.ps1 -Lively idle|wave|duck|joy` (joy jen s `-Watch` replaye levelu; replaye z golden replayů:
+  `replay_check --levels --write <složka>`).

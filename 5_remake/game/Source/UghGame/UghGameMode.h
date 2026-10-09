@@ -12,6 +12,7 @@
 #include "UghImpacts.h"
 #include "UghIntro.h"
 #include "UghLevelArt.h"
+#include "UghLively.h"
 #include "UghMenu.h"
 #include "UghMotionBlur.h"
 #include "UghPads.h"
@@ -103,6 +104,8 @@ public:
 	const FUghIntro& GetIntro() const { return Intro; }
 	/** The passengers knocked off their pads, flung into the sea. */
 	const FUghFlings& GetFlings() const { return Flings; }
+	/** The passengers on land waving, ducking, glad (AUghFigures). */
+	const FUghLively& GetLively() const;
 	/** The copters falling into the sea. */
 	const FUghDunks& GetDunks() const { return Dunks; }
 	/** The help of the keys is wanted (F1 or a gamepad's Y in a game). */

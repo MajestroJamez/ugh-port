@@ -14,8 +14,8 @@ namespace
 {
 	/** The actions as the models name them, by EUghCaveAction. */
 	const TCHAR* const Actions[] = { TEXT("idle"), TEXT("sit"), TEXT("pedal"), TEXT("hang"), TEXT("walk"),
-		TEXT("wave"), TEXT("tread"), TEXT("swim"), TEXT("fall"), TEXT("flail") };
-	static_assert(UE_ARRAY_COUNT(Actions) == static_cast<int32>(EUghCaveAction::Flail) + 1);
+		TEXT("wave"), TEXT("tread"), TEXT("swim"), TEXT("fall"), TEXT("flail"), TEXT("duck"), TEXT("cheer") };
+	static_assert(UE_ARRAY_COUNT(Actions) == static_cast<int32>(EUghCaveAction::Cheer) + 1);
 	/** The colour of a glTF material Interchange imported. */
 	const FName ColorFactor(TEXT("BaseColorFactor"));
 

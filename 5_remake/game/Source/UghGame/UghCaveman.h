@@ -12,10 +12,11 @@ class USkeletalMeshComponent;
 
 /**
  * What a caveman does (the actions of Blender/caveman_actions.py and Python/metahuman_actions.py, where each says
- * where his origin is): standing, sitting, pedalling, hanging, walking, waving, treading water, swimming, falling,
- * flailing (flung through the air into the sea).
+ * where his origin is): standing (looking about), sitting, pedalling, hanging, walking, waving, treading water,
+ * swimming, falling, flailing (flung through the air into the sea), ducking (a copter flying low by him), cheering
+ * (walking off delivered, his arms up; FUghLively).
  */
-enum class EUghCaveAction : uint8 { Idle, Sit, Pedal, Hang, Walk, Wave, Tread, Swim, Fall, Flail };
+enum class EUghCaveAction : uint8 { Idle, Sit, Pedal, Hang, Walk, Wave, Tread, Swim, Fall, Flail, Duck, Cheer };
 
 /**
  * The people of the play by their look (0 the pilots, 1 .. 3 the passengers of the logic's cargo looks: a man, a

@@ -84,6 +84,71 @@ def in_water(posing, body, lean, bob):
     posing.turn["pelvis"] = pitch(lean)
 
 
+def idle(body):
+    """Over the clip's standing idle (its weight shifting from foot to foot): looking about - ahead, to the left, ahead,
+    to the right and ahead again over the loop (none at its ends: the clip's loop), the shoulders turning a little."""
+    def posing(t):
+        p = Posing()
+        s = math.sin(t)
+        look = 0.6 * s * abs(s)
+        p.spine(0, 0.2 * look)
+        p.head(0.06 * abs(look), 0.8 * look)
+        return p
+    return posing
+
+
+def duck(body):
+    """Ducking under a copter flying low by him: crouched on bent knees (the feet where they stand), the back bent
+    forward, the head down, the forearms crossed over it; trembling a little."""
+    lean = 0.75   # the upper body forward (the pelvis and the back)
+    drop = 0.15 * body.height
+    rest_pelvis = body.at["pelvis"]
+    pelvis = (rest_pelvis[0], rest_pelvis[1] - 0.05 * body.height, rest_pelvis[2] - drop)
+
+    def leaned(point):
+        """Where `point` of the rest pose's upper body goes, the body leaned forward about the lowered pelvis."""
+        d = sub(point, rest_pelvis)
+        return add(pelvis, (d[0], d[1] * math.cos(lean) + d[2] * math.sin(lean),
+                            d[2] * math.cos(lean) - d[1] * math.sin(lean)))
+
+    head = leaned(body.at["head"])
+
+    def posing(t):
+        p = Posing()
+        tremble = 0.004 * body.height * math.sin(6 * t)
+        p.pelvis = (pelvis[0], pelvis[1], pelvis[2] + tremble)
+        p.turn["pelvis"] = pitch(0.3)
+        p.spine(lean - 0.3, 0, 0.04 * math.sin(2 * t))
+        p.head(0.35, 0.12 * math.sin(t))
+        for side, s in SIDES:
+            foot = body.at[f"foot_{s}"]
+            p.reach[f"thigh_{s}"] = ((foot[0] * 1.1, foot[1], foot[2]), (side * 0.25, 1, 0))
+            p.aim[f"foot_{s}"] = body.rest.foot_axes(s)
+            # the forearm over the back of the head, the elbow out and forward
+            hand = add(head, (-side * 0.03 * body.height, -0.01 * body.height, 0.09 * body.height + tremble))
+            p.reach[f"upperarm_{s}"] = (hand, (side, 0.8, 0))
+            p.aim[f"hand_{s}"] = ((-side, 0.2, 0.2), (0, -1, 0))   # palms down on it
+            p.curl[s] = 0.5
+        return p
+    return posing
+
+
+def cheer(body):
+    """Glad to be home, walking off (over the clip's stride): both arms up over the head, the fists pumping once a step,
+    looking up."""
+    def posing(t):
+        p = Posing()
+        p.head(-0.2, 0.1 * math.sin(t))
+        pump = 0.5 + 0.5 * math.cos(2 * t)
+        for side, s in SIDES:
+            hand = add(body.shoulder(s), (side * 0.06 * body.height, 0.03 * body.height, (0.7 + 0.2 * pump) * body.arm))
+            p.reach[f"upperarm_{s}"] = (hand, (side, -0.3, 0))
+            p.aim[f"hand_{s}"] = ((side * 0.2, 0.1, 1), (-side, 0, 0))
+            p.curl[s] = 1.2
+        return p
+    return posing
+
+
 def wave(body):
     """Both arms over the head, waving to and fro against each other; a little bounce, looking up."""
     def posing(t):
@@ -270,9 +335,11 @@ def flail(body):
 
 
 def actions(rest, height):
-    """The actions by name: (seconds a loop, the posing of a moment; none: sampled from a clip on the rest pose)."""
+    """The actions by name: (seconds a loop, the posing of a moment - over a clip's frame for the sampled ones, none:
+    the clip itself)."""
     body = Body(rest, height)
-    return {"idle": (0, None), "sit": (3.2, sit(body)), "pedal": (1.0, pedal(body)), "hang": (3.2, hang(body)),
+    return {"idle": (0, idle(body)), "sit": (3.2, sit(body)), "pedal": (1.0, pedal(body)), "hang": (3.2, hang(body)),
             "walk": (0, None), "wave": (1.2, wave(body)), "tread": (2.4, tread(body)), "swim": (2.4, swim(body)),
-            "fall": (1.2, fall(body)), "flail": (1.4, flail(body))}
+            "fall": (1.2, fall(body)), "flail": (1.4, flail(body)), "duck": (1.2, duck(body)),
+            "cheer": (0, cheer(body))}
 
