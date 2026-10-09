@@ -10,7 +10,7 @@ class UAudioComponent;
 class USoundWaveProcedural;
 
 /**
- * Plays the stream of the sound player's mixer (FUghSoundPlayer) through the engine: a procedural sound wave fed
+ * Plays the stereo stream of the sound player (FUghSoundPlayer::MixStereo) through the engine: a procedural sound wave fed
  * every frame a little ahead of what the engine plays. Silent until Start (the autopilot of FUghShot never starts it),
  * and without the sound files or an audio device (-nosound).
  */

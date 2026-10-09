@@ -215,6 +215,12 @@ public:
 		FUghEffectPlayer& Effects);
 	/** The copters' bumps into the edges since the last call (FUghImpacts; also without the plants). */
 	TArray<FUghEdgeBumps::FBump> TakeBumps() { return MoveTemp(Bumped); }
+	/**
+	 * How much the plants rustle now (0 .. 1: the points of the chain swaying fastest moving RustleSpeed pixels a second
+	 * on average rustle fully) and where (the world: that chain's middle); 0 while nothing moves.
+	 */
+	float Rustle(FVector& OutPlace) const;
+	static constexpr double RustleSpeed = 40;
 
 protected:
 	virtual void BeginPlay() override;

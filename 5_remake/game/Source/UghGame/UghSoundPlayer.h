@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "ugh_logic.h"
+#include "UghAmbience.h"
 #include "UghMixer.h"
 #include "UghSounds.h"
 
@@ -10,8 +11,9 @@
  * When the game plays which sound, as the original did: the menu's music in the menu; in a game the effects of the
  * logic's events (FUghSounds::Cues) and the level's music from the start of the play; at its end the effects stop
  * and the music fades out as the picture does (over the original's 1.7 s); a lost game plays its jingle, then the
- * menu's music again; after the last level the ending's music plays in the menu. The sounds go to the mixer, which
- * a speaker (AUghSpeaker) plays; without the files nothing is heard.
+ * menu's music again; after the last level the ending's music plays in the menu. The sounds go to the mixer; the
+ * ambience (FUghAmbience, synthesized) goes with them in stereo, which a speaker (AUghSpeaker) plays; without the
+ * files nothing is heard.
  */
 class FUghSoundPlayer
 {
@@ -31,10 +33,15 @@ public:
 	/** The view after the steps of a frame: the play's start and end. */
 	void OnView(const ugh_logic_view& View);
 
-	/** The volumes in percent (FUghSettings): of everything, of the music, of the effects. */
-	void SetVolumes(int32 Volume, int32 Music, int32 Effects);
+	/** The volumes in percent (FUghSettings): of everything, of the music, of the effects, of the ambience. */
+	void SetVolumes(int32 Volume, int32 Music, int32 Effects, int32 Ambience = 100);
+	float GetAmbienceVolume() const { return AmbienceVolume; }
+
+	/** The next frames of the stream, left and right interleaved: the mixer's in the middle, the ambience around. */
+	void MixStereo(TArrayView<int16> Out);
 
 	FUghMixer& GetMixer() { return Mixer; }
+	FUghAmbience& GetAmbience() { return Ambience; }
 	const FUghSounds& GetSounds() const { return Sounds; }
 
 private:
@@ -46,6 +53,10 @@ private:
 
 	FUghSounds Sounds;
 	FUghMixer Mixer;
+	FUghAmbience Ambience;
+	float AmbienceVolume = 1;
+	TArray<int16> Mono;
+	TArray<float> AmbienceLeft, AmbienceRight;
 	int32 Phase = UGH_LOGIC_PHASE_START;
 	int32 Fade = 0;
 };

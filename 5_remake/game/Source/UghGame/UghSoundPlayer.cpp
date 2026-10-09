@@ -5,6 +5,10 @@ void FUghSoundPlayer::Load(const FString& SoundDir)
 	Mixer.StopEffects();   // they point into the sounds
 	Mixer.StopMusic();
 	Sounds.Load(SoundDir);
+	if (Sounds.GetSampleRate() > 0)
+	{
+		Ambience.SetSampleRate(Sounds.GetSampleRate());
+	}
 	PlayMusic(FUghSounds::MenuMusic);
 }
 
@@ -71,10 +75,28 @@ void FUghSoundPlayer::OnView(const ugh_logic_view& View)
 	Fade = View.fade;
 }
 
-void FUghSoundPlayer::SetVolumes(int32 Volume, int32 Music, int32 Effects)
+void FUghSoundPlayer::SetVolumes(int32 Volume, int32 Music, int32 Effects, int32 InAmbience)
 {
 	const float All = Volume / 100.f;
 	Mixer.SetVolumes(All * Music / 100.f, All * Effects / 100.f);
+	AmbienceVolume = FMath::Clamp(All * InAmbience / 100.f, 0.f, 1.f);
+}
+
+void FUghSoundPlayer::MixStereo(TArrayView<int16> Out)
+{
+	const int32 Frames = Out.Num() / 2;
+	Mono.SetNumUninitialized(Frames, EAllowShrinking::No);
+	AmbienceLeft.SetNumUninitialized(Frames, EAllowShrinking::No);
+	AmbienceRight.SetNumUninitialized(Frames, EAllowShrinking::No);
+	Mixer.Mix(Mono);
+	Ambience.Render(AmbienceLeft, AmbienceRight);   // (on even when silent: it goes on as the world does)
+	const float Scale = 32767.f * AmbienceVolume;
+	for (int32 Frame = 0; Frame < Frames; ++Frame)
+	{
+		const float Middle = Mono[Frame];
+		Out[2 * Frame] = int16(FMath::Clamp(Middle + AmbienceLeft[Frame] * Scale, -32768.f, 32767.f));
+		Out[2 * Frame + 1] = int16(FMath::Clamp(Middle + AmbienceRight[Frame] * Scale, -32768.f, 32767.f));
+	}
 }
 
 void FUghSoundPlayer::PlayMusic(const TCHAR* Name, int32 DelaySamples)

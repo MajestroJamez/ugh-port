@@ -269,6 +269,8 @@ void AUghGameMode::ShowFrame(double Seconds)
 	for (const FUghFlingSplash& Splash : Flings.TakeSplashes())
 	{
 		Effects->GetPlayer().Order(EUghBurst::Plunge, Splash.Place, Current, Splash.Scale, Splash.Depth);
+		Speaker->GetPlayer().GetAmbience().Splash(FUghAmbience::ESplash::Plunge,
+			UghShapes::ToWorld(Splash.Place.X, Splash.Place.Y, Splash.Depth), Splash.Scale);
 	}
 	// the copters falling into the sea: a splash where they meet it, foam where they come up again (a little above
 	// the surface: the foam lying on it at its very height was hidden by the water)
@@ -277,6 +279,9 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		Effects->GetPlayer().Order(Splash.bSurfacing ? EUghBurst::Boil : EUghBurst::Dunk,
 			Splash.Place - FVector2D(0, FoamAbove), Current, Splash.Scale);
+		Speaker->GetPlayer().GetAmbience().Splash(
+			Splash.bSurfacing ? FUghAmbience::ESplash::Boil : FUghAmbience::ESplash::Dunk,
+			UghShapes::ToWorld(Splash.Place.X, Splash.Place.Y, 0), Splash.Scale);
 		if (!Splash.bSurfacing)
 		{
 			Impacts.OnDunk(Splash.Player, Splash.Scale);
@@ -383,6 +388,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	Stage->SetCamera(Pose);
 	CameraPose = Pose;
+	Hear(Current, Surface, Shown, bMenuView, bIsles, Pose);
 	CameraLog.Record(Seconds, Pose, Current.phase, Intro);
 }
 
@@ -449,6 +455,7 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	ShotAround = FUghShot::LookAround;
 	Campfire->Place(Decorations, View.wind, Mood.FireLight);
 	Torches->Place(Decorations, View.wind, Mood.FireLight);
+	HearFires(Decorations);
 	Scenery->Show(Decorations);
 	const TArray<FUghRockPiece> Pieces = View.level_id < 0 ? TArray<FUghRockPiece>()
 		: UghRockDressing::Plan(Logic, Field, View.level_id, Decorations, Streams);

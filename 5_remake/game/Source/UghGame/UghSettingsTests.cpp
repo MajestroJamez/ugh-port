@@ -50,6 +50,7 @@ bool FUghProfileTest::RunTest(const FString& Parameters)
 	Settings.Volume = 70;
 	Settings.Music = 40;
 	Settings.Effects = 90;
+	Settings.Ambience = 30;
 	Settings.bIntro = false;
 	Settings.bShake = false;
 	Settings.bGhost = false;
@@ -85,6 +86,7 @@ bool FUghProfileTest::RunTest(const FString& Parameters)
 	const FUghKeyBindings Defaults = FUghKeyBindings::Defaults();
 	TestTrue(TEXT("an older profile without the camera's shake: on"), Loaded.Settings.bShake);
 	TestTrue(TEXT("an older profile without the ghost: on"), Loaded.Settings.bGhost);
+	TestEqual(TEXT("an older profile without the ambience: 100 %"), Loaded.Settings.Ambience, 100);
 	TestTrue(TEXT("odd values: the defaults"), Loaded.Settings.Quality == 3 && Loaded.Settings.Volume == 50 &&
 		Loaded.Settings.FrameGeneration == 0 && Loaded.Settings.Keys.Get({ 0, UGH_LOGIC_KEY_UP, 0 }) == EKeys::Up &&
 		!Loaded.Settings.Keys.Get({ 0, UGH_LOGIC_KEY_FIRE, 0 }).IsValid() &&
@@ -144,6 +146,12 @@ bool FUghSettingsMenuTest::RunTest(const FString& Parameters)
 		Menu.HandleKey(EKeys::Left, Settings, Options);
 	}
 	TestTrue(TEXT("the music silent at the least"), Settings.Music == 0 && Settings.Volume == 100);
+	Go(ERow::Ambience);
+	TestEqual(TEXT("the ambience at first"), FUghSettingsMenu::ValueOf(ERow::Ambience, Settings, Options),
+		FString(TEXT("100 %")));
+	TestTrue(TEXT("Left lowers the ambience"),
+		Menu.HandleKey(EKeys::Left, Settings, Options) == EResult::Changed && Settings.Ambience == 90 &&
+		FMath::IsNearlyEqual(FUghSettingsMenu::LevelOf(ERow::Ambience, Settings), 0.9f));
 	Go(ERow::Intro);
 	Menu.HandleKey(EKeys::Enter, Settings, Options);
 	TestFalse(TEXT("Enter turns the flight off"), Settings.bIntro);

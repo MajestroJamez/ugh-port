@@ -8,7 +8,8 @@ namespace
 {
 	const TCHAR* const Labels[FUghSettingsMenu::RowCount] = { TEXT("Quality"), TEXT("Upscaler"),
 		TEXT("Frame generation"), TEXT("Resolution"), TEXT("Window"), TEXT("Volume"), TEXT("Music"), TEXT("Effects"),
-		TEXT("Flight to the stone"), TEXT("Camera shake"), TEXT("Ghost of the best"), TEXT("Controls"), TEXT("Back") };
+		TEXT("Ambience"), TEXT("Flight to the stone"), TEXT("Camera shake"), TEXT("Ghost of the best"), TEXT("Controls"),
+		TEXT("Back") };
 
 	const TCHAR* const QualityHints[FUghSettings::QualityLevels] = {
 		TEXT("The fastest (a third to half resolution, kept at 60 fps): the sky's light, the sun's shadows, plain hair"),
@@ -121,6 +122,7 @@ bool FUghSettingsMenu::Change(int32 Direction, FUghSettings& Settings, const FUg
 	case ERow::Volume: Settings.Volume = StepVolume(Settings.Volume, Direction); break;
 	case ERow::Music: Settings.Music = StepVolume(Settings.Music, Direction); break;
 	case ERow::Effects: Settings.Effects = StepVolume(Settings.Effects, Direction); break;
+	case ERow::Ambience: Settings.Ambience = StepVolume(Settings.Ambience, Direction); break;
 	case ERow::Intro: Settings.bIntro = !Settings.bIntro; break;
 	case ERow::Shake: Settings.bShake = !Settings.bShake; break;
 	case ERow::Ghost: Settings.bGhost = !Settings.bGhost; break;
@@ -152,6 +154,7 @@ FString FUghSettingsMenu::ValueOf(ERow Row, const FUghSettings& Settings, const 
 	case ERow::Volume: return FString::Printf(TEXT("%d %%"), Settings.Volume);
 	case ERow::Music: return FString::Printf(TEXT("%d %%"), Settings.Music);
 	case ERow::Effects: return FString::Printf(TEXT("%d %%"), Settings.Effects);
+	case ERow::Ambience: return FString::Printf(TEXT("%d %%"), Settings.Ambience);
 	case ERow::Intro: return Settings.bIntro ? TEXT("On") : TEXT("Off");
 	case ERow::Shake: return Settings.bShake ? TEXT("On") : TEXT("Off");
 	case ERow::Ghost: return Settings.bGhost ? TEXT("On") : TEXT("Off");
@@ -166,6 +169,7 @@ float FUghSettingsMenu::LevelOf(ERow Row, const FUghSettings& Settings)
 	case ERow::Volume: return Settings.Volume / 100.f;
 	case ERow::Music: return Settings.Music / 100.f;
 	case ERow::Effects: return Settings.Effects / 100.f;
+	case ERow::Ambience: return Settings.Ambience / 100.f;
 	default: return -1;
 	}
 }
@@ -186,6 +190,7 @@ FString FUghSettingsMenu::HintOf(ERow Row, const FUghSettings& Settings, const F
 	case ERow::Volume: return TEXT("Everything heard (Page Up and Page Down in the game too)");
 	case ERow::Music: return TEXT("The original's music in the menu and the levels");
 	case ERow::Effects: return TEXT("The original's sounds of the game");
+	case ERow::Ambience: return TEXT("The sea, the jungle, the wind and the rain, the fires, the splashes, the lianas");
 	case ERow::Intro: return TEXT("At each level's start the camera flies over the sea to the stone it is carved into");
 	case ERow::Shake:
 		return TEXT("A crash, a stone on an enemy, a fall into the sea, a bump into the edge shake the camera a little");

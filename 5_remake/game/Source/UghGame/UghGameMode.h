@@ -5,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "UghCameraLog.h"
 #include "UghControls.h"
+#include "UghDecorations.h"
 #include "UghDunk.h"
 #include "UghFigureActions.h"
 #include "UghFling.h"
@@ -185,6 +186,14 @@ private:
 	 * autopilot's -UghShotGhost), none in the menu or while a replay is watched; in step with the game's play.
 	 */
 	void UpdateGhost();
+	/**
+	 * The ambience (FUghAmbience): the mood, the place (the menu's stone, the archipelago, the flight, the play), as much
+	 * as the picture `Shown`, the camera's ears, the fires burning over the water's `Surface`, the lianas rustling.
+	 */
+	void Hear(const ugh_logic_view& View, double Surface, double Shown, bool bMenuView, bool bIsles,
+		const FUghCameraPose& Pose);
+	/** The level's campfires and torches among its `Decorations`, heard from now on. */
+	void HearFires(const TArray<FUghDecoration>& Decorations);
 	/** A new game as chosen (the menu's PLAY, the level selection's stone); `Key` started it (its release is no key). */
 	void StartGame(const FUghGameChoice& Choice, const FKey& Key);
 	void Quit();
@@ -235,6 +244,7 @@ private:
 	FUghCameraPose CameraPose;  // the camera of the last frame
 	double SeaZ = 0;            // the sea's surface of the last frame (the world)
 	int32 PlayedLevel = -1;     // the level of the mode being played (when the game goes on from it, it is done)
+	TArray<FUghDecoration> HeardFires;   // the level's campfires and torches (Hear)
 
 	UPROPERTY() TObjectPtr<AUghStage> Stage;
 	UPROPERTY() TObjectPtr<AUghBackground> Background;

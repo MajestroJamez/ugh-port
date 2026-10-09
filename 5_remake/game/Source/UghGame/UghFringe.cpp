@@ -672,3 +672,30 @@ void AUghFringe::Show(const ugh_logic_view& Previous, const ugh_logic_view& Curr
 		}
 	}
 }
+
+float AUghFringe::Rustle(FVector& OutPlace) const
+{
+	double Most = 0;
+	for (const FUghFringeSway::FChain& Chain : Sway.Chains())
+	{
+		if ((!Chain.bMoving && !Chain.bMoved) || Chain.Speed.IsEmpty() || Chain.Rest.Num() != Chain.Speed.Num())
+		{
+			continue;
+		}
+		double Speed = 0;
+		FVector2D Middle = FVector2D::ZeroVector;
+		for (int32 Point = 0; Point < Chain.Speed.Num(); ++Point)
+		{
+			Speed += Chain.Speed[Point].Size();
+			Middle += Chain.Rest[Point] + (Chain.Offset.IsValidIndex(Point) ? Chain.Offset[Point] : FVector2D::ZeroVector);
+		}
+		Speed /= Chain.Speed.Num() * RustleSpeed;
+		if (Speed > Most)
+		{
+			Most = Speed;
+			Middle /= Chain.Speed.Num();
+			OutPlace = UghShapes::ToWorld(Middle.X, Middle.Y, Chain.Depth);
+		}
+	}
+	return float(FMath::Min(Most, 1.0));
+}

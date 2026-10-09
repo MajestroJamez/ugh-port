@@ -13,7 +13,7 @@ enum class EUghUpscaler : uint8 { Dlss, Fsr, Tsr };
  * The settings of the game (the menu's screen Settings, saved with the profile, FUghProfile): the quality preset
  * (UghGraphics: the engine's scalability groups and the heavy features of the diorama), the upscaler and the DLSS frame
  * generation (FUghUpscaler), the resolution and the window mode (none: as the engine started - the desktop's, the
- * command line's), the volumes (all, the music, the effects), the flight to the stone at a level's start, the camera
+ * command line's), the volumes (all, the music, the effects, the ambience), the flight to the stone at a level's start, the camera
  * shaken by an impact, the ghost of the level's best run, the pilots' keys (FUghKeyBindings).
  */
 struct FUghSettings
@@ -27,7 +27,7 @@ struct FUghSettings
 	int32 FrameGeneration = 0;   // off, 2x, 3x, 4x (where supported)
 	FIntPoint Resolution = FIntPoint::ZeroValue;   // zero: as the engine started
 	int32 WindowMode = -1;   // EWindowMode::Type; -1: as the engine started
-	int32 Volume = 100, Music = 100, Effects = 100;   // percent
+	int32 Volume = 100, Music = 100, Effects = 100, Ambience = 100;   // percent
 	bool bIntro = true;   // the flight to the stone at a level's start
 	bool bShake = true;   // the camera shaken a little by an impact (FUghImpacts)
 	bool bGhost = true;   // the ghost of the level's best run (FUghGhost)

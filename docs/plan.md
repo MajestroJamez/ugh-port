@@ -1900,3 +1900,18 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   (`1p-01-duck.png`, `1p-01-wave.png`, `1p-01-idle.png`). CTest logiky a `6_verification` (324) a 210 testů v UE
   zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 12, 1 % low 9 (editor, Epic, po buildech a testech
   zahřátý; 29g 15 / 11). Balíček nepřebalen. Další: **krok 29b**.
+- 2026-10-09: krok 29b hotový (bez poslechu) - zvuk prostředí (README hry). `FUghAmbience` ho syntetizuje za běhu, žádné
+  nahrávky: nic se nestahuje, žádná licence, balíček beze změny velikosti (CC0 zdroje by chtěly stahování a výběr
+  poslechem). Moře (podklad s pomalým vzdouváním + dvě vlny: šum s otevírajícím a zavírajícím se filtrem, v bouři
+  větší a hustší), džungle (5 druhů ptáků ve dne, večer méně; za soumraku a v noci cvrčci, kobylka, žáby, sova), vítr
+  (poryvy s hvízdáním; nad mořem slabý vánek) a déšť (šum + kapky) v bouři, praskání ohňů a loučí (hlas jen 6
+  nejhlasitějším, slábne se vzdáleností od „uší" - kamera posunutá po ose pohledu na 15 m před rovinu hry, z 113 m by
+  zněly všechny stejně - a stereo podle strany), šplouchnutí (25a cestující, 25d vrtulník a jeho pěna) a šustění lián
+  (24d, `AUghFringe::Rustle` z rychlosti řetězů). Nálada volí vrstvy, místo (menu, souostroví, let, hra) hlasitosti,
+  stmívání obrazu kolik je slyšet (v černé mezi levely ticho - tam se mění nálada; náběh 0,5 s). Proud je nově stereo
+  (`FUghSoundPlayer::MixStereo`: originál uprostřed, prostředí kolem). Settings > Ambience (`ambience` v profilu, starý
+  profil 100 %). Úrovně: den -38 dBFS, bouře -31, hudba originálu -31. Testy `Ugh.Sounds.Ambience.Moods/.Fires/.Events`
+  (analýza bufferu, nic nahlas; WAVy k poslechu v `5_remake\game\Saved\Ambience`), `Ugh.Settings.*`. 10 s bouře se
+  vším 61-136 ms (pod 1,5 % jádra). CTest logiky, `6_verification` (324) a 213 testů v UE zelené. `levels.ps1 -Quick`
+  0 chyb, fps medián 6, 1 % low 4 (IDEA indexovala, CPU 70-90 %; autopilot zvuk nespouští). Balíček nepřebalen.
+  Další: **krok 29e**.
