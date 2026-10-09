@@ -15,17 +15,29 @@ namespace
 	constexpr int32 Width = UghShapes::ScreenWidth, Height = UghShapes::ScreenHeight;
 
 	/**
-	 * The face in front of the slab, pixels: its edges rounded this much, at least this thick, at most FaceRelief more
-	 * where its relief (Relief) stands out, and how much more it bulges in the middle of a rock at least BulgeWidth
-	 * from its edges.
+	 * The face in front of the slab, pixels: at least this thick (in front of the slab's front, which shows where the
+	 * face broke off: FUghRockMesh::Shade), at most FaceRelief more where its relief (Face) stands out, and up to
+	 * FaceBulge more in broad swells across the whole level (one boulder's surface, not a pillow on each rock; SwellScale
+	 * per pixel), from BulgeWidth pixels inside the rock's edges.
 	 */
-	constexpr double EdgeRadius = 2.5, FaceBase = 0.8, FaceRelief = 2.4, FaceBulge = 0.8, BulgeWidth = 8;
+	constexpr double FaceBase = 1.4, FaceRelief = 2.8, FaceBulge = 0.8, BulgeWidth = 3, SwellScale = 0.03;
 	static_assert(FaceBase + FaceRelief + FaceBulge <= FUghRockField::FaceMax);
 	/**
-	 * The face's slate: beds about this thick (pixels), broken into flakes about this long; chips broken out of them
-	 * about this wide and high.
+	 * The face's slate (step 30a: no tiles' blocks of cobbles): beds about FaceBeds thick (pixels), broken into flakes
+	 * about FaceFlakes long, out most at their feet (lips); through them the stone's great beds (StoneBeds, StoneFlakes,
+	 * as FUghStackField's face at StoneAlong: one boulder) and thin laminae; blocks about BlockWidth x BlockHeight, a
+	 * share of them (BrokenShare) broken out of the face (a hollow, BrokenDepth of the relief left).
 	 */
-	constexpr double BedHeight = 5.5, FlakeLength = 16, ChipWidth = 6.5, ChipHeight = 3.5;
+	constexpr double FaceBeds = 7, FaceFlakes = 30, StoneBeds = 48, StoneFlakes = 110, StoneAlong = -10,
+		LaminaHeight = 2.2, LaminaLength = 12, BlockWidth = 26, BlockHeight = 12, BrokenShare = 0.16, BrokenDepth = 0.3;
+	/**
+	 * The face's edge broken flake by flake: a flake ends up to EdgeBreak pixels inside the mask's edge (the flakes
+	 * below BreakFrom reach it), a block broken out at the edge BrokenBreak; on top edges (the pads) TopKeep less. Its
+	 * edge rounded EdgeSharp (a sharp lip) to EdgeWorn (weathered) pixels.
+	 */
+	constexpr double EdgeBreak = 7, BreakFrom = 0.3, BrokenBreak = 6, TopKeep = 0.75, EdgeSharp = 0.8, EdgeWorn = 2.5;
+	/** The walls' ribs and the back wall's beds: their flakes about this long. */
+	constexpr double FlakeLength = 16;
 	/**
 	 * The cave's walls: the slate's beds as ribs, this thick and standing out up to this much (pixels); the back wall's
 	 * beds this thick and deep.
@@ -36,6 +48,17 @@ namespace
 	 * GrowMax pixels further into the cave (half of it GrowDepth deep); their roughness grows with the depth.
 	 */
 	constexpr double Blend = 3, GrowMax = 3, GrowDepth = 15, RoughMin = 0.5, RoughMax = 2.5, RoughPerPixel = 0.05;
+	/**
+	 * Behind the figures' room (from LedgeFrom, fully from LedgeTo pixels behind the slab: the boards of the pads'
+	 * numbers, the enemies and the copters' bodies are nearer) the slate's beds of the walls and ceilings reach into the
+	 * cave as ledges: beds LedgeBeds thick, flakes LedgeFlakes long, each up to LedgeReach pixels its own way, most at
+	 * its foot (a lip). Seen from the play the cave's outline is broken strata, not the tiles' rectangles. Further back
+	 * (from FadeFrom to FadeTo) they sink back into the walls, and they stay out of the lowest FloorFrom .. FloorTo
+	 * pixels over a floor: room for the palms and huts.
+	 */
+	constexpr double LedgeFrom = 9, LedgeTo = 13, FadeFrom = 15, FadeTo = 18, LedgeReach = 12, LedgeBeds = 7,
+		LedgeFlakes = 26, RoomShare = 0.2;
+	constexpr int32 FloorFrom = 12, FloorTo = 24, FloorAround = 12, FloorStep = 3, RoomMost = 60;
 	/**
 	 * The cave's back wall: its mean depth, its bumps, how much deeper it is behind a dark hole of the drawing, and at
 	 * least this deep (behind every decoration of UghDecorations).
@@ -67,19 +90,34 @@ namespace
 		return FMath::PerlinNoise3D(FVector(X, Y, Depth) * Scale);
 	}
 
-	/**
-	 * How far the face stands out at x, y (pixels), 0 .. 1: beds of slate (flakes each standing out its own way, most
-	 * at its foot - a sharp lip over the bed below -, open seams between some of them), chips broken out of them, broad
-	 * swellings and a grain.
-	 */
-	double Relief(double X, double Y)
+	/** The face at x, y: how far it stands out (0 .. 1), how far inside the mask's edge it ends, its edge's radius. */
+	struct FFace
 	{
-		const UghRockNoise::FBlock Bed = UghRockNoise::Slate(X, Y, X, BedHeight, FlakeLength, 0);
-		const UghRockNoise::FBlock Chip = UghRockNoise::Blocks(X, Y, ChipWidth, ChipHeight, 7);
-		const double Swell = 0.5 + 0.5 * Noise(X, Y, 0.04);
+		double Relief, Break, Radius;
+	};
+
+	/**
+	 * The face at x, y (pixels), `Top` 1 on a top edge of the mask: beds of slate (flakes each standing out its own way,
+	 * most at its foot - a sharp lip over the bed below -, open seams between some of them), the stone's great beds and
+	 * thin laminae through them, blocks (some broken out), a grain; its edge broken flake by flake.
+	 */
+	FFace Face(double X, double Y, double Top)
+	{
+		using UghRockNoise::FBlock;
+		const FBlock Bed = UghRockNoise::Slate(X, Y, X, FaceBeds, FaceFlakes, 0);
+		const FBlock Stone = UghRockNoise::Slate(X, Y, X + StoneAlong, StoneBeds, StoneFlakes, 13);
+		const FBlock Lamina = UghRockNoise::Slate(X, Y, X, LaminaHeight, LaminaLength, 3);
+		const FBlock Block = UghRockNoise::Blocks(X, Y, BlockWidth, BlockHeight, 7);
+		const bool bBroken = Block.Random < BrokenShare;
 		const double Grain = 0.5 + 0.5 * Noise(X, Y, 0.35);
-		return FMath::Clamp(0.78 * Bed.Height * (0.8 + 0.2 * Chip.Crack) + 0.1 * Chip.Height + 0.08 * Swell +
-			0.04 * Grain, 0.0, 1.0) * (0.3 + 0.7 * Bed.Crack);
+		FFace Face;
+		Face.Relief = FMath::Clamp(0.56 * Bed.Height + 0.24 * Stone.Height + 0.1 * Lamina.Height +
+			0.06 * Block.Height + 0.04 * Grain, 0.0, 1.0) * (0.3 + 0.7 * Bed.Crack) * (0.7 + 0.3 * Block.Crack) *
+			(bBroken ? BrokenDepth : 1);
+		Face.Break = (EdgeBreak * FMath::SmoothStep(BreakFrom, 1.0, Bed.Random) + (bBroken ? BrokenBreak : 0)) *
+			(1 - TopKeep * Top);
+		Face.Radius = FMath::Lerp(EdgeSharp, EdgeWorn, Bed.Random);
+		return Face;
 	}
 
 	/** The luminance of the drawing at each pixel of the screen, blurred over Radius pixels (the holes, not the cracks). */
@@ -224,13 +262,21 @@ float FUghRockField::Front(int32 I, int32 J, double Depth) const
 	const double X = FUghRockOutline::X(I), Y = FUghRockOutline::Y(J);
 	const double Ahead = -SlabHalf - Depth;   // in front of the slab
 	const double Soft = Outline.Soft(I, J);
-	const double Base = FMath::Lerp(double(Outline.Distance(I, J)), Soft, FMath::SmoothStep(0.0, EdgeRadius, Ahead)) +
-		Closing(I, J);
-	// the edge rounded: a quarter circle from the slab's wall to the face
-	const double Inset = Ahead < EdgeRadius ? EdgeRadius - FMath::Sqrt(EdgeRadius * EdgeRadius - Ahead * Ahead)
-		: EdgeRadius + 3 * (Ahead - EdgeRadius);
-	const double Face = FaceBase + FaceRelief * Relief(X, Y) + FaceBulge * FMath::Clamp(Soft / BulgeWidth, 0.0, 1.0);
-	return -SmoothMax(Inset - Base, Ahead - Face, 1);
+	const double Exact = Outline.Distance(I, J) + Closing(I, J);
+	// a top edge: the rock below, the air above (y down)
+	const double Top = FMath::Max(Outline.SoftGradient(I, J).GetSafeNormal(0.01f).Y, 0.f);
+	const FFace Shape = Face(X, Y, Top);
+	const double Radius = Shape.Radius;
+	const double Base = FMath::Lerp(double(Outline.Distance(I, J)), Soft, FMath::SmoothStep(0.0, Radius, Ahead)) +
+		Closing(I, J) - Shape.Break;
+	// the edge rounded: a quarter circle from the slab's wall (or its front, where the flake broke off) to the face
+	const double Inset = Ahead < Radius ? Radius - FMath::Sqrt(Radius * Radius - Ahead * Ahead)
+		: Radius + 3 * (Ahead - Radius);
+	const double Swell = FMath::Clamp(0.5 + 0.7 * Noise(X, Y, SwellScale), 0.0, 1.0);
+	const double Thick = FaceBase + FaceRelief * Shape.Relief +
+		FaceBulge * Swell * FMath::Clamp(Soft / BulgeWidth, 0.0, 1.0);
+	// never over the air of the plane of the play
+	return FMath::Min(-SmoothMax(Inset - Base, Ahead - Thick, 1), Exact);
 }
 
 float FUghRockField::Behind(int32 I, int32 J, double Depth) const
@@ -244,6 +290,41 @@ float FUghRockField::Behind(int32 I, int32 J, double Depth) const
 	const FVector2f Way = Outline.SoftGradient(I, J).GetSafeNormal(0.01f);
 	const double Wall = FMath::Abs(Way.X), Ceiling = FMath::Max(-Way.Y, 0.f);
 	Value += Blended * GrowMax * (1 - FMath::Exp(-Behind / GrowDepth)) * (Wall + 0.6 * Ceiling);
+	// behind the figures' room their beds as ledges (only near the surface: further they cannot change the side)
+	const double Ledges = FMath::SmoothStep(LedgeFrom, LedgeTo, Behind) *
+		(1 - FMath::SmoothStep(FadeFrom, FadeTo, Behind)) * FMath::Min(Wall + Ceiling, 1.0);
+	if (Ledges > 0.01 && Value > -LedgeReach - 1 && Value < 1)
+	{
+		// none low over a floor (the palms' and huts' room), and the cave's middle open (at most RoomShare of the air
+		// across it)
+		auto Run = [&](int32 DI, int32 DJ, int32 Most)
+		{
+			int32 Length = 0;
+			for (int32 CI = I + DI, CJ = J + DJ; Length < Most && CI >= 0 && CI < Columns && CJ < Rows &&
+				!Outline.Solid(CI, CJ); CI += DI, CJ += DJ)
+			{
+				++Length;
+			}
+			return Length;
+		};
+		const int32 Across = 1 + Run(-1, 0, RoomMost) + Run(1, 0, RoomMost);
+		// (the floor under it or beside it, within a ledge's reach: none grows round a corner up over a floor)
+		int32 Room = FloorTo;
+		for (int32 DI = -FloorAround; DI <= FloorAround; DI += FloorStep)
+		{
+			for (int32 Down = 1; Down <= Room && J + Down < Rows; ++Down)
+			{
+				if (Outline.Solid(FMath::Clamp(I + DI, 0, Columns - 1), J + Down))
+				{
+					Room = Down - 1;
+				}
+			}
+		}
+		const UghRockNoise::FBlock Ledge = UghRockNoise::Slate(X, Y, X + Depth, LedgeBeds, LedgeFlakes, 41);
+		Value += Ledges * FMath::SmoothStep(double(FloorFrom), double(FloorTo), double(Room)) *
+			FMath::Min(LedgeReach, RoomShare * Across) * Ledge.Height * (0.25 + 0.75 * Ledge.Random) *
+			(0.4 + 0.6 * Ledge.Crack);
+	}
 	const double Rough = Blended * FMath::Min(RoughMin + RoughPerPixel * Behind, RoughMax) *
 		(0.3 + 0.7 * FMath::Max(Wall, Ceiling));
 	// (only on steep walls, not at the slab nor on floors: a stream's banks stay level)

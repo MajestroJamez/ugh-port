@@ -27,6 +27,8 @@ namespace
 	constexpr double DeepAt = 60;
 	/** The grass hangs this many pixels (here more, there less) over the rock's top edges. */
 	constexpr double LipMin = 2, LipMax = 8;
+	/** How open the slab's front looks where the face broke off (FUghRockField): darker than the face, no moss. */
+	constexpr double BrokenOpen = 0.6;
 	/** The large patches of the surface: noise this many times per pixel (a few metres), and three times finer. */
 	constexpr double PatchScale = 0.025;
 	/** The static mesh's only material slot. */
@@ -182,7 +184,11 @@ FColor FUghRockMesh::Shade(const FUghRockField& Field, const FVector& Point, con
 			}
 		}
 	}
-	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far) * (1 - Dark)), uint8(255 * Deep), uint8(255 * Lip),
+	// the slab's front where the face broke off (the face is in front of it everywhere else): the bed below, shaded
+	const bool bBroken = Point.Z > -FUghRockField::SlabHalf - 1 && Point.Z <= -FUghRockField::SlabHalf + 0.5 &&
+		Outward.Z < -0.5;
+	return FColor(uint8(255 * (0.5 * Near + 0.5 * Far) * (1 - Dark) * (bBroken ? BrokenOpen : 1)), uint8(255 * Deep),
+		uint8(255 * Lip),
 		uint8(255 * Patches(Point)));
 }
 

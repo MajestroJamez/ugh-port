@@ -12,6 +12,8 @@ namespace UghRockNoise
 		double Height = 0;
 		/** 0 on the crack between two blocks (where there is one), 1 within a block. */
 		double Crack = 1;
+		/** A number 0 .. 1 of its own block (flake) that looks random: which of them broke off, which reach further. */
+		double Random = 0;
 	};
 
 	/**

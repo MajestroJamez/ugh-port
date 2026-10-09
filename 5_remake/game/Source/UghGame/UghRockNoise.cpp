@@ -60,6 +60,7 @@ UghRockNoise::FBlock UghRockNoise::Blocks(double X, double Y, double Width, doub
 	// is open (the same for both cells)
 	const bool bOpen = Fraction(Cell.X + Neighbour.X, Cell.Y + Neighbour.Y, Salt + 5) < CrackShare;
 	Block.Crack = bOpen ? FMath::SmoothStep(0.0, CrackWidth, (Second - Nearest) / 2) : 1;
+	Block.Random = Fraction(Cell.X, Cell.Y, Salt + 6);
 	return Block;
 }
 
@@ -88,6 +89,7 @@ UghRockNoise::FBlock UghRockNoise::Slate(double X, double Y, double Along, doubl
 	// some of the flakes' ends are open seams
 	const bool bOpen = Fraction(Bed, Flake, Salt + 6) < 0.5;
 	Block.Crack = bOpen ? FMath::SmoothStep(0.0, 0.07, FMath::Min(Within, 1 - Within) * Length / FlakeLength) : 1;
+	Block.Random = Fraction(Bed, Flake, Salt + 7);
 	return Block;
 }
 

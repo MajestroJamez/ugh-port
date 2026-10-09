@@ -44,10 +44,10 @@ public:
 	/** How far from a mask's row a floor is looked for, a ceiling, pixels. */
 	static constexpr double Reach = 3, CeilingReach = 6;
 
-private:
 	/** The field at x, y (pixels) and depth (units) is rock. */
 	bool Rock(double X, double Y, double Depth) const;
 
+private:
 	const ugh_logic* Logic;
 	const FUghRockField& Field;
 };

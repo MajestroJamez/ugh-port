@@ -24,7 +24,7 @@ public:
 	/** The hollow of the level's rock: pixels of the screen, from far in front back to HoleBack (pixels). */
 	static constexpr double HoleLeft = -43, HoleRight = UghShapes::ScreenWidth + 43, HoleTop = -19,
 		HoleBottom = UghShapes::ScreenHeight + 19, HoleBack = FUghRockField::BackDepth + 8;
-	/** The frame around it is at least this far in front of the plane of the play (pixels: the rock's face at most 6). */
+	/** The frame around it is at least this far in front of the plane of the play (pixels: the rock's face at most 7). */
 	static constexpr double FrameDepth = -10;
 
 	static int32 Layers() { return LayerCount; }

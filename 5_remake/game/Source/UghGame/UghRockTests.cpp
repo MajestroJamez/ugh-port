@@ -1,4 +1,5 @@
-// The rock of every level as an automation test of the editor (Ugh.Rock): its edge in the plane of the play.
+// The rock of every level as an automation test of the editor (Ugh.Rock): its edge in the plane of the play, its
+// face in front of it never over the air.
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Algo/BinarySearch.h"
@@ -168,6 +169,28 @@ namespace
 	}
 
 	/**
+	 * How many nodes of the field in front of the slab of the play are rock over a pixel of air of the mask (the face
+	 * covering the play: its edge may break off inside the mask, never reach over it).
+	 */
+	int32 OverTheAir(const ugh_logic* Logic, const FUghRockField& Field)
+	{
+		int32 Over = 0;
+		const TConstArrayView<double> Depths = FUghRockField::Depths();
+		for (int32 K = 0; K < Depths.Num() && Depths[K] < -FUghRockField::SlabHalf; ++K)
+		{
+			for (int32 Y = 0; Y < Height; ++Y)
+			{
+				for (int32 X = 0; X < Width; ++X)
+				{
+					Over += ugh_logic_solid(Logic, X, Y) == 0 &&
+						Field.At(X + FUghRockOutline::MarginX, Y + FUghRockOutline::MarginY, K) > 0;
+				}
+			}
+		}
+		return Over;
+	}
+
+	/**
 	 * The cut against the mask: how many pixels' centres are on the wrong side, how many other points are further
 	 * than the tolerance from a pixel of the kind the cut gives them, the furthest of all. Row by row of points (the
 	 * cut keeps a row's crossings).
@@ -240,6 +263,8 @@ bool FUghRockTest::RunTest(const FString& Parameters)
 			const TArray<FUghPadSign> Signs = UghPadSigns::Plan(Logic, FUghGround(Logic, Field), Art.Signs(LevelId));
 			Field.CarveChannels(UghStreams::Plan(Logic, Field, Simulation.GetCurrent().water_level / UghShapes::Subpixels,
 				Signs));
+			TestEqual(FString::Printf(TEXT("level_id %d: nodes of the face in front of the slab over the air"), LevelId),
+				OverTheAir(Logic, Field), 0);
 			FUghRockMesh Mesh;
 			Mesh.Build(Field);
 			for (const double Depth : CutDepths)

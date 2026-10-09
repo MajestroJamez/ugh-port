@@ -1940,3 +1940,14 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   notebooku nesplněn - rozhoduje takt GPU (dyn. rozlišení na minimu 33 %). Pozn.: `M_UghGhost` na Nanite meshi loguje
   „Invalid material" (vzhled ducha ověřen v 29g). CTest logiky a `6_verification` (324), 214 testů v UE zelené.
   Balíček nepřebalen (`pso.ps1` až na konci kroku 29). Další: balení (konec kroku 29).
+- 2026-10-09: krok 30a hotový - tvar skály (`docs/visual-concept.md`, krok 30a). Čelo levelu: místo dlažby odštěpků
+  (četly se jako cihly) vrstvy břidlice 7 px se šupinami a břity, velké vrstvy kamene (48 px jako `FUghStackField`),
+  lamely, vypadlé bloky, boule přes celý level; čelo silnější (`FaceMax` 5). Hrana čela se láme po šupinách až 7 px
+  dovnitř masky (plošiny méně), odhalená deska tmavší. Za figurami (9-18 px) stěny a stropy jeskyně vystupují po
+  vrstvách až 12 px (ne nízko nad podlahou: palmy, liány; liána musí viset ze skály). Skeny útesů v jeskyních tmavé
+  jako břidlice (dřív světlá zeď kvádrů). Kolizní hrana beze změny (`Ugh.Rock` nejvýš 0,12 px), nový test: čelo
+  nikdy nad vzduchem masky. Obrys z kamery dál sleduje masku (musí - kolize), mění se plocha, hrany a jeskyně.
+  Snímky `Saved\Shots\30a` (`*-crop-before/after.png`, `pair-team-21.png`, `team-21-frame100_40.png`), archy
+  `Levels-30a-before`, `Levels-30a-after` (12 levelů celých, 0 chyb, fps medián 17 / 1 % low 13 jako před). Síť skály
+  stejně velká (~403 tis. trojúhelníků, ~140 ms) - na Low beze změny. CTest logiky, `6_verification` (324) a 214 testů
+  v UE zelené. Balíček nepřebalen. Další: **krok 30b**.

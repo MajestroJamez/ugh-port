@@ -17,6 +17,8 @@ namespace
 	constexpr double FootSpread = 0.7;
 	/** A liana on the back wall finds the wall behind it at this many points along it (and one more). */
 	constexpr int32 CreeperPoints = 4;
+	/** It is held by the rock this many pixels above its top (as UghSceneryTests checks). */
+	constexpr double CreeperHold = 0.5;
 	/** Decorations keep this far apart (pixels; units in depth), from a campfire CampfireGap pixels. */
 	constexpr double Gap = 0.5, DepthGap = 5, CampfireGap = 3;
 	/**
@@ -157,7 +159,8 @@ bool FUghPlacer::Settle(FDecoration& Decoration) const
 			Nearest = FMath::Min(Nearest, *Wall);
 		}
 		Decoration.Depth = FMath::Max(Decoration.Depth, Nearest - Decoration.Width * UghShapes::UnitsPerPixel / 4);
-		return true;
+		// and held at its top (not under a ledge of the wall standing out further down: step 30a)
+		return Ground.Rock(Decoration.X, Decoration.Y - CreeperHold, Decoration.Depth);
 	}
 	if (Decoration.Hangs())
 	{

@@ -15,8 +15,11 @@ namespace
 	const TConstArrayView<const TCHAR*> KindModels[] = { UghElectricDreams::Cliffs, UghElectricDreams::Roots };
 	static_assert(UE_ARRAY_COUNT(KindModels) == int32(EKind::Root) + 1);
 
-	/** The cliffs' scans greyed into the stone's dark slate: this tint, this much of their colour, this much moss up. */
-	const FLinearColor CliffTint(0.5f, 0.56f, 0.66f);
+	/**
+	 * The cliffs' scans greyed into the stone's dark slate: this tint (step 30a: as dark as the slate of the cave's walls
+	 * around them - paler they stood out as a wall of blocks of their own), this much of their colour, this much moss up.
+	 */
+	const FLinearColor CliffTint(0.27f, 0.3f, 0.36f);
 	constexpr float CliffSaturation = 0.1f, CliffMoss = 0.45f;
 
 	/** `Mesh` fitted to `Piece`: in its ball, turned, Out of its depth out of the wall (no nearer than its limit). */

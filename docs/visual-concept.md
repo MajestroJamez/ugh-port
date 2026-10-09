@@ -932,3 +932,23 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
   `Ugh.Figures.People` (`duck`: o pětinu níž, ruce nad hlavou; `cheer`: ruce nad hlavou, na zemi, v desce hry).
   `shot.ps1 -Lively idle|wave|duck|joy` (joy jen s `-Watch` replaye levelu; replaye z golden replayů:
   `replay_check --levels --write <složka>`).
+
+## Tvar skály: vrstvy a převisy místo kvádrů (krok 30a)
+
+Z herní kamery čelo levelu působilo jako zeď hranatých kvádrů podle dlaždic originálu. Kolizní hrana v rovině hry
+zůstává přesně maska (`Ugh.Rock`), mění se jen to, co je před deskou a za figurami.
+
+- **Čelo** (`FUghRockField::Front`, `Face`): místo dlažby odštěpků (6,5 x 3,5 px - četly se jako cihly) vrstvy
+  břidlice 7 px se šupinami 30 px a břity u paty, přes ně velké vrstvy kamene (48 px, stejné jako čelo
+  `FUghStackField`: jeden balvan), tenké lamely 2,2 px, bloky 26 x 12 px, z nichž 16 % vypadlo (prohlubeň), široké
+  boule přes celý level místo polštáře na každé skále. Čelo je silnější (1,4-5 px před deskou, `FaceMax` 5).
+- **Hrana čela** se láme po šupinách: část šupin sahá až k hraně masky (ostrá, poloměr 0,8 px), jiné se odlomily až
+  7 px dovnitř (a vypadlý blok 6 px), na horních hranách (plošiny) o 75 % méně. Kde čelo chybí, je vidět přední
+  plocha desky - tmavší (`FUghRockMesh::Shade`, „otevřenost“ 0,6), jako vrstva pod odlomenou. Čelo nikdy nesahá přes
+  vzduch masky (test `Ugh.Rock`: žádný uzel pole před deskou nad pixelem vzduchu).
+- **Římsy za figurami** (`FUghRockField::Behind`): stěny a stropy jeskyně od 9 do 18 px za rovinou (za cedulemi,
+  nepřáteli a tělem vrtulníku) vystupují do jeskyně po vrstvách 7 px se šupinami 26 px, každá jinak (až 12 px, nejvýš
+  pětina šířky jeskyně), dál zase zapadají - z kamery je obrys jeskyně lámaná břidlice. Nad podlahou (12-24 px i do
+  strany) ne: místo pro palmy, chýše a liány (liána teď navíc musí viset ze skály nad sebou, `FUghPlacer::Settle`).
+- **Útesy vzadu** (`AUghCliffDressing`): tón 0,27/0,30/0,36 místo 0,5/0,56/0,66 - světlé skeny v jeskyních stály
+  jako vlastní zeď světlých kvádrů; teď tmavé jako břidlice kolem (jeden kámen).
