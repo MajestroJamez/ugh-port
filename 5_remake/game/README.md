@@ -138,6 +138,18 @@ on a busy CPU); the game collects it in the black before a level's flight or an 
 (`AUghGameMode::ShowFrame`), the engine's own interval is 10 minutes (`gc.TimeBetweenPurgingPendingKillObjects`). The
 target - Low 60 with a 1 % low of 50 on a warm notebook - is not met: the GPU's clock decides it.
 
+After the steps 29-30 (2026-10-09, the package with the new PSO cache - 582 stable PSOs, 571 at step 28 -, the
+notebook warm after the packaging and the recording, Docker, WSL and an IDE idle beside it, about 10 % of the CPU):
+Low 55, 1 % low 34, slowest 34 (16 hitches over 50 ms in the 12 levels, the slowest frame 122 ms); Medium 42 / 23 /
+25 (30, 162 ms); High 20 / 14 / 12; Epic 14 / 10 / 7 - as after step 28 (High and Epic a few fps up, Low and Medium
+as near as runs alike are). The sea's screen-space reflections at Low (step 30d) cost nothing measurable: four Low
+runs in turns, with them 55 / 33 and 55 / 33, without them (`-Commands "r.Water.SingleLayer.Reflection 0"`) 55 / 34
+and 55 / 36 (the dynamic resolution keeps the median; the 1 % low within the noise of runs alike). Small cyan dots on
+the water at Low (about 50 in a level's shot against 8-9 at Medium and Epic) are no reflection: the same without the
+screen-space reflections and at a fixed 67 % with FSR's quality mode, none with `ShowFlag.Specular 0` - the water's
+sharp highlight (roughness 0.03) on single pixels of the waves; no single light makes them (the sun, the sky light, the
+fires each off: as many); left as it is, a matter for the water's material if Jan minds them.
+
 (Before: step 24e, 2.5 s a level.) Step 24f found: low drew at two thirds of the screen like epic - FSR sets the
 resolution by code from its own mode, above the preset's (`r.FidelityFX.FSR.QualityMode` now goes with the preset);
 Alt+Enter put the engine's scalability back to epic (`UghGraphics::ApplyQuality` sets the engine's user settings
@@ -191,6 +203,10 @@ of two runs alike, so did the package with the cap (`Saved\Shots\28`: before and
 are not capped (their own texture groups). The zip is the Shipping build (no log, no console, no debug DLLs of DLSS
 and Streamline), its shots the same as the Development build's; Oodle Kraken at level 7 (the same speed to read).
 The Development package (`Packaged\Windows`, measured by the scripts) is 1697 MB without `.pdb`.
+
+After the steps 29-30 (2026-10-09): the pak 907 MB (+18 with the new materials and the passengers' new actions; the
+sounds of the ambience are made while playing), the Shipping package 1345 MB without
+`.pdb`, the zip 1118 MB as before, the Development package 1.68 GB without `.pdb`.
 
 ## Modules
 

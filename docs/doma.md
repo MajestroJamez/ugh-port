@@ -6,11 +6,12 @@ a modely z Fabu/Sketchfabu nejsou naše a nikam se nenahrávají.
 
 ## Nejrychlejší cesta: hotový zip z notebooku
 
-1. Na notebooku je po kroku 28 `5_remake\game\Packaged\UghGame-Windows.zip` (1,1 GB, rozbalený 1,3 GB; kroky
-   24f-28). Přenes ho domů na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
+1. Na notebooku je po krocích 29-30 `5_remake\game\Packaged\UghGame-Windows.zip` (1,1 GB, rozbalený 1,3 GB; kroky
+   24f-30e, zabaleno 2026-10-09). Přenes ho domů na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
 2. Spusť `UghGame.exe`. Je to Shipping build (bez logu a konzole, menší). Při prvním startu bez profilu hra sama
    vybere kvalitu podle grafiky: na RTX (DLSS) **Epic + DLSS**, na integrované grafice Low, jinak High. Volba se
-   uloží do `%LOCALAPPDATA%\UghGame\Saved\UghProfile.json`, jakmile cokoli změníš v Settings.
+   uloží do `%LOCALAPPDATA%\UghGame\Saved\UghProfile.json`, jakmile cokoli změníš v Settings. Replaye jsou vedle
+   v `%LOCALAPPDATA%\UghGame\Saved\Replays` (zip žádné nemá, složka vznikne s prvním uloženým replayem).
 3. **Frame generation**: Settings > Frame generation (2x / 3x / 4x - RTX 50 umí až 4x), nebo ve hře klávesa **G**.
    Upscaler přepíná **U** (DLSS / FSR / TSR). Zkušební průchod 2026-10-02 dal na RTX 5060 Ti ~150 fps bez a ~450 fps
    s frame generation.
@@ -27,7 +28,7 @@ powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_re
 
 - `play.ps1` teď spouští **zabalenou hru** (`Packaged\Windows\UghGame.exe`: uvařený obsah a PSO cache, hladká od
   prvního snímku); řekne, když je balíček starší než poslední build (pak `pso.ps1`). Profil (nastavení, klávesy,
-  skóre) je pořád `5_remake\game\Saved\UghProfile.json`, log `Saved\Logs\UghPlay.log`.
+  skóre) je pořád `5_remake\game\Saved\UghProfile.json`, replaye `Saved\Replays`, log `Saved\Logs\UghPlay.log`.
 - `play.ps1 -Editor` je dřívější hra v editoru: necookovaný obsah, shadery se kompilují za běhu - hryže a je
   pomalejší, jen na rychlé vyzkoušení změny bez balení. Proto se dřív hra „nehratelně hryzala“.
 - Alt+Enter (celá obrazovka) dřív přepnul grafiku potichu na Epic (engine znovu použil své uživatelské nastavení);
@@ -84,7 +85,25 @@ na snímcích), oblohy a plameny beze změny; Oodle Kraken úroveň 7; Shipping 
   zahřátý notebook (zahřátý je asi o třetinu pomalejší).
 - `levels.ps1 -Package` - všech 150 levelů ze zabalené hry s archy snímků (asi půl hodiny).
 
-## Co čeká na tvoje posouzení (kroky 13-28)
+## Co vyzkoušet nového (kroky 26-30)
+
+- **Výběr levelu nad souostrovím** (26): PLAY proletí nad kameny, každý je level (zelený hotový, žlutý rozehraný,
+  červený zamčený); vybraný kámen kamera přiletí a level začne. **R** na kameni pustí nejlepší replay toho levelu.
+- **Replaye** (29f): nejlepší průlet každého levelu a režimu se ukládá sám; **F5** uloží poslední level (v titulku
+  dalšího levelu body a čas, „NEW BEST“; i na kartě konce hry). Menu **Replays**: sledovat (banner REPLAY, Esc
+  konec), **C** zkopíruje text `UGHR1:...` do schránky (sdílení), **V** vloží cizí ze schránky, Delete 2× smaže,
+  **O** otevře složku.
+- **Duch** (29g): poloprůhledný vrtulník nejlepšího průletu letí s tebou; vypnout Settings > Ghost of the best.
+- **Pocit z nárazu** (29c): otřes kamery (Settings > Game > Camera shake) a vibrace gamepadu - havárie, kámen na
+  nepříteli, pád do moře, náraz do okraje; v týmu vibruje jen pad toho pilota.
+- **Zvuk prostředí** (29b): moře, džungle, vítr a déšť v bouři, ohně, šplouchání, liány; hlasitost Settings >
+  Ambience. Agent ho nikdy neslyšel - poslech je na tobě.
+- **Varování** (27b): vykřičníky nad vrtulníkem při nebezpečné rychlosti; rozmazání rychlého letu (27).
+- **Živí cestující** (29d): přešlapují, mávají, krčí se před nízko letícím vrtulníkem, po doručení radost.
+- **Grafika** (29a, 30a-30e): viditelné obláčky efektů, vrstvy skály, tráva přes hrany a cestičky k jeskyním, opar
+  a paprsky v jeskyních, mokrá skála u hladiny a odraz levelu v moři (i na Low), stín vrtulníku pod ním.
+
+## Co čeká na tvoje posouzení (kroky 13-30)
 
 Všechno v okně (`play.ps1`, tj. zabalená hra, nebo `UghGame.exe` ze zipu):
 
@@ -113,3 +132,6 @@ Všechno v okně (`play.ps1`, tj. zabalená hra, nebo `UghGame.exe` ze zipu):
     stínů.
 15. **Menší balíček** (28): zip je teď Shipping build (na notebooku ověřený jen s FSR - snímky stejné jako
     Development); doma na RTX 5060 Ti ověřit DLSS, frame generation 2x-4x a že textury nikde nevypadají měkčeji.
+16. **Kroky 29-30** (zip po krocích 29-30, viz Co vyzkoušet nového): poslech ambience a její hlasitosti, vibrace dvou
+    padů, síla otřesu, duch, replay přenesený textem mezi notebookem a domem. Na Low drobné tyrkysové tečky na vodě
+    (odlesky, ne odraz 30d) - vadí?

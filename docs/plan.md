@@ -1994,3 +1994,19 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   Epic před/po, dole Low před/po; `sea-low-before-after-epic.png`; `1p-01-low-before/after.png`). Arch
   `Levels-30cd-after` (viz 30c). CTest logiky, `6_verification` (324) a 218 testů v UE zelené. Fps Low v balíčku
   neměřeno (SSR jen na pixelech vody, kvalita 1). Balíček nepřebalen. Další: **krok 31** (po 2026-10-12) nebo balení.
+- 2026-10-09: balení po krocích 29-30 hotové (README hry: Performance, Size; `docs/doma.md`: co vyzkoušet nového).
+  `pso.ps1` beze změny - jeho běhy už pokrývají souostroví, rychlý let, obrazovku Replays, sledování, ducha (i Low),
+  efekty ve dne i v noci; opar jeskyní, tráva, stín vrtulníku a mokrá skála jsou v rychlé sadě (Low i Medium):
+  15 běhů, 582 stabilních PSO (28: 571). `levels.ps1 -Quick -Package` 0 chyb, arch `Saved\Shots\Levels\levels-quick.png`
+  stejný jako z editoru (`Levels-30cd-after`). `perf.ps1` (zahřátý po balení, Docker/WSL/IDEA naprázdno, CPU ~10 %):
+  Low 55 / 1 % low 34 / nejpomalejší 34 (16 hitchů, nejdelší 122 ms), Medium 42 / 23 / 25, High 20 / 14 / 12, Epic
+  14 / 10 / 7 - jako po kroku 28. SSR vody na Low (30d) A/B střídavě: se SSR 55 / 33 a 55 / 33, bez
+  (`r.Water.SingleLayer.Reflection 0`) 55 / 34 a 55 / 36 - v šumu, ponecháno. Tyrkysové tečky na vodě na Low (~50 na
+  snímek, Medium a Epic 8-9) nejsou odraz: stejně bez SSR i s pevnými 67 % a FSR quality, žádné s `ShowFlag.Specular 0`:
+  ostrý odlesk vody (drsnost 0,03) na jednotlivých pixelech vln, žádné jedno světlo (slunce, obloha, ohně vypnuté
+  zvlášť: pořád); jednoduchá oprava cvarem není, nechané na Janův posudek (`docs/doma.md` bod 16). Shipping
+  (`Packaged\Shipping\Windows`) bez okna odehrál menu a rychlou sadu (13 snímků, kód 0, žádný pád), profil a PSO
+  cache v `%LOCALAPPDATA%\UghGame\Saved`; zip bez `Saved`, replayů a `.pdb` (složka `Replays` vznikne vedle profilu).
+  Velikost: pak 907 MB (28: 889), Shipping bez `.pdb` 1345 MB, zip `Packaged\UghGame-Windows.zip` 1118 MB,
+  Development 1,68 GB. Čeká na Jana: zip doma (RTX 5060 Ti) a body 13-16 `docs/doma.md`. Další: **krok 31** (po
+  2026-10-12).
