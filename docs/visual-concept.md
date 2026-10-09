@@ -1015,3 +1015,11 @@ u sebe a nic za dosahem, deterministicky).
   (`r.Water.SingleLayer.Reflection 3`, `r.SSR.Quality 1`) a scéna bez vlastních SSR (`ugh.SceneReflections 0`:
   post-process `ReflectionMethod None` jen na Low) - moře zrcadlí liány, skálu a ohně nad sebou, kde je obrazovka
   ukazuje, tmavě tyrkysové, ne bílé. Planární odraz není potřeba (Lumen ho na High/Epic dělá).
+
+## Vestavěné generátory UE 5.8 (krok 31, zastaveno)
+
+- **Procedural Vegetation Editor**: nepoužit. Sítě ukládá jen editor assetu přes modální dialog (exportér je
+  privátní, bez Pythonu), presety jsou stromy mírného pásma a tropický jen bez textur listů. Palmy, stromy a keře
+  zůstávají skeny Electric Dreams a sítě z Blenderu.
+- **MetaHuman Generator**: nepoužit. Je místní, ale každá nová postava potřebuje rig obličeje a textury kůže
+  z Epicova cloudu (přihlášení). Cestující dál muž, žena a stařec z `metahumans.ps1`.

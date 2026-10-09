@@ -445,6 +445,11 @@ powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_re
 Without them the game shows the caveman of `Blender/caveman.py` (and logs it once); everything builds and the tests
 pass.
 
+UE 5.8's experimental generators are not used (step 31): the MetaHuman Generator is local but every new character
+still needs the face rig and skin textures from Epic's cloud (as above); the Procedural Vegetation Editor saves its
+meshes only from its asset editor through a modal dialog (its exporter is private, no Python), so it cannot run
+without a window, and its presets are temperate trees (no textured palm).
+
 ## Rules
 
 - The plane of the play is the collision mask, exactly: in the slab of the play the rock's edge is on the borders of

@@ -2010,3 +2010,18 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   Velikost: pak 907 MB (28: 889), Shipping bez `.pdb` 1345 MB, zip `Packaged\UghGame-Windows.zip` 1118 MB,
   Development 1,68 GB. Čeká na Jana: zip doma (RTX 5060 Ti) a body 13-16 `docs/doma.md`. Další: **krok 31** (po
   2026-10-12).
+- 2026-10-09: krok 31 zastaven u obou generátorů po průzkumu (`docs/visual-concept.md`, krok 31), hra beze změny.
+  **Procedural Vegetation Editor** (UE 5.8, experimentální): bez okna nejde. Graf druhu je PCG graf, uzel Export
+  v něm jen propouští data (`FPVExportElement`); síť (statická / skeletální s větrem, Nanite foliage) ukládá jen
+  `FPVEditor::OnExport` z otevřeného editoru assetu přes modální dialog `SPVExportSelectionDialog`, exportér
+  (`FPVExporter`, `PV::Export`) je v `Private` modulu bez `_API` exportu, žádná UFUNCTION ani Python. Cesta bez okna by
+  byla jen kopie privátního exportéru enginu do `UghEditor` - násilí, nedělá se. Navíc presety jsou mírné pásmo
+  (listnáče, smrky, borovice, keř, sazenice, lísky, buky, osiky, javory); `PVE_Preset_Tropical_01` je jen preset růstu
+  s vizualizačním listem (`SM_LeafScaled`), žádná palma s texturami - lepší než skeny Electric Dreams by nebyl.
+  Plugin v `UghGame.uproject` nezapnut. **MetaHuman Generator** (experimentální): sám je místní (Python toolset
+  `metahuman_toolset` pro AI agenta přes `ToolsetRegistry`: vytvořit postavu, tvar těla, barva kůže a očí nad
+  `MetaHumanCharacterEditorSubsystem`, žádný model ani služba uvnitř), ale novou postavu sestavit nejde bez
+  obličejového rigu a textur kůže z Epicova cloudu (`request_auto_rigging`, `request_texture_sources` v
+  `metahumans.py` - přihlášení k Epic účtu) - podle zadání stop, žádní noví cestující. Nic nového oproti
+  `metahumans.py`, který subsystém volá přímo. Testy ani snímky nespouštěny (kód a obsah beze změny proti 866a9ca),
+  balíček nepřebalen. Čeká na Jana: noví cestující jen s jeho souhlasem s cloudem Epicu (`metahumans.ps1`).
