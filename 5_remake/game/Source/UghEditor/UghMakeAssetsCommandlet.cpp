@@ -106,7 +106,7 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	};
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
-		{ UghMaterials::Turf, &MakeTurf },
+		{ UghMaterials::Turf, &MakeTurf }, { UghMaterials::CopterShadow, &MakeCopterShadow },
 		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Sprite, &MakeSprite }, { UghMaterials::Ghost, &MakeGhost },
 		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky },
 		{ UghMaterials::Rain, &MakeRain }, { UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop },
@@ -199,6 +199,24 @@ bool UUghMakeAssetsCommandlet::MakeTurf(UMaterial* Material)
 	UMaterialEditingLibrary::ConnectMaterialProperty(Turf, TEXT("return"), MP_BaseColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Turf, TEXT("TurfMask"), MP_OpacityMask);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Turf, TEXT("TurfRough"), MP_Roughness);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeCopterShadow(UMaterial* Material)
+{
+	Material->MaterialDomain = MD_DeferredDecal;
+	Material->BlendMode = BLEND_Translucent;
+	// the decal's UVs span its box: a round blob, soft to its rim
+	UMaterialExpression* Blob = Custom(Material,
+		TEXT("float r = length(UV * 2 - 1); return Opacity * pow(saturate(1 - r * r), 1.5);"),
+		CMOT_Float1, { { TEXT("UV"), Coordinates(Material, 0) },
+			{ UghMaterials::OpacityParameter, Scalar(Material, UghMaterials::OpacityParameter, 0.5f) } });
+	if (!Blob)
+	{
+		return false;
+	}
+	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.f), TEXT(""), MP_BaseColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Blob, TEXT(""), MP_Opacity);
 	return true;
 }
 

@@ -96,6 +96,11 @@ namespace UghMaterials
 	 */
 	inline const TCHAR* Turf = TEXT("/Game/Generated/M_UghTurf");
 	/**
+	 * The soft shadow under a copter (AUghCopterShadows): a deferred decal darkening what it lies on, a round blob filling
+	 * the decal's box, darkest in its middle; scalar Opacity.
+	 */
+	inline const TCHAR* CopterShadow = TEXT("/Game/Generated/M_UghCopterShadow");
+	/**
 	 * The water (Single Layer Water: the engine draws what is behind it through as much water as the view crosses,
 	 * refracted, and the surface's reflections with Lumen): on its surface (what faces up) swells and chop drifting
 	 * with the wind, the rings of what floats (vector parameters RingParameters: xyz its place on the surface, w how

@@ -42,6 +42,15 @@ namespace
 		Owner->AddInstanceComponent(Part);
 		return Part;
 	}
+
+	/** The shadows under the copters (AUghCopterShadows) do not darken them: none of the parts of `Copters` takes a decal. */
+	void KeepOffDecals(AActor* Copters)
+	{
+		for (UPrimitiveComponent* Part : TInlineComponentArray<UPrimitiveComponent*>(Copters))
+		{
+			Part->SetReceivesDecals(false);
+		}
+	}
 }
 
 AUghCopters::AUghCopters()
@@ -52,15 +61,15 @@ AUghCopters::AUghCopters()
 void AUghCopters::BeginPlay()
 {
 	Super::BeginPlay();
-	if (LoadModels())
+	if (!LoadModels())
 	{
-		return;
+		for (const FLinearColor& Color : ClayColors)
+		{
+			ClayBodies.Add(UghShapes::AddShapes(this, EShape::Cube, UghShapes::Clay(this, Color)));
+		}
+		ClayRotors = UghShapes::AddShapes(this, EShape::Cube, UghShapes::Clay(this, ClayRotorColor));
 	}
-	for (const FLinearColor& Color : ClayColors)
-	{
-		ClayBodies.Add(UghShapes::AddShapes(this, EShape::Cube, UghShapes::Clay(this, Color)));
-	}
-	ClayRotors = UghShapes::AddShapes(this, EShape::Cube, UghShapes::Clay(this, ClayRotorColor));
+	KeepOffDecals(this);
 }
 
 bool AUghCopters::LoadModels()
@@ -255,4 +264,5 @@ void AUghCopters::ShowClay(const ugh_logic_view& Previous, const ugh_logic_view&
 void AUghCopters::Stock()
 {
 	Caveman.Stock(this, RiderSpares);
+	KeepOffDecals(this);
 }

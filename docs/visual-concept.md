@@ -973,3 +973,16 @@ na čele. Teď (`FUghTurf`, `UghCliff.hlsl`, `M_UghTurf` / `UghTurf.hlsl`):
   materiál skály) podél římsy pod každým vchodem - plná 8 px od jeho středu, pak slábne (dalších 10-22 px), od 5 řádků
   nad hranou (plošina, podlaha jeskyně) po 3 pod ní (vyšlapaná hrana): udusaná světlejší hlína s kameny místo trávy,
   stébla tam kratší, kde je vyšlapáno, žádná.
+
+## Stín vrtulníku (krok 30e)
+
+Měkký stín pod každým vrtulníkem (`AUghCopterShadows`, `UghCopterShadow::Under`), aby byla čitelná výška a přistání
+snazší: tmavá skvrna na prvním povrchu masky pod vrtulníkem - nejvýš položený první plný pixel ve sloupcích pod
+prostřední polovinou jeho těla (plošina nebo skála, kam by dosedl) -, na stojícím nejtmavší (0,55), čím výš, tím
+slabší a širší (do 1,6x šířky těla), od 80 px nad povrchem žádný; pod hladinou vody ani mimo obrazovku žádný.
+Deferred decal `M_UghCopterShadow` (kulatá měkká skvrna přes celý box: od 1 px pod povrchem do 1,5 px nad ním, ±9 px
+do hloubky) ztmaví, na čem leží - skálu, trávu, nohy lidí, kteří tam stojí; vrtulníky ne (`SetReceivesDecals`). Na
+všech kvalitách stejně a levně (jeden decal na vrtulník): skutečný stín slunce (kde ho předvolba má) padá od slunce
+zepředu zleva šikmo dozadu na jeskyni, ne pod vrtulník - skvrna je zastínění světla oblohy, druhý stín slunce to není,
+nic se nezdvojuje. Duch nejlepšího průletu stín nemá. Test `Ugh.CopterShadow` (stín na povrchu plošiny, výška,
+slábne a roste s výškou, decal kolem povrchu; v mřížce poloh nad vodou dvou levelů první povrch pod vrtulníkem).

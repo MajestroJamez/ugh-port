@@ -24,6 +24,7 @@
 #include "UghFigures.h"
 #include "UghFringe.h"
 #include "UghGhosts.h"
+#include "UghCopterShadows.h"
 #include "UghGraphics.h"
 #include "UghGround.h"
 #include "UghHud.h"
@@ -167,6 +168,7 @@ void AUghGameMode::BuildStage()
 	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
 	Ghosts = World->SpawnActor<AUghGhosts>();
+	CopterShadows = World->SpawnActor<AUghCopterShadows>();
 	Figures = World->SpawnActor<AUghFigures>();
 	Effects = World->SpawnActor<AUghEffects>();
 	Campfire = World->SpawnActor<AUghCampfire>();
@@ -311,6 +313,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 		FSlowPart Part{ TEXT("copters") };
 		Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders, &Dunks);
 		Ghosts->Show(&Ghost, Simulation.Alpha(), Seconds);
+		CopterShadows->Show(Simulation.GetLogic(), Previous, Current, Simulation.Alpha());
 	}
 	{
 		FSlowPart Part{ TEXT("figures") };

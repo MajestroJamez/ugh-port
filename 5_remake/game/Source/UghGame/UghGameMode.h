@@ -37,6 +37,7 @@ class AUghFalls;
 class AUghFigures;
 class AUghFringe;
 class AUghGhosts;
+class AUghCopterShadows;
 class AUghRain;
 class AUghScenery;
 class AUghSigns;
@@ -258,6 +259,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghRain> Rain;
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;
 	UPROPERTY() TObjectPtr<AUghGhosts> Ghosts;
+	UPROPERTY() TObjectPtr<AUghCopterShadows> CopterShadows;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
 	UPROPERTY() TObjectPtr<AUghEffects> Effects;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;

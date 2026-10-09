@@ -1963,3 +1963,14 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   u každého vchodu - 700). Snímky `Saved\Shots\30b` (`1p-03-crop-before/after.png`, `1p-03-frame85_105-after.png`).
   CTest logiky, `6_verification` (324) a 216 testů v UE zelené. Arch rychlé sady až po 30e. Balíček nepřebalen.
   Další: **krok 30e**.
+- 2026-10-09: krok 30e hotový - stín vrtulníku (`docs/visual-concept.md`, krok 30e). `AUghCopterShadows`: měkká tmavá
+  skvrna (deferred decal `M_UghCopterShadow`) na prvním povrchu masky pod vrtulníkem (`UghCopterShadow::Under`: nejvýš
+  položený první plný pixel pod prostřední polovinou těla), na stojícím nejtmavší (0,55), výš slabší a širší, od 80 px
+  žádný, pod hladinou žádný; vrtulníky decal neberou, duch stín nemá. Na všech kvalitách stejně (Low i Epic): stín
+  slunce padá šikmo dozadu na jeskyni, skvrna je zastínění oblohy přímo pod vrtulníkem - nezdvojuje se. Test
+  `Ugh.CopterShadow` (stín na povrchu plošiny, výška, slábne a roste s výškou, decal kolem povrchu; mřížka poloh dvou
+  levelů: první povrch pod vrtulníkem). Snímky `Saved\Shots\30e` (`1p-01-crop-before/after.png` vznášení - vrtulník
+  pokaždé jinde, vysoko, stín slabý; `1p-01-landing-crop-after.png` při sestupu, `1p-01-landing-low-crop.png` na Low).
+  Arch `Saved\Shots\Levels-30e-after` (12 levelů, 0 chyb, postavy čitelné, tráva přes hrany, cestičky), fps medián 19,
+  1 % low 15 (30a 17 / 13). CTest logiky, `6_verification` (324) a 215 testů v UE zelené. Balíček nepřebalen.
+  Další: **krok 30c**.
