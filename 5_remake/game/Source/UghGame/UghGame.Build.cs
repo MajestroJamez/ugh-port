@@ -13,6 +13,7 @@ public class UghGame : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"Core", "CoreUObject", "Engine", "InputCore", "Json", "ImageWrapper", "UghLogic",
 			"Slate", "SlateCore",   // the menu and the HUD (UghUi)
+			"ApplicationCore",   // the clipboard the replays are copied to and pasted from (FUghReplays)
 			"MeshDescription", "StaticMeshDescription",   // the rock as a static mesh built at run time (FUghRockMesh)
 			"AssetRegistry",   // the imported assets (UghAssets)
 			"HairStrandsCore",   // the MetaHumans' grooms (UghMetaHumans)

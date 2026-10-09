@@ -10,9 +10,10 @@ struct FUghUiState;
 /**
  * The title screen over the sea stack (UghUi): the logo carved in stone, the menu's rows (FUghMenu: the mode, the
  * difficulty, the password field - offering the password of the level the mode's last game got to -, play, the
- * settings, the high scores, quit; the chosen one lit amber), the last game, the keys in a line; the menu's other
- * screens in its place (SUghSettingsScreen, SUghControlsScreen, SUghScoresScreen); after a game a card of how it ended
- * until a key, with a high score's name being typed. Only shows FUghUiState: the keys go to FUghMenu.
+ * settings, the high scores, the replays, quit; the chosen one lit amber), the last game, the keys in a line; the menu's other
+ * screens in its place (SUghSettingsScreen, SUghControlsScreen, SUghScoresScreen, SUghReplaysScreen); after a game a card of how it ended
+ * until a key, with a high score's name being typed and F5 saving the last level's replay. Only shows FUghUiState: the keys go
+ * to FUghMenu.
  */
 class SUghMenuScreen : public SCompoundWidget
 {

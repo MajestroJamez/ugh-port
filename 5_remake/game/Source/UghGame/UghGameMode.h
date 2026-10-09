@@ -16,6 +16,7 @@
 #include "UghPads.h"
 #include "UghPasswords.h"
 #include "UghProfile.h"
+#include "UghReplays.h"
 #include "UghShot.h"
 #include "UghSimulation.h"
 #include "UghSprites.h"
@@ -51,11 +52,16 @@ class AUghWater;
  * would start carved into it; PLAY opens the level selection (FUghIsles): the camera flies over an archipelago of the
  * mode's levels (AUghArchipelago), a stone is chosen and flown to, its level starts. No map: the scene is built here.
  * The profile (FUghProfile: the settings, the high scores, the levels the last games got to and done) is read at the start, put into the engine (UghGraphics, FUghUpscaler, the sounds'
- * volumes) and saved whenever it changes. Keys of the frontend: in a game U the next upscaler, G the frame generation,
- * F1 (a gamepad's Y) the help of the keys; everywhere Page Up and Page Down the volume.
+ * volumes) and saved whenever it changes. The logic records each level played (FUghSimulation::TakeEndedLevel): the
+ * best of each level and mode is kept (FUghReplays, the folder Replays next to the profile), F5 saves the last level's
+ * (in its next caption, on the card of the game's end); a replay chosen in the menu (its screen Replays, R on a stone of
+ * the level selection) is watched as the game it was (FUghSimulation::Watch: Esc stops it). Keys of the frontend: in a
+ * game U the next upscaler, G the frame generation, F1 (a gamepad's Y) the help of the keys, F5 the last level's replay
+ * saved; everywhere Page Up and Page Down the volume.
  *
  * -UghAssets=<folder> reads the data from elsewhere than assets/ (of the package, else of the repository).
- * -UghProfile=<file> keeps the profile elsewhere than Saved/UghProfile.json.
+ * -UghProfile=<file> keeps the profile elsewhere than Saved/UghProfile.json; -UghReplays=<folder> the replays elsewhere
+ * than the folder Replays next to it (the autopilot reads replays only from there, and never writes).
  * -UghShot=<folder>: the game plays by itself for screenshots (FUghShot) with the default profile (or the one of
  * -UghProfile), which it never saves, and the window as it is; PLAY starts the game at once (no level selection) but
  * for a shot of it (FUghShot::WantsIsles). -UghNoIntro: a level starts without the flight to the stone (FUghIntro,
@@ -103,6 +109,24 @@ public:
 	/** Why there is no game (the data cannot be read); empty when there is one. */
 	const FString& GetProblem() const { return Problem; }
 
+	/** The replays kept (the screen Replays, the best of each level). */
+	const FUghReplays& GetReplays() const { return Replays; }
+	/** A replay is watched (not a game played). */
+	bool IsWatching() const { return !bInMenu && Simulation.IsWatching(); }
+	const TSharedPtr<FUghReplay>& GetWatched() const { return Watched; }
+	/**
+	 * The replay of the last level that ended in the game played (or just over): its caption after it, the card of the
+	 * game's end offer to save it (F5). Whether it became the best of its level, the file it was saved to (empty: not).
+	 */
+	const TSharedPtr<FUghReplay>& GetLastLevel() const { return LastLevel; }
+	bool IsLastLevelBest() const { return bLastLevelBest; }
+	const FString& GetLastLevelSaved() const { return LastLevelSaved; }
+	/** What was last done with a replay (saved, not saved), and how many such notices there were. */
+	const FString& GetReplayNotice() const { return ReplayNotice; }
+	int32 GetReplayNoticeCount() const { return ReplayNoticeCount; }
+	/** Watches a replay (from the menu, the autopilot): false when the logic refuses it. */
+	bool StartWatching(const TSharedPtr<FUghReplay>& Replay);
+
 private:
 	void BuildStage();
 	/** The frame of the view (`Seconds` after the last one). */
@@ -115,7 +139,7 @@ private:
 	void FlyIntro(const ugh_logic_view& View, double Seconds);
 	/** A key pressed in the menu (a gamepad's button as FUghControls::MenuKeyOf gives it). */
 	void HandleMenuKey(const FKey& Key);
-	/** U, G, F1 (a gamepad's Y): true when it was one of them. */
+	/** U, G, F1 (a gamepad's Y), F5 (the last level's replay saved): true when it was one of them. */
 	bool HandleFrontendKey(const FKey& Key, EInputEvent Event);
 	/** Page Up and Page Down: the volume; true when it was one of them. */
 	bool HandleVolumeKey(const FKey& Key, EInputEvent Event);
@@ -134,8 +158,19 @@ private:
 	 * went on from done (the level selection's green).
 	 */
 	void NoteLevel(const ugh_logic_view& View);
-	/** Back to the menu after a game: how it ended, the level of the menu's choice behind it. */
+	/**
+	 * Back to the menu after a game: how it ended, the level of the menu's choice behind it; after a replay watched the
+	 * screen it was chosen on.
+	 */
 	void OpenMenu();
+	/**
+	 * A level ended in the game played (UghGameModeReplays.cpp): its replay labelled (the password, the profile's name,
+	 * now), kept as the best of its level and mode if it is better, the last level's (F5 saves it).
+	 */
+	void OnLevelEnded(const TSharedPtr<FUghReplay>& Ended);
+	/** F5: the last level's replay saved into the replays' folder. */
+	void SaveLastLevel();
+	void SayReplay(const FString& Text);
 	/** A new game as chosen (the menu's PLAY, the level selection's stone); `Key` started it (its release is no key). */
 	void StartGame(const FUghGameChoice& Choice, const FKey& Key);
 	void Quit();
@@ -155,6 +190,13 @@ private:
 	TOptional<FUghSettings> Applied;   // the settings put into the engine last
 	FUghDisplayOptions DisplayOptions;
 	FUghMenu Menu{ Passwords, Profile, DisplayOptions };
+	FUghReplays Replays;
+	TSharedPtr<FUghReplay> Watched;     // the replay watched
+	TSharedPtr<FUghReplay> LastLevel;   // the last level that ended in the game played
+	bool bLastLevelBest = false;
+	FString LastLevelSaved;
+	FString ReplayNotice;
+	int32 ReplayNoticeCount = 0;
 	FUghControls Controls{ Profile.Settings.Keys };
 	FUghGameChoice Playing;    // what the game being played started with
 	FUghUpscaler Upscaler;

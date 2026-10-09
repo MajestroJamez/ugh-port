@@ -1844,3 +1844,28 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   `6_verification` (163) a 204 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 13, 1 % low
   9 (editor, Epic, zahřátý notebook; 29a 13 / 10). Skutečný gamepad tu není - čeká na Jana (vibrace dvou padů).
   Balíček nepřebalen (konec kroku 29). Další: **krok 29f**.
+- 2026-10-09: krok 29f hotový - replaye levelů (`docs/replay-format.md`, README hry, logiky a `6_verification`). Logika
+  zaznamenává každý level sama (`record/`: `Recorder` z událostí titulku, `Recording`, `Playback`): co si pokus nese
+  z hry před ním (`game::AttemptStart`: hráči, obtížnost, level, životy, skóre, násobič, 4 slova náhody, řádek deště,
+  úsilí rotorů - točí se s ním při roztmívání -, poslední klávesa smyčky) a vstupy mezi kroky; `Game::resume` z něj
+  pustí hru dál jako tu původní (i level uprostřed hry), chování logiky jinak beze změny. Formát `.ughr` (UGHR 1):
+  hlavička (verze formátu, `UGH_LOGIC_VERSION`, CRC-32 dat, start pokusu, kroky, čas hry, pokusy, body levelu, hotovo,
+  datum, heslo, jména) + vstupy jako jedno číslo (mezera kroků bez změny << 6 | kód; klávesa pilota a za ní „jiná“
+  klávesa smyčky jedním kódem) + CRC-32; text `UGHR1:` + Base64Url (bílé znaky a BOM se přeskočí). Hover 6 s = 127 B /
+  176 znaků, 2 min se 150 klávesami ~650 B. Odmítne cizí, novější a poškozené (kontrolní součet, rozsah, zbytek bajtů);
+  jiná verze logiky/data se ohlásí. C API `ugh_logic_get_attempt_start`, `_resume_game`, `_get_replay`, `_watch`,
+  `ugh_replay_*`. Hra (`FUghReplays`, `Saved\Replays` vedle profilu, `-UghReplays`): nejlepší replay levelu a režimu
+  sám (`best-1p-07.ughr`: jen hotový, víc bodů, při rovnosti kratší čas hry), F5 uloží poslední level (v titulku dalšího
+  levelu body a čas, „NEW BEST“; na kartě konce hry), menu Replays (sledovat, C kopírovat text, V vložit ze schránky,
+  Delete 2×, O složka; poškozený soubor s důvodem), R na kameni výběru levelu pustí jeho nejlepší; sledování
+  (`FUghSimulation::Watch`, banner REPLAY s hodinami, Esc konec) nemění profil ani postup, nevibruje. Sdílený kód s
+  UGR 1: CRC-32 deště v polích replayů je teď logiky, `ReplayCheck::Observer`. Testy: CTest (kodek, text, odmítnutí,
+  nejlepší, 8 her obou režimů a obtížností náhodným pilotem - text → načíst → sledovat = stejný pohled každý krok,
+  záznam při sledování = tytéž bajty), `6_verification` `levels.*` (161: každý pokus zlatých replayů po posledním zásahu
+  testovacího pilota vystřižen jako replay, text a zpět, přehrán na obnovené hře = zlatý stav pole po poli; 67 replayů
+  ve 48 souborech, i přechod na další level), UE `Ugh.Record.Store`, `.Play`, `.Menu`, `Ugh.Menu` rozšířený. `shot.ps1
+  -SaveReplay`, `-Watch`, `-Replays`, `-Screens replays`; `pso.ps1` má obrazovku Replays a sledování. Snímky
+  `Saved\Shots\29f` (`replays.png`, `watch-1p-01.png`, `watch-team-01.png`, `1p-01-end.png` s F5). CTest logiky,
+  `6_verification` (324) a 207 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 19, 1 % low 14
+  (editor, Epic; 29c 13 / 9 na zahřátém). Snímek titulku po dohraném levelu chybí (autopilot level nedohraje). Balíček
+  nepřebalen. Další: **krok 29g**.

@@ -11,6 +11,7 @@ void GameState::reset(const data::Rules& rules, const NewGameSettings& settings)
     enemies = enemies::Enemies();
     bonuses.clear();
     menu = input::MenuInput();
+    attemptStart.reset();
 }
 
 }  // namespace ugh::game

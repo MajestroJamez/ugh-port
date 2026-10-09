@@ -33,6 +33,21 @@ struct FUghUiIsle
 	bool bCursor = false;
 };
 
+/** A replay of the menu's screen Replays (FUghReplays), as the screen writes it. */
+struct FUghUiReplay
+{
+	FString Mode;       // "1p", "Team"
+	int32 Level = 0;    // from 0
+	FString Kind;       // "best", "saved", "imported"
+	FString Score;      // the points earned in the level
+	FString Time;       // of its play
+	FString Name, Date, Difficulty;
+	bool bDone = false;
+	FString Problem;    // a refused file's reason (then only it and the file's name)
+	FString File;
+	bool bOtherLogic = false;   // made by another version of the logic or other data
+};
+
 /**
  * What the screen (UghUi) shows of the game, taken every frame by AUghHud: the menu and its screens (the settings, the
  * keys, the high scores), the status of the play, its caption, the help, a setting just changed, the scores rising. The
@@ -81,6 +96,23 @@ struct FUghUiState
 	int32 IslesDone = 0, IslesCount = 0;
 	FString IslesNotice;             // why Enter did nothing
 	double IslesNoticeAge = 1e9;
+	FString IslesBest;               // the cursor's stone's best replay (R watches it), empty none
+
+	// the replays (FUghReplaysMenu)
+	TArray<FUghUiReplay> Replays;
+	int32 ReplaysCursor = 0;
+	FString ReplaysNotice;           // what the last key did
+	double ReplaysNoticeAge = 1e9;
+	FString ReplaysFolder;
+	/** The replay of the last level that ended in the game (F5 saves it): what it was, empty none; its level. */
+	FString LevelEnded;
+	int32 LevelEndedLevel = -1;
+	bool bLevelEndedDone = false, bLevelEndedBest = false;
+	FString LevelEndedSaved;         // the file it was saved to, empty not
+	/** A replay watched: who, what (the mode, the level, the difficulty), the clock. */
+	bool bWatching = false;
+	FString WatchTitle;
+	FString WatchClock;
 
 	// the play (the logic's view)
 	int32 Phase = 0;   // UGH_LOGIC_PHASE_...

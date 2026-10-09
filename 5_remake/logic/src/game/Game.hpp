@@ -26,8 +26,8 @@ namespace ugh::game {
 /**
  * The game (Facade): a new game, the pilots' keys and the keys of the game loop, one frame after another, until the
  * game is over; the state can be read (a renderer, the replays) and the events are reported to listeners. Nothing can
- * be set from outside but by the test pilot of the replays (`testing::TestPilot`); the diagnostics are taken (and so
- * cleared) from outside.
+ * be set from outside but by the test pilot of the replays (`testing::TestPilot`) - a game may only start where another
+ * one's attempt started (`resume`, the replays of a level); the diagnostics are taken (and so cleared) from outside.
  */
 class Game {
 public:
@@ -40,6 +40,12 @@ public:
 
     /** A new game; the first step starts it. False (and no game) when a setting is out of range. */
     bool newGame(const NewGameSettings& settings);
+    /**
+     * A game that goes on from an attempt of another (its `attemptStart()`): the first step starts that attempt, and
+     * with the same keys it plays as the game it came from (the replays of a level, `record/`). False (and no game)
+     * when a value is out of range.
+     */
+    bool resume(const AttemptStart& start);
 
     /** A pilot's key pressed or released, between two frames. */
     void key(int player, input::PlayerKey key, bool pressed) { state_.level.copters()[player].controls().set(key, pressed); }
@@ -60,11 +66,16 @@ public:
     const bonuses::BonusSlots& bonuses() const { return state_.bonuses; }
     /** A level is loaded: its world and its entities are there (caption, setup, play). */
     bool levelLoaded() const;
+    /** What the attempt being played started from; none before the first attempt of the game. */
+    const std::optional<AttemptStart>& attemptStart() const { return state_.attemptStart; }
     /** What the logic does not support, so far: not only read - whoever takes the problems clears them. */
     events::Diagnostics& diagnostics() { return diagnostics_; }
 
 private:
     friend class testing::TestPilot;   // the one way into the state: the copters, the energy and the lives
+
+    /** The settings are within what the data has. */
+    bool accepts(const NewGameSettings& settings) const;
 
     const data::GameData& data_;
     events::EventBroadcast events_;

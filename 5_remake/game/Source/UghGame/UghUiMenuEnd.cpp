@@ -140,6 +140,20 @@ TSharedRef<SWidget> SUghMenuScreen::EndCard()
 				.ShadowOffset(FVector2D(0, 2)).ShadowColorAndOpacity(UghUiStyle::Shadow)
 				.ColorAndOpacity_Lambda([this] { return UghUiStyle::Bone.CopyWithNewOpacity(UghUiParts::Pulse(State->Time)); })
 				.Visibility_Lambda([this] { return UghUiParts::ShownIf(!State->NameEntry); })
+		]
+		// the replay of the last level played: F5 saves it
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 14, 0, 0)
+		[
+			SNew(SHorizontalBox).Visibility_Lambda([this] { return UghUiParts::ShownIf(!State->LevelEnded.IsEmpty()); })
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+			[
+				UghUiStyle::KeyHint(TEXT("F5"), TAttribute<FText>::CreateLambda([this]
+				{
+					return FText::FromString(State->LevelEndedSaved.IsEmpty()
+						? FString::Printf(TEXT("save the replay - %s"), *State->LevelEnded)
+						: FString::Printf(TEXT("replay saved: %s"), *State->LevelEndedSaved));
+				}))
+			]
 		];
 }
 

@@ -22,11 +22,27 @@ namespace ugh::check {
 class ReplayCheck {
 public:
     /** What to check. */
-    struct Options {
-        bool continueAfterMismatch = false;   // count all mismatches (for statistics) instead of stopping at the first
+    using Tick = ReplayFile::Tick;
+
+    /** Who wants to see the game as the replay plays it (LevelReplayCheck: the replays of a level). */
+    class Observer {
+    public:
+        virtual ~Observer() = default;
+        /** The new game of tick 0. */
+        virtual void started(game::Game& game) = 0;
+        /** An input the keyboard gave the game, after tick `after`. */
+        virtual void key(int player, input::PlayerKey key, bool pressed) = 0;
+        virtual void menuKey(input::MenuKey key) = 0;
+        /** The test pilot set something after tick `after`. */
+        virtual void intervened(long long after) = 0;
+        /** The step of tick `tick` was made and returned `result`. */
+        virtual void stepped(const game::Game& game, game::GameResult result, long long tick) = 0;
     };
 
-    using Tick = ReplayFile::Tick;
+    struct Options {
+        bool continueAfterMismatch = false;   // count all mismatches (for statistics) instead of stopping at the first
+        Observer* observer = nullptr;
+    };
 
     ReplayCheck(const data::GameData& data, const std::vector<keyboard::KeyBinding>& keys, const Options& options,
                 ReplayReport& report)

@@ -6,6 +6,7 @@
 #include "UghControlsMenu.h"
 #include "UghIsles.h"
 #include "UghNameEntry.h"
+#include "UghReplaysMenu.h"
 #include "UghSettingsMenu.h"
 
 class FUghPasswords;
@@ -32,7 +33,7 @@ struct FUghGameEnd
 
 /**
  * The menu before a game. The title screen: one player or the team, the difficulty, a level's password (the original's
- * menu and its F2), play, the settings, the high scores, quit. Up and Down choose a row, Left and Right change the mode
+ * menu and its F2), play, the settings, the high scores, the replays (FUghReplaysMenu), quit. Up and Down choose a row, Left and Right change the mode
  * or the difficulty (on the password Right fills in the password of the level the mode's last game got to, Left
  * clears it), letters and digits type the password (on any row), Backspace deletes, Enter plays (on Settings, High
  * scores, Quit: opens it, quits), Esc quits. A password the mode does not know stops Enter. The screens Settings
@@ -45,16 +46,17 @@ struct FUghGameEnd
 class FUghMenu
 {
 public:
-	enum class ERow : uint8 { Players, Difficulty, Password, Play, Settings, Scores, Quit };
-	static constexpr int32 RowCount = 7, DifficultyCount = 3, MaxPasswordLength = 24;
+	enum class ERow : uint8 { Players, Difficulty, Password, Play, Settings, Scores, Replays, Quit };
+	static constexpr int32 RowCount = 8, DifficultyCount = 3, MaxPasswordLength = 24;
 
-	enum class EScreen : uint8 { Title, Settings, Controls, Scores, Isles };
+	enum class EScreen : uint8 { Title, Settings, Controls, Scores, Isles, Replays };
 
 	/**
 	 * What the game mode does after a key: play, quit, apply the settings and save the profile (Save), open the level
-	 * selection (Isles: OpenIsles with the camera it flies from).
+	 * selection (Isles: OpenIsles with the camera it flies from), watch a replay (Watch: GetToWatch), open the folder of
+	 * the replays (OpenFolder).
 	 */
-	enum class EAction : uint8 { None, Play, Quit, Save, Isles };
+	enum class EAction : uint8 { None, Play, Quit, Save, Isles, Watch, OpenFolder };
 
 	FUghMenu(const FUghPasswords& InPasswords, FUghProfile& InProfile, const FUghDisplayOptions& InOptions)
 		: Passwords(InPasswords), Profile(InProfile), Options(InOptions) {}
@@ -91,6 +93,22 @@ public:
 	TOptional<FUghGameChoice> AdvanceIsles(double Seconds, const FUghCameraPose& Game, double SeaZ);
 	const FUghIsles& GetIsles() const { return Isles; }
 
+	/**
+	 * The replays of the screen Replays and of the level selection (R on a stone watches its best replay), and the
+	 * clipboard the screen copies to and pastes from; without them the screen is empty.
+	 */
+	void SetReplays(FUghReplays* InReplays, IUghClipboard* InClipboard)
+	{
+		Replays = InReplays;
+		Clipboard = InClipboard;
+	}
+	const FUghReplays* GetReplays() const { return Replays; }
+	const FUghReplaysMenu& GetReplaysMenu() const { return ReplaysMenu; }
+	/** The replay to watch after EAction::Watch. */
+	const TSharedPtr<FUghReplay>& GetToWatch() const { return ToWatch; }
+	/** A replay was watched (EAction::Watch): back to the screen it was chosen on (the level selection: the title). */
+	void ShowAfterWatching();
+
 	/** A game ended: shown until a key (a high score: until its name is typed); then it is the last game. */
 	void ShowEnd(const FUghGameEnd& End);
 	bool IsShowingEnd() const { return bShowingEnd; }
@@ -110,6 +128,9 @@ public:
 private:
 	EAction HandleTitleKey(const FKey& Key);
 	EAction HandleEndKey(const FKey& Key);
+	EAction HandleReplaysKey(const FKey& Key);
+	/** R on a stone of the level selection: its best replay to watch (EAction::Watch), if there is one. */
+	EAction WatchBest();
 	int32 PasswordLevel() const;
 	void Change(int32 Direction);
 
@@ -125,6 +146,11 @@ private:
 	FUghControlsMenu ControlsMenu;
 	FUghIsles Isles;
 	bool bIslesOn = false;
+	FUghReplays* Replays = nullptr;
+	IUghClipboard* Clipboard = nullptr;
+	FUghReplaysMenu ReplaysMenu;
+	TSharedPtr<FUghReplay> ToWatch;
+	EScreen WatchedFrom = EScreen::Title;
 	TOptional<FUghGameEnd> LastGame;
 	bool bShowingEnd = false;
 	TOptional<FUghNameEntry> NameEntry;

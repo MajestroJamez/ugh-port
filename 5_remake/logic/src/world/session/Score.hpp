@@ -18,6 +18,11 @@ public:
         points_ = 0;
         multiplier_ = 1;
     }
+    /** A game resumed at an attempt (game::AttemptStart): the points and the multiplier it had. */
+    void resume(uint32_t points, int multiplier) {
+        points_ = points;
+        multiplier_ = multiplier;
+    }
     uint32_t points() const { return points_; }
     void add(uint32_t points) { points_ += points; }
 

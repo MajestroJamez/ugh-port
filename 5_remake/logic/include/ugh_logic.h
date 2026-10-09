@@ -241,6 +241,114 @@ UGH_LOGIC_API int ugh_logic_get_pad(const ugh_logic* logic, int index, ugh_logic
 /** 1 when pixel x, y of the level being played is solid (its collision mask); 0 if not, outside, before a level. */
 UGH_LOGIC_API int ugh_logic_solid(const ugh_logic* logic, int x, int y);
 
+/* ------------------------------------------------------------------ the replays of a level (.ughr) */
+
+/*
+ * The logic records a replay of every level played (docs/replay-format.md): what its first attempt started from, the
+ * keys between its steps, how it went. A replay plays again exactly - the same score, the same state - on a logic of
+ * the same version with the same data: a game resumed at its start (ugh_logic_watch) and stepped with its keys. It is
+ * kept as a small file (.ughr) or a line of text to copy ("UGHR1:...").
+ */
+
+/** The version of the logic's behaviour: a replay made by another version may play differently. */
+enum { UGH_LOGIC_VERSION = 1 };
+
+/** The CRC-32 of the game data the logic read: a replay made with other data may play differently. */
+UGH_LOGIC_API uint32_t ugh_logic_data_hash(const ugh_logic* logic);
+
+/**
+ * What an attempt at a level starts from: everything of the game that lasts into it from before (the rest comes
+ * from the level's definition).
+ */
+typedef struct {
+    int players, difficulty;
+    int level;                 /* from 0 in the order of the mode */
+    int lives;
+    unsigned score;            /* the points so far */
+    int multiplier;
+    uint16_t random[4];        /* the state of the random numbers */
+    int rain_floor_row;
+    int effort[2];             /* how hard each pilot last worked his rotor (it turns on with it in the fade-in) */
+    int menu_key;              /* the last key event the game loop saw: UGH_LOGIC_MENU_... */
+} ugh_logic_attempt_start;
+
+/** Fills `start` with what the attempt being played started from; 0 before the first attempt of the game. */
+UGH_LOGIC_API int ugh_logic_get_attempt_start(const ugh_logic* logic, ugh_logic_attempt_start* start);
+
+/**
+ * A game that goes on from an attempt of another (ugh_logic_get_attempt_start): its first step starts that attempt
+ * (the caption fades in); with the same keys it plays as the game it came from. 0 when a value is out of range.
+ */
+UGH_LOGIC_API int ugh_logic_resume_game(ugh_logic* logic, const ugh_logic_attempt_start* start);
+
+typedef struct ugh_replay ugh_replay;
+
+enum { UGH_REPLAY_TEXT_SIZE = 33 };   /* a password or a name: at most 32 bytes of UTF-8 and the 0 */
+
+/** What a replay is. */
+typedef struct {
+    int logic_version;        /* UGH_LOGIC_VERSION of the logic that made it */
+    uint32_t data_hash;       /* ugh_logic_data_hash of the logic that made it */
+    ugh_logic_attempt_start start;   /* its level, mode, difficulty and what its first attempt started from */
+    int steps;                /* from the step its first attempt started in to the step the level ended in */
+    int play_steps;           /* of them the play (not the captions): its time */
+    int attempts;
+    unsigned points;          /* earned in the level */
+    int done;                 /* 1: the level was done; 0: the game ended in it */
+    int64_t date;             /* seconds since 1970 (UTC), 0 unknown */
+    char password[UGH_REPLAY_TEXT_SIZE];   /* of the level */
+    int name_count;           /* 0 .. 2 */
+    char names[2][UGH_REPLAY_TEXT_SIZE];   /* the pilots' */
+    int input_count;          /* the key events between its steps */
+} ugh_replay_info;
+
+enum { UGH_REPLAY_LEVEL_PLAYED = 0, UGH_REPLAY_LEVEL_ENDED = 1 };
+
+/**
+ * A copy of the replay of the level being played so far (UGH_REPLAY_LEVEL_PLAYED: not done yet) or of the last level
+ * that ended in this game (UGH_REPLAY_LEVEL_ENDED: done, or the game ended in it); NULL when there is none.
+ * ugh_replay_destroy frees it.
+ */
+UGH_LOGIC_API ugh_replay* ugh_logic_get_replay(const ugh_logic* logic, int which);
+UGH_LOGIC_API void ugh_replay_destroy(ugh_replay* replay);
+UGH_LOGIC_API void ugh_replay_get_info(const ugh_replay* replay, ugh_replay_info* info);
+/** The frontend's label: the level's password, the pilots' names (NULL none; UTF-8, cut to 32 bytes), the date. */
+UGH_LOGIC_API void ugh_replay_set_label(ugh_replay* replay, const char* password, const char* name1, const char* name2,
+                                        int64_t date);
+
+/** The replay as the bytes of a .ughr file into `out`, if `capacity` holds them; returns their size. */
+UGH_LOGIC_API size_t ugh_replay_write(const ugh_replay* replay, void* out, size_t capacity);
+/** The replay as a line of text ("UGHR1:" and Base64Url) and a 0 into `out`, if `capacity` holds them; returns its length. */
+UGH_LOGIC_API size_t ugh_replay_write_text(const ugh_replay* replay, char* out, size_t capacity);
+/**
+ * A replay from the bytes of a .ughr file or its text (white space around and in it skipped); NULL, and the reason in
+ * err, when it is not a replay, a newer format or damaged.
+ */
+UGH_LOGIC_API ugh_replay* ugh_replay_read(const void* bytes, size_t size, char* err, size_t err_size);
+
+/**
+ * 1 when `replay` is better than `than` (NULL: none) as the best replay of its level and mode: only a level done
+ * counts, more points, at the same points less time in the play (play_steps).
+ */
+UGH_LOGIC_API int ugh_replay_better(const ugh_replay* replay, const ugh_replay* than);
+
+enum { UGH_REPLAY_SAME_LOGIC = 0, UGH_REPLAY_OTHER_VERSION = 1, UGH_REPLAY_OTHER_DATA = 2 };
+
+/** Whether `logic` plays `replay` as the logic that made it: the same version and data, else what differs (bits). */
+UGH_LOGIC_API int ugh_replay_compare_logic(const ugh_replay* replay, const ugh_logic* logic);
+
+/** ugh_logic_step returns it once the replay being watched is over (nothing stepped). */
+enum { UGH_LOGIC_REPLAY_OVER = 3 };
+
+/**
+ * Watches `replay` (copied): a game resumed at its start (ugh_logic_resume_game), each ugh_logic_step gives the logic the
+ * keys recorded before it - the pilots' keys and menu keys of the frontend are ignored - until all of its steps are
+ * made (then UGH_LOGIC_REPLAY_OVER); a new game or another replay ends it. 0 when the game data has not its level.
+ */
+UGH_LOGIC_API int ugh_logic_watch(ugh_logic* logic, const ugh_replay* replay);
+/** The steps of the replay being watched made so far; -1 when none is watched. */
+UGH_LOGIC_API int ugh_logic_watched_steps(const ugh_logic* logic);
+
 #ifdef __cplusplus
 }
 #endif

@@ -3,6 +3,7 @@
 #include "UghControls.h"
 #include "UghPasswords.h"
 #include "UghProfile.h"
+#include "UghReplays.h"
 
 namespace
 {
@@ -85,8 +86,14 @@ FUghMenu::EAction FUghMenu::HandleKey(const FKey& Key)
 		Highlight.Reset();
 		return EAction::None;
 	case EScreen::Isles:
+		if (Key == EKeys::R)
+		{
+			return WatchBest();
+		}
 		Isles.HandleKey(Key);   // (it closes going back, AdvanceIsles)
 		return EAction::None;
+	case EScreen::Replays:
+		return HandleReplaysKey(Key);
 	default:
 		return HandleTitleKey(Key);
 	}
@@ -114,6 +121,50 @@ FUghMenu::EAction FUghMenu::HandleEndKey(const FKey& Key)
 	return EAction::Save;
 }
 
+FUghMenu::EAction FUghMenu::HandleReplaysKey(const FKey& Key)
+{
+	if (!Replays || !Clipboard)
+	{
+		Screen = EScreen::Title;   // (none: nothing to show)
+		return EAction::None;
+	}
+	switch (ReplaysMenu.HandleKey(Key, *Replays, *Clipboard))
+	{
+	case FUghReplaysMenu::EResult::Back:
+		Screen = EScreen::Title;
+		return EAction::None;
+	case FUghReplaysMenu::EResult::Watch:
+		ToWatch = ReplaysMenu.GetChosen(*Replays);
+		WatchedFrom = EScreen::Replays;
+		return EAction::Watch;
+	case FUghReplaysMenu::EResult::OpenFolder:
+		return EAction::OpenFolder;
+	default:
+		return EAction::None;
+	}
+}
+
+FUghMenu::EAction FUghMenu::WatchBest()
+{
+	const FUghReplays::FEntry* Best = Replays && Isles.GetStage() == FUghIsles::EStage::Choose
+		? Replays->Best(Isles.GetPlayers(), Isles.GetCursor()) : nullptr;
+	if (!Best)
+	{
+		return EAction::None;
+	}
+	ToWatch = Best->Replay;
+	WatchedFrom = EScreen::Title;
+	Isles.Close();
+	Screen = EScreen::Title;
+	return EAction::Watch;
+}
+
+void FUghMenu::ShowAfterWatching()
+{
+	Screen = WatchedFrom;
+	ToWatch.Reset();
+}
+
 FUghMenu::EAction FUghMenu::HandleTitleKey(const FKey& Key)
 {
 	if (Key == EKeys::Escape || (Key == EKeys::Enter && Row == ERow::Quit))
@@ -129,6 +180,12 @@ FUghMenu::EAction FUghMenu::HandleTitleKey(const FKey& Key)
 	if (Key == EKeys::Enter && Row == ERow::Scores)
 	{
 		Screen = EScreen::Scores;
+		return EAction::None;
+	}
+	if (Key == EKeys::Enter && Row == ERow::Replays)
+	{
+		ReplaysMenu.Open();
+		Screen = EScreen::Replays;
 		return EAction::None;
 	}
 	if (Key == EKeys::Enter)

@@ -8,24 +8,13 @@
 #include <string>
 #include <type_traits>
 
+#include "api/Handles.hpp"
 #include "api/LevelView.hpp"
 #include "data/ugd/DataFileReader.hpp"
-#include "events/EventQueue.hpp"
-#include "game/Game.hpp"
 #include "physics/CopterDanger.hpp"
 #include "physics/CopterPhysics.hpp"
+#include "record/Crc32.hpp"
 #include "world/copter/CopterShape.hpp"
-
-struct ugh_logic {
-    std::unique_ptr<const ugh::data::GameData> data;
-    ugh::game::Game game;
-    ugh::events::EventQueue events;
-    bool started = false;   // a new game was set up
-
-    explicit ugh_logic(std::unique_ptr<const ugh::data::GameData> loaded) : data(std::move(loaded)), game(*data) {
-        game.addListener(events);
-    }
-};
 
 namespace {
 
@@ -104,7 +93,7 @@ ugh_logic* ugh_logic_create(const char* data_path, char* err, size_t err_size) {
         }
         return nullptr;
     }
-    return new ugh_logic(std::move(data));
+    return new ugh_logic(std::move(data), ugh::record::Crc32::ofFile(data_path));
 }
 
 void ugh_logic_destroy(ugh_logic* logic) { delete logic; }
@@ -128,26 +117,36 @@ int ugh_logic_new_game(ugh_logic* logic, const ugh_logic_settings* settings) {
     for (size_t i = 0; i < SEED_WORDS; i++) s.randomSeed[i] = settings->random_seed[i];
     s.rainFloorRow = settings->rain_floor_row;
     if (!logic->game.newGame(s)) return 0;
-    logic->events.take();
-    logic->started = true;
+    logic->watched.reset();
+    logic->startedGame(true);
     return 1;
 }
 
 void ugh_logic_key(ugh_logic* logic, int player, int key, int pressed) {
-    if (!logic->started || player < 0 || player > 1 || key < UGH_LOGIC_KEY_UP || key > UGH_LOGIC_KEY_FIRE) return;
-    logic->game.key(player, static_cast<ugh::input::PlayerKey>(key), pressed != 0);
+    if (!logic->started || logic->watched || player < 0 || player > 1 || key < UGH_LOGIC_KEY_UP || key > UGH_LOGIC_KEY_FIRE)
+        return;
+    logic->key(player, static_cast<ugh::input::PlayerKey>(key), pressed != 0);
 }
 
 void ugh_logic_menu_key(ugh_logic* logic, int key) {
-    if (!logic->started || key < UGH_LOGIC_MENU_ESCAPE || key > UGH_LOGIC_MENU_OTHER) return;
-    logic->game.menuKey(static_cast<ugh::input::MenuKey>(key));
+    if (!logic->started || logic->watched || key < UGH_LOGIC_MENU_ESCAPE || key > UGH_LOGIC_MENU_OTHER) return;
+    logic->menuKey(static_cast<ugh::input::MenuKey>(key));
 }
 
 int ugh_logic_step(ugh_logic* logic) {
     if (!logic->started) return UGH_LOGIC_GAME_OVER;
-    const int status = result(logic->game.step());
+    if (logic->watched) {
+        if (logic->watched->over()) return UGH_LOGIC_REPLAY_OVER;
+        for (const ugh::record::Input& input : logic->watched->due()) {
+            if (input.kind == ugh::record::Input::Kind::PilotKey) logic->key(input.player, input.key, input.pressed);
+            else logic->menuKey(input.menuKey);
+        }
+    }
+    const ugh::game::GameResult stepped = logic->game.step();
+    logic->recorder.stepped(logic->game, stepped);
+    if (logic->watched) logic->watched->stepped();
     logic->game.diagnostics().take();   // what the logic does not support: only the replay check reports it
-    return status;
+    return result(stepped);
 }
 
 void ugh_logic_take_events(ugh_logic* logic, void (*callback)(void* ctx, const ugh_logic_event* event), void* ctx) {

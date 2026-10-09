@@ -5,6 +5,7 @@
 #include "ugh_logic.h"
 #include "UghControls.h"
 #include "UghMenu.h"
+#include "UghReplays.h"
 
 /**
  * The game logic (its C API) stepped at the original's fixed tick, 70.086 Hz, whatever the frame rate: Advance runs
@@ -33,10 +34,25 @@ public:
 	 * then it is over (IsOver) and Advance does nothing.
 	 */
 	void Preview(const FUghGameChoice& Choice);
-	/** The game is over (lost or won), not started or a preview: the logic is not stepped. */
+	/** The game is over (lost or won), not started, a preview or a replay watched to its end: the logic is not stepped. */
 	bool IsOver() const { return Result != UGH_LOGIC_CONTINUE; }
-	/** UGH_LOGIC_GAME_OVER or UGH_LOGIC_ALL_LEVELS_DONE once over. */
+	/** UGH_LOGIC_GAME_OVER, UGH_LOGIC_ALL_LEVELS_DONE or UGH_LOGIC_REPLAY_OVER once over. */
 	int32 GetResult() const { return Result; }
+
+	/**
+	 * Watches a replay of a level (ugh_logic_watch: the logic plays its keys, the players' are ignored) until it is over:
+	 * all of its steps, or the step the logic goes on to the next level in (its caption is not shown: the view stays
+	 * the level's). False when the logic refuses it (a level the data has not).
+	 */
+	bool Watch(const FUghReplay& Replay);
+	bool IsWatching() const { return bWatching; }
+	/** The steps of the replay watched so far. */
+	int32 GetWatchedSteps() const;
+	/**
+	 * The replay of the level that ended in the steps of the last Advance (done, or the game ended in it; not while
+	 * watching), taken: none when no level ended.
+	 */
+	TSharedPtr<FUghReplay> TakeEndedLevel() { return MoveTemp(Ended); }
 
 	virtual void Key(int32 Player, int32 LogicKey, bool bPressed) override;
 	virtual void MenuKey(int32 LogicMenuKey) override;
@@ -67,4 +83,11 @@ private:
 	TArray<ugh_logic_event> Events;
 	double Waiting = 0;   // real time since the last step, seconds
 	int32 Result = UGH_LOGIC_GAME_OVER;
+	bool bWatching = false;
+	int32 WatchedLevel = -1;     // the level of the replay watched
+	int32 RecordedLevel = -1;    // the level whose attempt the game plays (its replay is recorded), -1 none
+	TSharedPtr<FUghReplay> Ended;
+
+	/** After a step: a level that ended (its replay to take), a replay watched over. */
+	void AfterStep();
 };

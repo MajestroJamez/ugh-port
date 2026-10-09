@@ -22,12 +22,21 @@ GameFlow::GameFlow(Attempts attempts) : attempts_(attempts) {
 void GameFlow::restart() {
     current_ = nullptr;
     result_ = GameResult::Continue;
+    resuming_ = false;
+}
+
+void GameFlow::resume() {
+    restart();
+    resuming_ = true;
 }
 
 GameResult GameFlow::step() {
     if (result_ != GameResult::Continue) return result_;
     if (current_) {
         current_->nextFrame(*this);
+    } else if (resuming_) {
+        resuming_ = false;
+        goTo(PhaseId::CaptionFadeIn);
     } else {
         attempts_.startGame();
         goTo(PhaseId::BlackBeforeCaption);

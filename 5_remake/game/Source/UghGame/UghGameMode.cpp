@@ -4,6 +4,8 @@
 #include "Dom/JsonObject.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "HAL/FileManager.h"
+#include "HAL/PlatformProcess.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
@@ -116,6 +118,13 @@ void AUghGameMode::StartPlay()
 		}
 		return;
 	}
+	// the replays kept (the autopilot's: only -UghReplays', never written)
+	FString ReplayFolder;
+	if (!bShooting || FParse::Value(FCommandLine::Get(), TEXT("-UghReplays="), ReplayFolder))
+	{
+		Replays.Open(FUghReplays::DefaultFolder(ProfilePath), Simulation.GetLogic(), !bShooting);
+	}
+	Menu.SetReplays(&Replays, &IUghClipboard::System());
 	FigureActions.Load(Simulation.GetLogic(), Sprites.Count());
 	Figures->LoadBubbles(Simulation.GetLogic(), Sprites.Count());
 	Flings.Load(Simulation.GetLogic(), &Sprites);
@@ -181,7 +190,14 @@ void AUghGameMode::Tick(float DeltaSeconds)
 		}
 		FSlowPart Part{ TEXT("events") };
 		PlayEvents();
-		NoteLevel(Simulation.GetCurrent());
+		if (const TSharedPtr<FUghReplay> Ended = Simulation.TakeEndedLevel())
+		{
+			OnLevelEnded(Ended);
+		}
+		if (!Simulation.IsWatching())
+		{
+			NoteLevel(Simulation.GetCurrent());
+		}
 		if (Simulation.IsOver())
 		{
 			OpenMenu();
@@ -341,7 +357,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	for (int32 Pilot = 0; Pilot < FUghImpacts::Pilots; ++Pilot)
 	{
-		Pads.Set(Pilot, Impacts.Rumble(Pilot));
+		Pads.Set(Pilot, IsWatching() ? FUghRumble() : Impacts.Rumble(Pilot));   // (not the pads of who watches)
 	}
 	Stage->SetCamera(Pose);
 	CameraPose = Pose;
@@ -444,7 +460,11 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event, FInputDeviceId 
 	// the menu takes every key (U and G are in passwords)
 	if (bInMenu && Simulation.IsLoaded())
 	{
-		if (Event == IE_Pressed)
+		if (Event == IE_Pressed && Key == EKeys::F5 && Menu.IsShowingEnd())
+		{
+			SaveLastLevel();   // (the card stays)
+		}
+		else if (Event == IE_Pressed)
 		{
 			HandleMenuKey(Key);
 		}
@@ -457,6 +477,20 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event, FInputDeviceId 
 	if (!Simulation.IsLoaded())
 	{
 		return false;
+	}
+	if (Simulation.IsWatching())
+	{
+		// the replay plays its own keys: Esc (a gamepad's B, Back) stops it, any key hurries the flight
+		const bool bStop = Key == EKeys::Escape || Key == FUghControls::BackKey() || Key == EKeys::Gamepad_Special_Left;
+		if (Event == IE_Pressed && bStop)
+		{
+			OpenMenu();
+		}
+		else if (Event == IE_Pressed)
+		{
+			Intro.Hurry();
+		}
+		return true;
 	}
 	if (Event == IE_Released && Key == StartKey)
 	{
@@ -491,6 +525,16 @@ void AUghGameMode::HandleMenuKey(const FKey& Key)
 	case FUghMenu::EAction::Quit:
 		Quit();
 		break;
+	case FUghMenu::EAction::Watch:
+		StartWatching(Menu.GetToWatch());
+		break;
+	case FUghMenu::EAction::OpenFolder:
+		if (!bShooting)
+		{
+			IFileManager::Get().MakeDirectory(*Replays.GetFolder(), true);
+			FPlatformProcess::ExploreFolder(*Replays.GetFolder());
+		}
+		break;
 	case FUghMenu::EAction::Save:
 		ApplySettings();
 		SaveProfile();
@@ -519,24 +563,37 @@ void AUghGameMode::StartGame(const FUghGameChoice& Choice, const FKey& Key)
 	Playing = Choice;
 	PlayedLevel = Choice.FirstLevel;
 	Controls.Reset();
+	LastLevel.Reset();
+	LastLevelSaved.Reset();
+	bLastLevelBest = false;
 	UE_LOG(LogTemp, Display, TEXT("UGH new game: %s, level %d"), Choice.Players == 2 ? TEXT("team") : TEXT("one player"),
 		Choice.FirstLevel + 1);
 }
 
 void AUghGameMode::OpenMenu()
 {
-	const ugh_logic_view& View = Simulation.GetCurrent();
-	FUghGameEnd End{ Playing, View.level, View.score, Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE };
-	if (End.bAllDone && Profile.Scores.SetDone(Playing.Players, View.level))
+	if (Simulation.IsWatching())
 	{
-		SaveProfile();   // the last level done too
+		UE_LOG(LogTemp, Display, TEXT("UGH replay watched: %d steps"), Simulation.GetWatchedSteps());
+		Menu.ShowAfterWatching();
+		Speaker->GetPlayer().OnGameEnd(UGH_LOGIC_REPLAY_OVER);
+		Watched.Reset();
 	}
-	if (bShooting)
+	else
 	{
-		Shot.DressEnd(End);
+		const ugh_logic_view& View = Simulation.GetCurrent();
+		FUghGameEnd End{ Playing, View.level, View.score, Simulation.GetResult() == UGH_LOGIC_ALL_LEVELS_DONE };
+		if (End.bAllDone && Profile.Scores.SetDone(Playing.Players, View.level))
+		{
+			SaveProfile();   // the last level done too
+		}
+		if (bShooting)
+		{
+			Shot.DressEnd(End);
+		}
+		Menu.ShowEnd(End);
+		Speaker->GetPlayer().OnGameEnd(Simulation.GetResult());
 	}
-	Menu.ShowEnd(End);
-	Speaker->GetPlayer().OnGameEnd(Simulation.GetResult());
 	bInMenu = true;
 	Intro.Stop();
 	Effects->Clear();

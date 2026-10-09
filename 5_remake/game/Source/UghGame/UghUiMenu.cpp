@@ -2,6 +2,7 @@
 
 #include "UghUiIsles.h"
 #include "UghUiParts.h"
+#include "UghUiReplays.h"
 #include "UghUiScores.h"
 #include "UghUiSettings.h"
 #include "UghUiState.h"
@@ -68,6 +69,10 @@ void SUghMenuScreen::Construct(const FArguments& Args)
 		]
 		+ SOverlay::Slot()[ SNew(SUghScoresScreen).State(State).Visibility(Showing(EScreen::Scores)) ]
 		+ SOverlay::Slot()[ SNew(SUghIslesScreen).State(State).Visibility(Showing(EScreen::Isles)) ]
+		+ SOverlay::Slot().HAlign(HAlign_Left).Padding(UghUiParts::ColumnPadding)
+		[
+			SNew(SUghReplaysScreen).State(State).Visibility(Showing(EScreen::Replays))
+		]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center)[ EndCard() ]
 	];
 }
@@ -139,6 +144,10 @@ TSharedRef<SWidget> SUghMenuScreen::Title()
 					+ SVerticalBox::Slot().AutoHeight()
 					[
 						UghUiParts::MenuItem(TEXT("High scores"), [this] { return IsChosen(ERow::Scores); })
+					]
+					+ SVerticalBox::Slot().AutoHeight()
+					[
+						UghUiParts::MenuItem(TEXT("Replays"), [this] { return IsChosen(ERow::Replays); })
 					]
 					+ SVerticalBox::Slot().AutoHeight()
 					[

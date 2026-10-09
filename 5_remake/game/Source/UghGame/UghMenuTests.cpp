@@ -70,6 +70,11 @@ bool FUghMenuTest::RunTest(const FString& Parameters)
 	Menu.HandleKey(EKeys::Gamepad_FaceButton_Right);
 	TestTrue(TEXT("any key goes back"), Menu.GetScreen() == FUghMenu::EScreen::Title);
 	Menu.HandleKey(EKeys::Down);
+	TestTrue(TEXT("Enter on Replays opens them"),
+		Menu.HandleKey(EKeys::Enter) == FUghMenu::EAction::None && Menu.GetScreen() == FUghMenu::EScreen::Replays);
+	Menu.HandleKey(EKeys::Escape);
+	TestTrue(TEXT("Esc back from them"), Menu.GetScreen() == FUghMenu::EScreen::Title && Menu.GetRow() == FUghMenu::ERow::Replays);
+	Menu.HandleKey(EKeys::Down);
 	TestTrue(TEXT("Enter on Quit quits"), Menu.HandleKey(EKeys::Enter) == FUghMenu::EAction::Quit);
 	Menu.HandleKey(EKeys::Down);
 	TestTrue(TEXT("Down from the last row goes round"), Menu.GetRow() == FUghMenu::ERow::Players);

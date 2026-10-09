@@ -12,6 +12,11 @@ void FUghSoundPlayer::OnGameEnd(int32 Result)
 {
 	Mixer.StopEffects();
 	Phase = UGH_LOGIC_PHASE_START;
+	if (Result == UGH_LOGIC_REPLAY_OVER)
+	{
+		PlayMusic(FUghSounds::MenuMusic);   // a replay watched: back to the menu, no jingle
+		return;
+	}
 	if (Result == UGH_LOGIC_ALL_LEVELS_DONE)
 	{
 		PlayMusic(FUghSounds::EndingMusic);

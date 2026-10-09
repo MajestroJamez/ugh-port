@@ -55,13 +55,14 @@ class per file, named like the file; includes start at `src/`. A module uses onl
 | `bonuses/` | the bonus items: `BonusSlots`, `BonusItem`, their states `Falling` and `Lying` |
 | `passengers/` | `Passengers`, the base `Passenger`; `route/` the passenger with a route (17 states, also in the water; its parts `PassengerForm` (its kind on land or in the water), `RouteProgress`, `PickupWait` (waiting for a copter and calling it), `Ride`, `Swim`; `OnPickupPad` the base of the states on the pickup pad), `standing/` the standing passenger (5 states) |
 | `enemies/` | `Enemies`, the base `Enemy`, `EnemyFactory`, `Stun` (a walker or a blower stunned); `flyer/`, `walker/`, `blower/`, `tree/`: each kind its class and states |
-| `game/` | `Game` (the facade), `GameState` (what changes during a game), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game state: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play) |
-| `api/` | `LogicApi.cpp`: the C API over `Game`; `LevelView` what it shows of the level being played (`ugh_logic_view`: the entities with a passenger's look and an enemy knocked out, through Visitors) and what each sprite of the entities and each speech bubble is in the data (`ugh_logic_get_sprite`) |
+| `game/` | `Game` (the facade), `GameState` (what changes during a game), `GameFlow` with its `phases/` and `Attempts` (what the phases do to the game state: start an attempt, play a frame, end it), `PlayFrame` (one frame of the play), `AttemptStart` (what an attempt starts from: what lasts into it from before - a game resumed from it, `Game::resume`, plays the attempt as the game it came from) |
+| `record/` | the replays of a level (`.ughr`, `docs/replay-format.md`): `Recording` (what its first attempt started from, the inputs between its steps, how it went, its label; which is the best), `Recorder` (records each level of a game: the inputs and the steps, the attempts from the caption's event), `Playback` (a recording played on a resumed game), `ReplayCodec` (the binary file: varints, the inputs as gaps and codes, `Crc32`), `ReplayText` (`UGHR1:` and `Base64Url`; reads the text or the file), `ByteWriter`, `ByteReader` |
+| `api/` | `LogicApi.cpp`: the C API over `Game` (`Handles.hpp`: the logic with its recorder and the replay watched behind the handle; the keys reach the game and the recorder together), `ReplayApi.cpp` the replays' (`ugh_replay_*`, `ugh_logic_watch`, `ugh_logic_resume_game`); `LevelView` what it shows of the level being played (`ugh_logic_view`: the entities with a passenger's look and an enemy knocked out, through Visitors) and what each sprite of the entities and each speech bubble is in the data (`ugh_logic_get_sprite`) |
 
 `testing/` is not part of the logic: `testing::TestPilot` (library `ugh_logic_testing`), the test pilot of the replays
 (it puts a copter anywhere, keeps the energy and the lives up) for the tests and `6_verification`; it is the one
 `friend` of the facade `Game` and otherwise uses the public operations of the world. `tests/` holds the tests by module. The fields of the replays (`ugh_logic_replay`) and the replay check live in
-`6_verification/`; the logic does not know them.
+`6_verification/`; the logic does not know them (its own replays of a level, `record/`, are the player's: keys, not states).
 
 ## One frame
 
@@ -97,7 +98,9 @@ frame of the play (`PlayFrame::run`) runs the systems in the order of the origin
   it and add what only they need (the bonus items, the passengers), so a state writes `context.level`.
 - **Observer**: the logic reports `events::Event`s to `EventListener`s.
 - **Facade**: `game::Game` is the one entry; nothing of the state can be set from outside but by the test pilot
-  (`testing::TestPilot`, a test peer outside `src/` and the one friend of `Game`).
+  (`testing::TestPilot`, a test peer outside `src/` and the one friend of `Game`) - a game may only start where an
+  attempt of another started (`Game::resume` with its `AttemptStart`: the replays of a level).
+- **Observer** again: `record::Recorder` listens for the captions (an attempt starts) to cut a game into levels.
 - **Table of methods**: the readers of records that stand alone (`KindsReader`, `RulesReader`, `PlacementReader`) have
   a table "record type -> its method" (`RecordTable`, like method references in Java): a new record type is one line
   in the table and one method. `LevelReader` reads a level and the parts after it in order, `AnimationsReader` one
@@ -144,7 +147,8 @@ text of the error).
 - Values of the game are plain `int`s - but the score, a `uint32_t` (it grows past 16 bits and never goes below
   0); only `Fixed` and `Speed` keep the 16 bits of the original (and the energy, as a named quirk). A quirk of the
   original lives in the class it belongs to, named and described.
-- The logic knows nothing of DOS, the PC keyboard or the replays: those are in `6_verification/`.
+- The logic knows nothing of DOS, the PC keyboard or the golden replays: those are in `6_verification/`. It records and
+  plays its own replays of a level (`record/`): the keys it got, nothing of a frontend.
 
 ## Where to change what
 
@@ -170,6 +174,8 @@ text of the error).
 | change what ends an attempt (a crash, Esc, the last passenger) | `src/world/Level.cpp` (`crash`, `fadeOut`, `passengerFinished`) |
 | change what a frontend gets to draw | `include/ugh_logic.h` (`ugh_logic_view`, the background: `ugh_logic_pad`, `ugh_logic_solid`, the names of the sprites: `ugh_logic_get_sprite`, a copter's danger: `ugh_logic_get_copter_danger`), `src/api/LogicApi.cpp` and `src/api/LevelView.cpp` |
 | change how the score multiplier works | `src/world/session/Score.hpp` |
+| change the replay file of a level (`.ughr`) | `src/record/ReplayCodec.cpp` (raise `FORMAT`; `docs/replay-format.md`), its text `src/record/ReplayText.cpp`; what a level's attempt carries over `src/game/AttemptStart.hpp` (`Attempts::carried`, `Game::resume`; `6_verification` checks it); which replay is the best `src/record/Recording.hpp` (`betterThan`) |
+| change the logic's behaviour | raise `Recording::LOGIC_VERSION` (`UGH_LOGIC_VERSION`): the replays made before may play differently, and say so |
 | change what a passenger does on its pickup pad every frame (the water, a copter flying into it) | `src/passengers/route/OnPickupPad.cpp` |
 
 ## Glossary

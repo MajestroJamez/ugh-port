@@ -8,6 +8,7 @@ void Attempts::startGame() { state_.session->startGame(); }
 
 /** The level exists: the game starts at one (newGame checks it) and ends after the last (end). */
 void Attempts::start() {
+    state_.attemptStart = carried();
     world::session::Session& session = *state_.session;
     const data::levels::LevelDefinition& definition = *data_.level(session.players(), session.levelNumber());
     state_.level.startAttempt(definition, data_.sprites(), session.random(), diagnostics_);
@@ -41,6 +42,23 @@ GameResult Attempts::end() {
         return session.nextLevel(data_.levelCount(session.players())) ? GameResult::Continue
                                                                       : GameResult::AllLevelsDone;
     return session.loseLife() ? GameResult::Continue : GameResult::GameOver;
+}
+
+AttemptStart Attempts::carried() const {
+    const world::session::Session& session = *state_.session;
+    AttemptStart start;
+    start.players = session.players();
+    start.difficulty = session.difficulty();
+    start.level = session.levelNumber();
+    start.lives = session.lives().count();
+    start.points = session.score().points();
+    start.multiplier = session.score().multiplier();
+    start.random = session.random().words();
+    start.rainFloorRow = state_.level.rain().floorRow();
+    for (const world::copter::Copter& copter : state_.level.copters().all())
+        start.effort[copter.player()] = copter.rotor().effort();
+    start.lastMenuKey = state_.menu.last();
+    return start;
 }
 
 world::PlayContext Attempts::context() { return {state_.level, *state_.session, data_, events_, diagnostics_}; }

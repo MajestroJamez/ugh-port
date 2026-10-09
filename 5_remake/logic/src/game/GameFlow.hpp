@@ -29,6 +29,11 @@ public:
 
     /** A new game: the next step starts it. */
     void restart();
+    /**
+     * A game resumed at an attempt (AttemptStart, the game state set up from it): the next step starts the attempt as
+     * the game it came from did - its caption fades in (no black before it, the game not started again).
+     */
+    void resume();
 
     /** One frame. */
     GameResult step();
@@ -51,6 +56,7 @@ private:
     std::array<std::unique_ptr<Phase>, static_cast<int>(PhaseId::Count)> phases_;   // by PhaseId
     Phase* current_ = nullptr;   // nullptr: not started, or over
     GameResult result_ = GameResult::Continue;
+    bool resuming_ = false;      // the next step starts the attempt (resume)
 
     /** Where phase `id` is kept. */
     std::unique_ptr<Phase>& slot(PhaseId id) { return phases_[static_cast<int>(id)]; }

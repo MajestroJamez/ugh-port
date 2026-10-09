@@ -67,9 +67,13 @@ struct FUghHighScores;
  * arrive); then the level plays and is shot as ever. The password is typed only for a level the profile has locked.
  * -UghShotEnd gives each level up instead of its shot and saves the card of the game's end in the menu (the name
  * ending in -end after the others); -UghShotScore=<points> makes that game end with so many points (only the picture: a
- * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores
+ * score among the high scores shows the name being typed). -UghShotScreens=<screens> (settings, controls, scores, replays
  * separated by commas) first opens each screen of the menu by its keys and saves <folder>/<screen>.png. The game's
- * profile is the defaults (FUghProfile) or the one of -UghProfile, never saved.
+ * profile is the defaults (FUghProfile) or the one of -UghProfile, never saved; the replays (FUghReplays) only those of
+ * -UghReplays, never written. -UghShotSaveReplay=<file> writes the replay of each level played (the logic's, when it
+ * ended: given up) to the file (shot.ps1 -SaveReplay: a replay to watch, to show as a ghost). -UghShotWatch=<file>
+ * watches that replay instead of playing levels and saves <folder>/watch-<mode>-<NN>.png `At` seconds after its play is
+ * fully shown, then quits.
  *
  * The frame times (perf.ps1): with the frame rate of a level's hover it logs its frames' median, 1 % low (the frame
  * rate of the slowest 1 % of its frames) and slowest frame, and the slowest frame and the hitches (frames over
@@ -116,6 +120,8 @@ public:
 	bool IsWide() const { return bWide; }
 	/** The camera shaken by an impact in the shots (-UghShotShake; else they stand still). */
 	bool WantsShake() const { return bShake; }
+	/** Where the replay of each level the autopilot played goes (-UghShotSaveReplay=<file>; the last one stays), empty none. */
+	const FString& GetSaveReplay() const { return SaveReplay; }
 
 	/** The level selection is shot (-UghShotIsles): the menu opens it. */
 	bool WantsIsles() const { return !IslesShots.IsEmpty(); }
@@ -211,6 +217,8 @@ private:
 	void Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld);
 	void ReleasePedals(AUghGameMode& Mode);
 	static void Tap(AUghGameMode& Mode, const FKey& Key);
+	/** -UghShotWatch: the replay watched, shot `At` seconds after its play is fully shown, then stopped; then it quits. */
+	EAction WatchTick(AUghGameMode& Mode, double Seconds);
 
 	FString Folder;
 	FString Path;
@@ -258,6 +266,10 @@ private:
 	bool bEndWanted = false;   // the target was given up: its end is to be shot
 	TOptional<uint32> EndScore;   // -UghShotScore
 	TArray<FString> Screens;   // -UghShotScreens still to be shot
+	FString SaveReplay;        // -UghShotSaveReplay
+	FString WatchFile;         // -UghShotWatch
+	FString WatchName;         // its shot's
+	bool bWatchStarted = false, bWatchShot = false;
 	FString Suffix;           // of the shots' names
 	TArray<FTarget> Targets;
 	int32 Next = 0;            // the target being shot

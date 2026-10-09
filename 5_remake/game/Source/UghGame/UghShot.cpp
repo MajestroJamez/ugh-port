@@ -4,12 +4,14 @@
 #include "Algo/MaxElement.h"
 #include "Engine/Engine.h"
 #include "Misc/CommandLine.h"
+#include "Misc/FileHelper.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "UghGameMode.h"
 #include "UghMenu.h"
 #include "UghPasswords.h"
 #include "UghProfile.h"
+#include "UghReplays.h"
 #include "UghBursts.h"
 #include "UghFringe.h"
 #include "UghKnockPilot.h"
@@ -40,6 +42,12 @@ bool FUghShot::Configure()
 	FParse::Value(CommandLine, TEXT("-UghShotAt="), At);
 	FParse::Value(CommandLine, TEXT("-UghShotExec="), Exec, false);
 	bMenuShot = FParse::Param(CommandLine, TEXT("UghShotMenu"));
+	FParse::Value(CommandLine, TEXT("-UghShotSaveReplay="), SaveReplay);
+	if (FParse::Value(CommandLine, TEXT("-UghShotWatch="), WatchFile))
+	{
+		WatchFile = FPaths::ConvertRelativePathToFull(WatchFile);
+	}
+	SaveReplay = SaveReplay.IsEmpty() ? SaveReplay : FPaths::ConvertRelativePathToFull(SaveReplay);
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
 	bLand = FParse::Param(CommandLine, TEXT("UghShotLand"));
@@ -232,8 +240,9 @@ bool FUghShot::Configure()
 		ScreenList.ParseIntoArray(Screens, TEXT(","));
 		Screens.RemoveAll([](const FString& Screen)
 		{
-			const bool bKnown = Screen == TEXT("settings") || Screen == TEXT("controls") || Screen == TEXT("scores");
-			UE_CLOG(!bKnown, LogTemp, Error, TEXT("UGH shot: no screen %s (settings, controls, scores)"), *Screen);
+			const bool bKnown = Screen == TEXT("settings") || Screen == TEXT("controls") || Screen == TEXT("scores") ||
+				Screen == TEXT("replays");
+			UE_CLOG(!bKnown, LogTemp, Error, TEXT("UGH shot: no screen %s (settings, controls, scores, replays)"), *Screen);
 			return !bKnown;
 		});
 	}
@@ -332,6 +341,10 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		const FString Name = Screens[0];
 		Screens.RemoveAt(0);
 		return TakeShot(Name);
+	}
+	if (!WatchFile.IsEmpty())
+	{
+		return WatchTick(Mode, DeltaSeconds);
 	}
 	if (Next == Targets.Num())
 	{
@@ -596,7 +609,7 @@ FKey FUghShot::ScreenKey(const FUghMenu& Menu, const FString& Screen)
 {
 	using EScreen = FUghMenu::EScreen;
 	const EScreen Wanted = Screen == TEXT("settings") ? EScreen::Settings
-		: Screen == TEXT("controls") ? EScreen::Controls : EScreen::Scores;
+		: Screen == TEXT("controls") ? EScreen::Controls : Screen == TEXT("replays") ? EScreen::Replays : EScreen::Scores;
 	const EScreen Shown = Menu.GetScreen();
 	if (Menu.IsShowingEnd())
 	{
@@ -608,7 +621,8 @@ FKey FUghShot::ScreenKey(const FUghMenu& Menu, const FString& Screen)
 	}
 	if (Shown == EScreen::Title)
 	{
-		const FUghMenu::ERow Row = Wanted == EScreen::Scores ? FUghMenu::ERow::Scores : FUghMenu::ERow::Settings;
+		const FUghMenu::ERow Row = Wanted == EScreen::Scores ? FUghMenu::ERow::Scores
+			: Wanted == EScreen::Replays ? FUghMenu::ERow::Replays : FUghMenu::ERow::Settings;
 		return Menu.GetRow() == Row ? EKeys::Enter : EKeys::Down;
 	}
 	if (Shown == EScreen::Settings && Wanted == EScreen::Controls)
@@ -616,6 +630,49 @@ FKey FUghShot::ScreenKey(const FUghMenu& Menu, const FString& Screen)
 		return Menu.GetSettingsMenu().GetRow() == FUghSettingsMenu::ERow::Controls ? EKeys::Enter : EKeys::Down;
 	}
 	return EKeys::Escape;   // back
+}
+
+FUghShot::EAction FUghShot::WatchTick(AUghGameMode& Mode, double Seconds)
+{
+	if (!bWatchStarted)
+	{
+		if (!Mode.IsInMenu())
+		{
+			return EAction::None;
+		}
+		bWatchStarted = true;
+		TArray<uint8> Bytes;
+		FString Error = TEXT("cannot be read");
+		const TSharedPtr<FUghReplay> Replay =
+			FFileHelper::LoadFileToArray(Bytes, *WatchFile) ? FUghReplay::Read(Bytes, Error) : nullptr;
+		if (!Replay || !Mode.StartWatching(Replay))
+		{
+			UE_LOG(LogTemp, Error, TEXT("UGH shot: cannot watch %s: %s"), *WatchFile, Replay ? TEXT("refused") : *Error);
+			return EAction::Quit;
+		}
+		WatchName = FString::Printf(TEXT("watch-%s"), *TargetName(Replay->Players(), Replay->Level()));
+		PhaseTime = 0;
+		return EAction::None;
+	}
+	if (Mode.IsInMenu())
+	{
+		UE_CLOG(!bWatchShot, LogTemp, Error, TEXT("UGH shot: the replay was over before its shot"));
+		return EAction::Quit;
+	}
+	if (bWatchShot)
+	{
+		Tap(Mode, EKeys::Escape);   // (stops it)
+		return EAction::None;
+	}
+	// `At` seconds after the play is fully shown
+	const ugh_logic_view& View = Mode.GetSimulation().GetCurrent();
+	PhaseTime = View.phase == UGH_LOGIC_PHASE_PLAY && View.fade >= UghShapes::FadeShown ? PhaseTime + Seconds : 0;
+	if (PhaseTime < At)
+	{
+		return EAction::None;
+	}
+	bWatchShot = true;
+	return TakeShot(WatchName);
 }
 
 void FUghShot::DressEnd(FUghGameEnd& End) const

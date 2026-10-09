@@ -69,6 +69,7 @@ void SUghPlayScreen::Construct(const FArguments& Args)
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center).Padding(0, 0, 0, 120)[ Caption() ]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Bottom).Padding(0, 0, 0, 34)[ Help() ]
 		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Top).Padding(0, 28, 0, 0)[ Notice() ]
+		+ SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Top).Padding(0, 22, 0, 0)[ Watching() ]
 	];
 }
 
@@ -194,11 +195,69 @@ TSharedRef<SWidget> SUghPlayScreen::Caption()
 				]
 			]
 		]
+		// the level just done: its points, its time, the best of the level; F5 saves its replay
+		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 10, 0, 0)
+		[
+			SNew(SBorder).BorderImage(UghUiStyle::Panel()).Padding(FMargin(22, 8))
+				.Visibility_Lambda([this]
+				{
+					return UghUiParts::ShownIf(!State->bWatching && State->bLevelEndedDone &&
+						State->Level == State->LevelEndedLevel + 1);
+				})
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+				[
+					SNew(STextBlock).Font(UghUiStyle::Text(19, true)).ColorAndOpacity(UghUiStyle::Bone)
+						.Text_Lambda([this] { return FText::FromString(State->LevelEnded); })
+				]
+				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12, 0, 0, 0)
+				[
+					SNew(STextBlock).Font(UghUiStyle::Display(19)).ColorAndOpacity(UghUiStyle::Leaf)
+						.Text(FText::FromString(TEXT("NEW BEST")))
+						.Visibility_Lambda([this] { return UghUiParts::ShownIf(State->bLevelEndedBest); })
+				]
+				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(16, 0, 0, 0)
+				[
+					UghUiStyle::KeyHint(TEXT("F5"), TAttribute<FText>::CreateLambda([this]
+					{
+						return FText::FromString(State->LevelEndedSaved.IsEmpty() ? TEXT("save its replay") : TEXT("replay saved"));
+					}))
+				]
+			]
+		]
 		+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 18, 0, 0)
 		[
 			SNew(STextBlock).Font(UghUiStyle::Text(19, true)).Text(FText::FromString(TEXT("Press any key")))
 				.ShadowOffset(FVector2D(0, 2)).ShadowColorAndOpacity(UghUiStyle::Shadow)
 				.ColorAndOpacity_Lambda([this] { return UghUiStyle::Bone.CopyWithNewOpacity(UghUiParts::Pulse(State->Time)); })
+		]
+	];
+}
+
+TSharedRef<SWidget> SUghPlayScreen::Watching()
+{
+	return SNew(SBorder).BorderImage(UghUiStyle::Panel()).Padding(FMargin(16, 6))
+		.Visibility_Lambda([this] { return UghUiParts::ShownIf(State->bWatching); })
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(0, 0, 10, 0)
+		[
+			SNew(STextBlock).Font(UghUiStyle::Display(19)).ColorAndOpacity(UghUiStyle::Amber).Text(FText::FromString(TEXT("REPLAY")))
+		]
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+		[
+			SNew(STextBlock).Font(UghUiStyle::Text(16, true)).ColorAndOpacity(UghUiStyle::Bone)
+				.Text_Lambda([this] { return FText::FromString(State->WatchTitle); })
+		]
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(12, 0, 0, 0)
+		[
+			SNew(STextBlock).Font(UghUiStyle::Display(16)).ColorAndOpacity(UghUiStyle::Muted)
+				.Text_Lambda([this] { return FText::FromString(State->WatchClock); })
+		]
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(10, 0, 0, 0)
+		[
+			UghUiStyle::KeyHint(TEXT("Esc"), FText::FromString(TEXT("stop")))
 		]
 	];
 }

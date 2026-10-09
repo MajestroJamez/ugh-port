@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <vector>
 
+#include "record/Crc32.hpp"
+
 namespace ugh::replay {
 
 namespace {
@@ -37,15 +39,6 @@ const char* windName(data::levels::Wind wind) {
     return "";
 }
 
-/** CRC-32 (zlib). */
-uint32_t crc32(const std::vector<uint8_t>& bytes) {
-    uint32_t crc = 0xffffffffu;
-    for (uint8_t b : bytes) {
-        crc ^= b;
-        for (int k = 0; k < 8; k++) crc = (crc >> 1) ^ (0xedb88320u & (0u - (crc & 1)));
-    }
-    return ~crc;
-}
 
 /** The raindrops 0 .. 192 as little-endian int16 pairs x, y, CRC-32 in 8 hex digits. */
 std::string rainChecksum(const world::scenery::Rain& rain) {
@@ -57,7 +50,7 @@ std::string rainChecksum(const world::scenery::Rain& rain) {
         }
     }
     char buf[16];
-    std::snprintf(buf, sizeof buf, "%08x", crc32(bytes));
+    std::snprintf(buf, sizeof buf, "%08x", record::Crc32::of(bytes));   // (zlib's, as the .ughr files')
     return buf;
 }
 

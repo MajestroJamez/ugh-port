@@ -44,6 +44,9 @@ bool FUghSimulation::NewGame(const FUghGameChoice& Choice)
 		Settings.random_seed[Word] = static_cast<uint16_t>(Ticks >> (16 * Word));
 	}
 	Result = ugh_logic_new_game(Logic, &Settings) ? UGH_LOGIC_CONTINUE : UGH_LOGIC_GAME_OVER;
+	bWatching = false;
+	RecordedLevel = -1;
+	Ended.Reset();
 	ugh_logic_get_view(Logic, &CurrentView);
 	PreviousView = CurrentView;
 	Waiting = 0;
@@ -95,9 +98,18 @@ void FUghSimulation::Advance(double Seconds)
 	while (Waiting * TickRate >= 1.0 && !IsOver())
 	{
 		Waiting -= 1.0 / TickRate;
-		Result = ugh_logic_step(Logic);
+		const int32 Stepped = ugh_logic_step(Logic);
+		ugh_logic_view View;
+		ugh_logic_get_view(Logic, &View);
+		if (Stepped == UGH_LOGIC_REPLAY_OVER || (bWatching && View.level != WatchedLevel))
+		{
+			Result = UGH_LOGIC_REPLAY_OVER;   // (the next level's caption not shown)
+			break;
+		}
+		Result = Stepped;
 		PreviousView = CurrentView;
-		ugh_logic_get_view(Logic, &CurrentView);
+		CurrentView = View;
+		AfterStep();
 		if (++Steps == MaxStepsPerFrame)
 		{
 			Waiting = 0;
@@ -106,4 +118,55 @@ void FUghSimulation::Advance(double Seconds)
 	}
 	ugh_logic_take_events(Logic, [](void* Context, const ugh_logic_event* Event)
 		{ static_cast<TArray<ugh_logic_event>*>(Context)->Add(*Event); }, &Events);
+	if (Result == UGH_LOGIC_REPLAY_OVER)
+	{
+		// (not the next level's caption and its jingle)
+		Events.RemoveAll([](const ugh_logic_event& Event) { return Event.kind == UGH_LOGIC_EVENT_LEVEL_CAPTION; });
+	}
+}
+
+void FUghSimulation::AfterStep()
+{
+	if (bWatching)
+	{
+		return;
+	}
+	// the logic records each level: the replay of one that ended (the game went on to the next, or ended)
+	ugh_logic_attempt_start Start;
+	if (ugh_logic_get_attempt_start(Logic, &Start) && Start.level != RecordedLevel)
+	{
+		if (RecordedLevel >= 0)
+		{
+			Ended = FUghReplay::Of(ugh_logic_get_replay(Logic, UGH_REPLAY_LEVEL_ENDED));
+		}
+		RecordedLevel = Start.level;
+	}
+	if (Result != UGH_LOGIC_CONTINUE && RecordedLevel >= 0)
+	{
+		Ended = FUghReplay::Of(ugh_logic_get_replay(Logic, UGH_REPLAY_LEVEL_ENDED));
+		RecordedLevel = -1;
+	}
+}
+
+bool FUghSimulation::Watch(const FUghReplay& Replay)
+{
+	if (!Logic || !ugh_logic_watch(Logic, Replay.GetHandle()))
+	{
+		return false;
+	}
+	bWatching = true;
+	WatchedLevel = Replay.Level();
+	RecordedLevel = -1;
+	Ended.Reset();
+	Result = UGH_LOGIC_CONTINUE;
+	ugh_logic_get_view(Logic, &CurrentView);
+	PreviousView = CurrentView;
+	Waiting = 0;
+	Events.Reset();
+	return true;
+}
+
+int32 FUghSimulation::GetWatchedSteps() const
+{
+	return Logic ? ugh_logic_watched_steps(Logic) : -1;
 }

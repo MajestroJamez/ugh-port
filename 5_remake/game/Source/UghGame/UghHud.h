@@ -16,7 +16,7 @@ struct FUghUiState;
  * UghStoneArt), and every frame takes what it shows from the game (FUghUiState): the menu, the logic's view, the
  * scores earned projected where they were earned (AUghEffects), the warnings over copters flying fast enough to crash
  * (UghWarning), the numbers of the level selection's stones on them, when the help shows (F1, and at the first level),
- * a setting just changed (the volume, the upscaler).
+ * a setting just changed (the volume, the upscaler), the replays (the menu's screen, the last level's, the one watched).
  */
 UCLASS()
 class AUghHud : public AHUD
@@ -42,6 +42,8 @@ private:
 	void UpdateIsles(const AUghGameMode& Mode);
 	/** The warnings over the copters flying fast enough to crash (UghWarning), `Seconds` after the last frame. */
 	void UpdateWarnings(const AUghGameMode& Mode, double Seconds);
+	/** The replays: the menu's screen Replays, the last level's (F5), the one watched, what was done with one. */
+	void UpdateReplays(const AUghGameMode& Mode, double Seconds);
 
 	TSharedPtr<FUghUiState> State;
 	TSharedPtr<SWidget> Screen;
@@ -52,4 +54,5 @@ private:
 	int32 LastVolume = -1;
 	FString LastUpscaler;
 	double WarningAge[2] = { -1, -1 };   // of each copter's warning (its blinking), -1 none
+	int32 LastReplayNotice = 0, LastReplaysNotice = 0;   // the counts of the notices shown
 };

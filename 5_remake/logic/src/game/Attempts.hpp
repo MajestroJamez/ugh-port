@@ -45,6 +45,8 @@ private:
     events::Diagnostics& diagnostics_;
 
     world::PlayContext context();
+    /** What lasts into the attempt that starts now (AttemptStart). */
+    AttemptStart carried() const;
 };
 
 }  // namespace ugh::game

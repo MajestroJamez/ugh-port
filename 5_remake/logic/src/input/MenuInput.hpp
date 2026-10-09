@@ -11,6 +11,10 @@ namespace ugh::input {
  */
 class MenuInput {
 public:
+    MenuInput() = default;
+    /** A game resumed at an attempt (game::AttemptStart): `last` was the last key event, none arrived since. */
+    explicit MenuInput(MenuKey last) : last_(last) {}
+
     /** A key event, between two frames. */
     void receive(MenuKey key) {
         last_ = key;

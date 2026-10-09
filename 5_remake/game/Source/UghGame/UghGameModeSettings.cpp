@@ -103,6 +103,15 @@ bool AUghGameMode::HandleVolumeKey(const FKey& Key, EInputEvent Event)
 
 bool AUghGameMode::HandleFrontendKey(const FKey& Key, EInputEvent Event)
 {
+	// F5: the last level's replay saved (not while one is watched); its release is no key of the game either
+	if (Key == EKeys::F5)
+	{
+		if (Event == IE_Pressed && !Simulation.IsWatching())
+		{
+			SaveLastLevel();
+		}
+		return true;
+	}
 	// their releases are not keys of the game either (a caption would take one)
 	if (Key != EKeys::U && Key != EKeys::G && Key != EKeys::F1 && Key != EKeys::Gamepad_FaceButton_Top)
 	{

@@ -17,6 +17,8 @@ public:
     void addEffort(int effort) { effort_ += effort; }
     /** How hard the pilot works the rotor this frame; it lasts until the copter flies again. */
     int effort() const { return effort_; }
+    /** A game resumed at an attempt (game::AttemptStart): the effort the pilot last worked it with. */
+    void resumeEffort(int effort) { effort_ = effort; }
 
     /** The next of its sprites (first .. last) when its counter runs out; more effort runs it out faster. */
     void spin(int firstSprite, int lastSprite);

@@ -53,4 +53,6 @@ endif()
 foreach(replay IN LISTS UGH_REPLAY_FILES)
     get_filename_component(name "${replay}" NAME_WE)
     add_test(NAME "replay.${name}" COMMAND replay_check "${UGH_DATA}" "${replay}")
+    # the replays of a level (.ughr) cut out of it at its attempts, played again
+    add_test(NAME "levels.${name}" COMMAND replay_check --levels "${UGH_DATA}" "${replay}")
 endforeach()

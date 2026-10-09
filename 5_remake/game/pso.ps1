@@ -1,10 +1,10 @@
 # Records the bundled PSO cache, so the packaged game does not stutter when it first draws something:
 #   1. package.ps1 (the cook writes the stable shader keys, *.shk)
 #   2. the packaged game plays by itself without a window (-UghShot, -RenderOffscreen) with -logPSO, in a few runs
-#      (Passes): the menu and its screens, the quick set of levels.ps1 (every mood, rising water, storms, the team),
+#      (Passes): the menu and its screens (the replays too), the quick set of levels.ps1 (every mood, rising water, storms, the team),
 #      the flight to the sea stack in each mood, the bursts of the events by day and at night, the card of a game's
 #      end with a high score, the level selection over the archipelago (its flights, choosing; both modes), a copter
-#      flying fast (its motion blur, the warning over it; at Medium too), the quick
+#      flying fast (its motion blur, the warning over it; at Medium too) and its replay watched, the quick
 #      set, the flights, the bursts and the level selection at the preset Low and a few levels at Medium
 #      (their shaders differ: no volumetric fog, no halo, the sea without reflections)
 #   3. ShaderPipelineCacheTools expands the recorded PSOs with the keys into Build\Windows\PipelineCaches
@@ -26,16 +26,19 @@ $cache = Join-Path $caches "PSO_UghGame_$format.spc"
 $shots = Join-Path $PSScriptRoot 'Saved\Shots\Pso'
 $low = Join-Path $shots 'profile-low.json'
 $medium = Join-Path $shots 'profile-medium.json'
+$replay = Join-Path $shots 'pso-rush.ughr'
 New-UghQualityProfile $low 'Low'
 New-UghQualityProfile $medium 'Medium'
 $Passes = @(
-    "-UghShotMenu -UghShotScreens=settings,controls,scores -UghShotLevels=$UghQuickLevels -UghShotAt=3",
+    "-UghShotMenu -UghShotScreens=settings,controls,scores,replays -UghShotLevels=$UghQuickLevels -UghShotAt=3",
     '-UghShotLevels=1p:1,1p:3,1p:5,1p:6,1p:43 -UghShotIntro=4.4',
     '-UghShotLevels=1p:1,1p:6 -UghShotEffect=all',
     '-UghShotLevels=1p:3 -UghShotEnd -UghShotScore=5000',
     '-UghShotLevels=1p:1,team:1 -UghShotIsles=over:2,over:4,choose,approach:1,arrive',
     # a copter flying fast: its motion blur (FUghMotionBlur), the warning over it (UghWarning); at medium too
-    '-UghShotLevels=1p:1 -UghShotRush=left -UghShotRushY=60 -UghShotRushAfter=0.3,1.2',
+    # (its replay kept: watched in the next run, the banner over the play)
+    "-UghShotLevels=1p:1 -UghShotRush=left -UghShotRushY=60 -UghShotRushAfter=0.3,1.2 `"-UghShotSaveReplay=$replay`"",
+    "`"-UghShotWatch=$replay`" -UghShotAt=1",
     # low and medium (their shaders differ: no volumetric fog, no halo, the sea without reflections, no fire shadows):
     # every mood and the team at low (the notebook's preset), its flights and bursts too; a few levels at medium
     "-UghShotLevels=$UghQuickLevels -UghShotAt=2 `"-UghProfile=$low`"",

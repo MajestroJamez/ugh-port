@@ -8,6 +8,8 @@
 #include "UghBetween.h"
 #include "UghEffects.h"
 #include "UghGameMode.h"
+#include "Misc/Paths.h"
+#include "UghUiParts.h"
 #include "UghShapes.h"
 #include "UghUi.h"
 #include "UghUiState.h"
@@ -109,6 +111,7 @@ void AUghHud::Update(const AUghGameMode& Mode, double Seconds)
 		}
 	}
 	UpdateWarnings(Mode, Seconds);
+	UpdateReplays(Mode, Seconds);
 }
 
 void AUghHud::UpdateWarnings(const AUghGameMode& Mode, double Seconds)
@@ -153,7 +156,7 @@ void AUghHud::UpdateHelp(const AUghGameMode& Mode, double Seconds)
 	// hides it
 	bFirstHelpDone = bFirstHelpDone || PlaySeconds > FirstHelpSeconds || Mode.IsHelpWanted() != bLastHelpWanted;
 	bLastHelpWanted = Mode.IsHelpWanted();
-	const bool bWanted = Mode.IsHelpWanted() || (!bFirstHelpDone && State->Level == 0);
+	const bool bWanted = Mode.IsHelpWanted() || (!bFirstHelpDone && State->Level == 0 && !Mode.IsWatching());
 	State->Help = FMath::Clamp(State->Help + float((bWanted ? 1 : -1) * HelpRate * Seconds), 0.f, 1.f);
 }
 
@@ -257,4 +260,78 @@ void AUghHud::UpdateIsles(const AUghGameMode& Mode)
 	}
 	Shown.IslesNotice = Isles.GetNotice();
 	Shown.IslesNoticeAge = Isles.GetNoticeAge();
+}
+
+void AUghHud::UpdateReplays(const AUghGameMode& Mode, double Seconds)
+{
+	FUghUiState& Shown = *State;
+	const FUghReplays& Replays = Mode.GetReplays();
+	const FUghReplaysMenu& Menu = Mode.GetMenu().GetReplaysMenu();
+	Shown.ReplaysFolder = Replays.GetFolder();
+	Shown.ReplaysCursor = Menu.GetCursor();
+	Shown.ReplaysNoticeAge = Menu.GetNoticeCount() != LastReplaysNotice ? 0 : Shown.ReplaysNoticeAge + Seconds;
+	LastReplaysNotice = Menu.GetNoticeCount();
+	Shown.ReplaysNotice = Menu.GetNotice();
+	Shown.Replays.Reset();
+	if (Shown.MenuScreen == FUghMenu::EScreen::Replays)
+	{
+		static const TCHAR* const Kinds[] = { TEXT("best"), TEXT("saved"), TEXT("imported") };
+		for (const FUghReplays::FEntry& Entry : Replays.GetEntries())
+		{
+			FUghUiReplay& Row = Shown.Replays.AddDefaulted_GetRef();
+			Row.File = FPaths::GetCleanFilename(Entry.File);
+			Row.Kind = Kinds[uint8(Entry.Kind)];
+			if (!Entry.Replay)
+			{
+				Row.Problem = Entry.Problem;
+				continue;
+			}
+			const FUghReplay& Replay = *Entry.Replay;
+			Row.Mode = Replay.Players() == 2 ? TEXT("Team") : TEXT("1p");
+			Row.Level = Replay.Level();
+			Row.Score = UghUiParts::Score(Replay.GetInfo().points).ToString();
+			Row.Time = FUghReplay::Clock(Replay.Seconds());
+			Row.Name = Replay.Name();
+			Row.Date = Replay.Date();
+			Row.Difficulty = FUghMenu::DifficultyName(Replay.GetInfo().start.difficulty);
+			Row.bDone = Replay.IsDone();
+			Row.bOtherLogic = Entry.OtherLogic != 0;
+		}
+	}
+	// the cursor's stone of the level selection: its best replay
+	const FUghIsles& Isles = Mode.GetMenu().GetIsles();
+	const FUghReplays::FEntry* Best = Isles.IsOpen() ? Replays.Best(Isles.GetPlayers(), Isles.GetCursor()) : nullptr;
+	Shown.IslesBest = Best ? FString::Printf(TEXT("%s points in %s"), *UghUiParts::Score(Best->Replay->GetInfo().points).ToString(),
+		*FUghReplay::Clock(Best->Replay->Seconds())) : FString();
+	// the last level's (its next caption, the card of the game's end)
+	const TSharedPtr<FUghReplay>& Last = Mode.GetLastLevel();
+	Shown.LevelEndedLevel = Last ? Last->Level() : -1;
+	Shown.bLevelEndedDone = Last && Last->IsDone();
+	Shown.bLevelEndedBest = Last && Mode.IsLastLevelBest();
+	Shown.LevelEndedSaved = Mode.GetLastLevelSaved();
+	Shown.LevelEnded = !Last ? FString() : FString::Printf(TEXT("Level %d %s: %s points in %s"), Last->Level() + 1,
+		Last->IsDone() ? TEXT("done") : TEXT("played"), *UghUiParts::Score(Last->GetInfo().points).ToString(),
+		*FUghReplay::Clock(Last->Seconds()));
+	// the one watched
+	const TSharedPtr<FUghReplay>& Watched = Mode.GetWatched();
+	Shown.bWatching = Mode.IsWatching() && Watched;
+	if (Shown.bWatching)
+	{
+		const ugh_replay_info& Info = Watched->GetInfo();
+		const FString Name = Watched->Name();
+		Shown.WatchTitle = FString::Printf(TEXT("%s%s, level %d, %s"), Name.IsEmpty() ? TEXT("") : *(Name + TEXT(" · ")),
+			Info.start.players == 2 ? TEXT("team") : TEXT("one player"), Info.start.level + 1,
+			*FString(FUghMenu::DifficultyName(Info.start.difficulty)).ToLower());
+		const double Rate = int32(UGH_LOGIC_FRAMES_PER_1000_S) / 1000.0;
+		Shown.WatchClock = FString::Printf(TEXT("%s / %s"),
+			*FUghReplay::Clock(FMath::Max(Mode.GetSimulation().GetWatchedSteps(), 0) / Rate), *FUghReplay::Clock(Info.steps / Rate));
+	}
+	// what was done with a replay (saved, not saved), as a notice
+	if (Mode.GetReplayNoticeCount() != LastReplayNotice)
+	{
+		LastReplayNotice = Mode.GetReplayNoticeCount();
+		Shown.Notice = Mode.GetReplayNotice();
+		Shown.NoticeLevel = -1;
+		Shown.NoticeAge = 0;
+	}
 }

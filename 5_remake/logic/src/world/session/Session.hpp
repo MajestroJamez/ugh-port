@@ -22,6 +22,8 @@ public:
 
     /** The game starts: Lives::START lives, multiplier 1, score 0. */
     void startGame();
+    /** The game goes on from an attempt (game::AttemptStart) with these lives, points and multiplier. */
+    void resumeGame(int lives, uint32_t points, int multiplier);
 
     int players() const { return players_; }
     data::Difficulty difficulty() const { return difficulty_; }

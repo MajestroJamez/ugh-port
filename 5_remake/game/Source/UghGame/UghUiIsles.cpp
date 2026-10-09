@@ -104,6 +104,17 @@ void SUghIslesScreen::Construct(const FArguments& Args)
 										: TEXT("password ") + State->IslesPassword);
 								})
 						]
+						+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(22, 0, 0, 0)
+						[
+							// its best replay: R watches it
+							SNew(SBox).Visibility_Lambda([this] { return UghUiParts::ShownIf(!State->IslesBest.IsEmpty()); })
+							[
+								UghUiStyle::KeyHint(TEXT("R"), TAttribute<FText>::CreateLambda([this]
+								{
+									return FText::FromString(TEXT("watch the best: ") + State->IslesBest);
+								}))
+							]
+						]
 					]
 				]
 				+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(0, 8, 0, 0)

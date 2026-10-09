@@ -19,7 +19,10 @@ public:
 	/** Reads the sounds of assets/sound and starts the menu's music. */
 	void Load(const FString& SoundDir);
 
-	/** The menu after a game that ended with `Result` (UGH_LOGIC_GAME_OVER, UGH_LOGIC_ALL_LEVELS_DONE). */
+	/**
+	 * The menu after a game that ended with `Result` (UGH_LOGIC_GAME_OVER: a jingle, UGH_LOGIC_ALL_LEVELS_DONE: the
+	 * ending's music, UGH_LOGIC_REPLAY_OVER: a replay watched, the menu's music).
+	 */
 	void OnGameEnd(int32 Result);
 	/** A game starts: the menu's music fades out. */
 	void OnNewGame();

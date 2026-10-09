@@ -11,7 +11,8 @@ struct FUghUiState;
  * energy as a bone gauge; the score with its multiplier), fading with the play; the scores earned rising; the
  * caption of a level as a stone tablet over the flight to the stone (its number carved, its password, a hint to press
  * a key); the help of the keys (F1, and shown at the first level); a setting just changed (the volume, the
- * upscaler). Only shows FUghUiState.
+ * upscaler); after a level done its points and time in the next caption (F5 saves its replay); a replay watched. Only
+ * shows FUghUiState.
  */
 class SUghPlayScreen : public SCompoundWidget
 {
@@ -28,6 +29,8 @@ private:
 	TSharedRef<SWidget> Caption();
 	TSharedRef<SWidget> Help();
 	TSharedRef<SWidget> Notice();
+	/** The replay watched: who flew it, what, the clock, Esc. */
+	TSharedRef<SWidget> Watching();
 
 	TSharedPtr<const FUghUiState> State;
 };

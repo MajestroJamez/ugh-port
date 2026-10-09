@@ -33,20 +33,24 @@
 # separated by commas, one shot each; the name ends in -rush<way><seconds>, e.g. 1p-01-rushright1.2), -Difficulty 0|1|2:
 # the game at easy, medium (the default) or hard, -End: the level given up instead and the card of the game's end in the menu shot (the name ends in
 # -end; -Score <points>: the game ended with so many points, a high score shows its name being typed), -Menu: the
-# title screen first too (menu.png), -Screens settings,controls,scores: those screens of the menu first too
+# title screen first too (menu.png), -Screens settings,controls,scores,replays: those screens of the menu first too
 # (<screen>.png). The game's profile is the defaults, or -Profile <file> (a JSON of FUghProfile);
 # with -Screens scores, -Score or -Isles and without -Profile a sample one with high scores and levels done
 # (Saved\Shots\profile-sample.json: one player up to level 22, the team up to 40). -Isles <moments>: the level
 # selection opened on the way to the level and shot at those moments (separated by commas: over:<seconds> into the
 # flight over the archipelago, choose - the cursor moved onto the level's stone -, approach:<seconds> into the flight to
 # it, arrive at its end; the names end in -isles-over2, -isles-choose, -isles-approach1.5, -isles-arrive), then the
-# level as ever.
+# level as ever. -SaveReplay <file>: the replay of the level played (the logic records it; given up, not done) written
+# to the file (.ughr); -Watch <file>: that replay watched instead of a level, shot -At seconds after its play is fully
+# shown (watch-<mode>-<NN>.png); -Replays <folder>: the replays the menu lists (the screen Replays; the autopilot reads
+# none else and writes none).
 # The shots show the screen (the menu, the HUD) too. All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$Land,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
     [string]$EffectAge = '', [string]$EffectAt = '', [switch]$Wide, [switch]$Shake, [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Rush = '', [string]$RushAfter = '1', [int]$RushY = -1, [int]$Difficulty = -1, [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
     [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '', [string]$Isles = '',
+    [string]$SaveReplay = '', [string]$Watch = '', [string]$Replays = '',
     [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
@@ -90,8 +94,8 @@ $log = Join-Path $PSScriptRoot 'Saved\Logs\UghShot.log'
 $screenShots = @()
 if ($Screens) {
     foreach ($screen in $Screens.Split(',')) {
-        if (@('settings', 'controls', 'scores') -notcontains $screen) {
-            Write-Host "-Screens wants settings, controls, scores separated by commas" -ForegroundColor Red; exit 1
+        if (@('settings', 'controls', 'scores', 'replays') -notcontains $screen) {
+            Write-Host "-Screens wants settings, controls, scores, replays separated by commas" -ForegroundColor Red; exit 1
         }
         $screenShots += Join-Path $folder "$screen.png"
     }
@@ -159,10 +163,17 @@ if ($Score -gt 0) { $arguments += " -UghShotScore=$Score" }
 if ($Screens) { $arguments += " -UghShotScreens=$Screens" }
 if ($Isles) { $arguments += " -UghShotIsles=$Isles" }
 if ($Profile) { $arguments += " `"-UghProfile=$Profile`"" }
+if ($SaveReplay) {
+    $SaveReplay = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($SaveReplay)
+    if (Test-Path $SaveReplay) { Remove-Item $SaveReplay }   # (written anew)
+    $arguments += " `"-UghShotSaveReplay=$SaveReplay`""
+}
+if ($Watch) { $Watch = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Watch); $arguments += " `"-UghShotWatch=$Watch`"" }
+if ($Replays) { $Replays = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Replays); $arguments += " `"-UghReplays=$Replays`"" }
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
 # the shots the game says it took (one a burst), else the one
 $shots = @($shot)
-if (($Effect -or $Fling -or $Dunk -or $Drop -or $Rush -or $Isles) -and (Test-Path $log)) {
+if (($Effect -or $Fling -or $Dunk -or $Drop -or $Rush -or $Isles -or $Watch) -and (Test-Path $log)) {
     $shots = @(Select-String -Path $log -Pattern 'UGH shot (.+\.png)$' | ForEach-Object { $_.Matches[0].Groups[1].Value })
 }
 if ($Menu) { $shots += $menuShot }
@@ -178,5 +189,10 @@ if ($code -ne 0 -or $shots.Count -lt $wanted -or $missing.Count -gt 0) {
     Write-Host "FAILED: exit code $code (-1: no end in $TimeoutSeconds s), $($shots.Count) screenshots, missing: $missing, see $log" -ForegroundColor Red
     exit 1
 }
+if ($SaveReplay -and -not (Test-Path $SaveReplay)) {
+    Write-Host "FAILED: no replay $SaveReplay, see $log" -ForegroundColor Red
+    exit 1
+}
 foreach ($each in $shots) { Write-Host "OK: $each" -ForegroundColor Green }
+if ($SaveReplay) { Write-Host "OK: $SaveReplay" -ForegroundColor Green }
 exit 0

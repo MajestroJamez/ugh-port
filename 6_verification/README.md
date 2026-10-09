@@ -12,7 +12,8 @@ powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\6_ve
 ```
 
 It builds the logic (`add_subdirectory(../5_remake/logic)`), the fields of the replays, the keyboard and the replay
-check, then runs CTest: the unit tests of the logic, the tests of the keyboard and one check per golden replay (161).
+check, then runs CTest: the unit tests of the logic, the tests of the keyboard, one check per golden replay (161) and one
+of the replays of a level cut out of it (161, `levels.*`).
 `-NoTest` only builds. It needs the game data `assets\logic\ugh-data.ugd` (`.\gradlew.bat :extractor:run`) and the replays
 `4_test_data\verify\build\replays` (`.\gradlew.bat :verify:replays`). One replay by hand, from this folder:
 
@@ -20,7 +21,8 @@ check, then runs CTest: the unit tests of the logic, the tests of the keyboard a
 build\replay_check.exe ..\assets\logic\ugh-data.ugd ..\4_test_data\verify\build\replays\1p-L01-cheat.ugr
 ```
 
-(`--continue` counts all mismatches instead of stopping at the first.)
+(`--continue` counts all mismatches instead of stopping at the first; `--levels` checks the replays of a level instead,
+below.)
 
 ## What is in it
 
@@ -29,7 +31,7 @@ build\replay_check.exe ..\assets\logic\ugh-data.ugd ..\4_test_data\verify\build\
 | `replay/` | library `ugh_logic_replay`: the semantic state of the game as the fields of `UGR 1` (`StateWriter`, one writer per entity, `FieldRules` when a field is defined, `FieldTable` its value); it only reads the game |
 | `keyboard/` | library `ugh_pc_keyboard`: the PC keyboard of the original (Adapter). `KeyFile` reads the `key` records of the data (the logic skips them), `PcKeyboard` turns the scancodes of a replay into the pilots' keys and, before a frame, a menu key when the last scancode changed |
 | `tests/` | `verification_tests`: the tests of the keyboard |
-| `check/` | library `ugh_replay_check`: `ReplayCheck` reads a replay tick by tick (`ReplayFile`), feeds its keys and the test pilot's settings to the logic and compares the fields into a `ReplayReport`; also the replay tests inside Unreal Engine (`5_remake/game`) |
+| `check/` | library `ugh_replay_check`: `ReplayCheck` reads a replay tick by tick (`ReplayFile`), feeds its keys and the test pilot's settings to the logic and compares the fields into a `ReplayReport`; also the replay tests inside Unreal Engine (`5_remake/game`). `LevelReplayCheck` (`replay_check --levels`, CTest `levels.<replay>`): the logic's replays of a level (`.ughr`, `docs/replay-format.md`) against the golden replay - played with the logic's recorder listening (`ReplayCheck::Observer`), every attempt after the test pilot's last intervention cut out as a replay of its own, written as text and read back, played on a game resumed at its start: tick by tick the golden state (67 replays of attempts in 48 golden replays, both modes, every difficulty, a level going on from the one before) |
 | `tools/replay_check/` | `replay_check`: the check of the replays given on its command line |
 
 The format of the replays and the table of fields: `docs/rewrite-design.md`, chap. 9.

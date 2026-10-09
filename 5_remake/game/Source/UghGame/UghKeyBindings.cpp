@@ -84,7 +84,8 @@ FUghKeyBindings::EBound FUghKeyBindings::Bind(const FPlace& Place, const FKey& K
 
 bool FUghKeyBindings::IsReserved(const FKey& Key)
 {
-	static const FKey Game[] = { EKeys::Escape, EKeys::P, EKeys::F1, EKeys::U, EKeys::G, EKeys::PageUp, EKeys::PageDown };
+	static const FKey Game[] = { EKeys::Escape, EKeys::P, EKeys::F1, EKeys::F5, EKeys::U, EKeys::G, EKeys::PageUp,
+		EKeys::PageDown };
 	return !Key.IsValid() || Key.IsMouseButton() || Key.IsGamepadKey() || Key.IsTouch() || Key.IsAxis1D() ||
 		Key.IsAxis2D() || Key.IsAxis3D() || Algo::Find(Game, Key) != nullptr;
 }

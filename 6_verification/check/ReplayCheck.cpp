@@ -21,10 +21,12 @@ void ReplayCheck::run(const std::string& path) {
     while (file.next(tick)) {
         if (!started) {
             if (!start(game, tick)) return;
+            if (options_.observer) options_.observer->started(game);
             started = true;
         } else {
             apply(game, keyboard, previous);
             game::GameResult result = game.step();
+            if (options_.observer) options_.observer->stepped(game, result, tick.number);
             if (result != game::GameResult::Continue) {
                 report_.problem(tick.number, "the logic ended the game");
                 return;
@@ -99,15 +101,27 @@ bool ReplayCheck::compare(const game::Game& game, const Tick& tick) {
 
 /** After the tick: the test pilot's interventions, then the scancodes. */
 void ReplayCheck::apply(game::Game& game, keyboard::PcKeyboard& keyboard, const Tick& tick) {
-    if (!tick.inject.empty()) intervene(game, tick);
+    Observer* observer = options_.observer;
+    if (!tick.inject.empty()) {
+        intervene(game, tick);
+        if (observer) observer->intervened(tick.number);
+    }
     std::string keys = std::to_string(tick.number) + ":";
     for (int code : tick.scancodes) {
-        keyboard.deliver(static_cast<uint8_t>(code), game);
+        // (keyboard.deliver, seen)
+        if (const keyboard::KeyBinding::Action* action = keyboard.match(static_cast<uint8_t>(code))) {
+            game.key(action->player, action->key, action->press);
+            if (observer) observer->key(action->player, action->key, action->press);
+        }
         char hex[4];
         std::snprintf(hex, sizeof hex, "%02x", code);
         keys += std::string(" ") + hex;
     }
-    keyboard.beforeFrame(game);
+    // (keyboard.beforeFrame, seen)
+    if (std::optional<input::MenuKey> menuKey = keyboard.takeMenuKey()) {
+        game.menuKey(*menuKey);
+        if (observer) observer->menuKey(*menuKey);
+    }
     recent_.push_back(keys);
     if (recent_.size() > RECENT_TICKS) recent_.pop_front();
 }
