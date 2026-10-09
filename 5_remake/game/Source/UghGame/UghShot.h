@@ -9,6 +9,7 @@
 class AUghGameMode;
 class FUghMenu;
 class FUghPasswords;
+class FUghReplay;
 struct FUghGameEnd;
 struct FUghHighScores;
 
@@ -73,7 +74,8 @@ struct FUghHighScores;
  * -UghReplays, never written. -UghShotSaveReplay=<file> writes the replay of each level played (the logic's, when it
  * ended: given up) to the file (shot.ps1 -SaveReplay: a replay to watch, to show as a ghost). -UghShotWatch=<file>
  * watches that replay instead of playing levels and saves <folder>/watch-<mode>-<NN>.png `At` seconds after its play is
- * fully shown, then quits.
+ * fully shown, then quits. -UghShotGhost=<file>: the ghost (FUghGhost) flies that replay in its level and mode instead
+ * of the best one kept.
  *
  * The frame times (perf.ps1): with the frame rate of a level's hover it logs its frames' median, 1 % low (the frame
  * rate of the slowest 1 % of its frames) and slowest frame, and the slowest frame and the hitches (frames over
@@ -122,6 +124,8 @@ public:
 	bool WantsShake() const { return bShake; }
 	/** Where the replay of each level the autopilot played goes (-UghShotSaveReplay=<file>; the last one stays), empty none. */
 	const FString& GetSaveReplay() const { return SaveReplay; }
+	/** The replay the ghost flies in the level of its mode (-UghShotGhost=<file>), none: the store's best. */
+	TSharedPtr<FUghReplay> LoadGhost() const;
 
 	/** The level selection is shot (-UghShotIsles): the menu opens it. */
 	bool WantsIsles() const { return !IslesShots.IsEmpty(); }
@@ -268,6 +272,7 @@ private:
 	TArray<FString> Screens;   // -UghShotScreens still to be shot
 	FString SaveReplay;        // -UghShotSaveReplay
 	FString WatchFile;         // -UghShotWatch
+	FString GhostFile;         // -UghShotGhost
 	FString WatchName;         // its shot's
 	bool bWatchStarted = false, bWatchShot = false;
 	FString Suffix;           // of the shots' names

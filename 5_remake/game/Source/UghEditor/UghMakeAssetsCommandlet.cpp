@@ -4,6 +4,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialExpressionBumpOffset.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
+#include "Materials/MaterialExpressionEyeAdaptationInverse.h"
 #include "Materials/MaterialExpressionNoise.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
@@ -105,7 +106,7 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	};
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
-		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Sprite, &MakeSprite },
+		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Sprite, &MakeSprite }, { UghMaterials::Ghost, &MakeGhost },
 		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky },
 		{ UghMaterials::Rain, &MakeRain }, { UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop },
 		{ UghMaterials::Flow, &MakeFlow }, { UghMaterials::Mist, &MakeMist },
@@ -188,6 +189,34 @@ bool UUghMakeAssetsCommandlet::MakeSprite(UMaterial* Material)
 	UMaterialExpression* Art = ArtTexture(Material);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("RGB"), MP_EmissiveColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Art, TEXT("A"), MP_OpacityMask);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeGhost(UMaterial* Material)
+{
+	Material->BlendMode = BLEND_Translucent;
+	Material->SetShadingModel(MSM_Unlit);
+	Material->TwoSided = false;
+	// the rim (seen edge on) glows, the middle faint: a ghost's outline
+	UMaterialExpression* Rim = Custom(Material,
+		TEXT("return pow(1 - saturate(abs(dot(normalize(Normal), normalize(ToCamera)))), 2.2);"), CMOT_Float1,
+		{ { TEXT("Normal"), Add<UMaterialExpressionVertexNormalWS>(Material) },
+			{ TEXT("ToCamera"), Add<UMaterialExpressionCameraVectorWS>(Material) } });
+	UMaterialExpression* Glow = Custom(Material, TEXT("return Color * (0.3 + 1.7 * Rim);"), CMOT_Float3,
+		{ { TEXT("Color"), Vector(Material, UghMaterials::ColorParameter, FLinearColor(0.55f, 0.85f, 1.f)) },
+			{ TEXT("Rim"), Rim } });
+	UMaterialExpression* Opacity = Custom(Material, TEXT("return Opacity * (0.3 + 0.7 * Rim);"), CMOT_Float1,
+		{ { UghMaterials::OpacityParameter, Scalar(Material, UghMaterials::OpacityParameter, 0.55f) }, { TEXT("Rim"), Rim } });
+	UMaterialExpressionEyeAdaptationInverse* Exposed = Add<UMaterialExpressionEyeAdaptationInverse>(Material);
+	if (!Rim || !Glow || !Opacity || !Exposed)
+	{
+		return false;
+	}
+	// as bright as the exposure shows it, by day and at night alike
+	Exposed->LightValueInput.Connect(0, Glow);
+	Exposed->AlphaInput.Connect(0, Constant(Material, 1.f));
+	UMaterialEditingLibrary::ConnectMaterialProperty(Exposed, TEXT(""), MP_EmissiveColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Opacity, TEXT(""), MP_Opacity);
 	return true;
 }
 

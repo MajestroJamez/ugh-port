@@ -4,7 +4,8 @@
 #      (Passes): the menu and its screens (the replays too), the quick set of levels.ps1 (every mood, rising water, storms, the team),
 #      the flight to the sea stack in each mood, the bursts of the events by day and at night, the card of a game's
 #      end with a high score, the level selection over the archipelago (its flights, choosing; both modes), a copter
-#      flying fast (its motion blur, the warning over it; at Medium too) and its replay watched, the quick
+#      flying fast (its motion blur, the warning over it; at Medium too), its replay watched and flown by the ghost
+#      (at Low too), the quick
 #      set, the flights, the bursts and the level selection at the preset Low and a few levels at Medium
 #      (their shaders differ: no volumetric fog, no halo, the sea without reflections)
 #   3. ShaderPipelineCacheTools expands the recorded PSOs with the keys into Build\Windows\PipelineCaches
@@ -39,6 +40,9 @@ $Passes = @(
     # (its replay kept: watched in the next run, the banner over the play)
     "-UghShotLevels=1p:1 -UghShotRush=left -UghShotRushY=60 -UghShotRushAfter=0.3,1.2 `"-UghShotSaveReplay=$replay`"",
     "`"-UghShotWatch=$replay`" -UghShotAt=1",
+    # the ghost of the best run flying that replay (its translucent material), at low too
+    "-UghShotLevels=1p:1 `"-UghShotGhost=$replay`" -UghShotAt=2",
+    "-UghShotLevels=1p:1 `"-UghShotGhost=$replay`" -UghShotAt=2 `"-UghProfile=$low`"",
     # low and medium (their shaders differ: no volumetric fog, no halo, the sea without reflections, no fire shadows):
     # every mood and the team at low (the notebook's preset), its flights and bursts too; a few levels at medium
     "-UghShotLevels=$UghQuickLevels -UghShotAt=2 `"-UghProfile=$low`"",

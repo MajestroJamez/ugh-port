@@ -48,6 +48,7 @@ bool FUghShot::Configure()
 		WatchFile = FPaths::ConvertRelativePathToFull(WatchFile);
 	}
 	SaveReplay = SaveReplay.IsEmpty() ? SaveReplay : FPaths::ConvertRelativePathToFull(SaveReplay);
+	FParse::Value(CommandLine, TEXT("-UghShotGhost="), GhostFile);
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
 	bLand = FParse::Param(CommandLine, TEXT("UghShotLand"));
@@ -970,4 +971,17 @@ void FUghShot::Hold(AUghGameMode& Mode, int32 LogicKey, bool bHeld)
 		Mode.HandleKey(Mode.GetProfile().Settings.Keys.KeyOf(0, LogicKey), bHeld ? IE_Pressed : IE_Released);
 		bHolding = bHeld;
 	}
+}
+
+TSharedPtr<FUghReplay> FUghShot::LoadGhost() const
+{
+	if (GhostFile.IsEmpty())
+	{
+		return nullptr;
+	}
+	TArray<uint8> Bytes;
+	FString Error = TEXT("cannot be read");
+	TSharedPtr<FUghReplay> Replay = FFileHelper::LoadFileToArray(Bytes, *GhostFile) ? FUghReplay::Read(Bytes, Error) : nullptr;
+	UE_CLOG(!Replay, LogTemp, Error, TEXT("UGH shot: no ghost %s: %s"), *GhostFile, *Error);
+	return Replay;
 }

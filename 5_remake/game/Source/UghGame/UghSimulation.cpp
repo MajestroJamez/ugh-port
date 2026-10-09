@@ -47,6 +47,7 @@ bool FUghSimulation::NewGame(const FUghGameChoice& Choice)
 	bWatching = false;
 	RecordedLevel = -1;
 	Ended.Reset();
+	PlaySteps = 0;
 	ugh_logic_get_view(Logic, &CurrentView);
 	PreviousView = CurrentView;
 	Waiting = 0;
@@ -109,6 +110,7 @@ void FUghSimulation::Advance(double Seconds)
 		Result = Stepped;
 		PreviousView = CurrentView;
 		CurrentView = View;
+		PlaySteps = View.phase == UGH_LOGIC_PHASE_PLAY ? PlaySteps + 1 : 0;
 		AfterStep();
 		if (++Steps == MaxStepsPerFrame)
 		{
@@ -158,6 +160,7 @@ bool FUghSimulation::Watch(const FUghReplay& Replay)
 	WatchedLevel = Replay.Level();
 	RecordedLevel = -1;
 	Ended.Reset();
+	PlaySteps = 0;
 	Result = UGH_LOGIC_CONTINUE;
 	ugh_logic_get_view(Logic, &CurrentView);
 	PreviousView = CurrentView;

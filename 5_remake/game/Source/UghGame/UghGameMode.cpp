@@ -23,6 +23,7 @@
 #include "UghFalls.h"
 #include "UghFigures.h"
 #include "UghFringe.h"
+#include "UghGhosts.h"
 #include "UghGraphics.h"
 #include "UghGround.h"
 #include "UghHud.h"
@@ -125,6 +126,12 @@ void AUghGameMode::StartPlay()
 		Replays.Open(FUghReplays::DefaultFolder(ProfilePath), Simulation.GetLogic(), !bShooting);
 	}
 	Menu.SetReplays(&Replays, &IUghClipboard::System());
+	FString GhostProblem;
+	if (!Ghost.Load(Assets / TEXT("logic/ugh-data.ugd"), GhostProblem))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UGH no ghost: %s"), *GhostProblem);
+	}
+	ShotGhost = bShooting ? Shot.LoadGhost() : nullptr;
 	FigureActions.Load(Simulation.GetLogic(), Sprites.Count());
 	Figures->LoadBubbles(Simulation.GetLogic(), Sprites.Count());
 	Flings.Load(Simulation.GetLogic(), &Sprites);
@@ -156,6 +163,7 @@ void AUghGameMode::BuildStage()
 	Fringe = World->SpawnActor<AUghFringe>();
 	Rain = World->SpawnActor<AUghRain>();
 	Copters = World->SpawnActor<AUghCopters>();
+	Ghosts = World->SpawnActor<AUghGhosts>();
 	Figures = World->SpawnActor<AUghFigures>();
 	Effects = World->SpawnActor<AUghEffects>();
 	Campfire = World->SpawnActor<AUghCampfire>();
@@ -202,6 +210,10 @@ void AUghGameMode::Tick(float DeltaSeconds)
 		{
 			OpenMenu();
 		}
+	}
+	{
+		FSlowPart Part{ TEXT("ghost") };
+		UpdateGhost();
 	}
 	{
 		FSlowPart Part{ TEXT("frame") };
@@ -290,6 +302,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	{
 		FSlowPart Part{ TEXT("copters") };
 		Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders, &Dunks);
+		Ghosts->Show(&Ghost, Simulation.Alpha(), Seconds);
 	}
 	{
 		FSlowPart Part{ TEXT("figures") };

@@ -72,3 +72,22 @@ bool AUghGameMode::StartWatching(const TSharedPtr<FUghReplay>& Replay)
 		ugh_replay_compare_logic(Replay->GetHandle(), Simulation.GetLogic()) ? TEXT(" (made by another version)") : TEXT(""));
 	return true;
 }
+
+void AUghGameMode::UpdateGhost()
+{
+	TSharedPtr<FUghReplay> Wanted;
+	const ugh_logic_view& View = Simulation.GetCurrent();
+	if (!bInMenu && !Simulation.IsWatching() && View.level_id >= 0)
+	{
+		const bool bOn = Profile.Settings.bGhost;
+		Wanted = !ShotGhost ? FUghGhost::Of(Replays, Playing.Players, View.level, bOn)
+			: bOn && ShotGhost->Players() == Playing.Players && ShotGhost->Level() == View.level ? ShotGhost : nullptr;
+	}
+	if (Wanted != Ghost.GetReplay())
+	{
+		UE_CLOG(Wanted.IsValid(), LogTemp, Display, TEXT("UGH ghost of level %d: %u points in %s"), View.level + 1,
+			Wanted->GetInfo().points, *FUghReplay::Clock(Wanted->Seconds()));
+		Ghost.SetReplay(Wanted);
+	}
+	Ghost.Follow(bInMenu ? 0 : Simulation.GetPlaySteps());
+}

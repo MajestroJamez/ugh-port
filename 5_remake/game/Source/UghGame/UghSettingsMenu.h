@@ -24,18 +24,18 @@ struct FUghDisplayOptions
 /**
  * The screen Settings of the menu (FUghMenu): a row each - the graphics (the quality, the upscaler, the frame
  * generation, the resolution, the window), the sound (the volume, the music, the effects), the flight to the stone
- * at a level's start, the camera shaken by an impact, the keys (the screen Controls), back. Up and Down choose a row,
- * Left and Right change it (Enter too, forwards), Enter on Controls opens it, Esc (a gamepad's B) or Enter on Back goes
- * back. Only the presses count; UghUi shows it.
+ * at a level's start, the camera shaken by an impact, the ghost of the best run, the keys (the screen Controls), back.
+ * Up and Down choose a row, Left and Right change it (Enter too, forwards), Enter on Controls opens it, Esc (a
+ * gamepad's B) or Enter on Back goes back. Only the presses count; UghUi shows it.
  */
 class FUghSettingsMenu
 {
 public:
 	enum class ERow : uint8
 	{
-		Quality, Upscaler, FrameGeneration, Resolution, Window, Volume, Music, Effects, Intro, Shake, Controls, Back
+		Quality, Upscaler, FrameGeneration, Resolution, Window, Volume, Music, Effects, Intro, Shake, Ghost, Controls, Back
 	};
-	static constexpr int32 RowCount = 12;
+	static constexpr int32 RowCount = 13;
 	/** The rows of the parts of the screen begin at these: the graphics, the sound, the game. */
 	static constexpr ERow Parts[] = { ERow::Quality, ERow::Volume, ERow::Intro };
 

@@ -195,6 +195,11 @@ namespace UghMaterials
 	 */
 	inline const TCHAR* Sprite = TEXT("/Game/Generated/M_UghSprite");
 	/**
+	 * The ghost of the best run (AUghGhosts): see-through and unlit (no light, no shadow, cheap at every quality), as
+	 * bright as the exposure shows Color, its rim glowing more than its middle, Opacity at most.
+	 */
+	inline const TCHAR* Ghost = TEXT("/Game/Generated/M_UghGhost");
+	/**
 	 * A PBR surface of an imported texture set (UghAssets: its instance MI_<id>): texture parameters BaseColor, Normal,
 	 * Roughness (its green channel), Occlusion (its red channel: a packed AO/roughness/metal map serves both) and
 	 * Height (its red channel: the relief, which shifts the others with the view - parallax), the scalar Tiling

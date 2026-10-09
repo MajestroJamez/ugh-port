@@ -8,6 +8,7 @@
 #include "UghDunk.h"
 #include "UghFigureActions.h"
 #include "UghFling.h"
+#include "UghGhost.h"
 #include "UghImpacts.h"
 #include "UghIntro.h"
 #include "UghLevelArt.h"
@@ -33,6 +34,7 @@ class AUghEffects;
 class AUghFalls;
 class AUghFigures;
 class AUghFringe;
+class AUghGhosts;
 class AUghRain;
 class AUghScenery;
 class AUghSigns;
@@ -55,7 +57,8 @@ class AUghWater;
  * volumes) and saved whenever it changes. The logic records each level played (FUghSimulation::TakeEndedLevel): the
  * best of each level and mode is kept (FUghReplays, the folder Replays next to the profile), F5 saves the last level's
  * (in its next caption, on the card of the game's end); a replay chosen in the menu (its screen Replays, R on a stone of
- * the level selection) is watched as the game it was (FUghSimulation::Watch: Esc stops it). Keys of the frontend: in a
+ * the level selection) is watched as the game it was (FUghSimulation::Watch: Esc stops it); the best flies as a ghost
+ * beside the player (FUghGhost: a logic of its own in step with the play, AUghGhosts). Keys of the frontend: in a
  * game U the next upscaler, G the frame generation, F1 (a gamepad's Y) the help of the keys, F5 the last level's replay
  * saved; everywhere Page Up and Page Down the volume.
  *
@@ -114,6 +117,9 @@ public:
 	/** A replay is watched (not a game played). */
 	bool IsWatching() const { return !bInMenu && Simulation.IsWatching(); }
 	const TSharedPtr<FUghReplay>& GetWatched() const { return Watched; }
+	/** The ghost of the best run, and its copters shown. */
+	const FUghGhost& GetGhost() const { return Ghost; }
+	const AUghGhosts* GetGhosts() const { return Ghosts; }
 	/**
 	 * The replay of the last level that ended in the game played (or just over): its caption after it, the card of the
 	 * game's end offer to save it (F5). Whether it became the best of its level, the file it was saved to (empty: not).
@@ -171,6 +177,11 @@ private:
 	/** F5: the last level's replay saved into the replays' folder. */
 	void SaveLastLevel();
 	void SayReplay(const FString& Text);
+	/**
+	 * The ghost of the best run (Settings > Ghost): the replay of the level played (its best, of the same logic; the
+	 * autopilot's -UghShotGhost), none in the menu or while a replay is watched; in step with the game's play.
+	 */
+	void UpdateGhost();
 	/** A new game as chosen (the menu's PLAY, the level selection's stone); `Key` started it (its release is no key). */
 	void StartGame(const FUghGameChoice& Choice, const FKey& Key);
 	void Quit();
@@ -192,6 +203,8 @@ private:
 	FUghMenu Menu{ Passwords, Profile, DisplayOptions };
 	FUghReplays Replays;
 	TSharedPtr<FUghReplay> Watched;     // the replay watched
+	FUghGhost Ghost;                    // of the best run of the level played
+	TSharedPtr<FUghReplay> ShotGhost;   // -UghShotGhost's replay
 	TSharedPtr<FUghReplay> LastLevel;   // the last level that ended in the game played
 	bool bLastLevelBest = false;
 	FString LastLevelSaved;
@@ -230,6 +243,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghFringe> Fringe;
 	UPROPERTY() TObjectPtr<AUghRain> Rain;
 	UPROPERTY() TObjectPtr<AUghCopters> Copters;
+	UPROPERTY() TObjectPtr<AUghGhosts> Ghosts;
 	UPROPERTY() TObjectPtr<AUghFigures> Figures;
 	UPROPERTY() TObjectPtr<AUghEffects> Effects;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;

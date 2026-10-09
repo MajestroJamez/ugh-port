@@ -43,14 +43,15 @@
 # level as ever. -SaveReplay <file>: the replay of the level played (the logic records it; given up, not done) written
 # to the file (.ughr); -Watch <file>: that replay watched instead of a level, shot -At seconds after its play is fully
 # shown (watch-<mode>-<NN>.png); -Replays <folder>: the replays the menu lists (the screen Replays; the autopilot reads
-# none else and writes none).
+# none else and writes none); -Ghost <file>: the ghost of the best run flies that replay (its level and mode) instead
+# of the best one kept.
 # The shots show the screen (the menu, the HUD) too. All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$Land,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
     [string]$EffectAge = '', [string]$EffectAt = '', [switch]$Wide, [switch]$Shake, [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Rush = '', [string]$RushAfter = '1', [int]$RushY = -1, [int]$Difficulty = -1, [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
     [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '', [string]$Isles = '',
-    [string]$SaveReplay = '', [string]$Watch = '', [string]$Replays = '',
+    [string]$SaveReplay = '', [string]$Watch = '', [string]$Replays = '', [string]$Ghost = '',
     [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
@@ -169,6 +170,7 @@ if ($SaveReplay) {
     $arguments += " `"-UghShotSaveReplay=$SaveReplay`""
 }
 if ($Watch) { $Watch = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Watch); $arguments += " `"-UghShotWatch=$Watch`"" }
+if ($Ghost) { $Ghost = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Ghost); $arguments += " `"-UghShotGhost=$Ghost`"" }
 if ($Replays) { $Replays = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Replays); $arguments += " `"-UghReplays=$Replays`"" }
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
 # the shots the game says it took (one a burst), else the one

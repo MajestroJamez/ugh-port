@@ -53,6 +53,8 @@ public:
 	 * watching), taken: none when no level ended.
 	 */
 	TSharedPtr<FUghReplay> TakeEndedLevel() { return MoveTemp(Ended); }
+	/** The steps of the play of the attempt being played so far (its first: 1); 0 out of the play. */
+	int32 GetPlaySteps() const { return PlaySteps; }
 
 	virtual void Key(int32 Player, int32 LogicKey, bool bPressed) override;
 	virtual void MenuKey(int32 LogicMenuKey) override;
@@ -86,6 +88,7 @@ private:
 	bool bWatching = false;
 	int32 WatchedLevel = -1;     // the level of the replay watched
 	int32 RecordedLevel = -1;    // the level whose attempt the game plays (its replay is recorded), -1 none
+	int32 PlaySteps = 0;
 	TSharedPtr<FUghReplay> Ended;
 
 	/** After a step: a level that ended (its replay to take), a replay watched over. */

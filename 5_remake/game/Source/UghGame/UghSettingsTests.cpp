@@ -52,6 +52,7 @@ bool FUghProfileTest::RunTest(const FString& Parameters)
 	Settings.Effects = 90;
 	Settings.bIntro = false;
 	Settings.bShake = false;
+	Settings.bGhost = false;
 	Settings.Keys.Bind({ 0, UGH_LOGIC_KEY_UP, 0 }, EKeys::K);
 	Settings.Keys.Bind({ 1, UGH_LOGIC_KEY_FIRE, 1 }, EKeys::RightShift);
 	Settings.Keys.Clear({ 0, UGH_LOGIC_KEY_FIRE, 1 });
@@ -83,6 +84,7 @@ bool FUghProfileTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("an odd file read"), Loaded.Load(Odd, Error));
 	const FUghKeyBindings Defaults = FUghKeyBindings::Defaults();
 	TestTrue(TEXT("an older profile without the camera's shake: on"), Loaded.Settings.bShake);
+	TestTrue(TEXT("an older profile without the ghost: on"), Loaded.Settings.bGhost);
 	TestTrue(TEXT("odd values: the defaults"), Loaded.Settings.Quality == 3 && Loaded.Settings.Volume == 50 &&
 		Loaded.Settings.FrameGeneration == 0 && Loaded.Settings.Keys.Get({ 0, UGH_LOGIC_KEY_UP, 0 }) == EKeys::Up &&
 		!Loaded.Settings.Keys.Get({ 0, UGH_LOGIC_KEY_FIRE, 0 }).IsValid() &&
@@ -150,6 +152,10 @@ bool FUghSettingsMenuTest::RunTest(const FString& Parameters)
 		FString(TEXT("On")));
 	TestTrue(TEXT("Right turns the camera's shake off"),
 		Menu.HandleKey(EKeys::Right, Settings, Options) == EResult::Changed && !Settings.bShake);
+	Go(ERow::Ghost);
+	TestEqual(TEXT("the ghost: on"), FUghSettingsMenu::ValueOf(ERow::Ghost, Settings, Options), FString(TEXT("On")));
+	TestTrue(TEXT("Left turns the ghost off"),
+		Menu.HandleKey(EKeys::Left, Settings, Options) == EResult::Changed && !Settings.bGhost);
 	Go(ERow::Controls);
 	TestTrue(TEXT("Enter on Controls opens them"), Menu.HandleKey(EKeys::Enter, Settings, Options) == EResult::Controls);
 	TestTrue(TEXT("a gamepad's B goes back"), Menu.HandleKey(FUghControls::BackKey(), Settings, Options) == EResult::Back);

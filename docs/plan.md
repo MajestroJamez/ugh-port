@@ -1869,3 +1869,17 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   `6_verification` (324) a 207 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch beze změny, fps medián 19, 1 % low 14
   (editor, Epic; 29c 13 / 9 na zahřátém). Snímek titulku po dohraném levelu chybí (autopilot level nedohraje). Balíček
   nepřebalen. Další: **krok 29g**.
+- 2026-10-09: krok 29g hotový - duch nejlepšího průletu (README hry). `FUghGhost`: nejlepší replay levelu a režimu
+  (`FUghGhost::Of`: jen stejná logika a data; vypnuto v Settings > Ghost of the best - `ghost` v profilu, starý profil
+  zapnuto; ne v menu ani při sledování replaye) přehrává druhá instance logiky, hry se nedotkne: mezi hrami (titulek,
+  černá) se po 2 ms za snímek dopočítá na první krok hry posledního pokusu replaye (ten, který level dohrál), od začátku
+  hry krok za krokem s hrou (`FUghSimulation::GetPlaySteps`); po konci jeho průletu zmizí, s dalším pokusem znovu.
+  `AUghGhosts`: jen tělo a točící se vrtule vrtulníku (bez pilota, cestujících, řetězu), materiál `M_UghGhost`
+  (průsvitný, unlit, světle modrý, svítící okraj, jas přes expozici - ve dne i v noci stejný), bez stínu, Lumenu,
+  distance fields a ray tracingu - levné i na Low. Test `Ugh.Ghost` (replay hry obou režimů, dvě nové hry: duch
+  připraven před hrou, jeho vrtulníky přesně na pozicích replaye v posledním pokusu každý krok, hra s duchem stejná jako
+  bez něj; vypnuto / bez nejlepšího / jiná data = žádný), `Ugh.Settings.SaveLoad` a `.Menu` rozšířené. `shot.ps1 -Ghost
+  <file>`, `pso.ps1` duch (Epic, Low). Snímky `Saved\Shots\29g` (`1p-01-ghost.png`, `1p-01-ghost-closeup.png`,
+  `1p-06-ghost.png` v noci, `settings.png`). CTest logiky, `6_verification` (324) a 208 testů v UE zelené.
+  `levels.ps1 -Quick` 0 chyb, arch beze změny (duch tam není), fps medián 15, 1 % low 11, hned znovu 11 / 9 - notebook
+  se hřeje (29f ve stejném sezení 19 / 14). Balíček nepřebalen. Další: **krok 29d**.
