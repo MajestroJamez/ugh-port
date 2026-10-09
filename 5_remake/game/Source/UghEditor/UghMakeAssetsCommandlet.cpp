@@ -6,6 +6,9 @@
 #include "Materials/MaterialExpressionCameraVectorWS.h"
 #include "Materials/MaterialExpressionEyeAdaptationInverse.h"
 #include "Materials/MaterialExpressionNoise.h"
+#include "Materials/MaterialExpressionPixelDepth.h"
+#include "Materials/MaterialExpressionSceneDepth.h"
+#include "Materials/MaterialExpressionTime.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
@@ -107,6 +110,7 @@ int32 UUghMakeAssetsCommandlet::Main(const FString& Params)
 	const FRecipe Recipes[] = {
 		{ UghMaterials::Clay, &MakeClay }, { UghMaterials::Rock, &MakeRock }, { UghMaterials::Cliff, &MakeCliff },
 		{ UghMaterials::Turf, &MakeTurf }, { UghMaterials::CopterShadow, &MakeCopterShadow },
+		{ UghMaterials::CaveAir, &MakeCaveAir },
 		{ UghMaterials::Water, &MakeWater }, { UghMaterials::Sprite, &MakeSprite }, { UghMaterials::Ghost, &MakeGhost },
 		{ UghMaterials::Pbr, &MakePbr }, { UghMaterials::Scan, &MakeScan }, { UghMaterials::Sky, &MakeSky },
 		{ UghMaterials::Rain, &MakeRain }, { UghMaterials::Splash, &MakeSplash }, { UghMaterials::Raindrop, &MakeRaindrop },
@@ -217,6 +221,41 @@ bool UUghMakeAssetsCommandlet::MakeCopterShadow(UMaterial* Material)
 	}
 	UMaterialEditingLibrary::ConnectMaterialProperty(Constant(Material, 0.f), TEXT(""), MP_BaseColor);
 	UMaterialEditingLibrary::ConnectMaterialProperty(Blob, TEXT(""), MP_Opacity);
+	return true;
+}
+
+bool UUghMakeAssetsCommandlet::MakeCaveAir(UMaterial* Material)
+{
+	// unlit light added over what is behind, which it covers by CaveOpacity (premultiplied: the haze's colour and the
+	// shafts' and fires' light in one), seen from both sides (the camera flies around the stone)
+	Material->BlendMode = BLEND_AlphaComposite;
+	Material->SetShadingModel(MSM_Unlit);
+	Material->TwoSided = true;
+	UMaterialExpression* Thick = Custom(Material, TEXT("return max(Scene - Pixel, 0);"), CMOT_Float1,
+		{ { TEXT("Scene"), Add<UMaterialExpressionSceneDepth>(Material) },
+			{ TEXT("Pixel"), Add<UMaterialExpressionPixelDepth>(Material) } });
+	UMaterialExpressionCustom* Air = Thick ? Custom(Material, ShaderCode(TEXT("UghCaveAir.hlsl")), CMOT_Float3, {
+		{ TEXT("Position"), Add<UMaterialExpressionWorldPosition>(Material) },
+		{ TEXT("Thick"), Thick },
+		{ TEXT("Time"), Add<UMaterialExpressionTime>(Material) },
+		{ UghMaterials::AirParameter, TextureObject(Material, UghMaterials::AirParameter, SAMPLERTYPE_Color, DefaultColor) },
+		{ UghMaterials::WaterLevelParameter, Scalar(Material, UghMaterials::WaterLevelParameter, -1e6f) },
+		{ UghMaterials::DirectionParameter, Vector(Material, UghMaterials::DirectionParameter, FLinearColor(0.3f, 1, 0)) },
+		{ UghMaterials::HazeParameter, Vector(Material, UghMaterials::HazeParameter, FLinearColor(0.05f, 0.05f, 0.06f)) },
+		{ UghMaterials::ShaftParameter, Vector(Material, UghMaterials::ShaftParameter, FLinearColor(0.1f, 0.1f, 0.09f)) },
+		{ UghMaterials::FireGlowParameter,
+			Vector(Material, UghMaterials::FireGlowParameter, FLinearColor(0.1f, 0.045f, 0.015f)) } },
+		{ { TEXT("CaveOpacity"), CMOT_Float1 } }) : nullptr;
+	UMaterialExpressionEyeAdaptationInverse* Exposed = Add<UMaterialExpressionEyeAdaptationInverse>(Material);
+	if (!Air || !Exposed)
+	{
+		return false;
+	}
+	// as bright as the exposure shows it, by day and at night alike
+	Exposed->LightValueInput.Connect(0, Air);
+	Exposed->AlphaInput.Connect(0, Constant(Material, 1.f));
+	UMaterialEditingLibrary::ConnectMaterialProperty(Exposed, TEXT(""), MP_EmissiveColor);
+	UMaterialEditingLibrary::ConnectMaterialProperty(Air, TEXT("CaveOpacity"), MP_Opacity);
 	return true;
 }
 

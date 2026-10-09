@@ -1974,3 +1974,14 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   Arch `Saved\Shots\Levels-30e-after` (12 levelů, 0 chyb, postavy čitelné, tráva přes hrany, cestičky), fps medián 19,
   1 % low 15 (30a 17 / 13). CTest logiky, `6_verification` (324) a 215 testů v UE zelené. Balíček nepřebalen.
   Další: **krok 30c**.
+- 2026-10-09: krok 30c hotový - hloubka jeskyní (`docs/visual-concept.md`, krok 30c). `AUghCaveAir`: karta přes
+  obrazovku 12 px za rovinou hry (`M_UghCaveAir`, `UghCaveAir.hlsl`) s mapou vzduchu z kolizní masky
+  (`UghCaveAir::Map`, 160 x 96, ~3 ms při stavbě levelu): opar tím hustší, čím hlouběji jeskyně za kartou pokračuje
+  (hloubka scény), víc v krytých koutech, chuchvalce; paprsky slunce / měsíce podle nálady šikmo shora tam, kam vede
+  vzduch ven z obrazovky, rozdělené do pruhů; teplá záře ohňů a loučí z 19g vzduchem kolem skály hlouběji, než sahají
+  jejich světla (žádná nová světla ani stíny; utopený oheň nezáří). Barvy podle expozice, tmavší než postavy (24c).
+  Test `Ugh.CaveAir`. Snímky `Saved\Shots\30c` (`1p-01-try1.png` po vs. `Levels-30e-after\1p-01.png` před, noc
+  `1p-06-try2.png`, Low `1p-01-low-after.png` vs. `30e\1p-01-landing-low.png`). Arch `Levels-30cd-after` (12 levelů,
+  0 chyb, postavy čitelné, paprsky a záře vidět), fps medián 19, 1 % low 14, 467 snímků > 50 ms (v editoru normální:
+  30a-30e 408-571, 27 443 - při ~19 fps je snímek kolem 50 ms). CTest logiky, `6_verification` (324) a 218 testů v UE
+  zelené. Balíček nepřebalen. Další: **krok 30d**.

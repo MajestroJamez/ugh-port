@@ -28,6 +28,7 @@ private:
 	static bool MakeCliff(UMaterial* Material);
 	static bool MakeTurf(UMaterial* Material);
 	static bool MakeCopterShadow(UMaterial* Material);
+	static bool MakeCaveAir(UMaterial* Material);
 	static bool MakeSprite(UMaterial* Material);
 	static bool MakeGhost(UMaterial* Material);
 	static bool MakePbr(UMaterial* Material);

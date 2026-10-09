@@ -237,4 +237,16 @@ namespace UghMaterials
 	inline const TCHAR* FigureHalo = TEXT("/Game/Generated/M_UghFigureHalo");
 	inline const TCHAR* RadiusParameter = TEXT("Radius");
 	inline const TCHAR* DarkenParameter = TEXT("Darken");
+	/**
+	 * The air of the cave (AUghCaveAir, step 30c): a card across the screen behind the figures' room, alpha-composited,
+	 * unlit - a haze thicker the further the cave reaches behind it, sheltered air hazier, shafts of the sun (or the
+	 * moon) streaking down through it, the fires' warm glow in it; the texture Air its map (UghCaveAir::Map), the colours
+	 * Haze, Shaft and FireGlow as the exposure shows them, Direction the shafts' way on the screen, WaterLevel. The
+	 * shader code is Source/UghEditor/Shaders/UghCaveAir.hlsl.
+	 */
+	inline const TCHAR* CaveAir = TEXT("/Game/Generated/M_UghCaveAir");
+	inline const TCHAR* AirParameter = TEXT("Air");
+	inline const TCHAR* HazeParameter = TEXT("Haze");
+	inline const TCHAR* ShaftParameter = TEXT("Shaft");
+	inline const TCHAR* FireGlowParameter = TEXT("FireGlow");
 }

@@ -38,6 +38,7 @@ class AUghFigures;
 class AUghFringe;
 class AUghGhosts;
 class AUghCopterShadows;
+class AUghCaveAir;
 class AUghRain;
 class AUghScenery;
 class AUghSigns;
@@ -264,6 +265,7 @@ private:
 	UPROPERTY() TObjectPtr<AUghEffects> Effects;
 	UPROPERTY() TObjectPtr<AUghCampfire> Campfire;
 	UPROPERTY() TObjectPtr<AUghTorches> Torches;
+	UPROPERTY() TObjectPtr<AUghCaveAir> CaveAir;
 	UPROPERTY() TObjectPtr<AUghScenery> Scenery;
 	UPROPERTY() TObjectPtr<AUghCliffDressing> Dressing;
 	UPROPERTY() TObjectPtr<AUghSpeaker> Speaker;

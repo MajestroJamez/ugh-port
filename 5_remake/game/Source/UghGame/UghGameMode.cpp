@@ -25,6 +25,7 @@
 #include "UghFringe.h"
 #include "UghGhosts.h"
 #include "UghCopterShadows.h"
+#include "UghCaveAir.h"
 #include "UghGraphics.h"
 #include "UghGround.h"
 #include "UghHud.h"
@@ -173,6 +174,7 @@ void AUghGameMode::BuildStage()
 	Effects = World->SpawnActor<AUghEffects>();
 	Campfire = World->SpawnActor<AUghCampfire>();
 	Torches = World->SpawnActor<AUghTorches>();
+	CaveAir = World->SpawnActor<AUghCaveAir>();
 	Scenery = World->SpawnActor<AUghScenery>();
 	Dressing = World->SpawnActor<AUghCliffDressing>();
 	Speaker = World->SpawnActor<AUghSpeaker>();
@@ -308,6 +310,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Stage->SetWater(Surface);
 	Campfire->SetWater(Surface);
 	Torches->SetWater(Surface);
+	CaveAir->SetWater(Surface);
 	TArray<FTransform> ClayRiders;
 	{
 		FSlowPart Part{ TEXT("copters") };
@@ -488,6 +491,7 @@ void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 	Effects->SetShade(Mood.Shade);
 	Water->SetWeather(View.wind, Stage->SunDirection(), Mood.Caustics);
 	Water->SetSky(UghAssets::Texture(Mood.Sky), Mood.SkySeen);
+	CaveAir->Build(View.level_id < 0 ? nullptr : Logic, Decorations, Mood, Stage->SunDirection(), WaterRow);
 	Rain->Build(View.level_id < 0 ? nullptr : Logic, View.level_id, View.wind);
 	if (View.level_id >= 0 && !bInMenu)
 	{

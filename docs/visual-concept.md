@@ -986,3 +986,20 @@ všech kvalitách stejně a levně (jeden decal na vrtulník): skutečný stín 
 zepředu zleva šikmo dozadu na jeskyni, ne pod vrtulník - skvrna je zastínění světla oblohy, druhý stín slunce to není,
 nic se nezdvojuje. Duch nejlepšího průletu stín nemá. Test `Ugh.CopterShadow` (stín na povrchu plošiny, výška,
 slábne a roste s výškou, decal kolem povrchu; v mřížce poloh nad vodou dvou levelů první povrch pod vrtulníkem).
+
+## Hloubka jeskyní (krok 30c)
+
+Jeskyně už nejsou černé díry (hlavně na High/Epic, kde Lumen GI jeskyni pod převisy správně zastíní). `AUghCaveAir`:
+jedna karta přes celou obrazovku 12 px za rovinou hry (za prostorem postav, cedulí a vrtulníků), materiál
+`M_UghCaveAir` (`UghCaveAir.hlsl`, alpha composite, unlit, seřazený před ostatní průsvitné - nikdy přes plameny, déšť
+a efekty). Mapa vzduchu `UghCaveAir::Map` (160 x 96 buněk z kolizní masky, při stavbě levelu ~3 ms): r jak je vzduch
+krytý skálou nad ním a šikmo nad ním, g kam dosáhne paprsek světla (cesta proti světlu vede vzduchem ven z obrazovky do
+150 px, čím blíž, tím jasněji), b teplá záře ohňů a loučí (nejkratší cestou vzduchem kolem skály, oheň 70 px, louč
+40 px; utopený oheň nezáří), a podíl vzduchu. V materiálu: opar tím hustší, čím hlouběji za kartou jeskyně pokračuje
+(hloubka scény - zadní stěna daleko zamžená, stěny blízko čisté), víc v krytých koutech, pomalé chuchvalce; paprsky
+slunce (v noci měsíce, barva světla nálady) podél jeho směru na obrazovce, rozdělené napříč do pruhů, které se pomalu
+posouvají (listí nahoře); záře ohňů dýchá s plameny. Barvy jako je ukáže expozice: opar 0,08x světla stínu nálady
+(`FUghMood::Shade`), paprsky 0,02-0,075x barvy slunce (bouřka skoro žádné), záře 0,08-0,16x (nejvíc v noci) - vždy
+tmavší než postavy (24c). Na všech kvalitách stejně a levně (jedna karta, jedna textura, žádné světlo ani stín).
+Test `Ugh.CaveAir` (v mapě žádný vzduch, záře ani paprsek ve skále, vzduch ve vzduchu, paprsky někde, oheň nejjasnější
+u sebe a nic za dosahem, deterministicky).
