@@ -144,11 +144,12 @@ Alt+Enter put the engine's scalability back to epic (`UghGraphics::ApplyQuality`
 too); the frame is mostly the GPU's at its resolution (the render thread about 15 ms besides), no single feature
 dominating: the fires' shadows (medium 15 %), the figures' halo (4 %), Nanite's detail (4 %) - so low and medium keep
 their frame time by a dynamic resolution (low 33-50 % of the screen within 16.6 ms, medium 42-59 % within 22.2 ms),
-low without the halo and the engine's reflections on the sea (they mirrored the sky light only: a white sea), with
-coarser Nanite, medium without the fires' shadows. The hitches were pipelines compiled while playing (the PSO cache of
-step 23 was stale; `pso.ps1` records low more fully now), the passengers' MetaHumans made when they first showed
-(20-50 ms each: now made ahead in the black, `FUghCaveman::Stock`) and the GPU catching up on a new level at the start
-of its flight (the flight settles until the frames are short, `FUghIntro`). `play.ps1` plays the package: the
+low without the halo, the sea with screen-space reflections alone (step 30d: the level mirrored where the screen
+shows it, quality 1, the scene's own off - without Lumen the engine's other reflections mirrored the sky light only:
+a white sea), with coarser Nanite, medium without the fires' shadows. The hitches were pipelines compiled while
+playing (the PSO cache of step 23 was stale; `pso.ps1` records low more fully now), the passengers' MetaHumans made
+when they first showed (20-50 ms each: now made ahead in the black, `FUghCaveman::Stock`) and the GPU catching up on a new
+level at the start of its flight (the flight settles until the frames are short, `FUghIntro`). `play.ps1` plays the package: the
 editor's game mode compiles shaders while it plays. A first start without a profile picks the preset by the GPU
 (`UghGraphics::RecommendedQuality`): Epic with DLSS on an RTX (the trial on an RTX 5060 Ti: about 150 fps, about 450
 with frame generation), Low on an integrated GPU, High otherwise.

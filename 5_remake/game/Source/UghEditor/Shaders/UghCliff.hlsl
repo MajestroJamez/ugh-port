@@ -14,13 +14,13 @@
 // wall) and blended by the way the surface faces, only the projections and layers that count are sampled. The layers:
 // grass on what faces up and along the top edges of the face, moss here and there - hanging below the grass, in deep
 // crevices, in a few of the large patches, where the drawing is green, on the little ledges and slopes, on deep floors
-// and in the wet -; soil in the crevices of what faces up, under the grass's ragged edge, in bare patches and on the
+// and at the tide line -; soil in the crevices of what faces up, under the grass's ragged edge, in bare patches and on the
 // paths, stones lying in it; the grass lush, olive or dry by its patches (step 30b); else the slate (rock and stone, the same scanned plates at
 // two sizes; the rock's at two scales the large patches choose between, so that its tiles do not repeat visibly); where
 // two meet, the higher relief of the two wins (height blend). The slate is greyed to a dark blue grey (darker than the
 // figures, so that they stand out of it), each of its beds its own shade and its flakes along them too, dark seams
 // between the beds, the gaps between its plates deep and dark, thin white quartz veins along the strata (in pieces,
-// wandering, a few crossing them) and pale wisps; matte; the rock just at the water and under it wet; the drawing
+// wandering, a few crossing them) and pale wisps; matte; wet in a band over the water following its surface (step 30d); the drawing
 // shades it a little, so that each level keeps its light and dark areas.
 
 #define UGH_WRAP View.MaterialTextureBilinearWrapedSampler
@@ -74,8 +74,18 @@ float open = Shade.r, deep = Shade.g, patches = Shade.a;
 float back = smoothstep(0.25, 0.6, deep);   // the cave's back wall: darker
 // below a top edge, on what faces the camera or up (not the sides of the slab of the play)
 float lip = Shade.b * saturate(max(n.y, n.z) * 3);
-// wet at the water and up to a metre above it (here more, there less), and under it
-float wet = 1 - smoothstep(0, 0.3 + 0.7 * patches, m.z - WaterLevel * 0.01);
+// wet (step 30d): the band the sea washes follows its surface as it rises - under it, a film of water just above it
+// (glossy, darkest; the waves wash up and down it), above that wet rock up to 0.5 .. 1.6 m (higher in some of the large
+// patches, in streaks running down from its top), a dark tide line of algae at the surface
+float above = m.z - WaterLevel * 0.01;   // metres above the surface
+float streaks, washing;
+UGH_NOISE(float2(m.x * 9, m.z * 0.8), streaks);
+UGH_NOISE(float2(m.x * 0.9 + 4.1, 1.3), washing);
+float bandTop = 0.45 + 0.9 * patches + 0.6 * (streaks - 0.5);
+float wet = 1 - smoothstep(0.55 * bandTop, bandTop, above);
+float wash = 0.14 + 0.1 * sin(View.GameTime * 0.9 + m.x * 0.4 + washing * 6);
+float film = 1 - smoothstep(0.4 * wash, wash, above);
+float tide = (1 - smoothstep(0.04, 0.3, above)) * smoothstep(-0.4, -0.05, above);
 // moss only here and there: in the deep crevices of the face, on its little ledges and the slopes of the cave, in a few
 // of the large patches
 float mossy = max(max(0.7 * smoothstep(0.45, 0.12, open) * (1 - back),
@@ -103,7 +113,7 @@ float soilBand = saturate(max(smoothstep(0.22, 0.36, edge + 0.15 * (ragged - 0.5
 float W[5];
 W[2] = max(tops * (1 - 0.6 * deep) * (1 - worn) * (1 - bareTop), grassLip);
 W[3] = saturate(max(max(max(green * 0.8, smoothstep(0.3, 0.7, n.z) * deep), mossy),
-	max(smoothstep(0.0, 0.25, lip), wet * smoothstep(0.55, 0.75, patches))) - W[2] - soilBand);
+	max(smoothstep(0.0, 0.25, lip), tide * smoothstep(0.45, 0.75, patches))) - W[2] - soilBand);
 W[4] = max(smoothstep(0.45, 0.75, n.z + 0.25 * (1 - open)) * 0.8, soilBand) * saturate(1 - W[2] - W[3]);
 float rest = saturate(1 - W[2] - W[3] - W[4]);
 W[1] = rest * saturate(max(1 - warm, back) + 0.8 * smoothstep(0.5, 0.72, patches));
@@ -250,10 +260,11 @@ base *= lerp(0.85, 1.15, patches) * lerp(float3(0.98, 0.99, 1.02), float3(1.02, 
 base *= lerp(0.35, 1, open) * lerp(0.75, 1.05, saturate(relief * 1.5));
 // the drawing's lightness a little, deep in the cave darker
 base *= lerp(1, saturate(lum * 2.5), 0.1) * lerp(1, 0.5, back);
-// matte: dry rock never glossy; wet: darker, glossy
+// matte: dry rock never glossy; wet: darker, glossy, the film of water glossiest; the tide line dark green-brown
 rough = max(rough, 0.78 * rockShare);
-base *= lerp(1, 0.5, wet);
-rough = lerp(rough, 0.3, 0.8 * wet);
+base *= lerp(1, 0.33, wet) * lerp(1, 0.75, film);
+base = lerp(base, float3(0.02, 0.024, 0.016), 0.5 * tide);
+rough = lerp(lerp(rough, 0.26, 0.85 * wet), 0.07, film);
 
 CliffNormal = normalize(n + 1.8 * UGH_UNROT(bump));
 CliffRough = rough;

@@ -1985,3 +1985,12 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   0 chyb, postavy čitelné, paprsky a záře vidět), fps medián 19, 1 % low 14, 467 snímků > 50 ms (v editoru normální:
   30a-30e 408-571, 27 443 - při ~19 fps je snímek kolem 50 ms). CTest logiky, `6_verification` (324) a 218 testů v UE
   zelené. Balíček nepřebalen. Další: **krok 30d**.
+- 2026-10-09: krok 30d hotový - mokrá skála u vody a odraz (`docs/visual-concept.md`, krok 30d). `UghCliff.hlsl`:
+  mokrý pruh nad hladinou z logiky (stoupá s vodou): film vody těsně nad ní (lesklý, vlny po něm omývají), mokrá skála
+  do 0,5-1,6 m po pruzích, 0,33x tmavší a lesklejší, tmavá čára řas u hladiny (mech už ne po celém pruhu). Odraz
+  levelu v moři: High/Epic Lumen (beze změny), Medium SSR, Low nově jen SSR vody (`r.Water.SingleLayer.Reflection 3`,
+  `r.SSR.Quality 1`, scéna bez SSR - `ugh.SceneReflections 0`): liány, skála a ohně se zrcadlí, moře tyrkysové, ne
+  bílé (kde odráží světlý kámen, je světlejší). Snímky `Saved\Shots\30d` (`waterline-before-after.png`: nahoře
+  Epic před/po, dole Low před/po; `sea-low-before-after-epic.png`; `1p-01-low-before/after.png`). Arch
+  `Levels-30cd-after` (viz 30c). CTest logiky, `6_verification` (324) a 218 testů v UE zelené. Fps Low v balíčku
+  neměřeno (SSR jen na pixelech vody, kvalita 1). Balíček nepřebalen. Další: **krok 31** (po 2026-10-12) nebo balení.

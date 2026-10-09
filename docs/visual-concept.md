@@ -1003,3 +1003,15 @@ posouvají (listí nahoře); záře ohňů dýchá s plameny. Barvy jako je uká
 tmavší než postavy (24c). Na všech kvalitách stejně a levně (jedna karta, jedna textura, žádné světlo ani stín).
 Test `Ugh.CaveAir` (v mapě žádný vzduch, záře ani paprsek ve skále, vzduch ve vzduchu, paprsky někde, oheň nejjasnější
 u sebe a nic za dosahem, deterministicky).
+
+## Mokrá skála u vody a odraz (krok 30d)
+
+- **Mokrý pruh** (`UghCliff.hlsl`, čelo levelu i okolní kámen): sleduje hladinu z logiky (`WaterLevel` každý snímek,
+  stoupá s vodou): těsně nad hladinou film vody (drsnost 0,07, nejtmavší), po kterém vlny omývají nahoru a dolů,
+  nad ním mokrá skála do 0,5-1,6 m (výš v části velkých skvrn, pruhy stékající shora), 0,33x tmavší, drsnost 0,26;
+  u hladiny tmavá čára řas (mech jen tam a ve skvrnách, ne po celém pruhu).
+- **Odraz levelu v moři**: High/Epic dál odrazy Lumenu (traceované, odrážejí level i ohně), Medium SSR jako dosud.
+  Low dřív odrazy vypnuté (bez Lumenu jen světlo oblohy: bílé moře); teď jen screen-space odrazy na vodě
+  (`r.Water.SingleLayer.Reflection 3`, `r.SSR.Quality 1`) a scéna bez vlastních SSR (`ugh.SceneReflections 0`:
+  post-process `ReflectionMethod None` jen na Low) - moře zrcadlí liány, skálu a ohně nad sebou, kde je obrazovka
+  ukazuje, tmavě tyrkysové, ne bílé. Planární odraz není potřeba (Lumen ho na High/Epic dělá).

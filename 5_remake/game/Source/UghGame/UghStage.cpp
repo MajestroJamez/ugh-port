@@ -31,6 +31,12 @@ namespace
 	 */
 	TAutoConsoleVariable<int32> CVarHalo(TEXT("ugh.Halo"), 1,
 		TEXT("Whether the figures have their soft dark halo (a post-process; 0: none, the pass not drawn)."));
+	/**
+	 * The scene's reflections of the engine (1) or none (0: no screen-space reflections on the rock and the plants - the
+	 * sea's own still, r.Water.SingleLayer.Reflection 3). The quality presets set it (UghGraphics: none at low).
+	 */
+	TAutoConsoleVariable<int32> CVarSceneReflections(TEXT("ugh.SceneReflections"), 1,
+		TEXT("Whether the scene has the engine's reflections (0: none - the sea's screen-space reflections alone)."));
 	/** A fog low over the water: how fast it thins upwards; the mist of a storm, much faster. */
 	constexpr float FogFalloff = 0.3f, MistFalloff = 2.5f;
 	/**
@@ -205,6 +211,9 @@ void AUghStage::SetCamera(const FUghCameraPose& Pose)
 	Look->Settings.bOverride_AutoExposureBias = Pose.ExposureBias != 0;
 	Look->Settings.AutoExposureBias = Pose.ExposureBias;
 	ShowHalo();
+	const bool bNoReflections = CVarSceneReflections.GetValueOnGameThread() == 0;
+	Look->Settings.bOverride_ReflectionMethod = bNoReflections;
+	Look->Settings.ReflectionMethod = bNoReflections ? EReflectionMethod::None : EReflectionMethod::Lumen;
 }
 
 void AUghStage::ShowHalo()
