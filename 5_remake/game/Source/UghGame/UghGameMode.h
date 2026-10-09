@@ -234,6 +234,7 @@ private:
 	FUghGameChoice Previewed;   // whose level the diorama shows behind the menu
 	FKey StartKey;              // the key that started the game: its release is not a key of the game
 	double MenuTime = 0;        // seconds of the menu's camera (UghMenuView)
+	double CollectedAt = -1e9;  // when the garbage was last collected in the black (FPlatformTime)
 	bool bHelp = false;         // F1, a gamepad's Y
 	FString Assets;
 	FString Problem;

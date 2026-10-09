@@ -10,9 +10,10 @@
 # storms, both modes) on one sheet, levels-quick.png; -Levels: other levels, items <1p|team>:<first>[-<last>]; -At:
 # seconds of the fully shown level before each shot; -Package: the packaged game (package.ps1) instead of the editor;
 # -Profile <file>: a profile (FUghProfile JSON: a quality preset) instead of the defaults; -Commands: console commands
-# before the play (e.g. "r.SetRes 1920x1080w"); -Tag <name>: into Saved\Shots\Levels-<name> and its own log (perf.ps1).
+# before the play (e.g. "r.SetRes 1920x1080w"); -Tag <name>: into Saved\Shots\Levels-<name> and its own log (perf.ps1);
+# -PackageDir: another package than Packaged\Windows (relative to this folder: an older one kept for an A/B).
 param([switch]$Quick, [string]$Levels = '1p:1-69,team:1-81', [double]$At = 1.5, [switch]$Package, [string]$Profile = '',
-    [string]$Commands = '', [string]$Tag = '', [int]$TimeoutSeconds = 3600)
+    [string]$Commands = '', [string]$Tag = '', [int]$TimeoutSeconds = 3600, [string]$PackageDir = 'Packaged\Windows')
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -49,7 +50,7 @@ if ($Commands) { $arguments += " `"-ExecCmds=$Commands`"" }
 if ($Profile) { $arguments += " `"-UghProfile=$Profile`"" }
 $exe = $UeEditor
 if ($Package) {
-    $exe = Join-Path $PSScriptRoot 'Packaged\Windows\UghGame.exe'
+    $exe = Join-Path (Join-Path $PSScriptRoot $PackageDir) 'UghGame.exe'
     if (-not (Test-Path $exe)) { Write-Host "FAILED: no package $exe (package.ps1)" -ForegroundColor Red; exit 1 }
 } else {
     $arguments = "`"$Project`" -game $arguments"

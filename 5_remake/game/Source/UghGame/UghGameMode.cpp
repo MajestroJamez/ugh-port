@@ -53,6 +53,8 @@ namespace
 	 * any log (levels.ps1, a player's).
 	 */
 	constexpr double SlowPartSeconds = 0.02;
+	/** The garbage is collected in the black at most this often (seconds; AUghGameMode::ShowFrame). */
+	constexpr double CollectEvery = 10;
 	/** A copter's splash in the sea starts this far above the surface (pixels). */
 	constexpr double FoamAbove = 0.4;
 	struct FSlowPart
@@ -389,6 +391,15 @@ void AUghGameMode::ShowFrame(double Seconds)
 	Stage->SetCamera(Pose);
 	CameraPose = Pose;
 	Hear(Current, Surface, Shown, bMenuView, bIsles, Pose);
+	// the garbage collected where nothing moves: in the black before a level's flight or an attempt's play. The
+	// engine's own once a minute fell into the play (a frame 15-30 ms longer); its interval is 10 minutes now
+	// (DefaultEngine.ini), kept from the play by this
+	if (Shown <= 0 && !bInMenu && Current.level_id >= 0 && GEngine &&
+		FPlatformTime::Seconds() - CollectedAt > CollectEvery)
+	{
+		CollectedAt = FPlatformTime::Seconds();
+		GEngine->ForceGarbageCollection(true);
+	}
 	CameraLog.Record(Seconds, Pose, Current.phase, Intro);
 }
 

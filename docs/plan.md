@@ -711,6 +711,15 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
 
 - Měkký stín vrtulníku na plošině a skále pod ním (výška čitelná, pomůže přistání), i na Low.
 
+## Krok 31 - Vestavěné generátory UE 5.8 (Jan 2026-10-09; až po resetu týdenního limitu 2026-10-12)
+
+- **Procedural Vegetation Editor** (experimentální plugin v UE 5.8, Nanite Foliage, presety druhů): přegenerovat
+  palmy, stromy a keře (místo skenů Electric Dreams / Blender skriptů tam, kde to vypadá lépe), víc variant, vítr.
+  Generovat skriptem/commandletem (žádné binární assety v gitu), levné na Low, velikost balíčku (28) hlídat.
+- **MetaHuman Generator** (experimentální, AI tvorba postav): víc různých cestujících (teď muž, žena, stařec),
+  stejný styl (listy, vlasy z karet, 19b), bez přihlášení, pokud to jde; jinak MetaHuman Creator jako dosud.
+- Hotovo když: snímky před/po, arch rychlé sady, fps a velikost balíčku beze zhoršení.
+
 ## Průběžně
 
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
@@ -1915,3 +1924,19 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   vším 61-136 ms (pod 1,5 % jádra). CTest logiky, `6_verification` (324) a 213 testů v UE zelené. `levels.ps1 -Quick`
   0 chyb, fps medián 6, 1 % low 4 (IDEA indexovala, CPU 70-90 %; autopilot zvuk nespouští). Balíček nepřebalen.
   Další: **krok 29e**.
+- 2026-10-09: krok 29e hotový - hitche a fps na Low (README hry: Performance). A/B balíčků Development (28 = 142c93d,
+  29b = c64f827, 29e) střídavě v jednom sezení s CSV profilem (`perf.ps1 -PackageDir -Tag -Commands`): klidný notebook
+  (IDEA ~8 % CPU) Low 28 54 / 1 % low 34 / 13 hitchů, 29b 54 / 33 / 16 a 56 / 41 / 30, 29e 54 / 33 / 23 a 56 / 39 / 19;
+  Epic 14 / 11, 13 / 8, 14 / 11. Práce snímku stejná (Low game thread 4,4-4,5 ms, render thread 10,0-10,2 ms, GPU
+  7,2-7,4× pevný průchod FSR; Epic 23-25×) - kroky 29a-29b žádnou regresi nemají (duch, ambience bez replaye / zvuku
+  v měření nejsou; ambience 0,1-0,2 ms za snímek dle 29b). Pokles fps editoru byl stav notebooku: týž balíček ten den
+  Low 18-56, průchod FSR 1,9-5,7 ms (takt iGPU až na třetinu při Gradle, WSL, Dockeru, indexaci IDEA). Hitche nejsou
+  první použití (žádný PSO miss, streaming, MetaHuman): ve shluku jsou pomalá všechna vlákna i GPU naráz (Insights
+  trace: render thread čeká na vyhladovělé workery) - správa napájení a cizí procesy. Opraveno: hra bez okna vpředu
+  (autopilot, hra za jiným oknem) běžela jako proces v pozadí (EcoQoS, hrubé časovače) - vlákna ~1,6× pomalejší; teď
+  `UghGameModule.cpp` škrcení vypne (log `UGH power throttling of the process: off`). GC enginu jednou za minutu i ve
+  hře (+11-15 ms game thread, 25-30 při zátěži): teď ho hra spouští v černé před letem / pokusem
+  (`AUghGameMode::ShowFrame`), interval enginu 10 min (`DefaultEngine.ini`). Cíl Low 60 / 1 % low 50 na zahřátém
+  notebooku nesplněn - rozhoduje takt GPU (dyn. rozlišení na minimu 33 %). Pozn.: `M_UghGhost` na Nanite meshi loguje
+  „Invalid material" (vzhled ducha ověřen v 29g). CTest logiky a `6_verification` (324), 214 testů v UE zelené.
+  Balíček nepřebalen (`pso.ps1` až na konci kroku 29). Další: balení (konec kroku 29).

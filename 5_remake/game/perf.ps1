@@ -4,9 +4,11 @@
 # the median, the slowest and the fastest level. Windows PowerShell 5.1:
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\perf.ps1
 # -Presets: some of Low, Medium, High, Epic (separated by commas); -Resolution <width>x<height>; -At: seconds of each
-# level measured (longer: the copters of a storm level may crash first). The shots go to
-# Saved\Shots\Levels-perf-<preset>, the table to Saved\Shots\perf.txt.
-param([string]$Presets = 'Low,Medium,High,Epic', [string]$Resolution = '1920x1080', [double]$At = 2)
+# level measured (longer: the copters of a storm level may crash first); -PackageDir another package (an older one kept
+# for an A/B), -Tag <name> its own shots and table, -Commands more console commands. The shots go to
+# Saved\Shots\Levels-perf-<preset>[-<tag>], the table to Saved\Shots\perf[-<tag>].txt.
+param([string]$Presets = 'Low,Medium,High,Epic', [string]$Resolution = '1920x1080', [double]$At = 2,
+    [string]$PackageDir = 'Packaged\Windows', [string]$Tag = '', [string]$Commands = '')
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ue.ps1')
@@ -16,17 +18,20 @@ if ($Resolution -notmatch '^\d+x\d+$') { Write-Host '-Resolution wants <width>x<
 
 $rows = @("fps of the package at $Resolution, $At s a level (the quick set: median, slowest, fastest)")
 foreach ($preset in $Presets.Split(',')) {
-    $tag = 'perf-' + $preset.ToLower()
-    $presetProfile = Join-Path $folder "profile-$tag.json"
+    $run = 'perf-' + $preset.ToLower()
+    if ($Tag) { $run += "-$Tag" }
+    $exec = "r.SetRes ${Resolution}w"
+    if ($Commands) { $exec += ",$Commands" }
+    $presetProfile = Join-Path $folder "profile-$run.json"
     try { New-UghQualityProfile $presetProfile $preset }
     catch { Write-Host "FAILED: $_" -ForegroundColor Red; exit 1 }
-    & powershell -ExecutionPolicy Bypass -File $levels -Quick -Package -At $At -Profile $presetProfile -Commands "r.SetRes ${Resolution}w" -Tag $tag
+    & powershell -ExecutionPolicy Bypass -File $levels -Quick -Package -At $At -Profile $presetProfile -Commands $exec -Tag $run -PackageDir $PackageDir
     if ($LASTEXITCODE -ne 0) { Write-Host "FAILED: levels.ps1 at $preset" -ForegroundColor Red; exit 1 }
-    $fps = Join-Path $folder "Levels-$tag\fps.txt"
+    $fps = Join-Path $folder "Levels-$run\fps.txt"
     if (-not (Test-Path $fps)) { Write-Host "FAILED: no frame rates at $preset" -ForegroundColor Red; exit 1 }
     $rows += '{0,-7} {1}' -f $preset, [IO.File]::ReadAllText($fps)
 }
-$table = Join-Path $folder 'perf.txt'
+$table = Join-Path $folder $(if ($Tag) { "perf-$Tag.txt" } else { 'perf.txt' })
 [IO.File]::WriteAllLines($table, $rows)
 $rows | ForEach-Object { Write-Host $_ }
 Write-Host "OK: $table" -ForegroundColor Green
