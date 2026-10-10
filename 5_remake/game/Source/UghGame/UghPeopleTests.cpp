@@ -89,7 +89,7 @@ bool FUghPeopleTest::RunTest(const FString& Parameters)
 	{
 		const TCHAR* Name = UghMetaHumans::Names[Look];
 		FUghMetaHuman Person;
-		if (!Person.Load(Name, FUghCaveman::ActionNames(), UghMetaHumans::Tops[Look]))
+		if (!Person.Load(Look, FUghCaveman::ActionNames()))
 		{
 			AddInfo(FString::Printf(TEXT("no MetaHuman %s (metahumans.ps1): not checked"), Name));
 			continue;

@@ -8,7 +8,9 @@
 
 class AActor;
 class USceneComponent;
+class UMaterialInterface;
 class USkeletalMeshComponent;
+class UStaticMesh;
 
 /**
  * What a caveman does (the actions of Blender/caveman_actions.py and Python/metahuman_actions.py, where each says
@@ -22,7 +24,8 @@ enum class EUghCaveAction : uint8 { Idle, Sit, Pedal, Hang, Walk, Wave, Tread, S
  * The people of the play by their look (0 the pilots, 1 .. 3 the passengers of the logic's cargo looks: a man, a
  * woman, an old man): the photoreal MetaHumans of metahumans.ps1 (UghMetaHumans) where all of them are there, else
  * the caveman of Blender/caveman.py (UghAssets::Caveman) dressed for the look (hair, beard, colours of hair, fur and
- * skin by its material slots). A person is a holder component, its origin the action's, PersonHeight tall
+ * skin by its material slots). The old man leans on a staff (in his right hand, upright; not in the cabin or the water).
+ * A person is a holder component, its origin the action's, PersonHeight tall
  * (UghFigurePlace) whatever the model; Load finds the models, without any there are no people (the game shows clay
  * instead).
  */
@@ -69,8 +72,14 @@ private:
 	static void SetTicking(USceneComponent* Person, bool bTicking);
 	/** The model of `Person` and its rig. */
 	TPair<USkeletalMeshComponent*, const FUghRig*> ModelOf(USceneComponent* Person) const;
+	/** Gives the old man `Person` (made, its model there) his staff, hidden. */
+	void AddStaff(AActor* Owner, USceneComponent* Person) const;
+	/** The old man `Person` holds his staff while he stands, walks, waves, ducks or cheers (else it is hidden). */
+	static void HoldStaff(USceneComponent* Person, EUghCaveAction Action);
 
 	UPROPERTY() FUghRig Caveman;                    // its actions by EUghCaveAction; none with the MetaHumans
 	UPROPERTY() TArray<FUghMetaHuman> MetaHumans;   // by look; none without all of them
 	mutable TArray<TWeakObjectPtr<USceneComponent>> Spares;   // hidden, of their owners (which keep them)
+	UPROPERTY() mutable TObjectPtr<UStaticMesh> Staff;              // made with the first old man
+	UPROPERTY() mutable TObjectPtr<UMaterialInterface> StaffWood;
 };

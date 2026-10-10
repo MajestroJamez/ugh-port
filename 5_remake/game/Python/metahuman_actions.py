@@ -30,6 +30,8 @@ from ugh_math import Pose, scale, sub  # noqa: E402
 
 ROOT = "/Game/External/MetaHumans"
 CHARACTERS = ("Pilot", "Man", "Woman", "Grandpa")
+# radians: the old man stooped (metahuman_poses.stooped)
+STOOP = {"Grandpa": 0.45}
 LOCOMOTION = "/MetaHumanCharacter/Optional/Animation/UEFNAnimPreset/Locomotion"
 # the clips sampled: the action, the clip, whether only its first stride
 SAMPLED = {"idle": (f"{LOCOMOTION}/AS_MH_Neutral_Stand_Idle_Loop", False),
@@ -154,7 +156,7 @@ def make(name, report):
     rest = Pose(names, parents, *read_pose(rest_pose, names))
     unreal.EditorAssetLibrary.delete_asset(f"{folder}/AS_rest")
     report(f"{name}: {len(names)} bones, {height:.0f} cm tall")
-    for action, (seconds, posing) in poses.actions(rest, height).items():
+    for action, (seconds, posing) in poses.actions(rest, height, STOOP.get(name, 0.0)).items():
         base = None
         if action in SAMPLED:
             clip, stride = SAMPLED[action]

@@ -2129,3 +2129,15 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   `team-01-fare.png` (oba piloti s cestujícím), výřez `hud-team.png`. CTest logiky, `6_verification` (324) a 217 testů
   v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32h-after` bez vad (jas 52,3), fps medián 13 (Epic v editoru,
   kolísá: 32b 11, 32a 17). Balíček nepřebalen. Další: **krok 32c**.
+- 2026-10-10: krok 32c hotový - rozlišitelní cestující (`docs/visual-concept.md`, README hry). Logika: muž (`kind1`,
+  vzhled 1) ve vodě vydrží 700 snímků (10 s) a dá se zachránit, žena (`kind3`, vzhled 2) 1400 (20 s), stařec
+  (`kind2`, vzhled 3) 140 (2 s), zachránit nejde - utopí se (`Swimming`: `rescuable`, `swimTime`). Podle spritů 377,
+  299, 497: muž černé vlasy, ramenatý (`UghMetaHumans::Builds` 1,16 / 1,12), tmavé olivové listy; žena světlá blond,
+  štíhlá (0,88 / 0,9), červené listy; stařec bílý, shrbený (`metahuman_poses.stooped` 0,45 rad v idle, walk, wave,
+  cheer) a s holí (`FUghCaveman::AddStaff`: křivá hůl z kódu v pravé ruce, svisle, schovaná v kabině a ve vodě),
+  slámové listy. Listy `FUghLeaves` tónuje `Albedo Tint` taro a bez prosvítání (`Translucency Min/Max` 0 - zelená
+  prosvítala světlem postav zezadu); vlasy `metahumans.py`, akce `metahumans.ps1` znovu (bez Epic účtu). Výšky beze
+  změny. Snímky `Saved\Shots\32c\passengers-before-after.png` (1p-03 a 1p-61 z herní kamery 1280x720, výřezy 3x:
+  muž, žena, stařec), `original-sprites.png`. CTest logiky, `6_verification` (324) a 218 testů v UE zelené.
+  `levels.ps1 -Quick` 0 chyb, arch `Levels-32cd-after` bez vad, fps medián 14, 1 % low 10. Balíček nepřebalen.
+  Další: **krok 32d**.

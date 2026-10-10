@@ -33,8 +33,9 @@ namespace
 	}
 }
 
-bool FUghMetaHuman::Load(const TCHAR* Name, TConstArrayView<const TCHAR*> ActionNames, bool bTop)
+bool FUghMetaHuman::Load(int32 Look, TConstArrayView<const TCHAR*> ActionNames)
 {
+	const TCHAR* const Name = UghMetaHumans::Names[Look];
 	const FString Folder = FString(UghMetaHumans::Root) / Name;
 	Blueprint = Find<UBlueprintGeneratedClass>(Folder / FString::Printf(TEXT("BP_%s"), Name),
 		FString::Printf(TEXT("BP_%s_C"), Name));
@@ -51,7 +52,8 @@ bool FUghMetaHuman::Load(const TCHAR* Name, TConstArrayView<const TCHAR*> Action
 		return false;
 	}
 	OwnHeight = Face->GetImportedBounds().GetBox().Max.Z;
-	Leaves.Make(Body.GetMesh(), OwnHeight, bTop);
+	Build = UghMetaHumans::Builds[Look];
+	Leaves.Make(Body.GetMesh(), OwnHeight, UghMetaHumans::Tops[Look], UghMetaHumans::LeafTints[Look]);
 	return true;
 }
 
@@ -96,7 +98,7 @@ void FUghMetaHuman::AddNode(FAdding& Adding, const USCS_Node* Node, USceneCompon
 			if (Node->GetVariableName() == BodyName)
 			{
 				Adding.Leader = Mesh;
-				Mesh->SetRelativeTransform(FTransform(FQuat::Identity, FVector::ZeroVector, FVector(Adding.Scale)));
+				Mesh->SetRelativeTransform(FTransform(FQuat::Identity, FVector::ZeroVector, Adding.Scale * Build));
 			}
 		}
 		if (UGroomComponent* Groom = Cast<UGroomComponent>(Part))

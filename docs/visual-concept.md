@@ -1045,3 +1045,17 @@ u sebe a nic za dosahem, deterministicky).
   za energií pro každého pilota s cestujícím „Pilot N to“ - bublina s prkénkem (stejný obrázek jako bubliny
   cestujících, `UghBubbles`), číslo plošiny číslicí a jantarové jízdné, které během letu ubývá. Prázdná kabina nebo
   kámen na laně: nic.
+
+## Rozlišitelní cestující (krok 32c)
+
+- Logika (`ugh-data.ugd`, `passengerKind ... swimTime rescuable`): muž (`kind1`, vzhled 1) ve vodě vydrží 700 snímků
+  (10 s) a dá se zachránit, žena (`kind3`, vzhled 2) 1400 (20 s), stařec (`kind2`, vzhled 3) jen 140 (2 s) a zachránit
+  nejde - utopí se. Proto musí být z herní kamery na první pohled poznat, kdo je kdo (jako sprity 377, 299, 497).
+- Muž: černé vlasy a vous, ramenatý (tělo 1,16 do šířky, 1,12 do hloubky), tmavé olivové listy. Žena: světlé blond
+  dlouhé vlasy, štíhlá (0,88 / 0,9), červené listy. Stařec: bílé vlasy a vous, shrbený (záda 0,45 rad, hlava zpět
+  nahoru; stojí, chodí, mává, raduje se), opírá se o světlou hůl (pravá ruka, svisle; ne v kabině a ve vodě), listy
+  suché slámové. Všichni stejně vysocí (`PersonHeight`). Listy tónuje `Albedo Tint` taro a nesvítí skrz (zelená by
+  prosvítala světlem postav zezadu). Barvy vlasů `metahumans.py`, shrbení `metahuman_actions.py` (`metahumans.ps1`),
+  postava, listy a hůl v `UghMetaHumans.h` / `UghCaveman.cpp`; jeskynní muž bez MetaHumanů má barvy podle stejného
+  klíče a hůl také.
+

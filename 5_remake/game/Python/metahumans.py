@@ -26,19 +26,20 @@ REPORT = os.path.join(unreal.Paths.project_saved_dir(), "Logs", "UghMetaHumans.t
 OUTFITS = "Outfits"
 
 # name: the preset, the grooms by slot (None: none), the hair's colour (parameters of its materials: melanin 0 blond
-# .. 1 black, redness, white amount: grey)
+# .. 1 black, redness, white amount: grey): told apart from the game's camera (step 32c) - the man black, the woman
+# light blond, the old man white
 CHARACTERS = {
     "Pilot": ("Mateo", {"Hair": "Hair/WI_Hair_L_MessyClumps", "Beard": "Beards/WI_Beard_S_Stubble",
                         "Mustache": "Mustaches/WI_Mustache_S_Stubble"},
               {"hairMelanin": 0.8, "hairRedness": 0.15, "WhiteAmount": 0.0}),
     "Man": ("Bruce", {"Hair": "Hair/WI_Hair_M_Layered", "Beard": "Beards/WI_Beard_L_Messy",
                       "Mustache": "Mustaches/WI_Mustache_L_Messy"},
-            {"hairMelanin": 0.6, "hairRedness": 0.35, "WhiteAmount": 0.0}),
+            {"hairMelanin": 0.95, "hairRedness": 0.1, "WhiteAmount": 0.0}),
     "Woman": ("Celeste", {"Hair": "Hair/WI_Hair_L_MessyClumps", "Beard": None, "Mustache": None},
-              {"hairMelanin": 0.55, "hairRedness": 0.45, "WhiteAmount": 0.0}),
+              {"hairMelanin": 0.1, "hairRedness": 0.15, "WhiteAmount": 0.0}),
     "Grandpa": ("Walter", {"Hair": "Hair/WI_Hair_L_MessyClumps", "Beard": "Beards/WI_Beard_L_Full",
                            "Mustache": "Mustaches/WI_Mustache_L_Full"},
-                {"hairMelanin": 0.35, "hairRedness": 0.05, "WhiteAmount": 0.9}),
+                {"hairMelanin": 0.2, "hairRedness": 0.0, "WhiteAmount": 1.0}),
 }
 
 lines = []

@@ -20,6 +20,10 @@ namespace
 	const FName LeafSlot(TEXT("Leaves"));
 	/** Without the sample's taro: leaves of green clay. */
 	const FLinearColor ClayLeaf(0.06f, 0.2f, 0.03f);
+	/** The parameter of the taro's material (its Megascans master) its colour is multiplied by. */
+	const FName AlbedoTint(TEXT("Albedo Tint"));
+	/** ... and how much light it lets through. */
+	const FName ShineThrough[] = { FName(TEXT("Translucency Min")), FName(TEXT("Translucency Max")) };
 	/** The sample's foliage sways in the wind (its material's parameters): not on a body. */
 	const TCHAR* const Winds[] = { TEXT("Wind Gust Strength"), TEXT("Wind Noise Strength"),
 		TEXT("Wind Gust Noise Strength"), TEXT("Animation Gradient") };
@@ -207,7 +211,7 @@ namespace
 	}
 }
 
-void FUghLeaves::Make(const USkeletalMesh* Body, double Height, bool bTop)
+void FUghLeaves::Make(const USkeletalMesh* Body, double Height, bool bTop, const FLinearColor& Tint)
 {
 	Parts.Reset();
 	const FReferenceSkeleton& Skeleton = Body->GetRefSkeleton();
@@ -249,7 +253,16 @@ void FUghLeaves::Make(const USkeletalMesh* Body, double Height, bool bTop)
 	}
 	UMaterialInterface* Taro = UghElectricDreams::Material(UghElectricDreams::LeafMaterial);
 	UMaterialInstanceDynamic* Leaf = Taro ? UMaterialInstanceDynamic::Create(Taro, GetTransientPackage())
-		: UghShapes::Clay(GetTransientPackage(), ClayLeaf);
+		: UghShapes::Clay(GetTransientPackage(), ClayLeaf * Tint);
+	if (Taro && !Tint.Equals(FLinearColor::White))
+	{
+		// tinted, and no light through them: the taro's own green would shine through (the figures' light from behind)
+		Leaf->SetVectorParameterValue(AlbedoTint, Tint);
+		for (const FName& Through : ShineThrough)
+		{
+			Leaf->SetScalarParameterValue(Through, 0);
+		}
+	}
 	for (const TCHAR* Wind : Taro ? TConstArrayView<const TCHAR*>(Winds) : TConstArrayView<const TCHAR*>())
 	{
 		Leaf->SetScalarParameterValue(Wind, 0);

@@ -33,8 +33,11 @@ struct FUghLeaves
 {
 	GENERATED_BODY()
 
-	/** Makes the leaves of `Body` (a MetaHuman's, standing `Height` cm), with the band round the chest when `bTop`. */
-	void Make(const USkeletalMesh* Body, double Height, bool bTop);
+	/**
+	 * Makes the leaves of `Body` (a MetaHuman's, standing `Height` cm), with the band round the chest when `bTop`, their
+	 * colour times `Tint` (each look its own: UghMetaHumans::LeafTints).
+	 */
+	void Make(const USkeletalMesh* Body, double Height, bool bTop, const FLinearColor& Tint);
 	/** Adds them to `Body` (a component of `Owner` with Make's mesh), each part on its bone, hidden. */
 	void Add(AActor* Owner, USkeletalMeshComponent* Body) const;
 	/** The box of the leaves on `Bones` of `Body` (Make's) in its rest pose; empty without them. */

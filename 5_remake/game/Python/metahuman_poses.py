@@ -334,12 +334,34 @@ def flail(body):
     return posing
 
 
-def actions(rest, height):
+# the actions an old man does stooped (standing, walking; step 32c: told apart from afar)
+STOOPED = ("idle", "walk", "wave", "cheer")
+
+
+def stooped(posing, lean):
+    """An old man's stoop over `posing` (None: the clip's own): the back bent forward by `lean` (radians) over its
+    bones, the neck lifting the head back up a little, so that he looks ahead."""
+    bones = ("spine_01", "spine_02", "spine_03", "spine_04", "spine_05")
+
+    def stooping(t):
+        p = posing(t) if posing else Posing()
+        for bone in bones:
+            p.turn[bone] = qmul(p.turn.get(bone, pitch(0)), pitch(lean / len(bones)))
+        p.turn["neck_01"] = qmul(p.turn.get("neck_01", pitch(0)), pitch(-0.6 * lean))
+        return p
+    return stooping
+
+
+def actions(rest, height, stoop=0.0):
     """The actions by name: (seconds a loop, the posing of a moment - over a clip's frame for the sampled ones, none:
-    the clip itself)."""
+    the clip itself); with `stoop` (radians) the standing and walking ones stooped."""
     body = Body(rest, height)
-    return {"idle": (0, idle(body)), "sit": (3.2, sit(body)), "pedal": (1.0, pedal(body)), "hang": (3.2, hang(body)),
+    made = {"idle": (0, idle(body)), "sit": (3.2, sit(body)), "pedal": (1.0, pedal(body)), "hang": (3.2, hang(body)),
             "walk": (0, None), "wave": (1.2, wave(body)), "tread": (2.4, tread(body)), "swim": (2.4, swim(body)),
             "fall": (1.2, fall(body)), "flail": (1.4, flail(body)), "duck": (1.2, duck(body)),
             "cheer": (0, cheer(body))}
-
+    if stoop:
+        for name in STOOPED:
+            seconds, posing = made[name]
+            made[name] = (seconds, stooped(posing, stoop))
+    return made
