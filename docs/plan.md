@@ -2204,3 +2204,14 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   materiálů v Blenderu smazat `Content\Imported\<id>` (nebo `build.ps1 -ForceImport`). CTest logiky, `6_verification`
   (324) a 219 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32g-after-quick` bez vad. Balíček
   nepřebalen. Další: **balení** (32a-32h hotové).
+- 2026-10-10: balení po kroku 32 (32a-32g) hotové (README hry: Performance, Size; `docs/doma.md`: co vyzkoušet nového,
+  krok 32). Nejdřív `build.ps1 -ForceImport` (smaže a znovu naimportuje všech 54 assetů, žádné `Renamed Assets`) a
+  `levels.ps1 -Quick` (arch `Levels-32-forceimport`): stejný jako `Levels-32g-after-quick`, jen déšť, vlny a pohyb -
+  žádná dřívější změna materiálu tedy nechyběla. `pso.ps1` beze změny (už má běhy letu mezi levely z 32f): 17 běhů,
+  639 stabilních PSO (29-30: 582). `levels.ps1 -Quick -Package` 0 chyb, arch `Saved\Shots\Levels\levels-quick.png`
+  stejný jako z editoru. `perf.ps1` Low a Medium (zahřátý po balení, Docker, IDEA a Rider naprázdno, CPU 8-20 %):
+  Low 58 / 1 % low 33 / nejpomalejší 33 (14 hitchů, nejdelší 168 ms) - jako po 29-30; **Medium spadl** na 24 / 13 / 17
+  (262 hitchů) a v druhém běhu 20 / 13 / 16 (508 hitchů), po 29-30 bylo 42 / 23 / 25 - regrese některého z kroků
+  32a-32g jen na Medium, příčina nehledaná (High, Epic neměřeno). Velikost: Shipping bez `.pdb` 1,30 GB, zip
+  `Packaged\UghGame-Windows.zip` 1101 MB, Development 1,66 GB. Čeká na Jana: zip doma, krok 32 v `docs/doma.md`.
+  Další: najít regresi Medium (A/B balíčků po krocích 32a-32g nebo `csvprofile`).

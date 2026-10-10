@@ -6,8 +6,8 @@ a modely z Fabu/Sketchfabu nejsou naše a nikam se nenahrávají.
 
 ## Nejrychlejší cesta: hotový zip z notebooku
 
-1. Na notebooku je po krocích 29-30 `5_remake\game\Packaged\UghGame-Windows.zip` (1,1 GB, rozbalený 1,3 GB; kroky
-   24f-30e, zabaleno 2026-10-09). Přenes ho domů na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
+1. Na notebooku je po kroku 32 `5_remake\game\Packaged\UghGame-Windows.zip` (1,1 GB, rozbalený 1,3 GB; kroky
+   24f-32g, zabaleno 2026-10-10). Přenes ho domů na disk (USB, síť), rozbal třeba do `D:\Hry\UGH`.
 2. Spusť `UghGame.exe`. Je to Shipping build (bez logu a konzole, menší). Při prvním startu bez profilu hra sama
    vybere kvalitu podle grafiky: na RTX (DLSS) **Epic + DLSS**, na integrované grafice Low, jinak High. Volba se
    uloží do `%LOCALAPPDATA%\UghGame\Saved\UghProfile.json`, jakmile cokoli změníš v Settings. Replaye jsou vedle
@@ -102,6 +102,22 @@ na snímcích), oblohy a plameny beze změny; Oodle Kraken úroveň 7; Shipping 
 - **Živí cestující** (29d): přešlapují, mávají, krčí se před nízko letícím vrtulníkem, po doručení radost.
 - **Grafika** (29a, 30a-30e): viditelné obláčky efektů, vrstvy skály, tráva přes hrany a cestičky k jeskyním, opar
   a paprsky v jeskyních, mokrá skála u hladiny a odraz levelu v moři (i na Low), stín vrtulníku pod ním.
+
+## Co vyzkoušet nového (krok 32, zip 2026-10-10)
+
+- **Rotor** (32a): listy už nejsou z jedné strany náboje černé (osvětlené i zespodu).
+- **Tmavší obraz na Low** (32b): Low dřív mléčný (noci a bouře přesvícené), teď blízko Epic - sedí jas noci a bouře?
+- **HUD** (32h): u každého pilota bublina s cílovou plošinou (čárky jako v originálu) a jízdné ve čtyřech číslicích,
+  které klesá.
+- **Rozlišitelní cestující** (32c): muž černovlasý, široký (tmavě olivové listy); žena světlá blondýna, štíhlá (červené
+  listy); stařec bělovlasý, shrbený, o holi (slámové listy). Pozor: stařec ve vodě vydrží jen 2 s a zachránit nejde,
+  utopí se (muž 10 s, žena 20 s) - jako originál.
+- **Foukač** (32d): T-rex velký jako v originálu (natočený ke kameře); **ohňostroj** po dokončení levelu větší a delší.
+- **Kámen** (32e): ostrý kus břidlice místo hroudy; visí pod vrtulníkem na laně a nikdy nezajede do skály - při
+  přistání si sedne vedle na zem.
+- **Let mezi levely** (32f): místo střihu do černé 9 s let dronem nad souostrovím od kamene ke kameni přes mlhu;
+  klávesa ho urychlí až od titulku dalšího levelu. Trhá někde (hlavně v mlze)?
+- **Strom z džungle** (32g): škrtič s kořeny po čele skály dolů, liány, velké listy taro; tvář a chování jako dřív.
 
 ## Co čeká na tvoje posouzení (kroky 13-30)
 

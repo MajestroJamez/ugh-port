@@ -167,6 +167,8 @@ editor's game mode compiles shaders while it plays. A first start without a prof
 (`UghGraphics::RecommendedQuality`): Epic with DLSS on an RTX (the trial on an RTX 5060 Ti: about 150 fps, about 450
 with frame generation), Low on an integrated GPU, High otherwise.
 
+After step 32 (2026-10-10, 32a-32g; the package with the new PSO cache - 639 stable PSOs, 17 runs with the flight between levels -, the notebook warm after the packaging, Docker and two IDEs idle beside it, 8-20 % of the CPU): Low 58, 1 % low 33, slowest 33 (14 hitches over 50 ms, the slowest frame 168 ms) - as after the steps 29-30; Medium down to 24 / 13 / 17 (262 hitches, 123 ms) and in a second run 20 / 13 / 16 (508 hitches, 140 ms), from 42 / 23 / 25 after the steps 29-30 - a regression of one of the steps 32a-32g at Medium not yet found (Low not affected). High and Epic not measured.
+
 ### Size
 
 Step 28 (MB; before: step 25e's package, Development; after: the Shipping game of the zip, `Packaged\Shipping\Windows`;
@@ -208,6 +210,9 @@ The Development package (`Packaged\Windows`, measured by the scripts) is 1697 MB
 After the steps 29-30 (2026-10-09): the pak 907 MB (+18 with the new materials and the passengers' new actions; the
 sounds of the ambience are made while playing), the Shipping package 1345 MB without
 `.pdb`, the zip 1118 MB as before, the Development package 1.68 GB without `.pdb`.
+
+After step 32 (2026-10-10): the Shipping package 1.30 GB without `.pdb`, the zip `Packaged\UghGame-Windows.zip` 1101 MB
+(1154 million bytes), the Development package 1.66 GB without `.pdb`.
 
 ## Modules
 
