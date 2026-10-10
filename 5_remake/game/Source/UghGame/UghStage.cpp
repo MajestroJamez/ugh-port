@@ -37,6 +37,13 @@ namespace
 	 */
 	TAutoConsoleVariable<int32> CVarSceneReflections(TEXT("ugh.SceneReflections"), 1,
 		TEXT("Whether the scene has the engine's reflections (0: none - the sea's screen-space reflections alone)."));
+	/**
+	 * How bright the fog's light is, times the mood's (1 as tuned). Without the volumetric fog (low) the engine's height
+	 * fog adds its colour evenly over the whole level, the caves in shadow too - a milky picture; the volumetric fog
+	 * lights it by the shadowed sun. The quality presets set it (UghGraphics: lower at low).
+	 */
+	TAutoConsoleVariable<float> CVarFogLight(TEXT("ugh.FogLight"), 1.f,
+		TEXT("How bright the fog's light is, times the mood's (1: as tuned; lower at low, without the volumetric fog)."));
 	/** A fog low over the water: how fast it thins upwards; the mist of a storm, much faster. */
 	constexpr float FogFalloff = 0.3f, MistFalloff = 2.5f;
 	/**
@@ -211,6 +218,7 @@ void AUghStage::SetCamera(const FUghCameraPose& Pose)
 	Look->Settings.bOverride_AutoExposureBias = Pose.ExposureBias != 0;
 	Look->Settings.AutoExposureBias = Pose.ExposureBias;
 	ShowHalo();
+	LightFog();
 	const bool bNoReflections = CVarSceneReflections.GetValueOnGameThread() == 0;
 	Look->Settings.bOverride_ReflectionMethod = bNoReflections;
 	Look->Settings.ReflectionMethod = bNoReflections ? EReflectionMethod::None : EReflectionMethod::Lumen;
@@ -226,6 +234,16 @@ void AUghStage::ShowHalo()
 	}
 }
 
+void AUghStage::LightFog()
+{
+	const float Light = CVarFogLight.GetValueOnGameThread();
+	if (Light != FogLit)
+	{
+		Fog->SetFogInscatteringColor(FogColor * Light);
+		FogLit = Light;
+	}
+}
+
 void AUghStage::SetMood(const FUghMood& Mood, int32 Wind)
 {
 	Sun->SetRelativeRotation(FRotator(Mood.SunPitch, Mood.SunYaw, 0));
@@ -234,7 +252,9 @@ void AUghStage::SetMood(const FUghMood& Mood, int32 Wind)
 	Sun->SetVolumetricScatteringIntensity(Mood.Shafts);
 	SkyLight->SetIntensity(Mood.SkyLight);
 	Fog->SetFogDensity(Mood.FogDensity);
-	Fog->SetFogInscatteringColor(Mood.FogColor);
+	FogColor = Mood.FogColor;
+	FogLit = -1;
+	LightFog();
 	Fog->SetSecondFogDensity(Mood.Mist);
 	Look->Settings.AutoExposureMinBrightness = Look->Settings.AutoExposureMaxBrightness = Mood.Exposure;
 	const float Fill = Mood.FigureFill * FMath::Pow(2.f, Mood.Exposure);

@@ -7,7 +7,8 @@ import ugh_kit as kit
 
 # the players' colours: leather dyed red ochre and teal (the colours of the clay copters), light and dark leaves
 LEATHER = ((0.95, 0.42, 0.16), (0.2, 0.62, 0.68))
-LEAVES = ((0.9, 1.0, 0.72), (0.55, 0.78, 0.5))
+# (dimmer since 32b: lit as their top on both sides since 32a, the rotor's disc glowed lime)
+LEAVES = ((0.55, 0.6, 0.45), (0.36, 0.48, 0.32))
 
 
 def make(folder, wood_folder, stone_folder):
@@ -83,5 +84,5 @@ def make(folder, wood_folder, stone_folder):
                                  colour=False)
     for player, tint in enumerate(LEAVES, 1):
         # one-sided: the rotor's leaves have an underside of their own, lit as their top (copter.leaf)
-        made[f"leaf_{player}"] = kit.material(f"leaf_{player}", leaf, leaf_normal, roughness=0.55, tint=tint)
+        made[f"leaf_{player}"] = kit.material(f"leaf_{player}", leaf, leaf_normal, roughness=0.7, tint=tint)
     return made

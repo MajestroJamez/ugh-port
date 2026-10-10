@@ -2103,3 +2103,16 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   prázdného místa; duch je průsvitný záměrně. CTest logiky, `6_verification` (324) a 217 testů v UE zelené.
   `levels.ps1 -Quick` 0 chyb, arch beze změny (`Levels-32a-after`), fps medián 17, 1 % low 13. Balíček nepřebalen.
   Další: **krok 32b**.
+- 2026-10-10: krok 32b hotový - méně přesvětlené (`docs/visual-concept.md`, README hry). Jan hrál balíček na **Low**
+  (profil balíčku). Jas snímků rychlé sady (sRGB luma 0-255, střední hodnota 12 levelů; bez HUD): Low po 30e 87,7
+  (noci 44-46, bouřka 130 s p10 101 = mléko) proti Epicu 57,5 (noci 17-20); pro srovnání 24c Epic 71,5 / Low 108,4,
+  24e 51,1 / 99,8. Příčina: Low bez Lumenu i distance field AO (GI kvalita 0) - světlo oblohy nezastíněné i v jeskyních
+  a výšková mlha bez objemu přidává svou barvu rovnoměrně přes stíny. A/B na Low: světlo oblohy x0,3 → 75,3, k tomu
+  bez mlhy 49,5. Kroky 30c-30e na Epicu jen +1 (opar 30c zvedl p10 z 1 na 4), 30a +5,6 (tvar skály). Oprava: preset
+  Low `r.SkylightIntensityMultiplier` 0,3 a nové `ugh.FogLight` 0,4 (světlo mlhy, `AUghStage`); expozice dne, večera,
+  soumraku a bouřky +0,2-0,25 EV (noc beze změny; světla postav jdou s expozicí, postavy vyniknou víc), opar jeskyní
+  0,05 místo 0,08; listy rotoru tmavší (tint 0,55/0,6/0,45 a 0,36/0,48/0,32, drsnost 0,7). Po: Low 52,9 (noci 22-25,
+  p10 8-10, bouřka 68), Epic 51,9 (noci 16-20). Archy před/po `Saved\Shots\32b-after\sheet-low-before-after.png`
+  (před = `Levels-perf-low` z balíčku po 30e, po = `Levels-32b-low`), `sheet-epic-before-after.png` (`Levels-32a-after`
+  / `Levels-32b-epic`), vrtule `rotor-before-after.png`. Postavy > plošiny > skála drží, noci čitelné (ohně, výplň
+  postav). CTest logiky, `6_verification` (324) a 217 testů v UE zelené. Balíček nepřebalen. Další: **krok 32h**.

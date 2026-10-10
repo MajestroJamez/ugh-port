@@ -24,7 +24,7 @@ namespace
 	 * the sun's (the moon's) colour, the fires' glow a warm one times the mood's fire light, as bright as each mood
 	 * wants them (a storm's sun hardly makes shafts, the fires glow most at night).
 	 */
-	constexpr float HazeShare = 0.08f;
+	constexpr float HazeShare = 0.05f;   // 0.08 lifted the caves' black (32b)
 	const FLinearColor FireColor(1.f, 0.42f, 0.13f);
 	float ShaftShare(EKind Kind)
 	{

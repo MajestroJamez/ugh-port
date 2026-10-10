@@ -31,6 +31,12 @@ TConstArrayView<UghGraphics::FVariable> UghGraphics::Variables()
 		{ TEXT("r.VolumetricFog"), { TEXT("0"), TEXT("1"), TEXT("1"), TEXT("1") } },
 		{ TEXT("r.VolumetricFog.GridPixelSize"), { TEXT("16"), TEXT("24"), TEXT("16"), TEXT("16") } },
 		{ TEXT("r.VolumetricFog.GridSizeZ"), { TEXT("64"), TEXT("48"), TEXT("64"), TEXT("64") } },
+		// low has neither Lumen nor distance field occlusion: the sky light lit the caves as brightly as the open rock
+		// and the fog without its volume added its colour evenly over the shadows too - a flat milky picture twice as
+		// bright as epic's at night (32b); a third of the sky light (what the cave walls let in, as epic's frame shows)
+		// and the fog's light dimmer (ugh.FogLight, AUghStage) bring it to epic's brightness and depth of black
+		{ TEXT("r.SkylightIntensityMultiplier"), { TEXT("0.3"), TEXT("1"), TEXT("1"), TEXT("1") } },
+		{ TEXT("ugh.FogLight"), { TEXT("0.4"), TEXT("1"), TEXT("1"), TEXT("1") } },
 		// the sea: at low the engine's screen-space reflections on it alone (the level mirrored where the screen shows
 		// it, as medium has them; the scene's own off, ugh.SceneReflections - without Lumen the engine's other
 		// reflections had only the sky light to mirror: a white sea), else as the scene's (Lumen's at half resolution,

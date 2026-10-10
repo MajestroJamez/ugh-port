@@ -1027,3 +1027,14 @@ u sebe a nic za dosahem, deterministicky).
   zůstávají skeny Electric Dreams a sítě z Blenderu.
 - **MetaHuman Generator**: nepoužit. Je místní, ale každá nová postava potřebuje rig obličeje a textury kůže
   z Epicova cloudu (přihlášení). Cestující dál muž, žena a stařec z `metahumans.ps1`.
+
+## Méně přesvětlené, hlavně na Low (krok 32b)
+
+- Low nemá Lumen ani stínění oblohy (distance field AO): světlo oblohy svítilo do jeskyní stejně jako na otevřenou
+  skálu a mlha bez objemu přidávala svou barvu rovnoměrně i do stínů - mléčný plochý obraz, střední jas 1,5x Epicu,
+  v noci 2x. Na Low teď světlo oblohy x0,3 (`r.SkylightIntensityMultiplier`) a světlo mlhy x0,4 (`ugh.FogLight`):
+  jas a hloubka černé jako na Epicu, bouřka dál šedá.
+- Všechny presety: expozice dne, večera, soumraku a bouřky o 0,2-0,25 EV tmavší (noc beze změny); světla postav jdou
+  s expozicí, takže postavy vynikají víc (postavy > plošiny > skála). Opar jeskyní (30c) slabší (0,05 místo 0,08),
+  už nezvedá černou.
+- Listy rotoru tmavší zelené (od 32a svítily z obou stran limetkově).

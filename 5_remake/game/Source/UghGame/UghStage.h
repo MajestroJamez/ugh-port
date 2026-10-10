@@ -68,6 +68,12 @@ private:
 	void SetFoliageWind(int32 Wind);
 	/** The figures' halo drawn or not, by ugh.Halo (the quality preset). */
 	void ShowHalo();
+	/** The fog's light, the mood's times ugh.FogLight (the quality preset), when either changed. */
+	void LightFog();
+
+	/** The mood's fog colour and the ugh.FogLight it was last lit with (FogLit < 0: not yet). */
+	FLinearColor FogColor = FLinearColor::Black;
+	float FogLit = -1;
 
 	UPROPERTY() TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY() TObjectPtr<UDirectionalLightComponent> Sun;
