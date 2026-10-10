@@ -60,6 +60,8 @@ namespace
 	constexpr double CollectEvery = 10;
 	/** A copter's splash in the sea starts this far above the surface (pixels). */
 	constexpr double FoamAbove = 0.4;
+	/** After the mist of a flight between two levels the sea goes to the next level's height over this long (seconds). */
+	constexpr double SurfaceBlend = 1.5;
 	struct FSlowPart
 	{
 		const TCHAR* Name;
@@ -103,9 +105,10 @@ void AUghGameMode::StartPlay()
 	ApplySettings();
 	GAreScreenMessagesEnabled = false;   // the engine's messages: the log has them, the screen is the game's
 	bIntro = FUghIntro::bFlies && !FParse::Param(FCommandLine::Get(), TEXT("UghNoIntro"));
-	// the level selection (the autopilot only shooting it); its stones made now, in the black
+	// the level selection (the autopilot only shooting it); its stones made now, in the black (also for the flights
+	// between the levels over them, FUghVoyage)
 	Menu.SetIsles(!FParse::Param(FCommandLine::Get(), TEXT("UghNoIsles")) && (!bShooting || Shot.WantsIsles()));
-	if (Menu.IsIslesOn())
+	if (Menu.IsIslesOn() || bIntro)
 	{
 		Archipelago->Make();   // (it logs how long)
 	}
@@ -196,15 +199,43 @@ void AUghGameMode::Tick(float DeltaSeconds)
 		{
 			StartGame(*Chosen, FKey());
 		}
+		// a stone chosen: no flight to black there - the game begins and the camera flies on to the stone, where the
+		// level is built in the flight's mist (FUghVoyage)
+		else if (bIntro && Profile.Settings.bIntro && Menu.GetScreen() == FUghMenu::EScreen::Isles &&
+			Menu.GetIsles().GetStage() == FUghIsles::EStage::Approach)
+		{
+			const FUghCameraPose From = CameraPose;
+			FrozenPrevious = Simulation.GetPrevious();   // (the level the title shows, until the mist)
+			FrozenCurrent = Simulation.GetCurrent();
+			const FUghGameChoice Taken = Menu.TakeIsles();
+			StartGame(Taken, FKey());
+			if (!bInMenu)
+			{
+				StartVoyage(From, Taken.FirstLevel, false);
+			}
+		}
 	}
 	if (!bInMenu)
 	{
+		if (ShotNextIn > 0 && (ShotNextIn -= DeltaSeconds) <= 0)
+		{
+			// (the autopilot's level done: the logic on at the next level, as after its fade out)
+			Simulation.NewGame({ Playing.Players, Playing.Difficulty, VoyageNext });
+		}
 		{
 			FSlowPart Part{ TEXT("logic") };
 			Simulation.Advance(DeltaSeconds);
 		}
 		FSlowPart Part{ TEXT("events") };
 		PlayEvents();
+		// a level done: the camera flies on to the next level's stone (not while a replay is watched: it ends there)
+		for (const ugh_logic_event& Event : Simulation.GetEvents())
+		{
+			if (Event.kind == UGH_LOGIC_EVENT_LEVEL_DONE && !Simulation.IsWatching() && !Voyage.IsFlying())
+			{
+				StartVoyage(CameraPose, Simulation.GetCurrent().level + 1, true);
+			}
+		}
 		if (const TSharedPtr<FUghReplay> Ended = Simulation.TakeEndedLevel())
 		{
 			OnLevelEnded(Ended);
@@ -242,6 +273,7 @@ void AUghGameMode::Tick(float DeltaSeconds)
 void AUghGameMode::EndPlay(const EEndPlayReason::Type Reason)
 {
 	CameraLog.Flush();
+	DropPlan();
 	Super::EndPlay(Reason);
 }
 
@@ -253,13 +285,35 @@ void AUghGameMode::ShowFrame(double Seconds)
 		Shot.Dress(Previous, Simulation.GetLogic());
 		Shot.Dress(Current, Simulation.GetLogic());
 	}
+	if (Voyage.IsFlying() && !Voyage.IsSwitched())
+	{
+		// the flight to the next level's stone: the level left shown until the mist, the next built in it
+		FSlowPart Part{ TEXT("level step") };
+		SwitchVoyage(Current);
+		if (!Voyage.IsSwitched())
+		{
+			if (Current.level_id == BackgroundLevel && Current.level == MoodLevel)
+			{
+				FrozenPrevious = Previous;
+				FrozenCurrent = Current;
+			}
+			else
+			{
+				FrozenPrevious = FrozenCurrent;   // (held still: the logic is at the next level)
+			}
+			Previous = FrozenPrevious;
+			Current = FrozenCurrent;
+		}
+	}
 	if (Current.level_id != BackgroundLevel || Current.level != MoodLevel)
 	{
 		FSlowPart Part{ TEXT("level built") };
+		DropPlan();
 		BuildLevel(Current);
 		CameraLog.Note(TEXT("level built"));
 	}
 	FlyIntro(Current, Seconds);
+	FlyVoyage(Simulation.GetCurrent(), Seconds);
 	// behind the menu the camera swings around the stone over the open sea
 	const bool bMenuView = bInMenu && Current.level_id >= 0;
 	MenuTime = bMenuView ? MenuTime + Seconds : 0;
@@ -294,13 +348,30 @@ void AUghGameMode::ShowFrame(double Seconds)
 			Impacts.OnDunk(Splash.Player, Splash.Scale);
 		}
 	}
-	const double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
+	double Surface = UghWater::Surface(Previous, Current, Simulation.Alpha());
+	// after the flight's mist the sea goes smoothly from the level left's height to the next one's
+	if (SurfaceAge < SurfaceBlend)
+	{
+		Surface = FMath::Lerp(SurfaceFrom, Surface, FMath::SmoothStep(0.0, SurfaceBlend, SurfaceAge));
+		SurfaceAge += FMath::Min(Seconds, FUghVoyage::MaxStep);   // (as the flight's clock: a long frame no jump)
+	}
+	LastSurface = Surface;
 	Background->SetWater(Surface);
 	SeaStack->SetWater(Surface);
 	// the archipelago of the level selection while it is open (behind the menu)
 	const FUghIsles& Isles = Menu.GetIsles();
 	const bool bIsles = bMenuView && Isles.IsOpen();
-	Archipelago->Show(bIsles ? &Isles : nullptr);
+	if (Voyage.IsFlying())
+	{
+		// in the flight between two levels: around the stone, which stands for the level left, then the next
+		const bool bSwitched = Voyage.IsSwitched();
+		Archipelago->ShowPlaces(VoyagePlaces, VoyageStates, Playing.Players, bSwitched ? VoyageAfter : VoyageBefore,
+			bSwitched ? VoyageNext : VoyageLeft);
+	}
+	else
+	{
+		Archipelago->Show(bIsles ? &Isles : nullptr);
+	}
 	Archipelago->SetWater(Surface);
 	// the open sea all along (no switch)
 	Water->Show(Surface, UghWater::Rings(Current, Sprites, Surface, &Flings, Dunks.Stirs(Surface)), true);
@@ -358,7 +429,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	double Shown = 1 - FMath::Square(1 - Faded);
 	if (bIntroScene)
 	{
-		Shown = FMath::Max(Shown, Intro.Shown());
+		Shown = FMath::Max(Shown, bVoyageScene ? 1.0 : Intro.Shown());   // (no black in a flight between two levels)
 	}
 	if (bMenuView)
 	{
@@ -366,12 +437,16 @@ void AUghGameMode::ShowFrame(double Seconds)
 	}
 	// the stone's jungle: in the flight until it is out of its view, behind the menu; not in the play, which does not see
 	// it (thousands of swaying plants) - in black at once, else a few kinds a frame
-	SeaStack->ShowJungle(bMenuView || (Intro.IsFlying() && Intro.GetTime() < AUghSeaStack::JungleOutOfView), Shown <= 0);
+	SeaStack->ShowJungle(bMenuView || (Intro.IsFlying() && Intro.GetTime() < AUghSeaStack::JungleOutOfView) ||
+		Voyage.ShowsJungle(), Shown <= 0);
 	if (APlayerController* Controller = GetWorld()->GetFirstPlayerController())
 	{
 		if (Controller->PlayerCameraManager)
 		{
-			Controller->PlayerCameraManager->SetManualCameraFade(1.f - float(Shown), FLinearColor::Black, false);
+			// the flight's mist: the picture fades into its colour (the mood left's, then the next one's as it thins)
+			const double Mist = Voyage.IsFlying() ? Voyage.GetMist() : 0;
+			Controller->PlayerCameraManager->SetManualCameraFade(Mist > 0 ? float(Mist) : 1.f - float(Shown),
+				Mist > 0 ? FMath::Lerp(MistAfter, MistBefore, float(Mist)) : FLinearColor::Black, false);
 		}
 	}
 	const TOptional<FBox2D> CloseUp = bShooting ? Shot.CloseUp(Current, ShotLook, ShotAround) : TOptional<FBox2D>();
@@ -381,11 +456,11 @@ void AUghGameMode::ShowFrame(double Seconds)
 	MotionBlur.Update(Previous, Current, Seconds);
 	Game.MotionBlur = MotionBlur.GetAmount();
 	SeaZ = UghShapes::ToWorld(0, Surface, 0).Z;
-	FUghCameraPose Pose = Intro.IsFlying() ? Intro.Pose(Game, SeaZ)
+	FUghCameraPose Pose = Intro.IsFlying() ? Intro.Pose(Game, SeaZ) : Voyage.IsFlying() ? Voyage.Pose(Game, SeaZ)
 		: bIsles ? Isles.GetPose() : bMenuView ? UghMenuView::At(Game, SeaZ, MenuTime) : Game;
 	// an impact shakes the play's camera a little (in the screen's plane), rumbles its pilot's gamepad
 	Impacts.Advance(Seconds);
-	if (!Intro.IsFlying() && !bMenuView)
+	if (!Intro.IsFlying() && !Voyage.IsFlying() && !bMenuView)
 	{
 		const FVector2D Shake = Impacts.Offset();
 		Pose.Location += Pose.Rotation.RotateVector(FVector(0, Shake.X, Shake.Y));
@@ -410,18 +485,38 @@ void AUghGameMode::ShowFrame(double Seconds)
 		CollectedAt = FPlatformTime::Seconds();
 		GEngine->ForceGarbageCollection(true);
 	}
-	CameraLog.Record(Seconds, Pose, Current.phase, Intro);
+	const bool bFlight = Intro.IsFlying() || Voyage.IsFlying();
+	CameraLog.Record(Seconds, Pose, Simulation.GetCurrent().phase, bFlight,
+		Voyage.IsFlying() ? Voyage.GetTime() : Intro.GetTime(), Voyage.IsFlying() ? Voyage.GetMist() : 0);
+}
+
+void AUghGameMode::FlyVoyage(const ugh_logic_view& Live, double Seconds)
+{
+	if (!Voyage.IsFlying())
+	{
+		return;
+	}
+	if (Voyage.IsSwitched() && Live.phase == UGH_LOGIC_PHASE_PLAY)
+	{
+		Voyage.Hurry();   // never into the play
+	}
+	Voyage.Advance(Seconds);
+	if (Voyage.HasArrived())
+	{
+		CameraLog.Note(TEXT("voyage arrived"));
+		UE_LOG(LogTemp, Display, TEXT("UGH voyage arrived"));
+	}
 }
 
 void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)
 {
 	const bool bPlay = View.phase == UGH_LOGIC_PHASE_PLAY;
-	if (bPlay && View.fade >= UghShapes::FadeShown)
+	if (bPlay && View.fade >= UghShapes::FadeShown && !Voyage.IsFlying())
 	{
-		bIntroScene = false;   // the play's own fades again
+		bIntroScene = bVoyageScene = false;   // the play's own fades again
 	}
 	const bool bFlies = bIntro && Profile.Settings.bIntro;
-	if (bFlies && !bInMenu && View.phase == UGH_LOGIC_PHASE_CAPTION && View.level != IntroLevel)
+	if (bFlies && !bInMenu && !Voyage.IsFlying() && View.phase == UGH_LOGIC_PHASE_CAPTION && View.level != IntroLevel)
 	{
 		IntroLevel = View.level;   // not again after a crash
 		Intro.Start();
@@ -434,76 +529,6 @@ void AUghGameMode::FlyIntro(const ugh_logic_view& View, double Seconds)
 			Intro.Hurry();   // never into the play
 		}
 		Intro.Advance(Seconds);
-	}
-}
-
-/**
- * The diorama of the level the view shows: the rock coloured by its drawing, the pads' boards, its springs' streams, the
- * campfires and torches, the decorations, the scanned rock dressing the cliff; the light and the air of its mood
- * (UghMood), its rain.
- */
-void AUghGameMode::BuildLevel(const ugh_logic_view& View)
-{
-	BackgroundLevel = View.level_id;
-	MoodLevel = View.level;
-	const ugh_logic* Logic = Simulation.GetLogic();
-	const TArray<FColor> Art = LevelArt.Draw(View.level_id, Sprites);
-	FUghRockField Field;
-	Field.Build(Logic, Art, LevelArt.Doors(View.level_id));
-	const TArray<FUghPadSign> PadSigns = View.level_id < 0 ? TArray<FUghPadSign>()
-		: UghPadSigns::Plan(Logic, FUghGround(Logic, Field), LevelArt.Signs(View.level_id));
-	const int32 WaterRow = View.water_level / UghShapes::Subpixels;
-	const TArray<FUghStream> Streams =
-		View.level_id < 0 ? TArray<FUghStream>() : UghStreams::Plan(Logic, Field, WaterRow, PadSigns);
-	Field.CarveChannels(Streams);
-	FUghRockMesh Rock;
-	Rock.Build(Field);
-	FUghTurf Turf;
-	if (View.level_id >= 0)
-	{
-		Turf.Build(Logic, Field, WaterRow, Streams);
-	}
-	Background->Build(Rock, Art, &Turf);
-	Signs->Show(Background->ShowsArt() ? TArray<FUghPadSign>() : PadSigns, Sprites);   // else the drawing shows them
-	Falls->Show(Streams);
-	const double Started = FPlatformTime::Seconds();
-	const TArray<FUghDecoration> Decorations = View.level_id < 0 ? TArray<FUghDecoration>()
-		: UghDecorations::Plan(Logic, Field, View.level_id, WaterRow, PadSigns, Streams);
-	UE_LOG(LogTemp, Display, TEXT("UGH decorations: %d in %.0f ms (%s), streams %d"), Decorations.Num(),
-		(FPlatformTime::Seconds() - Started) * 1000, *UghDecorations::Summary(Decorations), Streams.Num());
-	const FUghMood& Mood = UghMood::Of(View.level, View.wind);
-	// what a shot wants to look at
-	const FUghDecoration* Looked = Decorations.FindByPredicate([this](const FUghDecoration& Decoration)
-	{
-		return Shot.GetLook() == UghDecorations::Name(Decoration.Kind);
-	});
-	ShotLook = Looked ? FVector2D(Looked->X, Looked->Y - Looked->Height / 2) : TOptional<FVector2D>();
-	ShotAround = FUghShot::LookAround;
-	Campfire->Place(Decorations, View.wind, Mood.FireLight);
-	Torches->Place(Decorations, View.wind, Mood.FireLight);
-	HearFires(Decorations);
-	Scenery->Show(Decorations);
-	const TArray<FUghRockPiece> Pieces = View.level_id < 0 ? TArray<FUghRockPiece>()
-		: UghRockDressing::Plan(Logic, Field, View.level_id, Decorations, Streams);
-	const int32 Roots =
-		Pieces.FilterByPredicate([](const FUghRockPiece& Piece) { return Piece.Kind == FUghRockPiece::EKind::Root; }).Num();
-	UE_LOG(LogTemp, Display, TEXT("UGH rock dressing: %d cliffs, %d roots"), Pieces.Num() - Roots, Roots);
-	Dressing->Show(Pieces);
-	UE_LOG(LogTemp, Display, TEXT("UGH mood: %s"), Mood.Name);
-	Stage->SetMood(Mood, View.wind);
-	Effects->SetShade(Mood.Shade);
-	Water->SetWeather(View.wind, Stage->SunDirection(), Mood.Caustics);
-	Water->SetSky(UghAssets::Texture(Mood.Sky), Mood.SkySeen);
-	CaveAir->Build(View.level_id < 0 ? nullptr : Logic, Decorations, Mood, Stage->SunDirection(), WaterRow);
-	Rain->Build(View.level_id < 0 ? nullptr : Logic, View.level_id, View.wind);
-	if (View.level_id >= 0 && !bInMenu)
-	{
-		// the people the play may show, made now in the black (a MetaHuman made in the play was a hitch)
-		FSlowPart Part{ TEXT("people stocked") };
-		Figures->Stock();
-		Copters->Stock();
-		// (a flung passenger's splash, FUghFlings; a copter falling into the sea and coming up, FUghDunks)
-		Effects->Stock({ EUghBurst::Plunge, EUghBurst::Dunk, EUghBurst::Boil });
 	}
 }
 
@@ -556,6 +581,13 @@ bool AUghGameMode::HandleKey(const FKey& Key, EInputEvent Event, FInputDeviceId 
 	if (Event == IE_Pressed)
 	{
 		Intro.Hurry();   // (the key goes to the logic all the same)
+		// the flight between two levels: once the logic is at the next level's caption (a key before does not count there)
+		const ugh_logic_view& Live = Simulation.GetCurrent();
+		if (Voyage.IsSwitched() || Plan || PlanTask.IsValid() ||
+			(Live.level_id >= 0 && (Live.level_id != BackgroundLevel || Live.level != MoodLevel)))
+		{
+			Voyage.Hurry();
+		}
 	}
 	Controls.Handle(Simulation, Key, Event, Device);
 	return true;
@@ -652,6 +684,10 @@ void AUghGameMode::OpenMenu()
 	}
 	bInMenu = true;
 	Intro.Stop();
+	Voyage.Stop();
+	DropPlan();
+	ShotNextIn = -1;
+	bVoyageScene = false;
 	Effects->Clear();
 	Impacts.Reset();
 	bIntroScene = false;

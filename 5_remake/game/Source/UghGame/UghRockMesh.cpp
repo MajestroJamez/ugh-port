@@ -121,6 +121,66 @@ UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer, const TArray<const FUghR
 	return Pointers.IsEmpty() ? nullptr : UghMeshes::FromDescriptions(Outer, Pointers, SlotName, ScreenSizes);
 }
 
+void FUghRockMesh::Describe(int32 Pieces, TArray<FMeshDescription>& Described) const
+{
+	Described.Reset();
+	if (Vertices.IsEmpty() || Pieces <= 1)
+	{
+		if (!Vertices.IsEmpty())
+		{
+			Describe(Described.AddDefaulted_GetRef());
+		}
+		return;
+	}
+	// each triangle into the piece of its middle across
+	double Left = UE_BIG_NUMBER, Right = -UE_BIG_NUMBER;
+	for (const FVector& Vertex : Vertices)
+	{
+		Left = FMath::Min(Left, Vertex.X);
+		Right = FMath::Max(Right, Vertex.X);
+	}
+	const double Width = FMath::Max(Right - Left, 1.0) / Pieces;
+	TArray<TArray<int32>> Kept;
+	Kept.SetNum(Pieces);
+	for (int32 Index = 0; Index < Triangles.Num(); Index += 3)
+	{
+		const double Middle =
+			(Vertices[Triangles[Index]].X + Vertices[Triangles[Index + 1]].X + Vertices[Triangles[Index + 2]].X) / 3;
+		Kept[FMath::Clamp(int32((Middle - Left) / Width), 0, Pieces - 1)].Add(Index);
+	}
+	Kept.RemoveAll([](const TArray<int32>& Piece) { return Piece.IsEmpty(); });
+	Described.SetNum(Kept.Num());
+	// (each piece on a worker of its own: describing a mesh is slow)
+	ParallelFor(Kept.Num(), [&](int32 Index)
+	{
+		const TArray<int32>& Piece = Kept[Index];
+		FUghRockMesh Part;
+		TArray<int32> Map;
+		Map.Init(INDEX_NONE, Vertices.Num());
+		for (const int32 First : Piece)
+		{
+			for (int32 Corner = 0; Corner < 3; ++Corner)
+			{
+				const int32 Vertex = Triangles[First + Corner];
+				if (Map[Vertex] == INDEX_NONE)
+				{
+					Map[Vertex] = Part.Vertices.Add(Vertices[Vertex]);
+					Part.Normals.Add(Normals[Vertex]);
+					Part.UVs.Add(UVs[Vertex]);
+					Part.Colors.Add(Colors[Vertex]);
+				}
+				Part.Triangles.Add(Map[Vertex]);
+			}
+		}
+		Part.Describe(Described[Index]);
+	});
+}
+
+UStaticMesh* FUghRockMesh::ToStaticMesh(UObject* Outer, const FMeshDescription& Described)
+{
+	return UghMeshes::FromDescriptions(Outer, { &Described }, SlotName, { 1.f });
+}
+
 void FUghRockMesh::Describe(FMeshDescription& Description) const
 {
 	FStaticMeshAttributes Attributes(Description);

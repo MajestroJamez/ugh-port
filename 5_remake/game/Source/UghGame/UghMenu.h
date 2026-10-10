@@ -91,6 +91,11 @@ public:
 	 * is over (then the title again, for after the game); back to the title when it closed.
 	 */
 	TOptional<FUghGameChoice> AdvanceIsles(double Seconds, const FUghCameraPose& Game, double SeaZ);
+	/**
+	 * The game of the stone chosen in the level selection taken at once, as its flight to the stone begins (the game
+	 * mode flies on to the level itself, FUghVoyage): the selection closed, the title again (for after the game).
+	 */
+	FUghGameChoice TakeIsles();
 	const FUghIsles& GetIsles() const { return Isles; }
 
 	/**

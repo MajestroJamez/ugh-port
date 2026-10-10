@@ -50,6 +50,14 @@ public:
 	/** Meshes of the same surface, finer to coarser, as one static mesh with them as its levels of detail (UghMeshes). */
 	static UStaticMesh* ToStaticMesh(UObject* Outer, const TArray<const FUghRockMesh*>& Lods,
 		const TArray<float>& ScreenSizes);
+	/**
+	 * The mesh in `Pieces` side by side (by the middles of its triangles across), each as a static mesh's description
+	 * (the engine's mesh built from one later, a piece a frame: ToStaticMesh); the same vertices, normals and colours
+	 * at their seams. Pure data: on any thread.
+	 */
+	void Describe(int32 Pieces, TArray<FMeshDescription>& Described) const;
+	/** A piece of Describe as the engine's static mesh (as ToStaticMesh). */
+	static UStaticMesh* ToStaticMesh(UObject* Outer, const FMeshDescription& Described);
 	/** The large patches at a point (pixels), 0 .. 1 over metres (the vertex colours' alpha). */
 	static double Patches(const FVector& Point);
 

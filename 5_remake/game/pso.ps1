@@ -3,7 +3,8 @@
 #   2. the packaged game plays by itself without a window (-UghShot, -RenderOffscreen) with -logPSO, in a few runs
 #      (Passes): the menu and its screens (the replays too), the quick set of levels.ps1 (every mood, rising water, storms, the team),
 #      the flight to the sea stack in each mood, the bursts of the events by day and at night, the card of a game's
-#      end with a high score, the level selection over the archipelago (its flights, choosing; both modes), a copter
+#      end with a high score, the level selection over the archipelago (its flights, choosing; both modes), the flight between two levels
+#      (FUghVoyage: a level taken as done), a copter
 #      flying fast (its motion blur, the warning over it; at Medium too), its replay watched and flown by the ghost
 #      (at Low too), the quick
 #      set, the flights, the bursts and the level selection at the preset Low and a few levels at Medium
@@ -36,6 +37,8 @@ $Passes = @(
     '-UghShotLevels=1p:1,1p:6 -UghShotEffect=all',
     '-UghShotLevels=1p:3 -UghShotEnd -UghShotScore=5000',
     '-UghShotLevels=1p:1,team:1 -UghShotIsles=over:2,over:4,choose,approach:1,arrive',
+    # the flight between two levels (a level taken as done; FUghVoyage): the archipelago, its mist, the next stone
+    '-UghShotLevels=1p:5,1p:9,1p:22,team:1 -UghShotVoyage=2,4,6,end',
     # a copter flying fast: its motion blur (FUghMotionBlur), the warning over it (UghWarning); at medium too
     # (its replay kept: watched in the next run, the banner over the play)
     "-UghShotLevels=1p:1 -UghShotRush=left -UghShotRushY=60 -UghShotRushAfter=0.3,1.2 `"-UghShotSaveReplay=$replay`"",
@@ -49,6 +52,7 @@ $Passes = @(
     "-UghShotLevels=1p:1,1p:3,1p:6,1p:23,1p:43 -UghShotIntro=4.4 `"-UghProfile=$low`"",
     "-UghShotLevels=1p:1,1p:6 -UghShotEffect=all `"-UghProfile=$low`"",
     "-UghShotLevels=1p:1 -UghShotIsles=over:2,over:4,choose,approach:1,arrive `"-UghProfile=$low`"",
+    "-UghShotLevels=1p:5,1p:9,1p:22 -UghShotVoyage=2,4,6,end `"-UghProfile=$low`"",
     "-UghShotLevels=1p:1,1p:6,1p:43,team:21 -UghShotAt=2 `"-UghProfile=$medium`"",
     "-UghShotLevels=1p:1 -UghShotRush=left -UghShotRushY=60 -UghShotRushAfter=1.2 `"-UghProfile=$medium`""
 )

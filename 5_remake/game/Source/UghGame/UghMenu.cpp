@@ -255,6 +255,14 @@ void FUghMenu::OpenIsles(const FUghCameraPose& From, const FVector& Home, double
 	Screen = EScreen::Isles;
 }
 
+FUghGameChoice FUghMenu::TakeIsles()
+{
+	const FUghGameChoice Chosen{ Players, Difficulty, Isles.GetCursor() };
+	Isles.Close();
+	Screen = EScreen::Title;
+	return Chosen;
+}
+
 TOptional<FUghGameChoice> FUghMenu::AdvanceIsles(double Seconds, const FUghCameraPose& Game, double SeaZ)
 {
 	Isles.Advance(Seconds, Game, SeaZ);

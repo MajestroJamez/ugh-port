@@ -138,6 +138,8 @@ public:
 
 	/** The level selection is shot (-UghShotIsles): the menu opens it. */
 	bool WantsIsles() const { return !IslesShots.IsEmpty(); }
+	/** The flight between two levels is shot (-UghShotVoyage): its archipelago is made at the start. */
+	bool WantsVoyage() const { return !VoyageShots.IsEmpty(); }
 
 	/** A frame longer than this is a hitch (seconds). */
 	static constexpr double HitchSeconds = 0.05;
@@ -291,6 +293,22 @@ private:
 	TArray<FIslesShot> IslesLeft;    // of the target being shot
 	double IslesKeyTime = 0;         // since the cursor's last key
 	TArray<float> IslesFrames;       // the frame times over the archipelago (choosing)
+	/** A shot of the flight between two levels (FUghVoyage): its name's end, seconds into it (-1: its arrival). */
+	struct FVoyageShot
+	{
+		FString Name;
+		double At = 0;
+	};
+	/**
+	 * The flight between two levels flown: its shots due taken, the level left hovered until the logic moves on; true
+	 * when they are all taken.
+	 */
+	bool VoyageTick(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, EAction& Action);
+	TArray<FVoyageShot> VoyageShots;   // -UghShotVoyage
+	TArray<FVoyageShot> VoyageLeft;    // of the target being shot (also the level selection's approach, arrive)
+	bool bVoyageBegun = false;         // the target's flight began
+	bool bVoyageEnds = false;          // its shots end the target (-UghShotVoyage; not the level selection's)
+	TArray<float> VoyageFrames;        // its frame times
 	bool bEndShot = false;     // -UghShotEnd
 	bool bEndWanted = false;   // the target was given up: its end is to be shot
 	TOptional<EUghLively> Lively;   // -UghShotLively

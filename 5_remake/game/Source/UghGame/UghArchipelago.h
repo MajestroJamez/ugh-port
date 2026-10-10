@@ -76,6 +76,12 @@ public:
 	void Make();
 	/** Shows the stones of `Isles` (their places and colours) or hides them all. */
 	void Show(const FUghIsles* Isles);
+	/**
+	 * Shows `Places` (their `States`, the mode of `Players`) moved by `Offset` (the world), but the stone `Hidden` (the
+	 * level's stone stands there in a flight between two levels, FUghVoyage; INDEX_NONE: none).
+	 */
+	void ShowPlaces(const TArray<FUghIslePlace>& Places, const TArray<EUghIsle>& States, int32 Players,
+		const FVector& Offset, int32 Hidden);
 	bool IsShown() const { return bShown; }
 	/** The water's surface, pixels from the top of the screen: the stones are wet there and under it. */
 	void SetWater(double Surface);
@@ -94,4 +100,9 @@ private:
 	bool bShown = false;
 	int32 ShownPlayers = 0;
 	TArray<EUghIsle> ShownStates;
+	FVector ShownOffset = FVector::ZeroVector;
+	int32 ShownHidden = INDEX_NONE;
+	int32 ShownCount = 0;
+
+	void SetShown(bool bShow);
 };

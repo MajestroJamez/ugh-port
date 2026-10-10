@@ -24,6 +24,8 @@
 #include "UghSimulation.h"
 #include "UghSprites.h"
 #include "UghUpscaler.h"
+#include "UghVoyage.h"
+#include "Tasks/Task.h"
 #include "UghGameMode.generated.h"
 
 class AUghArchipelago;
@@ -46,6 +48,7 @@ class AUghSpeaker;
 class AUghStage;
 class AUghSeaStack;
 class AUghWater;
+struct FUghLevelPlan;
 
 /**
  * The remake: the menu (FUghMenu) starts a game, the logic runs at its own tick (FUghSimulation) with the keys and the
@@ -105,6 +108,15 @@ public:
 	const FUghMenu& GetMenu() const { return Menu; }
 	/** The flight to the stone at the start of a level. */
 	const FUghIntro& GetIntro() const { return Intro; }
+	/** The flight from stone to stone between two levels (FUghVoyage). */
+	const FUghVoyage& GetVoyage() const { return Voyage; }
+	/**
+	 * The autopilot (-UghShotVoyage): the level played is taken as done - the flight to the next level begins, the logic
+	 * starts a game at the next level ShotNextAfter seconds later (as its own fade out of a level done would); false when
+	 * there is no next level or no flight.
+	 */
+	bool ShotLevelDone();
+	static constexpr double ShotNextAfter = 1.8;
 	/** The passengers knocked off their pads, flung into the sea. */
 	const FUghFlings& GetFlings() const { return Flings; }
 	/** The passengers on land waving, ducking, glad (AUghFigures). */
@@ -143,12 +155,41 @@ private:
 	void BuildStage();
 	/** The frame of the view (`Seconds` after the last one). */
 	void ShowFrame(double Seconds);
+	/** The level the view shows built at once (UghGameModeLevel.cpp): planned (PlanLevel), every step applied. */
 	void BuildLevel(const ugh_logic_view& View);
+	/**
+	 * What the diorama of the level the view shows is made of, planned without touching the scene (its drawing on the
+	 * game thread, the rest - the rock's field and mesh, the turf, the decorations, the rock dressing - wherever it is
+	 * called: a worker's task in a flight between the levels).
+	 */
+	static TSharedPtr<FUghLevelPlan> PlanLevel(const ugh_logic* Logic, const ugh_logic_view& View, TArray<FColor> Art,
+		TArray<FUghArtTile> Doors, TArray<FUghArtTile> Signs);
+	/**
+	 * The first step of ApplyLevel that changes what is seen (the old rock gone): in a flight between two levels the
+	 * steps before it run while the level left is still seen, the rest only in its mist.
+	 */
+	static int32 FirstUnseenStep(const FUghLevelPlan& Plan);
+	/** Step `Step` of putting the plan into the scene (each short: one a frame in the mist); false when it was the last. */
+	bool ApplyLevel(const FUghLevelPlan& Plan, int32 Step);
+	/**
+	 * The flight to the next level's stone (FUghVoyage) begins from `From` to level `Next` of the mode played (from
+	 * the play of a level done, else from the level selection's chosen stone); false when there is none.
+	 */
+	bool StartVoyage(const FUghCameraPose& From, int32 Next, bool bFromPlay);
+	/**
+	 * The world switching in the flight's mist: the next level planned on a worker once the logic shows it (`Live`),
+	 * built a step a frame in the mist, the archipelago moved; all at once when the play is about to begin.
+	 */
+	void SwitchVoyage(const ugh_logic_view& Live);
+	/** The plan being made on a worker waited for and dropped (back to the menu, the end). */
+	void DropPlan();
 	/**
 	 * The flight to the stone (FUghIntro) at the first caption of a level: starts it, flies it on `Seconds`, hurries it
 	 * when the play begins, shows the stone meanwhile.
 	 */
 	void FlyIntro(const ugh_logic_view& View, double Seconds);
+	/** The flight between two levels (FUghVoyage) on `Seconds`, hurried when the play (of `Live`) begins. */
+	void FlyVoyage(const ugh_logic_view& Live, double Seconds);
 	/** A key pressed in the menu (a gamepad's button as FUghControls::MenuKeyOf gives it). */
 	void HandleMenuKey(const FKey& Key);
 	/** U, G, F1 (a gamepad's Y), F5 (the last level's replay saved): true when it was one of them. */
@@ -244,6 +285,21 @@ private:
 	bool bIntro = false;        // the levels may start with the flight (FUghIntro::bFlies, not -UghNoIntro)
 	int32 IntroLevel = -1;      // the level (of the mode) of the last flight in this game
 	bool bIntroScene = false;   // since its flight began until the play is fully shown: the scene is not black
+	FUghVoyage Voyage;          // the flight from stone to stone between two levels
+	bool bVoyageScene = false;  // since it began until the play is fully shown: the scene is shown all along
+	ugh_logic_view FrozenPrevious{}, FrozenCurrent{};   // the level left, shown until the mist
+	UE::Tasks::TTask<TSharedPtr<FUghLevelPlan>> PlanTask;   // the next level planned on a worker
+	TSharedPtr<FUghLevelPlan> Plan;   // and being built, a step a frame
+	int32 PlanStep = 0;
+	TArray<FUghIslePlace> VoyagePlaces;   // the archipelago around the stone in the flight
+	TArray<EUghIsle> VoyageStates;
+	FVector VoyageBefore = FVector::ZeroVector, VoyageAfter = FVector::ZeroVector;   // its offset before, after the switch
+	int32 VoyageLeft = INDEX_NONE, VoyageNext = INDEX_NONE;   // the stones the level's stone stands for
+	FLinearColor MistBefore = FLinearColor::White, MistAfter = FLinearColor::White;   // the mist's colour by the moods
+	double LastSurface = 0;          // the sea's surface of the last frame (pixels)
+	double SurfaceFrom = 0;          // the sea's surface when the world switched
+	double SurfaceAge = 1e9;         // seconds since then (it goes to the next level's smoothly)
+	double ShotNextIn = -1;          // ShotLevelDone: seconds until the logic starts the next level
 	FUghCameraPose CameraPose;  // the camera of the last frame
 	double SeaZ = 0;            // the sea's surface of the last frame (the world)
 	int32 PlayedLevel = -1;     // the level of the mode being played (when the game goes on from it, it is done)

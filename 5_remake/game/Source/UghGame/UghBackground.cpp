@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Texture2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "MeshDescription.h"
 #include "Misc/PackageName.h"
 #include "UghAssets.h"
 #include "UghElectricDreams.h"
@@ -65,11 +66,15 @@ AUghBackground::AUghBackground()
 void AUghBackground::BeginPlay()
 {
 	Super::BeginPlay();
-	RockMaterial = MakeCliffMaterial(this);
-	bCliff = RockMaterial != nullptr;
-	if (!bCliff)
+	// two of it: the shown rock's and the next level's (built while the shown one is seen, FinishBuild)
+	for (TObjectPtr<UMaterialInstanceDynamic>& Material : RockMaterials)
 	{
-		RockMaterial = UghShapes::Material(this, UghMaterials::Rock);
+		Material = MakeCliffMaterial(this);
+		bCliff = Material != nullptr;
+		if (!bCliff)
+		{
+			Material = UghShapes::Material(this, UghMaterials::Rock);
+		}
 	}
 	// the turf's blades (UghMakeAssets makes it; none before build.ps1)
 	const FString Turf = UghMaterials::Turf;
@@ -182,18 +187,44 @@ bool AUghBackground::SetImportedLayer(UMaterialInstanceDynamic* Cliff, int32 Lay
 
 void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, const FUghTurf* Turf)
 {
-	for (TObjectPtr<UStaticMeshComponent>* Part : { &Rock, &Blades })
+	BeginBuild(Art, Turf);
+	TArray<FMeshDescription> Pieces;
+	Mesh.Describe(1, Pieces);
+	for (const FMeshDescription& Piece : Pieces)
 	{
-		if (*Part)
-		{
-			(*Part)->DestroyComponent();   // a static one: a new one for the new mesh
-			*Part = nullptr;
-		}
+		AddRock(Piece);
 	}
-	UStaticMesh* RockMesh = Mesh.ToStaticMesh(this);
-	if (!RockMesh)
+	if (Turf)
 	{
-		return;
+		AddBlades(*Turf);
+	}
+	FinishBuild();
+}
+
+namespace
+{
+	/** Each of `Parts` destroyed (a static one: a new one for a new mesh), none left. */
+	void DestroyParts(TArray<TObjectPtr<UStaticMeshComponent>>& Parts)
+	{
+		for (UStaticMeshComponent* Part : Parts)
+		{
+			if (Part)
+			{
+				Part->DestroyComponent();
+			}
+		}
+		Parts.Reset();
+	}
+}
+
+void AUghBackground::BeginBuild(const TArray<FColor>& Art, const FUghTurf* Turf)
+{
+	// (what an unfinished build left)
+	DestroyParts(NewRocks);
+	if (NewBlades)
+	{
+		NewBlades->DestroyComponent();
+		NewBlades = nullptr;
 	}
 	// the cliff takes the drawing's areas, the drawing's colours on their own its pixels
 	TArray<FColor> Shown = bCliff ? Soften(Art) : Art;
@@ -206,43 +237,83 @@ void AUghBackground::Build(const FUghRockMesh& Mesh, const TArray<FColor>& Art, 
 			Shown[Index].A = bPaths ? 255 - Turf->GetPaths()[Index] : 255;
 		}
 	}
-	RockArt = UghTexture::Create(this, Width, Height, Shown, false);
-	RockMaterial->SetTextureParameterValue(UghMaterials::ArtParameter, RockArt);
-	Rock = NewObject<UStaticMeshComponent>(this);
+	// into the material the shown rock does not have
+	const int32 Built = 1 - ShownMaterial;
+	RockArts[Built] = UghTexture::Create(this, Width, Height, Shown, false);
+	RockMaterials[Built]->SetTextureParameterValue(UghMaterials::ArtParameter, RockArts[Built]);
+}
+
+void AUghBackground::AddRock(const FMeshDescription& Piece)
+{
+	UStaticMesh* RockMesh = FUghRockMesh::ToStaticMesh(this, Piece);
+	if (!RockMesh)
+	{
+		return;
+	}
+	UStaticMeshComponent* Rock = NewObject<UStaticMeshComponent>(this);
 	Rock->SetMobility(EComponentMobility::Static);
 	Rock->SetStaticMesh(RockMesh);
-	Rock->SetMaterial(0, RockMaterial);
+	Rock->SetMaterial(0, RockMaterials[1 - ShownMaterial]);
 	Rock->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Rock->SetVisibility(false);   // (until FinishBuild)
 	Rock->SetupAttachment(RootComponent);
 	Rock->RegisterComponent();
 	AddInstanceComponent(Rock);
+	NewRocks.Add(Rock);
+}
+
+void AUghBackground::AddBlades(const FUghTurf& Turf)
+{
 	// the grass hanging over the edges: static, no shadows, no ray tracing (cheap at any quality)
-	UStaticMesh* BladesMesh = Turf && BladesMaterial ? Turf->GetBlades().ToStaticMesh(this) : nullptr;
+	UStaticMesh* BladesMesh = BladesMaterial ? Turf.GetBlades().ToStaticMesh(this) : nullptr;
 	if (BladesMesh)
 	{
-		Blades = NewObject<UStaticMeshComponent>(this);
-		Blades->SetMobility(EComponentMobility::Static);
-		Blades->SetStaticMesh(BladesMesh);
-		Blades->SetMaterial(0, BladesMaterial);
-		Blades->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Blades->SetCastShadow(false);
-		Blades->bVisibleInRayTracing = false;
-		Blades->bAffectDistanceFieldLighting = false;
-		Blades->SetupAttachment(RootComponent);
-		Blades->RegisterComponent();
-		AddInstanceComponent(Blades);
+		NewBlades = NewObject<UStaticMeshComponent>(this);
+		NewBlades->SetMobility(EComponentMobility::Static);
+		NewBlades->SetStaticMesh(BladesMesh);
+		NewBlades->SetMaterial(0, BladesMaterial);
+		NewBlades->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		NewBlades->SetCastShadow(false);
+		NewBlades->bVisibleInRayTracing = false;
+		NewBlades->bAffectDistanceFieldLighting = false;
+		NewBlades->SetVisibility(false);   // (until FinishBuild)
+		NewBlades->SetupAttachment(RootComponent);
+		NewBlades->RegisterComponent();
+		AddInstanceComponent(NewBlades);
 	}
-	if (Turf)
+	UE_LOG(LogTemp, Display, TEXT("UGH turf: %d cards of grass%s"), Turf.CardCount(),
+		NewBlades ? TEXT("") : TEXT(" (not shown: no M_UghTurf, run build.ps1)"));
+}
+
+void AUghBackground::FinishBuild()
+{
+	DestroyParts(Rocks);
+	if (Blades)
 	{
-		UE_LOG(LogTemp, Display, TEXT("UGH turf: %d cards of grass%s"), Turf->CardCount(),
-			Blades ? TEXT("") : TEXT(" (not shown: no M_UghTurf, run build.ps1)"));
+		Blades->DestroyComponent();
 	}
+	Rocks = MoveTemp(NewRocks);
+	NewRocks.Reset();
+	Blades = NewBlades;
+	NewBlades = nullptr;
+	for (UStaticMeshComponent* Part : Rocks)
+	{
+		Part->SetVisibility(true);
+	}
+	if (Blades)
+	{
+		Blades->SetVisibility(true);
+	}
+	ShownMaterial = 1 - ShownMaterial;
 }
 
 void AUghBackground::SetWater(double Surface)
 {
 	if (bCliff)
 	{
-		RockMaterial->SetScalarParameterValue(UghMaterials::WaterLevelParameter, UghShapes::ToWorld(0, Surface, 0).Z);
+		for (UMaterialInstanceDynamic* Material : RockMaterials)
+		{
+			Material->SetScalarParameterValue(UghMaterials::WaterLevelParameter, UghShapes::ToWorld(0, Surface, 0).Z);
+		}
 	}
 }

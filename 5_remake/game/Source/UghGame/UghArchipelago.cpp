@@ -217,47 +217,72 @@ void AUghArchipelago::Make()
 
 void AUghArchipelago::Show(const FUghIsles* Isles)
 {
-	const bool bShow = Isles && Isles->IsOpen() && Isles->GetCount() > 0;
-	if (bShow)
+	if (!Isles || !Isles->IsOpen() || Isles->GetCount() == 0)
 	{
-		Make();
-		TArray<EUghIsle> States;
-		for (int32 Level = 0; Level < Isles->GetCount(); ++Level)
-		{
-			States.Add(Isles->GetState(Level));
-		}
-		if (Isles->GetPlayers() != ShownPlayers || States != ShownStates)
-		{
-			ShownPlayers = Isles->GetPlayers();
-			ShownStates = States;
-			TArray<FTransform> Placed[FUghIsles::Variants], Flagged[UE_ARRAY_COUNT(FlagColors)], Poled;
-			const TArray<FUghIslePlace>& Places = Isles->GetPlaces();
-			for (int32 Level = 0; Level < Places.Num(); ++Level)
-			{
-				const FUghIslePlace& Place = Places[Level];
-				Placed[Place.Variant].Add(FTransform(FRotator(0, Place.Yaw, 0), Place.Foot, FVector(Place.Scale)));
-				// the pole on its top, the flag to its right facing the camera's side
-				const FVector Foot = FUghIsles::Top(Place) - FVector(0, 0, PoleIn);
-				const double Size = UghShapes::ShapeSize;
-				Poled.Add(FTransform(FQuat::Identity, Foot + FVector(0, 0, PoleHeight / 2),
-					FVector(PoleThick / Size, PoleThick / Size, PoleHeight / Size)));
-				Flagged[int32(States[Level])].Add(FTransform(FQuat::Identity,
-					Foot + FVector(FlagWidth / 2 + PoleThick / 2, 0, PoleHeight - FlagHeight / 2 - 20),
-					FVector(FlagWidth / Size, FlagThick / Size, FlagHeight / Size)));
-			}
-			for (int32 Variant = 0; Variant < Stones.Num(); ++Variant)
-			{
-				Stones[Variant]->ClearInstances();
-				Stones[Variant]->AddInstances(Placed[Variant], false, true, false);
-				Stones[Variant]->BuildTreeIfOutdated(false, true);
-			}
-			for (int32 State = 0; State < Flags.Num(); ++State)
-			{
-				UghShapes::SetShapes(Flags[State], Flagged[State]);
-			}
-			UghShapes::SetShapes(Poles, Poled);
-		}
+		SetShown(false);
+		return;
 	}
+	TArray<EUghIsle> States;
+	for (int32 Level = 0; Level < Isles->GetCount(); ++Level)
+	{
+		States.Add(Isles->GetState(Level));
+	}
+	ShowPlaces(Isles->GetPlaces(), States, Isles->GetPlayers(), FVector::ZeroVector, INDEX_NONE);
+}
+
+void AUghArchipelago::ShowPlaces(const TArray<FUghIslePlace>& Places, const TArray<EUghIsle>& States, int32 Players,
+	const FVector& Offset, int32 Hidden)
+{
+	if (Places.IsEmpty() || States.Num() != Places.Num())
+	{
+		SetShown(false);
+		return;
+	}
+	Make();
+	if (Players != ShownPlayers || States != ShownStates || Offset != ShownOffset || Hidden != ShownHidden ||
+		Places.Num() != ShownCount)
+	{
+		ShownPlayers = Players;
+		ShownStates = States;
+		ShownOffset = Offset;
+		ShownHidden = Hidden;
+		ShownCount = Places.Num();
+		TArray<FTransform> Placed[FUghIsles::Variants], Flagged[UE_ARRAY_COUNT(FlagColors)], Poled;
+		for (int32 Level = 0; Level < Places.Num(); ++Level)
+		{
+			if (Level == Hidden)
+			{
+				continue;
+			}
+			FUghIslePlace Place = Places[Level];
+			Place.Foot += Offset;
+			Placed[Place.Variant].Add(FTransform(FRotator(0, Place.Yaw, 0), Place.Foot, FVector(Place.Scale)));
+			// the pole on its top, the flag to its right facing the camera's side
+			const FVector Foot = FUghIsles::Top(Place) - FVector(0, 0, PoleIn);
+			const double Size = UghShapes::ShapeSize;
+			Poled.Add(FTransform(FQuat::Identity, Foot + FVector(0, 0, PoleHeight / 2),
+				FVector(PoleThick / Size, PoleThick / Size, PoleHeight / Size)));
+			Flagged[int32(States[Level])].Add(FTransform(FQuat::Identity,
+				Foot + FVector(FlagWidth / 2 + PoleThick / 2, 0, PoleHeight - FlagHeight / 2 - 20),
+				FVector(FlagWidth / Size, FlagThick / Size, FlagHeight / Size)));
+		}
+		for (int32 Variant = 0; Variant < Stones.Num(); ++Variant)
+		{
+			Stones[Variant]->ClearInstances();
+			Stones[Variant]->AddInstances(Placed[Variant], false, true, false);
+			Stones[Variant]->BuildTreeIfOutdated(false, true);
+		}
+		for (int32 State = 0; State < Flags.Num(); ++State)
+		{
+			UghShapes::SetShapes(Flags[State], Flagged[State]);
+		}
+		UghShapes::SetShapes(Poles, Poled);
+	}
+	SetShown(true);
+}
+
+void AUghArchipelago::SetShown(bool bShow)
+{
 	if (bShow != bShown)
 	{
 		bShown = bShow;

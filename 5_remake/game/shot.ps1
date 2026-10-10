@@ -49,6 +49,10 @@
 # of the best one kept; -Lively idle|wave|duck|joy: the shot taken once a passenger on land shows that a while (a duck a
 # quarter of a second), framed around it (the name ends in -<state>): wave and duck with the first copter flying into
 # the first passenger on land, joy (delivered, walking off glad) only with -Watch (a replay of a level played).
+# -Voyage <moments>: once the level's copters have hovered -At seconds the level is taken as done and the flight on
+# to the next level's stone (FUghVoyage) shot at those moments (seconds into it separated by commas, end: its arrival;
+# the names end in -voyage<seconds>, -voyage-end), then given up. -CameraLog <file>: the camera of every frame of the
+# flights written there (CSV, FUghCameraLog).
 # The shots show the screen (the menu, the HUD) too. All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
     [switch]$Land, [switch]$Fare,
@@ -56,6 +60,7 @@ param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [
     [string]$EffectAge = '', [string]$EffectAt = '', [switch]$Wide, [switch]$Shake, [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Rush = '', [string]$RushAfter = '1', [int]$RushY = -1, [int]$Difficulty = -1, [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
     [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '', [string]$Isles = '',
     [string]$SaveReplay = '', [string]$Watch = '', [string]$Replays = '', [string]$Ghost = '', [string]$Lively = '',
+    [string]$Voyage = '', [string]$CameraLog = '',
     [int]$TimeoutSeconds = 300)
 
 $ErrorActionPreference = 'Stop'
@@ -171,6 +176,12 @@ if ($Menu) { $arguments += ' -UghShotMenu' }
 if ($Score -gt 0) { $arguments += " -UghShotScore=$Score" }
 if ($Screens) { $arguments += " -UghShotScreens=$Screens" }
 if ($Isles) { $arguments += " -UghShotIsles=$Isles" }
+if ($Voyage) { $arguments += " -UghShotVoyage=$Voyage" }
+if ($CameraLog) {
+    $CameraLog = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($CameraLog)
+    $arguments += " `"-UghCameraLog=$CameraLog`""
+    if ($Voyage) { $arguments += ' -UghCameraLogFlight=2' }   # (the first is the flight to the level's stone)
+}
 if ($Profile) { $arguments += " `"-UghProfile=$Profile`"" }
 if ($SaveReplay) {
     $SaveReplay = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($SaveReplay)
@@ -183,7 +194,7 @@ if ($Replays) { $Replays = $ExecutionContext.SessionState.Path.GetUnresolvedProv
 $code = Invoke-UghOffscreen $UeEditor $arguments $TimeoutSeconds
 # the shots the game says it took (one a burst), else the one
 $shots = @($shot)
-if (($Effect -or $Fling -or $Dunk -or $Drop -or $Rush -or $Isles -or $Watch -or $Lively) -and (Test-Path $log)) {
+if (($Effect -or $Fling -or $Dunk -or $Drop -or $Rush -or $Isles -or $Voyage -or $Watch -or $Lively) -and (Test-Path $log)) {
     $shots = @(Select-String -Path $log -Pattern 'UGH shot (.+\.png)$' | ForEach-Object { $_.Matches[0].Groups[1].Value })
 }
 if ($Menu) { $shots += $menuShot }
@@ -194,6 +205,7 @@ if ($Dunk) { $wanted *= $Dunk.Split(',').Count }
 if ($Drop) { $wanted *= $Drop.Split(',').Count }
 if ($Rush) { $wanted *= $RushAfter.Split(",").Count }
 if ($Isles) { $wanted += $Isles.Split(',').Count }
+if ($Voyage) { $wanted = $Voyage.Split(',').Count }
 $missing = @($shots | Where-Object { -not (Test-Path $_) })
 if ($code -ne 0 -or $shots.Count -lt $wanted -or $missing.Count -gt 0) {
     Write-Host "FAILED: exit code $code (-1: no end in $TimeoutSeconds s), $($shots.Count) screenshots, missing: $missing, see $log" -ForegroundColor Red

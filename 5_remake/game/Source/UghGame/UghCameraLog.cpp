@@ -16,11 +16,13 @@ void FUghCameraLog::Configure()
 	if (FParse::Value(FCommandLine::Get(), TEXT("-UghCameraLog="), File))
 	{
 		Path = FPaths::ConvertRelativePathToFull(File);
+		FParse::Value(FCommandLine::Get(), TEXT("-UghCameraLogFlight="), WantedFlight);
 		Collected = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([this] { Note(TEXT("gc")); });
 	}
 }
 
-void FUghCameraLog::Record(double Seconds, const FUghCameraPose& Pose, int32 Phase, const FUghIntro& Intro)
+void FUghCameraLog::Record(double Seconds, const FUghCameraPose& Pose, int32 Phase, bool bFlying, double FlightTime,
+	double Mist)
 {
 	if (!IsOn() || bWritten)
 	{
@@ -28,12 +30,15 @@ void FUghCameraLog::Record(double Seconds, const FUghCameraPose& Pose, int32 Pha
 	}
 	if (!bRecording)
 	{
-		if (!Intro.IsFlying())
+		// (the flight wanted: -UghCameraLogFlight=<n>, the n-th one, else the first)
+		Flights += bFlying && !bWasFlying ? 1 : 0;
+		bWasFlying = bFlying;
+		if (!bFlying || Flights != WantedFlight)
 		{
 			return;
 		}
 		bRecording = true;
-		Lines.Add(TEXT("frame,clock,dt,wall,phase,flying,flight,x,y,z,pitch,yaw,roll,fov,exposure,blur,speed,flightspeed,streaming,notes"));
+		Lines.Add(TEXT("frame,clock,dt,wall,phase,flying,flight,x,y,z,pitch,yaw,roll,fov,exposure,blur,speed,flightspeed,streaming,mist,notes"));
 	}
 #if WITH_EDITOR
 	// shaders still compiling (a hitch when the renderer waits for one)
@@ -51,17 +56,17 @@ void FUghCameraLog::Record(double Seconds, const FUghCameraPose& Pose, int32 Pha
 	{
 		const double Moved = FVector::Dist(Pose.Location, Last->Location);
 		Speed = Seconds > 0 ? Moved / Seconds : 0;
-		const double FlightStep = Intro.GetTime() - LastFlightTime;
+		const double FlightStep = FlightTime - LastFlightTime;
 		FlightSpeed = FlightStep > 0 ? Moved / FlightStep : 0;
 	}
-	Lines.Add(FString::Printf(TEXT("%d,%.4f,%.5f,%.5f,%d,%d,%.7f,%.3f,%.3f,%.3f,%.5f,%.5f,%.5f,%.5f,%.4f,%.3f,%.1f,%.1f,%d,%s"),
-		Frame++, Clock, Seconds, Wall, Phase, Intro.IsFlying() ? 1 : 0, Intro.GetTime(), Pose.Location.X, Pose.Location.Y,
+	Lines.Add(FString::Printf(TEXT("%d,%.4f,%.5f,%.5f,%d,%d,%.7f,%.3f,%.3f,%.3f,%.5f,%.5f,%.5f,%.5f,%.4f,%.3f,%.1f,%.1f,%d,%.3f,%s"),
+		Frame++, Clock, Seconds, Wall, Phase, bFlying ? 1 : 0, FlightTime, Pose.Location.X, Pose.Location.Y,
 		Pose.Location.Z, Pose.Rotation.Pitch, Pose.Rotation.Yaw, Pose.Rotation.Roll, Pose.FieldOfView, Pose.ExposureBias,
-		Pose.MotionBlur, Speed, FlightSpeed, IStreamingManager::Get().GetNumWantingResources(), *Notes));
+		Pose.MotionBlur, Speed, FlightSpeed, IStreamingManager::Get().GetNumWantingResources(), Mist, *Notes));
 	Notes.Reset();
 	Last = Pose;
-	LastFlightTime = Intro.GetTime();
-	Since = Intro.IsFlying() ? 0 : Since + Seconds;
+	LastFlightTime = FlightTime;
+	Since = bFlying ? 0 : Since + Seconds;
 	if (Since > AfterSeconds)
 	{
 		Flush();

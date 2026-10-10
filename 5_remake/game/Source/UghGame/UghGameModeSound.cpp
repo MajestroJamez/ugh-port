@@ -11,8 +11,8 @@ void AUghGameMode::Hear(const ugh_logic_view& View, double Surface, double Shown
 	using EPlace = FUghAmbience::EPlace;
 	using ESource = FUghAmbience::ESource;
 	FUghAmbience& Ambience = Speaker->GetPlayer().GetAmbience();
-	const EPlace Place = Intro.IsFlying() ? EPlace::Flight : bIsles ? EPlace::Isles : bMenuView ? EPlace::Menu
-		: EPlace::Play;
+	const EPlace Place = Intro.IsFlying() || Voyage.IsFlying() ? EPlace::Flight : bIsles ? EPlace::Isles
+		: bMenuView ? EPlace::Menu : EPlace::Play;
 	// heard as much as seen: silent in the black between the levels (the mood changes there), fading in and out with
 	// the picture; nothing without a level
 	const float Presence = View.level_id >= 0 ? float(Shown) : 0.f;

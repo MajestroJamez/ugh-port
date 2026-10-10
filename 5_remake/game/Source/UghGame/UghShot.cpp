@@ -251,6 +251,18 @@ bool FUghShot::Configure()
 			}
 		}
 	}
+	FString VoyageList;
+	if (FParse::Value(CommandLine, TEXT("-UghShotVoyage="), VoyageList, false))
+	{
+		TArray<FString> Moments;
+		VoyageList.ParseIntoArray(Moments, TEXT(","));
+		for (const FString& Moment : Moments)
+		{
+			const bool bEnd = Moment == TEXT("end");
+			const double When = bEnd ? -1.0 : FCString::Atod(*Moment);
+			VoyageShots.Add({ bEnd ? FString(TEXT("-voyage-end")) : FString::Printf(TEXT("-voyage%g"), When), When });
+		}
+	}
 	bEndShot = FParse::Param(CommandLine, TEXT("UghShotEnd"));
 	uint32 Score = 0;
 	if (FParse::Value(CommandLine, TEXT("-UghShotScore="), Score))
@@ -377,7 +389,7 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	TargetTime += DeltaSeconds;
 	// the frames of the level once something of it is seen (the flight faded in, or the play; not while it is built
 	// and settles in the black)
-	const bool bSeen = (Mode.GetIntro().IsFlying() && Mode.GetIntro().Shown() > 0) ||
+	const bool bSeen = (Mode.GetIntro().IsFlying() && Mode.GetIntro().Shown() > 0) || Mode.GetVoyage().IsFlying() ||
 		Mode.GetSimulation().GetCurrent().phase == UGH_LOGIC_PHASE_PLAY;
 	if (!Mode.IsInMenu() && !bShotTaken && bSeen)
 	{
@@ -401,6 +413,8 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		// given up after the shot: the next one
 		++Next;
 		LevelFrames.Reset();
+		bVoyageBegun = bVoyageEnds = false;
+		VoyageLeft.Reset();
 		TargetTime = 0;
 		bShotTaken = false;
 		Phase = -1;
@@ -423,6 +437,20 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		IslesLeft = IslesShots;   // (the target's, from its start)
 		Tap(Mode, MenuKey(Mode.GetMenu(), Mode.GetPasswords(), Mode.GetProfile().Scores, Target));
 		return EAction::None;
+	}
+	if (!IslesLeft.IsEmpty() && Mode.GetVoyage().IsFlying())
+	{
+		// the stone chosen: the level selection's approach and arrival are the flight on to the level (FUghVoyage)
+		for (const FIslesShot& Moment : IslesLeft)
+		{
+			if (Moment.Stage == uint8(FUghIsles::EStage::Approach))
+			{
+				VoyageLeft.Add({ TEXT("-isles-") + Moment.Name, Moment.At });
+			}
+		}
+		IslesLeft.Reset();
+		bVoyageBegun = !VoyageLeft.IsEmpty();
+		bVoyageEnds = false;
 	}
 	if (!IslesLeft.IsEmpty() && Mode.GetMenu().IsIslesOn())
 	{
@@ -459,6 +487,20 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		FareTime = -1;
 		DropTime = BounceTime = -1;
 		RushTime = -1;
+	}
+	if (bVoyageBegun)
+	{
+		EAction Action = EAction::None;
+		if (!VoyageTick(Mode, View, DeltaSeconds, Action))
+		{
+			return Action;
+		}
+		bVoyageBegun = false;   // all taken: given up (-UghShotVoyage), else the level goes on to its shot
+		if (bVoyageEnds)
+		{
+			bShotTaken = true;
+			return EAction::None;
+		}
 	}
 	if (View.phase == UGH_LOGIC_PHASE_CAPTION && IntroAt)
 	{
@@ -532,6 +574,21 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 			UE_LOG(LogTemp, Display, TEXT("UGH shot exec: %s"), *Command.TrimStartAndEnd());
 			GEngine->Exec(Mode.GetWorld(), *Command.TrimStartAndEnd());
 		}
+	}
+	if (!VoyageShots.IsEmpty())
+	{
+		// the level taken as done: the flight on to the next one shot (-UghShotVoyage), then given up
+		if (!Mode.ShotLevelDone())
+		{
+			UE_LOG(LogTemp, Error, TEXT("UGH shot: no flight on from %s (the last level, or flights off)"),
+				*TargetName(Target.Players, Target.Level));
+			bShotTaken = true;
+			return EAction::None;
+		}
+		VoyageLeft = VoyageShots;
+		bVoyageBegun = bVoyageEnds = true;
+		VoyageFrames.Reset();
+		return EAction::None;
 	}
 	bShotTaken = true;
 	if (bEndShot)
@@ -711,6 +768,51 @@ FUghShot::EAction FUghShot::WatchTick(AUghGameMode& Mode, double Seconds)
 void FUghShot::DressEnd(FUghGameEnd& End) const
 {
 	End.Score = EndScore.Get(End.Score);
+}
+
+bool FUghShot::VoyageTick(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, EAction& Action)
+{
+	const FUghVoyage& Voyage = Mode.GetVoyage();
+	if (Voyage.IsFlying())
+	{
+		VoyageFrames.Add(Seconds);
+	}
+	for (int32 Index = 0; Index < VoyageLeft.Num(); ++Index)
+	{
+		const FVoyageShot& Moment = VoyageLeft[Index];
+		const bool bDue = Moment.At < 0 ? Voyage.HasArrived()
+			: (Voyage.IsFlying() || Voyage.HasArrived()) && Voyage.GetTime() >= Moment.At;
+		if (bDue)
+		{
+			UE_LOG(LogTemp, Display, TEXT("UGH shot: the flight between the levels at %.2f s, the mist %.2f"),
+				Voyage.GetTime(), Voyage.GetMist());
+			const FString Name = NameOf(Targets[Next]) + Moment.Name;
+			VoyageLeft.RemoveAt(Index);
+			Action = TakeShot(Name);
+			return false;
+		}
+	}
+	if (!Voyage.IsFlying() && !Voyage.HasArrived())
+	{
+		UE_LOG(LogTemp, Error, TEXT("UGH shot: the flight between the levels stopped before its shots"));
+		VoyageLeft.Reset();
+	}
+	if (VoyageLeft.IsEmpty())
+	{
+		// its frame times (FUghShot::HitchSeconds a hitch)
+		TArray<float> Sorted = VoyageFrames;
+		Sorted.Sort();
+		UE_CLOG(!Sorted.IsEmpty(), LogTemp, Display,
+			TEXT("UGH shot voyage frames: %d, median %.1f ms, slowest %.1f ms, %d hitches"), Sorted.Num(),
+			Sorted[Sorted.Num() / 2] * 1000, Sorted.Last() * 1000,
+			Algo::CountIf(Sorted, [](float Frame) { return Frame > HitchSeconds; }));
+		return true;
+	}
+	if (View.phase == UGH_LOGIC_PHASE_PLAY && !Voyage.IsSwitched())
+	{
+		Hover(Mode, View, Seconds);   // (the level left, until the logic moves on)
+	}
+	return false;
 }
 
 FUghShot::EAction FUghShot::IslesTick(AUghGameMode& Mode, const FTarget& Target, double Seconds)

@@ -2163,3 +2163,26 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   Blender / hra), `landing-sheet.png` (visí, dosedá, odsunut, přistál), `land-*.png`. CTest logiky, `6_verification`
   (324) a 220 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32e-after` bez vad, fps medián 18, 1 % low
   14. Balíček nepřebalen. Další: **krok 32f**.
+- 2026-10-10: krok 32f hotový - přechody mezi levely letem dronu, bez černé (README hry: `FUghVoyage`, Performance).
+  Po hotovém levelu (událost logiky `LEVEL_DONE`, ne při sledování replaye, ne po posledním levelu) a po výběru kamene
+  v souostroví (26) letí kamera 9 s: od kamene (ohňostroj) dozadu a nahoru, vysoko nad mořem (nad všemi kameny) před
+  další kámen do mlhy (obraz přejde do mlhy barvy nálady, nikdy černé), z ní dolů k levelu a měkce do herní kamery.
+  Kámen s levelem (`AUghSeaStack`) zůstává na místě; souostroví (`AUghArchipelago::ShowPlaces`) stojí kolem něj tak, aby
+  kámen zastupoval opouštěný level, v mlze se svět přepne (souostroví i kamera o `Shift`, nová nálada, hladina moře
+  plynule 1,5 s k nové). Opouštěný level se ukazuje jako naposled v logice, dokud není mlha. Stavba levelu rozložená:
+  `PlanLevel` na workeru, jakmile logika ukáže nový level (pole a síť skály, 16 kusů popsaných paralelně, trávník,
+  dekorace, obložení; 0,4-0,7 s), `ApplyLevel` po krocích: výkres a 16 kusů skály skrytě po kusu za snímek ještě před
+  mlhou (`AUghBackground` má dva materiály, `FinishBuild` vymění), zbytek (stará skála pryč, cedule, dekorace, nálada,
+  lidé, GC) v mlze ~12 ms za snímek; najednou jen když už začíná hra (pozdní klávesa). Logika a její časování beze
+  změny: ztmavení 1,8 s a popisek (čeká na klávesu) běží pod letem, popisek se ukazuje přes let; klávesa let zrychlí
+  až od popisku dalšího levelu (dřív ji logika nebere): před mlhou do mlhy hned, pak zbytek za 0,9 s. Prohra, vzdání,
+  havárie beze změny (černá); replaye let nemají (končí na konci levelu); duch a autopilot beze změny (autopilot let
+  zrychlí klávesou). `FUghIntro` (první level z PLAY bez výběru, autopilot) beze změny. Měření (editor, Low,
+  `shot.ps1 -Voyage ... -CameraLog`): mimo snímky screenshotů žádný snímek nad 50 ms (GC v mlze 45 ms), medián 10-12 ms,
+  mlha plná 4 snímky; log kamery bez skoků mimo přepnutí v mlze, otáčení nejvýš 53 °/s. Nové: `shot.ps1 -Voyage
+  <okamžiky>` (level vezme za hotový, `-UghShotVoyage`), `-CameraLog` (`-UghCameraLogFlight`), `pso.ps1` lety mezi
+  levely (Epic, Low), test `Ugh.Voyage`. Snímky `Saved\Shots\32f` (`sheet-1p01-to-02-low.png`, `sheet-1p09-to-10-low.png`
+  - konec řady, přelet nad džunglí kamene -, `sheet-isles-to-1p12.png`, CSV kamery). CTest logiky, `6_verification`
+  (324) a 219 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32f-after` bez vad (skála v 16 kusech bez
+  švů), fps medián 19, 1 % low 12. Zbývá: skutečný konec levelu s ohňostrojem nenatočen (autopilot level nedohraje,
+  let spuštěn `-UghShotVoyage`); balíček nezměřen (nepřebalen, PSO cache bez nových běhů). Další: **krok 32g**.
