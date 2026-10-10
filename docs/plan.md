@@ -720,6 +720,70 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   stejný styl (listy, vlasy z karet, 19b), bez přihlášení, pokud to jde; jinak MetaHuman Creator jako dosud.
 - Hotovo když: snímky před/po, arch rychlé sady, fps a velikost balíčku beze zhoršení.
 
+## Krok 32 - Janovy připomínky po hraní balíčku 29-30 (2026-10-10)
+
+Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak balení.
+
+### 32a - Průhlednost za objekty (vrtule a další)
+
+- Vrtule: za ní „průhledno“, při točení vypadá divně (díra / prosvítání pozadí přes listy vrtule). Najít příčinu
+  (maskovaný/průhledný materiál, motion blur 27 + TSR historie, chybějící velocity, back-face) a opravit u zdroje.
+- Projít všechny ostatní objekty, jestli se za nimi neobjevuje „prázdné místo“ (vrtulník 24b2, liány, tráva 30b,
+  duch 29g, jeskynní opar 30c, efekty 29a, cedule, ohně) - snímky zblízka v pohybu.
+
+### 32b - Přesvětlené
+
+- Jan: „strašně přesvětlené“ (po 30c/30d - opar jeskyní, světelné paprsky, mokrá skála, odraz moře?). Změřit jas
+  snímků proti 24c a vrátit tmavší, kontrastnější obraz; postavy > plošiny > skála zůstává.
+
+### 32c - Rozlišitelnost cestujících z herní kamery
+
+- V originále je na první pohled vidět, jestli je to muž, žena nebo stařešina - a na tom záleží (kdo ve vodě doplave
+  a kdo se utopí, podle logiky). Teď z dálky nerozeznatelné. Silueta a barva na typ: např. stařešina bílé vlasy
+  a vous + hůl + shrbení, žena světlé dlouhé vlasy a jiná barva listů, muž tmavý, ramenatý; volitelně barevný
+  „lem“/ikona u nohou. Ověřit na archu, že typy jde rozeznat na 1280x720.
+
+### 32d - Foukač (spící T-rex) ve velikosti originálu
+
+- Foukač je proti originálu malinký; např. v levelu 4 je v originále tak velký, že není vidět celý. Velikost
+  a umístění podle spritu originálu (měřítko jako ostatní objekty), dosah foukání beze změny. Projít všechny
+  levely s foukačem.
+- Ohňostroj po úspěšném konci levelu je malý - udělat výrazně větší a delší (levné na Low).
+
+### 32e - Kámen: ostřejší tvar podle reference, stavy
+
+- Kámen (25e) je moc kulatý, není tak „plastický“ jako reference `C:\Users\Ja079591\.claude\ugh-rock-reference-slate.png`
+  (ostré lámané hrany, hluboké vrstvy, šupiny). Přepracovat geometrii (víc zlomů, hlubší vrstvy, ostré hrany),
+  srovnávací snímek vedle reference.
+- Stavy kamene v logice (`passengers/standing`: Placed, Standing, Hanging, Falling, Gone): kámen se jen sebere na
+  lano (`pickUpHanging`, bez cíle), **nikdy nesedí v kabině** - „kamenný cestující“ je jen interní název logiky.
+  Odstranit kámen na sedadle (`SeatedStone` v `UghCopters.cpp`, mrtvá větev) a zbytky v dokumentaci/shotech.
+- Jan: když vrtulník s kamenem na laně přistane, kámen „vjede“ do skály pod ním. Zjistit v logice, kde kámen při
+  přistání je (kolize s ním počítá?), a vizuálně řešit: kámen dosedne na zem a lano povolí (vrtulník stojí nad ním),
+  nebo se lano zkrátí/kámen přitáhne pod podlahu - nikdy průnik do skály. Snímky přistání s kamenem.
+
+### 32f - Přechody mezi levely letem dronu
+
+- Po konci levelu kamera odletí od kamene (oddálení nad moře) a přeletí k dalšímu kameni souostroví (26), kde
+  se plynule přiblíží na nový level - bez střihu do černé. Další level se postaví během letu (rozložit stavbu
+  ~1-1,5 s z 24f/29e do více snímků nebo na pozadí, předem připravit), bez hitche.
+- Po výběru levelu v souostroví (26) totéž: přílet ke kameni bez střihu, level se „vytesá“ do kamene během letu.
+  Žádná mapa se všemi 69 levely - jen aktuální a příští.
+- Klávesa let zrychlí / přeskočí; replaye a autopilot fungují.
+
+### 32g - Strom z džungle s kořeny skrz skálu
+
+- Strom (fruit_tree / hornbeam 19h) působí jako zahradní listnáč. Chce tropický strom z džungle (fíkovník / banyán
+  / ceiba: deskové kořeny, vzdušné kořeny, liány, velké listy) s dlouhými kořeny viditelně prorůstajícími skalním
+  podložím (kořeny po čele skály, do štěrbin). Obličej v kůře (19h) a herní chování (shazování ovoce) beze změny.
+
+### 32h - HUD: cíl naloženého cestujícího
+
+- Po nabrání cestujícího není v HUDu vidět, na kterou plošinu („patro“) chce. Do HUDu každého pilota cíl
+  (`ugh_logic_copter.destination`, číslo plošiny jako na ceduli - čárky z 19d i číslice), případně i jízdné
+  (`fare`, ubývá); nic, když je kabina prázdná nebo visí kámen. Podívat se, jak to ukazuje originál, a držet se ho.
+  Test: cíl v HUDu = cíl z logiky po nástupu, zmizí po výstupu.
+
 ## Průběžně
 
 - MCP: zaregistrovat `unreal` (UE 5.8 plugin, `127.0.0.1:8000/mcp`, jen editor; `AllToolsets` ne - rozbije cook)
@@ -2025,3 +2089,17 @@ Po kroku 29, před balením. Kolizní hrana v herní rovině a logika beze změn
   `metahumans.py` - přihlášení k Epic účtu) - podle zadání stop, žádní noví cestující. Nic nového oproti
   `metahumans.py`, který subsystém volá přímo. Testy ani snímky nespouštěny (kód a obsah beze změny proti 866a9ca),
   balíček nepřebalen. Čeká na Jana: noví cestující jen s jeho souhlasem s cloudem Epicu (`metahumans.ps1`).
+- 2026-10-10: krok 32a hotový - průhlednost za vrtulí (`docs/visual-concept.md`, README hry). Příčina: listy rotoru
+  (`Blender/copter.py` `leaf`) byly jedna oboustranná plocha nakloněná jako lopatka; na jedné straně náboje kamera
+  viděla spodek, jehož normála (oboustranný materiál ji otočí) míří od slunce a oblohy - list černý jako jeskyně za
+  ním, při točení půlka kotouče „díra“, rozmazání pohybem (27) z ní dělalo tmavou šmouhu; druhá půlka svítila.
+  Stejně bez Lumenu i bez motion bluru (A/B `Saved\Shots\32a-ab`), tedy ne TSR/velocity/průsvitnost. Oprava u zdroje:
+  list má dvě strany (plocha a tatáž otočená, materiál `leaf_*` jednostranný), obě s vlastní normálou strany obrácené
+  nahoru (custom normals) - tenký list prosvítá, zespodu stejně světlý jako shora; i duch (29g, jednostranný materiál)
+  má teď celý kotouč. Snímky `Saved\Shots\32a-before` / `32a-after` (`crop-hover.png`, `crop-rush-seq.png`: zblízka
+  visí a tři po sobě jdoucí snímky letu vlevo). Audit (`Saved\Shots\32a-audit`, arch): vrtulník 24b2 (břečťan, liány,
+  praporky - geometrie, neprůhledné), liány 24d, tráva 30b, opar jeskyní 30c (karta 12 px za rovinou, konce listů
+  rotoru 13 px zasáhnou za ni jen o 10 cm = 2 % oparu), efekty 29a, cedule, ohně a louče, vlasy postav - bez
+  prázdného místa; duch je průsvitný záměrně. CTest logiky, `6_verification` (324) a 217 testů v UE zelené.
+  `levels.ps1 -Quick` 0 chyb, arch beze změny (`Levels-32a-after`), fps medián 17, 1 % low 13. Balíček nepřebalen.
+  Další: **krok 32b**.

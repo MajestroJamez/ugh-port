@@ -82,6 +82,6 @@ def make(folder, wood_folder, stone_folder):
     leaf_normal = kit.save_image(folder, "copter_leaf_normal", kit.normals_from_height(rib - veins * 0.5, 2),
                                  colour=False)
     for player, tint in enumerate(LEAVES, 1):
-        made[f"leaf_{player}"] = kit.material(f"leaf_{player}", leaf, leaf_normal, roughness=0.55, tint=tint,
-                                              double_sided=True)
+        # one-sided: the rotor's leaves have an underside of their own, lit as their top (copter.leaf)
+        made[f"leaf_{player}"] = kit.material(f"leaf_{player}", leaf, leaf_normal, roughness=0.55, tint=tint)
     return made

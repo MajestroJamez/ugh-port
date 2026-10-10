@@ -36,6 +36,10 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
   opisuje kruh, před čelem skály ale jen nad vzduchem těla (čelo stojí jen na pevných pixelech). Barvy týmu jsou barvy
   kůže: hráč 1 rezavě oranžová, hráč 2 tyrkysová. Rotor se točí plynule tak rychle, jak rychle se mění jeho sprity
   v logice (6 spritů na otáčku), klika 3x pomaleji; pilot šlape přesně s klikou (akce `pedal` držená v úhlu kliky).
+  Listy rotoru mají dvě strany (krok 32a): plochu a tutéž otočenou, obě stínované normálou strany obrácené nahoru -
+  tenký list prosvítá, zespodu stejně světlý jako shora. Dřív jedna oboustranná plocha: list nakloněný jako lopatka
+  ukazoval na jedné straně náboje kameře spodek s normálou od slunce a oblohy, černý jako jeskyně za ním - při točení
+  půlka kotouče „díra“ a rozmazání pohybem z ní dělalo tmavou šmouhu.
 - **Šlapání a sezení** (krok 24b): na první pohled je vidět, že pilot šlape. Pilot sedí z profilu (natočený o 70°
   doleva) na koženém sedátku s opěradlem na bambusových nohách, klika má poloměr 12 cm a na straně ke kameře velké
   kolo s kostěnými paprsky a 18 zuby (poloměr 18 cm). Řetěz z kostěných článků vede z kola nahoru na pastorek se 6 zuby

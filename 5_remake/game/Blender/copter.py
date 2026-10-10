@@ -51,6 +51,8 @@ class Part:
 
     def __init__(self, name):
         self.name, self.materials, self.bm = name, [], bmesh.new()
+        # (vertex, the vertex whose normal it takes, turned upwards): both sides of a leaf shaded as its top
+        self.lit_as = []
 
     def slot(self, material):
         if material not in self.materials:
@@ -85,7 +87,19 @@ class Part:
             loop[uv].uv = coord
 
     def done(self, materials):
-        return kit.mesh_object(self.name, self.bm, [materials[name] for name in self.materials])
+        self.bm.verts.index_update()
+        lit_as = {vert.index: top.index for vert, top in self.lit_as}
+        made = kit.mesh_object(self.name, self.bm, [materials[name] for name in self.materials])
+        if lit_as:
+            mesh = made.data
+            corners = [Vector(normal.vector) for normal in mesh.corner_normals]
+            tops = [Vector(normal.vector) for normal in mesh.vertex_normals]
+            for loop in mesh.loops:
+                if loop.vertex_index in lit_as:
+                    top = tops[lit_as[loop.vertex_index]]
+                    corners[loop.index] = top if top.z >= 0 else -top
+            mesh.normals_split_custom_set(corners)
+        return made
 
 
 def clamped(part, make):
@@ -354,13 +368,22 @@ def leaf(part, out, side, start, end, width, lift, spread, material):
         rows.append([part.bm.verts.new(centre + side * half * s + Vector((0, 0, -0.025 * abs(s) * half / width +
                                                                            0.55 * s * half)))
                      for s in (-1, 0, 1)])
+    # both sides: the surface and the same turned over, each shaded with the normal of the side facing up - a thin
+    # leaf the light shines through, as bright from below as from above. With one two-sided face the side seen from
+    # below had its normal turned away from the sun and the sky: black, half the rotor's disc a dark hole in the cave
+    # behind it while it turns (step 32a)
+    under = [[part.bm.verts.new(vert.co) for vert in row] for row in rows]
+    part.lit_as += [(each, up) for grid in (rows, under) for row, row_up in zip(grid, rows)
+                    for each, up in zip(row, row_up)]
     for i in range(steps):
         for j in range(2):
-            face = part.bm.faces.new((rows[i][j], rows[i][j + 1], rows[i + 1][j + 1], rows[i + 1][j]))
-            face.material_index = part.slot(material)
-            face.smooth = True
-            for loop, coord in zip(face.loops, ((j, i), (j + 1, i), (j + 1, i + 1), (j, i + 1))):
-                loop[uv].uv = (coord[0] / 2, coord[1] / steps)
+            corners = ((j, i), (j + 1, i), (j + 1, i + 1), (j, i + 1))
+            for grid, order in ((rows, corners), (under, corners[::-1])):
+                face = part.bm.faces.new([grid[row][column] for column, row in order])
+                face.material_index = part.slot(material)
+                face.smooth = True
+                for loop, coord in zip(face.loops, order):
+                    loop[uv].uv = (coord[0] / 2, coord[1] / steps)
 
 
 def wheel(part, centre, radius, teeth, tooth, spokes, material="wood"):
