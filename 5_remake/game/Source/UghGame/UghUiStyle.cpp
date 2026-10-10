@@ -5,6 +5,8 @@
 #include "Engine/Texture2D.h"
 #include "Fonts/CompositeFont.h"
 #include "Misc/Paths.h"
+#include "UghBubbles.h"
+#include "UghPadSigns.h"
 #include "UghStoneArt.h"
 #include "UghTexture.h"
 #include "Widgets/Images/SImage.h"
@@ -138,6 +140,12 @@ TSharedRef<UghUiStyle::FPictures> UghUiStyle::MakePictures(UObject* Outer, TArra
 	Pictures->Copter = Make(96, 72, UghStoneArt::Copter(96, 72), FVector2D(44, 33));
 	Pictures->Bone = Make(640, 80, UghStoneArt::Bone(640, 80), FVector2D(336, 42));
 	Pictures->Fade = Make(256, 1, UghStoneArt::Fade(256, 0.82f), FVector2D(256, 1));
+	static_assert(FPictures::BubbleBoards == UghPadSigns::MostMarks + 1);
+	for (int32 Marks = 0; Marks < FPictures::BubbleBoards; ++Marks)
+	{
+		Pictures->Bubbles[Marks] = Make(UghBubbles::PictureWidth, UghBubbles::PictureHeight,
+			UghBubbles::Draw(FUghBubbleLook{ Marks, false }, true), FVector2D(48, 45));
+	}
 	UE_LOG(LogTemp, Display, TEXT("UGH screen pictures in %.0f ms"), (FPlatformTime::Seconds() - Started) * 1000);
 	return Pictures;
 }

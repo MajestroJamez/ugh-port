@@ -8,7 +8,8 @@ struct FUghUiState;
 
 /**
  * The screen during a game (UghUi): the status in two panels at the top (the level, the lives as bone copters, the
- * energy as a bone gauge; the score with its multiplier), fading with the play; the scores earned rising; the
+ * energy as a bone gauge; each pilot's passenger as the original's status bar shows it - its bubble with the board of
+ * the pad it wants, the pad's number and the fare; the score with its multiplier), fading with the play; the scores earned rising; the
  * caption of a level as a stone tablet over the flight to the stone (its number carved, its password, a hint to press
  * a key); the help of the keys (F1, and shown at the first level); a setting just changed (the volume, the
  * upscaler); after a level done its points and time in the next caption (F5 saves its replay); a replay watched. Only
@@ -26,6 +27,8 @@ public:
 private:
 	TSharedRef<SWidget> Status();
 	TSharedRef<SWidget> Score();
+	/** Pilot `Player`'s passenger: its bubble with the board of the pad it wants, the pad's number, its fare. */
+	TSharedRef<SWidget> Cargo(int32 Player);
 	TSharedRef<SWidget> Caption();
 	TSharedRef<SWidget> Help();
 	TSharedRef<SWidget> Notice();

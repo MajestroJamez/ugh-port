@@ -9,6 +9,7 @@
 #include "UghEffects.h"
 #include "UghGameMode.h"
 #include "Misc/Paths.h"
+#include "UghPadSigns.h"
 #include "UghUiParts.h"
 #include "UghShapes.h"
 #include "UghUi.h"
@@ -112,6 +113,21 @@ void AUghHud::Update(const AUghGameMode& Mode, double Seconds)
 	}
 	UpdateWarnings(Mode, Seconds);
 	UpdateReplays(Mode, Seconds);
+	ShowCargo(Shown, View);
+}
+
+void AUghHud::ShowCargo(FUghUiState& Shown, const ugh_logic_view& View)
+{
+	for (int32 Player = 0; Player < UE_ARRAY_COUNT(Shown.Cargo); ++Player)
+	{
+		// a passenger in the cabin wants a pad (its number); none in it: 0, the stone on the sling: -1
+		const bool bCarried = View.phase == UGH_LOGIC_PHASE_PLAY && Player < View.copter_count &&
+			View.copters[Player].destination > 0;
+		FUghUiState::FCargo& Cargo = Shown.Cargo[Player];
+		Cargo.Destination = bCarried ? View.copters[Player].destination : 0;
+		Cargo.Marks = bCarried ? UghPadSigns::Marks(Cargo.Destination) : 0;
+		Cargo.Fare = bCarried ? FMath::Max(View.copters[Player].fare, 0) : 0;
+	}
 }
 
 void AUghHud::UpdateWarnings(const AUghGameMode& Mode, double Seconds)

@@ -111,7 +111,42 @@ TSharedRef<SWidget> SUghPlayScreen::Status()
 		[
 			Part(TEXT("Energy"), SNew(SUghGauge).State(State))
 		]
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)[ Cargo(0) ]
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)[ Cargo(1) ]
 	];
+}
+
+TSharedRef<SWidget> SUghPlayScreen::Cargo(int32 Player)
+{
+	// as the original's status bar: the bubble the passenger showed, with the board of the pad it wants (its tally
+	// marks), the number beside it (the bubbles show none above five: a blank board) and the fare it pays, falling
+	const auto Carried = [this, Player] { return State->Cargo[Player].Destination > 0; };
+	return SNew(SHorizontalBox).Visibility_Lambda([Carried] { return UghUiParts::ShownIf(Carried()); })
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(20, 0)[ Divider() ]
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+		[
+			Part(FString::Printf(TEXT("Pilot %d to"), Player + 1), SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+				[
+					SNew(SImage).Image_Lambda([this, Player]
+					{
+						return &State->Pictures->Bubbles[FMath::Clamp(State->Cargo[Player].Marks, 0,
+							UghUiStyle::FPictures::BubbleBoards - 1)];
+					})
+				]
+				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(8, 0, 0, 0)
+				[
+					SNew(STextBlock).Font(UghUiStyle::Display(32)).ColorAndOpacity(UghUiStyle::Bone)
+						.ShadowOffset(FVector2D(0, 2)).ShadowColorAndOpacity(UghUiStyle::Shadow)
+						.Text_Lambda([this, Player] { return FText::AsNumber(State->Cargo[Player].Destination); })
+				])
+		]
+		+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(18, 0, 0, 0)
+		[
+			Part(TEXT("Fare"), SNew(STextBlock).Font(UghUiStyle::Display(24)).ColorAndOpacity(UghUiStyle::Amber)
+				.ShadowOffset(FVector2D(0, 2)).ShadowColorAndOpacity(UghUiStyle::Shadow)
+				.Text_Lambda([this, Player] { return FText::AsNumber(State->Cargo[Player].Fare); }), HAlign_Right)
+		];
 }
 
 TSharedRef<SWidget> SUghPlayScreen::Score()

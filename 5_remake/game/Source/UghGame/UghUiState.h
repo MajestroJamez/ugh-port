@@ -130,6 +130,16 @@ struct FUghUiState
 	float NoticeLevel = -1;
 	TArray<FUghUiPopup> Popups;
 	TArray<FUghUiWarning> Warnings;
+	/**
+	 * Each pilot's passenger as the original's status bar shows it (its bubble with the board of the pad it wants to go
+	 * to, its fare): the pad's number (0 none: the cabin empty, the stone on the sling), its tally marks as the pads'
+	 * boards have them (UghPadSigns::Marks), the fare falling while it rides.
+	 */
+	struct FCargo
+	{
+		int32 Destination = 0, Marks = 0, Fare = 0;
+	};
+	FCargo Cargo[2];
 
 	/** The pictures of the screen (UghStoneArt). */
 	TSharedPtr<const UghUiStyle::FPictures> Pictures;

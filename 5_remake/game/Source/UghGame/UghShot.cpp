@@ -52,6 +52,7 @@ bool FUghShot::Configure()
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
 	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
 	bLand = FParse::Param(CommandLine, TEXT("UghShotLand"));
+	bFare = FParse::Param(CommandLine, TEXT("UghShotFare"));
 	bBubbles = FParse::Param(CommandLine, TEXT("UghShotBubbles"));
 	bCloseUp = FParse::Param(CommandLine, TEXT("UghShotCloseUp"));
 	FParse::Value(CommandLine, TEXT("-UghShotLook="), Look);
@@ -84,6 +85,10 @@ bool FUghShot::Configure()
 	if (bLand)
 	{
 		Suffix += TEXT("-landed");
+	}
+	if (bFare)
+	{
+		Suffix += TEXT("-fare");
 	}
 	if (bBubbles)
 	{
@@ -447,6 +452,8 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 		FlingTime = -1;
 		DunkPilot = FUghDunkPilot();
 		DropPilot = FUghDropPilot();
+		FarePilot = FUghFarePilot(0);
+		FareTime = -1;
 		DropTime = BounceTime = -1;
 		RushTime = -1;
 	}
@@ -489,20 +496,21 @@ FUghShot::EAction FUghShot::Tick(AUghGameMode& Mode, float DeltaSeconds)
 	const bool bDunked = bDunk && Dunk(Mode, View, *Target.Dunk);
 	const bool bDropped = bDrop && Drop(Mode, View, DeltaSeconds, *Target.Drop);
 	const bool bRushed = bRush && RushOn(Mode, View, DeltaSeconds, *Target.Rush);
+	const bool bFared = bFare && Fare(Mode, View, DeltaSeconds);
 	// a passenger waving at the copter flying into it, ducking before the knock (never shot by the knock's time)
 	const bool bKnocking = !bFling && Lively && (*Lively == EUghLively::Wave || *Lively == EUghLively::Duck);
 	if (bKnocking)
 	{
 		Knock(Mode, View, DeltaSeconds, UE_BIG_NUMBER);
 	}
-	if (Edge.IsEmpty() && !bFling && !bDunk && !bDrop && !bRush && !bKnocking)
+	if (Edge.IsEmpty() && !bFling && !bDunk && !bDrop && !bRush && !bKnocking && !bFare)
 	{
 		Hover(Mode, View, DeltaSeconds);
 	}
 	PhaseTime += DeltaSeconds;
 	++Frames;
 	HoverFrames.Add(DeltaSeconds);
-	if (Lively ? !LivelyShown(Mode) : bRush ? !bRushed : bDrop ? !bDropped : bDunk ? !bDunked : bFling ? !bFlung
+	if (Lively ? !LivelyShown(Mode) : bFare ? !bFared : bRush ? !bRushed : bDrop ? !bDropped : bDunk ? !bDunked : bFling ? !bFlung
 		: Edge.IsEmpty() ? PhaseTime <= At : !bAtEdge)
 	{
 		return EAction::None;
@@ -916,6 +924,22 @@ bool FUghShot::Dunk(AUghGameMode& Mode, const ugh_logic_view& View, double Age)
 			Until ? *FString::Printf(TEXT("%.2f s"), *Until) : TEXT("-"));
 	}
 	return bNow;
+}
+
+bool FUghShot::Fare(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds)
+{
+	const FUghPilotKeys Keys = FarePilot.Fly(Mode.GetSimulation().GetLogic(), Mode.GetSimulation().GetPrevious(), View);
+	Hold(Mode, UGH_LOGIC_KEY_UP, Keys.bUp);
+	Hold(Mode, UGH_LOGIC_KEY_LEFT, Keys.bLeft);
+	Hold(Mode, UGH_LOGIC_KEY_RIGHT, Keys.bRight);
+	// on its way to the pad the passenger wants (the status shows it), a while after it got in
+	FareTime = FarePilot.HasBoarded() ? FMath::Max(FareTime, 0.0) + (FareTime < 0 ? 0 : Seconds) : -1;
+	if (FarePilot.IsLost())
+	{
+		UE_LOG(LogTemp, Error, TEXT("UGH shot: the fare pilot is lost"));
+		return true;
+	}
+	return FareTime >= FareShownAfter;
 }
 
 bool FUghShot::Drop(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age)

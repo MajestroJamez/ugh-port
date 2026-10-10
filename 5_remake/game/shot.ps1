@@ -4,7 +4,9 @@
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\shot.ps1 -Level 12 -Team
 # -Level: from 1 in the order of the mode (one player 1 .. 69, -Team 1 .. 81); -Commands: console commands before the
 # play, separated by commas (e.g. "r.Shadow.Virtual.Enable 0"); -Cargo <look>: the copters shown with a passenger of
-# the logic's cargo look in the cabin (1 .. 4: 4 the stone, smaller), -Hanging below instead, -Land: the copters come
+# the logic's cargo look in the cabin (1 .. 4: 4 the stone, smaller), -Hanging below instead, -Fare: the first copter takes a
+# fare (lands by the first passenger, it gets in) and the shot shows it on its way to the pad wanted (the status shows
+# the pad and the fare; the name ends in -fare), -Land: the copters come
 # down slowly instead of hovering until they stand on the ground below (give it -At 8), -Bubbles: every passenger
 # with a speech bubble (each the next of the data's), -CloseUp: framing the copters (the name of the shot ends in
 # -cargo<look> / -hanging<look>, -landed, -bubbles, -closeup), -Look campfire|torch: framing the first campfire (torch) of the
@@ -49,7 +51,7 @@
 # the first passenger on land, joy (delivered, walking off glad) only with -Watch (a replay of a level played).
 # The shots show the screen (the menu, the HUD) too. All levels at once: levels.ps1.
 param([int]$Level = 1, [switch]$Team, [double]$At = 2, [string]$Commands = '', [int]$Cargo = 0, [switch]$Hanging,
-    [switch]$Land,
+    [switch]$Land, [switch]$Fare,
     [switch]$Bubbles, [switch]$CloseUp, [string]$Look = '', [string]$Frame = '', [string]$Intro = '', [string]$Effect = '',
     [string]$EffectAge = '', [string]$EffectAt = '', [switch]$Wide, [switch]$Shake, [string]$Fling = '', [string]$Dunk = '', [string]$Drop = '', [string]$Rush = '', [string]$RushAfter = '1', [int]$RushY = -1, [int]$Difficulty = -1, [string]$Edge = '', [double]$EdgeAfter = -1, [int]$EdgeY = -1, [switch]$End,
     [int]$Score = 0, [switch]$Menu, [string]$Screens = '', [string]$Profile = '', [string]$Isles = '',
@@ -63,6 +65,7 @@ $folder = Join-Path $PSScriptRoot 'Saved\Shots'
 $suffix = ''
 if ($Cargo -gt 0) { $suffix += '-{0}{1}' -f $(if ($Hanging) { 'hanging' } else { 'cargo' }), $Cargo }
 if ($Land) { $suffix += '-landed' }
+if ($Fare) { $suffix += '-fare' }
 if ($Bubbles) { $suffix += '-bubbles' }
 if ($CloseUp) { $suffix += '-closeup' }
 if ($Look) {
@@ -141,6 +144,7 @@ if ($Commands) { $arguments += " `"-ExecCmds=$Commands`"" }
 if ($Cargo -gt 0) { $arguments += " -UghShotCargo=$Cargo" }
 if ($Hanging) { $arguments += ' -UghShotHanging' }
 if ($Land) { $arguments += ' -UghShotLand' }
+if ($Fare) { $arguments += ' -UghShotFare' }
 if ($Bubbles) { $arguments += ' -UghShotBubbles' }
 if ($CloseUp) { $arguments += ' -UghShotCloseUp' }
 if ($Look) { $arguments += " -UghShotLook=$Look" }

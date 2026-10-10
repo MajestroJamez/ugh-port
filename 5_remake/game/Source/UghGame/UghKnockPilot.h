@@ -95,14 +95,45 @@ public:
 	/** No stone or no enemy in the level, or no way to them. */
 	bool IsLost() const { return bLost; }
 
-private:
 	/** The way from `From` to `To` (the copter's corner, pixels), from the next place on; empty when there is none. */
 	static TArray<FIntPoint> Way(const ugh_logic* Logic, const FIntPoint& From, const FIntPoint& To);
 
+private:
 	enum class EStage : uint8 { ToStone, ToEnemy, Dropped };
 	EStage Stage = EStage::ToStone;
 	TArray<FIntPoint> Path;
 	int32 Along = 0;
 	bool bDropped = false, bLost = false, bFired = false;
 	TOptional<FIntPoint> Enemy;   // the corner of the enemy to drop it onto
+};
+
+/**
+ * Flies copter `Player` as a player takes a fare: lands on the pad of the first passenger on land (beside it), waits
+ * until it got in (the logic gives the copter its destination), flies to the pad of that number, lands there and waits
+ * until it got out; then it stays. The ways found as FUghDropPilot's. Only for the test Ugh.Ui.Cargo: no player flies
+ * so.
+ */
+class FUghFarePilot
+{
+public:
+	/** It lands from this many pixels above the pad; it gives up waiting after this many steps. */
+	static constexpr int32 Hover = 3, Patience = 1500;
+
+	explicit FUghFarePilot(int32 InPlayer) : Player(InPlayer) {}
+	/** The keys to hold after `Current` (the view of the step before: `Previous`) of `Logic`. */
+	FUghPilotKeys Fly(const ugh_logic* Logic, const ugh_logic_view& Previous, const ugh_logic_view& Current);
+	/** A passenger got in; it got out at the pad it wanted. */
+	bool HasBoarded() const { return Stage >= EStage::ToPad; }
+	bool HasDelivered() const { return Stage == EStage::Done; }
+	/** No passenger or no pad found, no way there, or it waited in vain. */
+	bool IsLost() const { return bLost; }
+
+private:
+	enum class EStage : uint8 { ToPassenger, Boarding, ToPad, Leaving, Done };
+	int32 Player;
+	EStage Stage = EStage::ToPassenger;
+	TArray<FIntPoint> Path;
+	int32 Along = 0, Waited = 0, Wanted = 0;
+	double HoverY = -1;   // where it hovers waiting for a passenger to come out, -1 not yet
+	bool bLanding = false, bLost = false;
 };

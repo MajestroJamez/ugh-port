@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "ugh_logic.h"
 #include "UghHud.generated.h"
 
 class AUghGameMode;
@@ -29,6 +30,8 @@ public:
 
 	/** At the first level the help shows through its caption and this long into the play (seconds). */
 	static constexpr double FirstHelpSeconds = 6;
+	/** Each pilot's passenger of `View` into `Shown` (FUghUiState::Cargo): only in the play, none but a destination. */
+	static void ShowCargo(FUghUiState& Shown, const ugh_logic_view& View);
 
 private:
 	void Build(const AUghGameMode& Mode);

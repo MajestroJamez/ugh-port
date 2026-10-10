@@ -1038,3 +1038,10 @@ u sebe a nic za dosahem, deterministicky).
   s expozicí, takže postavy vynikají víc (postavy > plošiny > skála). Opar jeskyní (30c) slabší (0,05 místo 0,08),
   už nezvedá černou.
 - Listy rotoru tmavší zelené (od 32a svítily z obou stran limetkově).
+
+## HUD: cíl naloženého cestujícího (krok 32h)
+
+- Jako stavový řádek originálu (sprity 183-190: bublina s prkénkem čárek cílové plošiny, vedle jízdné): ve stavu nahoře
+  za energií pro každého pilota s cestujícím „Pilot N to“ - bublina s prkénkem (stejný obrázek jako bubliny
+  cestujících, `UghBubbles`), číslo plošiny číslicí a jantarové jízdné, které během letu ubývá. Prázdná kabina nebo
+  kámen na laně: nic.

@@ -355,3 +355,151 @@ TArray<FIntPoint> FUghDropPilot::Way(const ugh_logic* Logic, const FIntPoint& Fr
 	}
 	return Found;
 }
+
+namespace
+{
+	/** The pad under a passenger at `X`, `Y` (pixels: its middle, its top), none without one. */
+	TOptional<ugh_logic_pad> PadOf(const ugh_logic* Logic, double X, double Y)
+	{
+		TOptional<ugh_logic_pad> Found;
+		for (int32 Index = 0; Index < ugh_logic_pad_count(Logic); ++Index)
+		{
+			ugh_logic_pad Pad;
+			if (ugh_logic_get_pad(Logic, Index, &Pad) && Pad.left - 8 <= X && X <= Pad.right + 8 && Pad.y > Y &&
+				(!Found || Pad.y < Found->y))
+			{
+				Found = Pad;
+			}
+		}
+		return Found;
+	}
+
+	/** The copter's corner standing on `Pad` (across: `X`, kept on the pad a little in from its ends), Above it. */
+	FIntPoint OnPad(const ugh_logic_pad& Pad, double X, int32 Above)
+	{
+		constexpr int32 In = 2;
+		const double Least = Pad.left - UghShapes::CopterBodyLeft + In, Most = Pad.right - UghShapes::CopterBodyRight - In;
+		const double Across = Least <= Most ? FMath::Clamp(X, Least, Most) : (Least + Most) / 2;
+		return FIntPoint(FMath::RoundToInt32(Across), Pad.y - UghShapes::CopterBodyHeight - Above);
+	}
+}
+
+FUghPilotKeys FUghFarePilot::Fly(const ugh_logic* Logic, const ugh_logic_view& Previous, const ugh_logic_view& Current)
+{
+	FUghPilotKeys Keys;
+	if (!Logic || Player >= Current.copter_count || Player >= Previous.copter_count || bLost)
+	{
+		return Keys;
+	}
+	const ugh_logic_copter& Copter = Current.copters[Player];
+	const FVector2D At = FVector2D(Copter.x, Copter.y) / UghShapes::Subpixels;
+	const FVector2D Speed = FVector2D(Copter.x - Previous.copters[Player].x, Copter.y - Previous.copters[Player].y) /
+		UghShapes::Subpixels;
+	// the logic tells: a passenger got in (the copter's destination), got out again (none)
+	if (Stage <= EStage::Boarding && Copter.destination > 0)
+	{
+		Stage = EStage::ToPad;
+		Wanted = Copter.destination;
+		Path.Reset();
+		bLanding = false;
+		Waited = 0;
+	}
+	else if ((Stage == EStage::ToPad || Stage == EStage::Leaving) && Copter.destination == 0)
+	{
+		Stage = EStage::Done;
+	}
+	if (Stage == EStage::Boarding || Stage == EStage::Leaving)
+	{
+		bLost = ++Waited > Patience;   // standing on the pad while the passenger walks
+		return Keys;
+	}
+	if (Stage == EStage::Done)
+	{
+		return Keys;
+	}
+	if (Path.IsEmpty())
+	{
+		TOptional<FIntPoint> Goal;
+		if (Stage == EStage::ToPassenger)
+		{
+			for (int32 I = 0; I < Current.entity_count && !Goal; ++I)
+			{
+				const ugh_logic_entity& Entity = Current.entities[I];
+				const FVector2D Corner = FVector2D(Entity.x, Entity.y) / UghShapes::Subpixels;
+				const double Middle = Corner.X + PassengerMiddle;
+				const TOptional<ugh_logic_pad> Pad = IsOnLand(Logic, Entity) && Entity.look > 0
+					? PadOf(Logic, Middle, Corner.Y) : TOptional<ugh_logic_pad>();
+				if (Pad)
+				{
+					// at the end of its pad away from it: not onto its head
+					const bool bRight = Middle < (Pad->left + Pad->right) / 2.0;
+					Goal = OnPad(*Pad, bRight ? 1e9 : -1e9, Hover);
+				}
+			}
+			if (!Goal)
+			{
+				// nobody out yet: hovering where it is (it would sink into the sea)
+				bLost = ++Waited > Patience;
+				HoverY = HoverY < 0 ? At.Y : HoverY;
+				Keys.bUp = At.Y + Speed.Y * Lead > HoverY;
+				return Keys;
+			}
+		}
+		else
+		{
+			for (int32 Index = 0; Index < ugh_logic_pad_count(Logic) && !Goal; ++Index)
+			{
+				ugh_logic_pad Pad;
+				if (ugh_logic_get_pad(Logic, Index, &Pad) && Pad.number == Wanted)
+				{
+					Goal = OnPad(Pad, (Pad.left + Pad.right) / 2.0 - BodyMiddle, Hover);
+				}
+			}
+		}
+		Path = Goal ? FUghDropPilot::Way(Logic, FIntPoint(FMath::FloorToInt32(At.X), FMath::FloorToInt32(At.Y)), *Goal)
+			: TArray<FIntPoint>();
+		Along = 0;
+		if (Path.IsEmpty())
+		{
+			// standing on a pad (its rock within the way's margin): up out of it first
+			bLost = !Goal || ++Waited > Patience;
+			if (bLost)
+			{
+				UE_LOG(LogTemp, Error, TEXT("UGH fare pilot %d: no %s or no way to it"), Player,
+					Stage == EStage::ToPassenger ? TEXT("passenger's pad") : TEXT("pad wanted"));
+			}
+			Keys.bUp = true;
+			return Keys;
+		}
+	}
+	if (bLanding)
+	{
+		// down the last pixels onto the pad by itself, held still across; standing: wait for the passenger
+		if (At.Y >= Path.Last().Y + Hover - 0.5 && Speed.Size() < 0.01)
+		{
+			Stage = Stage == EStage::ToPassenger ? EStage::Boarding : EStage::Leaving;
+			Waited = 0;
+		}
+		Keys.bRight = Speed.X < -SpeedSlack;
+		Keys.bLeft = Speed.X > SpeedSlack;
+		return Keys;
+	}
+	// the nearest place of the way a little further on, the target a few places ahead of it (FUghDropPilot)
+	int32 Nearest = Along;
+	for (int32 I = Along; I < FMath::Min(Along + 24, Path.Num()); ++I)
+	{
+		if (FVector2D::Distance(At, FVector2D(Path[I])) < FVector2D::Distance(At, FVector2D(Path[Nearest])))
+		{
+			Nearest = I;
+		}
+	}
+	Along = Nearest;
+	const FVector2D Target(Path[FMath::Min(Along + FUghDropPilot::Ahead, Path.Num() - 1)]);
+	bLanding = Along + FUghDropPilot::Ahead >= Path.Num() - 1 && FVector2D::Distance(At, Target) < FUghDropPilot::Near &&
+		Speed.Size() < FUghDropPilot::Still;
+	Keys.bUp = !bLanding && At.Y + Speed.Y * Lead > Target.Y;
+	const double Across = FMath::Clamp((Target.X - At.X) * SpeedPerPixel * 2, -MaxSpeed * 0.8, MaxSpeed * 0.8);
+	Keys.bRight = Speed.X < Across - SpeedSlack;
+	Keys.bLeft = Speed.X > Across + SpeedSlack;
+	return Keys;
+}

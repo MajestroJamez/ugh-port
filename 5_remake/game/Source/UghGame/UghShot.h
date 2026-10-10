@@ -56,6 +56,8 @@ struct FUghHighScores;
  * stone on its sling, fly above the first enemy and let it go (FUghDropPilot), and takes the shot that many seconds
  * after the logic let it fall (the stone tumbling down, bouncing off the enemy), the name ending in -drop<seconds>
  * after the others.
+ * -UghShotFare lets the first copter take a fare (FUghFarePilot) and takes the shot on its way to the pad the passenger
+ * wants (the status shows it), the name ending in -fare.
  * -UghShotRush=left|right|down with -UghShotRushAfter=<seconds> (several separated by commas: the level shot once for
  * each) lets the first copter climb to the height -UghShotRushY (pixels, else 40), then fly that way as fast as it can
  * - sideways steering and pedalling to keep its height, down diving -, and takes the shot that many seconds after it
@@ -225,6 +227,11 @@ private:
 	 */
 	bool Drop(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds, double Age);
 	/**
+	 * -UghShotFare: the first copter takes a fare (FUghFarePilot: lands by the first passenger, it gets in, on to its
+	 * pad); true FareShownAfter seconds after it got in (or when the pilot is lost).
+	 */
+	bool Fare(AUghGameMode& Mode, const ugh_logic_view& View, double Seconds);
+	/**
 	 * -UghShotRush: the first copter climbs to RushY, then rushes that way (sideways keeping its height, down diving);
 	 * true `Age` seconds after it began.
 	 */
@@ -266,6 +273,11 @@ private:
 	FUghDropPilot DropPilot;   // of the level being shot
 	double DropTime = -1;      // since the stone was let go, -1 not yet
 	double BounceTime = -1;    // when it bounced off the enemy (seconds after it was let go), -1 not yet
+	bool bFare = false;        // -UghShotFare
+	FUghFarePilot FarePilot{ 0 };   // of the level being shot
+	double FareTime = -1;      // since the passenger got in, -1 not yet
+	/** -UghShotFare: shot this long after the passenger got in (on the way to its pad, the status shows it). */
+	static constexpr double FareShownAfter = 1.5;
 	FString Rush;              // -UghShotRush: left, right, down
 	TArray<double> Rushes;     // -UghShotRushAfter
 	double RushY = 40;         // -UghShotRushY

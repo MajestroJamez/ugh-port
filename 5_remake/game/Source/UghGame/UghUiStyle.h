@@ -50,6 +50,9 @@ namespace UghUiStyle
 	struct FPictures
 	{
 		FSlateBrush Logo, Tablet, Copter, Bone, Fade;
+		/** The passengers' speech bubbles (UghBubbles) with a board of 0 .. 5 tally marks (0: blank), for the status. */
+		static constexpr int32 BubbleBoards = 6;
+		FSlateBrush Bubbles[BubbleBoards];
 	};
 	/** Makes the pictures' textures (into `Textures`, owned by `Outer`) and their brushes (tens of milliseconds). */
 	TSharedRef<FPictures> MakePictures(UObject* Outer, TArray<TObjectPtr<UTexture2D>>& Textures);

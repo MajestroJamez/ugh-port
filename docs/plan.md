@@ -2116,3 +2116,16 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   (před = `Levels-perf-low` z balíčku po 30e, po = `Levels-32b-low`), `sheet-epic-before-after.png` (`Levels-32a-after`
   / `Levels-32b-epic`), vrtule `rotor-before-after.png`. Postavy > plošiny > skála drží, noci čitelné (ohně, výplň
   postav). CTest logiky, `6_verification` (324) a 217 testů v UE zelené. Balíček nepřebalen. Další: **krok 32h**.
+- 2026-10-10: krok 32h hotový - HUD: cíl naloženého cestujícího (`docs/visual-concept.md`, README hry). Originál
+  (`Draw.kt` `updateStatusBar`, sprity 178-190): ve stavovém řádku každého pilota ikona cestujícího a bublina s prkénkem
+  čárek cílové plošiny (183 prázdná, 184-188 I až pětka, 189 prázdné prkno, 190 otazník), k tomu jízdné (4 číslice,
+  ubývá). Teď ve skleněném panelu stavu za energií pro každého pilota s cestujícím „Pilot N to“: bublina s prkénkem
+  (`UghBubbles::Draw`, jako bubliny cestujících, 6 obrázků v `UghUiStyle::FPictures::Bubbles`), číslo plošiny číslicí
+  a jantarové „Fare“; prázdná kabina, kámen na laně (`destination` -1) a mimo hru nic (`AUghHud::ShowCargo`,
+  `FUghUiState::Cargo`). Test `Ugh.Ui.Cargo`: `FUghFarePilot` (nový autopilot: přistane vedle prvního cestujícího,
+  počká, než nastoupí, letí na jeho plošinu, přistane, počká, než vystoupí) v levelu 1 jednoho hráče a týmu (každý
+  pilot zvlášť, druhý vrtulník visí): HUD = cíl a jízdné logiky po každém kroku, jízdné klesá, po výstupu nic; kámen
+  a prázdná kabina nic. `shot.ps1 -Fare` (snímek cestou na cílovou plošinu): `Saved\Shots\32h\1p-01-fare.png`,
+  `team-01-fare.png` (oba piloti s cestujícím), výřez `hud-team.png`. CTest logiky, `6_verification` (324) a 217 testů
+  v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32h-after` bez vad (jas 52,3), fps medián 13 (Epic v editoru,
+  kolísá: 32b 11, 32a 17). Balíček nepřebalen. Další: **krok 32c**.
