@@ -2141,3 +2141,15 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   muž, žena, stařec), `original-sprites.png`. CTest logiky, `6_verification` (324) a 218 testů v UE zelené.
   `levels.ps1 -Quick` 0 chyb, arch `Levels-32cd-after` bez vad, fps medián 14, 1 % low 10. Balíček nepřebalen.
   Další: **krok 32d**.
+- 2026-10-10: krok 32d hotový - foukač ve velikosti originálu, větší ohňostroj (`docs/visual-concept.md`, README hry).
+  Foukač v 9 mapách: jeden hráč 4, 18, 19, 38, 39, 48, 60, 61 (tytéž mapy tým 4, 20, 21, 44, 45, 56, 70, 71) a tým 30.
+  T-rex (19h) zabíral z herní kamery asi 22 x 7 px spritu 32 x 22 (ležel plochý z boku); teď `FUghFigureModels`
+  natočí o 45° víc ke kameře, zvětší 2,3x (nahoru 2,75x, `UghFigurePlace::TrexScale`) a posune o 50 cm dozadu:
+  asi 34 x 24 px, hrbatá hmota jako originál. Logika a dosah foukání beze změny, kreslený foukač beze změny;
+  `Ugh.Figures.Models` měří zvětšeného (ocas za ním do 3x spritu). Ve 1p-60 / tým 70 hoří táborák u jeho boku (byl
+  tam i dřív; dekorace se plánují ve tmě, kdy logika ještě neukazuje sprity nepřátel, takže foukače nepozná). Ohňostroj:
+  12 koulí jisker (zlatá, růžová, nefritová, `FPart::Shells`: každá z vlastního bodu nad vrtulníkem ve vlastní chvíli
+  během 1,7 s, asi 8 m), lístky a třpyt větší, záblesk 30 cd; obraz zhasíná pozvolna (`1 - (1 - f)^2`), aby byl vidět
+  v 1,8 s ztmavení logiky (delší až s letem mezi levely, 32f). Snímky `Saved\Shots\32d\blower-before-after.png`
+  (všech 9 map), `celebration-before-1p-01.png` (29a) / `celebration-after-1p-01.png`, `-1p-03.png`. Testy a arch
+  jako 32c. Balíček nepřebalen. Další: **krok 32e**.

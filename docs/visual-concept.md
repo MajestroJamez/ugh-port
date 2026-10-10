@@ -1059,3 +1059,13 @@ u sebe a nic za dosahem, deterministicky).
   postava, listy a hůl v `UghMetaHumans.h` / `UghCaveman.cpp`; jeskynní muž bez MetaHumanů má barvy podle stejného
   klíče a hůl také.
 
+## Foukač ve velikosti originálu, větší ohňostroj (krok 32d)
+
+- Foukač (T-rex ležící ve spánku, 19h) zabíral z herní kamery jen asi 22 x 7 px svého spritu 32 x 22: plochý ležící
+  ještěr z boku. Teď natočený o 45° víc ke kameře (dívá se na ni, ocas mizí dozadu do skály), zvětšený 2,3x (nahoru
+  2,75x) a o 50 cm dál: hrbatá hmota velká jako sprite originálu (asi 34 x 24 px). Dosah foukání a logika beze změny,
+  starý kreslený foukač beze změny (je velký jako sprite).
+- Ohňostroj po dokončeném levelu: 12 ohňostrojových koulí jisker (zlatá, růžová, nefritová; každá vybuchne z vlastního
+  bodu 2,5-5,5 m nad vrtulníkem ve vlastní chvíli během 1,7 s, průměr asi 8 m), k tomu okvětní lístky a třpyt.
+  Jen světlo (Glint) kromě lístků: levné i na Low. Obraz při ztmavení na konci levelu zhasíná pozvolna (`1 - (1 - f)^2`),
+  takže je ohňostroj vidět po většinu 1,8 s, které logika na ztmavení dává; delší by byl až s letem mezi levely (32f).

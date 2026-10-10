@@ -93,14 +93,28 @@ namespace
 		{ .Blend = EBlend::Bits, .Shape = EShape::Leaf, .Mode = EMode::Tumbling, .Count = 7, .Life = 2.6f,
 			.Stagger = 0.5f, .Speed = 70, .Spread = 1.5f, .Gravity = 200, .Drag = 2.5f, .Size = 15, .Flutter = 30,
 			.Spin = 6, .Box = { 30, 15, 15 } } };
+	/**
+	 * The level done (step 32d: bigger and longer than the petals of step 20): fireworks over the copter - shells of
+	 * sparks bursting one after another over some 1.7 s, gold, rose and jade, each some 8 m across -, petals raining
+	 * and glints. Light only (Glint) but the petals: cheap at Low too.
+	 */
+	const FLinearColor Rose(1.f, 0.35f, 0.3f), Jade(0.45f, 1.f, 0.65f);
 	const FPart CelebrationParts[] = {
-		{ .Blend = EBlend::Bits, .Shape = EShape::Petal, .Mode = EMode::Tumbling, .Count = 36, .Life = 3,
-			.Stagger = 0.3f, .Speed = 750, .Spread = 0.6f, .Gravity = 450, .Drag = 1.6f, .Size = 14, .Flutter = 25,
-			.Spin = 8, .Box = { 20, 10, 10 }, .Roughness = 0.6f },
-		{ .Blend = EBlend::Glint, .Shape = EShape::Star, .Count = 24, .Life = 1.2f, .Stagger = 0.6f, .Speed = 500,
-			.Spread = 1.2f, .Gravity = -30, .Drag = 2, .Size = 16, .Box = { 20, 10, 10 }, .Color = Gold,
+		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 250, .Life = 1.5f, .Stagger = 1.6f, .Speed = 950,
+			.Spread = 2, .Gravity = 260, .Drag = 2.3f, .Size = 10, .Stretch = 1.6f, .Box = { 4, 4, 4 }, .Color = Gold,
+			.Strength = 6, .Shells = 5, .ShellBox = { 550, 20, 140 }, .ShellAbove = 420 },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 200, .Life = 1.4f, .Stagger = 1.7f, .Speed = 900,
+			.Spread = 2, .Gravity = 260, .Drag = 2.3f, .Size = 10, .Stretch = 1.6f, .Box = { 4, 4, 4 }, .Color = Rose,
+			.Strength = 6, .Shells = 4, .ShellBox = { 600, 20, 150 }, .ShellAbove = 400 },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Drop, .Count = 150, .Life = 1.4f, .Stagger = 1.5f, .Speed = 850,
+			.Spread = 2, .Gravity = 260, .Drag = 2.3f, .Size = 10, .Stretch = 1.6f, .Box = { 4, 4, 4 }, .Color = Jade,
+			.Strength = 6, .Shells = 3, .ShellBox = { 500, 20, 120 }, .ShellAbove = 380 },
+		{ .Blend = EBlend::Bits, .Shape = EShape::Petal, .Mode = EMode::Tumbling, .Count = 60, .Life = 3.6f,
+			.Stagger = 0.8f, .Speed = 900, .Spread = 0.6f, .Gravity = 450, .Drag = 1.6f, .Size = 20, .Flutter = 35,
+			.Spin = 8, .Box = { 40, 10, 10 }, .Roughness = 0.6f },
+		{ .Blend = EBlend::Glint, .Shape = EShape::Star, .Count = 40, .Life = 1.6f, .Stagger = 1.2f, .Speed = 650,
+			.Spread = 1.2f, .Gravity = -30, .Drag = 2, .Size = 22, .Box = { 30, 10, 10 }, .Color = Gold,
 			.Strength = 4 } };
-
 	/** A body falling from high into the water (a flung passenger): a crown of drops, a column of spray, rings. */
 	const FPart PlungeParts[] = {
 		{ .Shape = EShape::Drop, .Count = 140, .Life = 1.1f, .Stagger = 0.08f, .Speed = 760, .Spread = 0.35f,
@@ -157,7 +171,7 @@ namespace
 		{ TEXT("gust"), GustParts, false, {}, 40, 0.5, ERest::Air },
 		{ TEXT("thud"), ThudParts, false, {}, 16, 0.3, ERest::Ground },
 		{ TEXT("leaves"), LeafParts, false, {}, 20, 1.2, ERest::Air },
-		{ TEXT("celebration"), CelebrationParts, false, { Gold, 10, 1.f }, 30, 0.6, ERest::Air },
+		{ TEXT("celebration"), CelebrationParts, false, { Gold, 30, 1.5f }, 90, 1.2, ERest::Air },
 		{ TEXT("rustle"), RustleParts, false, {}, 20, 0.8, ERest::Air, -150 },
 		{ TEXT("plunge"), PlungeParts, false, {}, 24, 0.35, ERest::Water },
 		{ TEXT("dunk"), DunkParts, false, {}, 45, 0.4, ERest::Water },

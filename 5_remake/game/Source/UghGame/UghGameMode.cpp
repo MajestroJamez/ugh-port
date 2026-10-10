@@ -351,8 +351,11 @@ void AUghGameMode::ShowFrame(double Seconds)
 
 	// the fade of the play; black around it (the HUD shows the captions) but after a level's flight; all of the stone
 	// behind the menu
-	double Shown = Current.phase == UGH_LOGIC_PHASE_PLAY
+	// (eased: the picture stays brighter longer as the play fades out - the fireworks of a level done, 1.8 s of the
+	// logic's fade, are seen; it comes up as quickly fading in)
+	const double Faded = Current.phase == UGH_LOGIC_PHASE_PLAY
 		? FMath::Clamp(double(Current.fade) / UghShapes::FadeShown, 0.0, 1.0) : 0.0;
+	double Shown = 1 - FMath::Square(1 - Faded);
 	if (bIntroScene)
 	{
 		Shown = FMath::Max(Shown, Intro.Shown());

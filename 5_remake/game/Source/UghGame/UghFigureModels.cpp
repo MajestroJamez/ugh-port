@@ -39,6 +39,10 @@ void FUghFigureModels::Load()
 	};
 	Either(Walker, UghAssets::WalkerTriceratops, UghAssets::Triceratops, EUghModel::Walker);
 	Either(Blower, UghAssets::BlowerTrex, UghAssets::Blower, EUghModel::Blower);
+	const bool bTrex = Blower.IsLoaded() && Blower.GetMesh() == UghAssets::SkeletalMesh(UghAssets::BlowerTrex);
+	BlowerScale = bTrex ? UghFigurePlace::TrexScale : FVector::OneVector;
+	BlowerTurn = bTrex ? UghFigurePlace::TrexTurn : 0;
+	BlowerBack = bTrex ? UghFigurePlace::TrexBack : 0;
 	Either(Tree, UghAssets::TreeHornbeam, UghAssets::FruitTree, EUghModel::Tree);
 	Stone = UghAssets::Stone();
 	Wings = nullptr;
@@ -150,6 +154,16 @@ bool FUghFigureModels::Show(AActor* Owner, const ugh_logic_entity& Entity, const
 	}
 	Turn(Slot, Action, Velocity, Seconds);
 	FTransform Place = UghFigurePlace::Of(Action, At, Size, Slot.Clock.Phase(), Slot.Spin);
+	if (Action.Model == EUghModel::Blower)
+	{
+		// the T-rex turned further towards the camera (a hunched mass, as the original's) and bigger, about its origin on
+		// the ground under its middle, a little further back (its head over the ledge, not before it)
+		const double Yaw = Place.Rotator().Yaw;
+		Place.SetRotation(FQuat(FVector::UpVector, FMath::DegreesToRadians(-FMath::Sign(Yaw) * BlowerTurn)) *
+			Place.GetRotation());
+		Place.SetScale3D(Place.GetScale3D() * BlowerScale);
+		Place.AddToTranslation(UghShapes::ToWorld(0, 0, BlowerBack) - UghShapes::ToWorld(0, 0, 0));
+	}
 	Place.AddToTranslation(Offset);
 	Shown->SetWorldTransform(Place);
 	USceneComponent* const Parts[] = { Slot.Person.Get(), Slot.Rigged.Get(), Slot.Mesh.Get() };

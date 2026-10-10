@@ -89,6 +89,9 @@ private:
 	UPROPERTY() FUghRig Flyer;
 	UPROPERTY() FUghRig Walker;
 	UPROPERTY() FUghRig Blower;
+	FVector BlowerScale = FVector::OneVector;   // the T-rex's UghFigurePlace::TrexScale
+	double BlowerTurn = 0;                      // UghFigurePlace::TrexTurn
+	double BlowerBack = 0;                      // UghFigurePlace::TrexBack
 	UPROPERTY() FUghRig Tree;
 	UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> Wings;   // the flyer's (UghMaterials::Membrane)
 	UPROPERTY() TObjectPtr<UStaticMesh> Stone;

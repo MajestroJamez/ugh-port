@@ -34,6 +34,17 @@ namespace UghFigurePlace
 	 * edge on), and bigger than its model by FlyerScale (its sprite is as long as its wings are wide).
 	 */
 	constexpr double FlyerBank = 35, FlyerScale = 1.3;
+	/**
+	 * The blower when it is the T-rex lying asleep (Blender/blower_trex.py): the original's blower is a hunched mass
+	 * filling its sprite (32 x 22 px), the model lying flat seen from the side filled only some 22 x 7 px of it from the
+	 * game's camera (step 32d). FUghFigureModels turns it TrexTurn degrees further towards the camera (it looks at it, its
+	 * tail away behind) and scales it by TrexScale (a little more up: bulkier): about as much of the screen as its
+	 * sprite. (The older cartoon blower, Blender/blower.py, is as big as its sprite as it is.)
+	 */
+	inline const FVector TrexScale(2.3, 2.3, 2.75);
+	constexpr double TrexTurn = 45;
+	/** ... and moves it this far back (units): its head, turned towards the camera, over its ledge, not before it. */
+	constexpr double TrexBack = 50;
 
 	/**
 	 * The transform of the model of `Action` for its sprite of `Size` px with its top left corner at `At` (pixels),

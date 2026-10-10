@@ -134,16 +134,21 @@ bool FUghFigureModelsTest::RunTest(const FString& Parameters)
 			AddInfo(FString::Printf(TEXT("%s is not imported (fetch-assets.ps1, build.ps1): not checked"), Each.Id));
 			continue;
 		}
-		// about as long as its sprite is wide (it may reach a little further: wings, a tail), not higher than it
+		// about as long as its sprite is wide (it may reach a little further: wings, a tail), not higher than it; the
+		// T-rex lying flat shown bigger (its tail reaching far behind), about as much of the screen
 		const USkeletalMesh* Mesh = Models.SkeletalMeshOf(Each.Model);
 		AddInfo(FString::Printf(TEXT("%s: %s"), Each.Id, *Mesh->GetPathName()));
 		const FBox Box = Mesh->GetBounds().GetBox();
 		const FVector2D Wanted = FVector2D(Each.Sprite) * UghShapes::UnitsPerPixel;
-		const double Scale = Each.Model == EUghModel::Flyer ? UghFigurePlace::FlyerScale : 1;
-		const FVector2D Got = FVector2D(FMath::Max(Box.GetSize().X, Box.GetSize().Y), Box.GetSize().Z) * Scale;
+		const bool bTrex = Mesh == UghAssets::SkeletalMesh(UghAssets::BlowerTrex);
+		const FVector Scale = Each.Model == EUghModel::Flyer ? FVector(UghFigurePlace::FlyerScale)
+			: bTrex ? UghFigurePlace::TrexScale : FVector::OneVector;
+		const double Longest = bTrex ? 3 : 1.4;   // (its tail curls away far behind, into the rock)
+		const FVector2D Got(FMath::Max(Box.GetSize().X * Scale.X, Box.GetSize().Y * Scale.Y), Box.GetSize().Z * Scale.Z);
 		TestTrue(FString::Printf(TEXT("%s is as big as its sprite (%.0f x %.0f, its sprite %.0f x %.0f)"), Each.Id,
 			Got.X, Got.Y, Wanted.X, Wanted.Y),
-			Got.X > Wanted.X * 0.7 && Got.X < Wanted.X * 1.4 && Got.Y < Wanted.Y * 1.4);
+			Got.X > Wanted.X * 0.7 && Got.X < Wanted.X * Longest && Got.Y < Wanted.Y * 1.4 &&
+			(!bTrex || Got.Y > Wanted.Y * 0.5));
 	}
 	// the light shines through the flyer's wings: their slot and maps are there
 	if (const USkeletalMesh* Flyer = Models.SkeletalMeshOf(EUghModel::Flyer))

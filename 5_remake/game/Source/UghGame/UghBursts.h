@@ -17,7 +17,7 @@ enum class EUghBurst : uint8
 	Gust,         // the blower's breath: leaves, streaks of wind, dust
 	Thud,         // an enemy knocked out: dust and pebbles
 	Leaves,       // falling from the tree's crown as it drops its fruit
-	Celebration,  // the level done: petals and glints, a flash
+	Celebration,  // the level done: fireworks (shells of sparks in three colours), petals, glints, a flash
 	Rustle,       // a few leaves off the plants at the stone's edges a copter bumps into (AUghFringe; no event)
 	Plunge,       // a body falling from high into the water: drops, a column of spray, rings (FUghFlings)
 	Dunk,         // a copter falling into the water: a column and a crown of water, drops, foam, rings (FUghDunks)
@@ -60,6 +60,13 @@ namespace UghBursts
 		float Roughness = 0.7f;
 		bool bTinted = false;   // its colour times the event's tint (a bonus item's kind)
 		bool bFacing = false;   // its Direction mirrored when the figure faces left
+		/**
+		 * Fireworks: its particles in this many shells, each bursting at once from its own point (within ShellBox - half
+		 * sizes, cm - around ShellAbove over the burst's place) at its own moment within Stagger; 0: one cloud.
+		 */
+		int32 Shells = 0;
+		FVector3f ShellBox = FVector3f::ZeroVector;
+		float ShellAbove = 0;
 	};
 
 	/** A flash of light with a burst: its colour, candelas at once, dying away in Seconds. */

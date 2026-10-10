@@ -262,11 +262,23 @@ UStaticMesh* AUghEffects::MeshOf(EUghBurst Burst, int32 Part)
 	}
 	TArray<UghMeshes::FQuad> Quads;
 	FRandomStream Random(Key + 1);
-	for (int32 Each = 0; Each < Get(Burst).Parts[Part].Count; ++Each)
+	const FPart& Each = Get(Burst).Parts[Part];
+	for (int32 Particle = 0; Particle < Each.Count; ++Particle)
 	{
 		// (each a little aside in depth too: the bounds a box, not a plane the cliff's face could hide)
 		const FVector Aside(0, Random.FRandRange(-0.5, 0.5), 0);
-		Quads.Add({ Aside, FVector2D(1), FVector2D(Random.FRand(), Random.FRand()) });
+		FVector2D Seed(Random.FRand(), Random.FRand());
+		FVector Middle = Aside;
+		if (Each.Shells > 0)
+		{
+			// a shell's particles start from its point at its moment (the second seed: UghBurst.hlsl's start in Stagger)
+			const int32 Shell = Particle % Each.Shells;
+			FRandomStream Where(Key * 64 + Shell + 7);
+			Middle += FVector(Where.FRandRange(-1, 1) * Each.ShellBox.X, Where.FRandRange(-1, 1) * Each.ShellBox.Y,
+				Each.ShellAbove + Where.FRandRange(-1, 1) * Each.ShellBox.Z);
+			Seed.Y = (Shell + 0.5) / Each.Shells;
+		}
+		Quads.Add({ Middle, FVector2D(1), Seed });
 	}
 	UStaticMesh* Mesh = UghMeshes::Quads(this, Quads);
 	Meshes.Add(Key, Mesh);
