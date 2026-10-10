@@ -13,6 +13,7 @@
 #include "UghImpacts.h"
 #include "UghIntro.h"
 #include "UghLevelArt.h"
+#include "UghTreeRoots.h"
 #include "UghLively.h"
 #include "UghMenu.h"
 #include "UghMotionBlur.h"
@@ -163,7 +164,7 @@ private:
 	 * called: a worker's task in a flight between the levels).
 	 */
 	static TSharedPtr<FUghLevelPlan> PlanLevel(const ugh_logic* Logic, const ugh_logic_view& View, TArray<FColor> Art,
-		TArray<FUghArtTile> Doors, TArray<FUghArtTile> Signs);
+		TArray<FUghArtTile> Doors, TArray<FUghArtTile> Signs, TArray<FVector2D> Trees);
 	/**
 	 * The first step of ApplyLevel that changes what is seen (the old rock gone): in a flight between two levels the
 	 * steps before it run while the level left is still seen, the rest only in its mist.
@@ -250,6 +251,7 @@ private:
 	FUghImpacts Impacts;         // a crash, a stone on an enemy, a fall into the sea, a bump: the camera shaken, a pad rumbling
 	FUghPads Pads;
 	FUghLevelArt LevelArt;
+	FUghTreePlaces TreePlaces;
 	FUghPasswords Passwords;
 	FUghProfile Profile;
 	FString ProfilePath;

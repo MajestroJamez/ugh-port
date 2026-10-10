@@ -1,4 +1,4 @@
-"""What the enemies of the remake (pterodactyl.py, triceratops.py, blower.py, fruit_tree.py, tree_hornbeam.py,
+"""What the enemies of the remake (pterodactyl.py, triceratops.py, blower.py, fruit_tree.py, tree_jungle.py,
 stone_slate.py) share: a scaly hide, a horn or claw, cartoon eyes (a white ball with a pupil) and wet ones (an
 eyeball's picture), stars over a dizzy head, and their materials.
 """

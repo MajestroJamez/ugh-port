@@ -6,6 +6,7 @@
 #include "UghBackground.generated.h"
 
 class FUghRockMesh;
+class FUghTreeRoots;
 class FUghTurf;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
@@ -18,7 +19,8 @@ struct FMeshDescription;
  * rock, grass, moss and soil steered by the original's drawing; without them the drawing's colours, the boards with
  * the pads' numbers among them), the cliff going on beyond the screen (its shadow beyond its mesh); the rock is wet at
  * the water (AUghWater) and under it; its turf (FUghTurf: the paths trodden to the cave entrances, the grass hanging
- * over the edges in M_UghTurf). The pads' boards are AUghSigns'.
+ * over the edges in M_UghTurf); the roots of its trees down the face (FUghTreeRoots, in the bark of the tree's model).
+ * The pads' boards are AUghSigns'.
  */
 UCLASS()
 class AUghBackground : public AActor
@@ -39,6 +41,8 @@ public:
 	void BeginBuild(const TArray<FColor>& Art, const FUghTurf* Turf);
 	void AddRock(const FMeshDescription& Piece);
 	void AddBlades(const FUghTurf& Turf);
+	/** The roots of the level's trees made hidden (none without the jungle tree's model: the older tree has none). */
+	void AddRoots(const FUghTreeRoots& Roots);
 	void FinishBuild();
 	/** The rock shows the drawing's colours (the cliff's surfaces are missing), the pads' boards among them. */
 	bool ShowsArt() const { return !bCliff; }
@@ -73,6 +77,8 @@ private:
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Blades;   // the turf's grass over the edges, none without it
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> NewBlades;   // of the level being built (hidden)
 	UPROPERTY() TObjectPtr<UMaterialInterface> BladesMaterial;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> Roots;   // the trees' roots down the face, none without them
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> NewRoots;   // of the level being built (hidden)
 	UPROPERTY() TObjectPtr<UTexture2D> RockArts[2];
 	int32 ShownMaterial = 0;   // of RockMaterials: the shown rock's (the other one the next level's)
 	bool bCliff = false;   // RockMaterial is the cliff's (else the drawing's colours)

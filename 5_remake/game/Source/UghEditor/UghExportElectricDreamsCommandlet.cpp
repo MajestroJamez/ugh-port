@@ -49,7 +49,25 @@ int32 UUghExportElectricDreamsCommandlet::Main(const FString& Params)
 	bool bAll = true;
 	for (const TCHAR* Path : UghElectricDreams::ForBlender)
 	{
-		const UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *UghElectricDreams::ObjectPath(Path));
+		UObject* Asset = LoadObject<UObject>(nullptr, *UghElectricDreams::ObjectPath(Path));
+		if (UTexture* Texture = Cast<UTexture>(Asset))
+		{
+			// a surface's texture: to the folder named as the surface's (Surfaces/<name>/<texture>)
+			const FString Folder = FPaths::ConvertRelativePathToFull(Out / FPaths::GetCleanFilename(FPaths::GetPath(Path)));
+			const FString Png = Folder / Texture->GetName() + TEXT(".png");
+			if (IsCurrent(Png, Texture))
+			{
+				continue;
+			}
+			IFileManager::Get().MakeDirectory(*Folder, true);
+			FImage Image;
+			const bool bWritten = Texture->Source.IsValid() && Texture->Source.GetMipImage(Image, 0) &&
+				FImageUtils::SaveImageByExtension(*Png, Image);
+			UE_LOG(LogUghExportElectricDreams, Display, TEXT("%s %s"), bWritten ? TEXT("exported") : TEXT("FAILED"), *Png);
+			bAll = bWritten && bAll;
+			continue;
+		}
+		const UStaticMesh* Mesh = Cast<UStaticMesh>(Asset);
 		if (!Mesh)
 		{
 			UE_LOG(LogUghExportElectricDreams, Error, TEXT("no copy of %s (UghCopyElectricDreams first)"), Path);

@@ -41,10 +41,21 @@ namespace
 		{
 			AddFolder(UghAssets::Folder(Id));
 		}
-		const TConstArrayView<const TCHAR*> ForBlender = UghElectricDreams::ForBlender;
-		for (const TCHAR* Path : UghElectricDreams::All())
+		// (what only Blender wants is in the list once: the taro is a plant of the game too)
+		const TArray<const TCHAR*> All = UghElectricDreams::All();
+		const auto OnlyForBlender = [&All](const TCHAR* Path)
 		{
-			if (!ForBlender.Contains(Path))
+			int32 Times = 0;
+			for (const TCHAR* Each : All)
+			{
+				Times += FCString::Strcmp(Each, Path) == 0 ? 1 : 0;
+			}
+			return Times == 1 && TConstArrayView<const TCHAR*>(UghElectricDreams::ForBlender).ContainsByPredicate(
+				[Path](const TCHAR* Each) { return FCString::Strcmp(Each, Path) == 0; });
+		};
+		for (const TCHAR* Path : All)
+		{
+			if (!OnlyForBlender(Path))
 			{
 				AddPackage(FString(UghElectricDreams::Root) / Path);
 			}

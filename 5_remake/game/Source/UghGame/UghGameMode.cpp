@@ -118,7 +118,8 @@ void AUghGameMode::StartPlay()
 	TSharedPtr<FJsonObject> Levels;
 	if (!Sprites.Load(Assets, Problem) || !UghJson::ReadObject(LevelsPath, Levels, Problem) ||
 		!LevelArt.Load(*Levels, LevelsPath, Problem) || !Passwords.Load(*Levels, LevelsPath, Problem) ||
-		!Simulation.Load(Assets / TEXT("logic/ugh-data.ugd"), Problem))
+		!Simulation.Load(Assets / TEXT("logic/ugh-data.ugd"), Problem) ||
+		!TreePlaces.Load(Assets / TEXT("logic/ugh-data.ugd"), Problem))
 	{
 		UE_LOG(LogTemp, Error, TEXT("UGH no game: %s"), *Problem);
 		if (bShooting)

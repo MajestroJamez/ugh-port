@@ -95,11 +95,17 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
     hlava se zvedne; první 3 z 10 spritů) a mocné odfrknutí (hlava vyrazí dopředu, žebra splasknou), `stunned` =
     třepe hlavou. Při odfrknutí mu z nozder (kost `nostrils`) vyletí obláček prachu a dechu (`FUghSnort`, materiál
     `M_UghPuff`: čtverečky posouvané GPU, nic za snímek).
-  - Strom s tváří (`tree_hornbeam.py`) je starý hrabový pahýl: zavalitý rýhovaný kmen s kořeny a větvemi
-    (metaballs), kůra naskenovaná z Electric Dreams (dlaždicová kůra habru promítnutá ze tří os, tmavší v dutinách)
-    s vyřezanou tváří (hluboké oční důlky pod obočím s vlhkýma očima, suk nosu, otevřená ústa), koruna ze dvou
-    naskenovaných korun mladého habru (větvičky a listy), mezi listy pár planých jablek; víčka z kůry ukáže jen
-    mrknutí. Akce jako dřív (`sway` s mrknutím, `shaken`).
+  - Strom s tváří (`tree_jungle.py`, od kroku 32g; dřív hrabový pahýl `tree_hornbeam.py`) je fíkovník škrtič
+    z džungle: zavalitý kmen ze srostlých kmínků, vysoké deskové kořeny (přední přes hranu římsy), široce rozložené
+    větve (metaballs), kůra naskenovaného deskového kořene z Electric Dreams (`ButtressRoot`, promítnutá ze tří os,
+    tmavší v dutinách) s vyřezanou tváří (hluboké oční důlky pod obočím s vlhkýma očima, suk nosu, otevřená ústa);
+    vzdušné kořeny z větví (vnější až na zem jako sloupy), dřevnaté liány v obloucích a visící, koruna z velkých
+    lesklých listů naskenovaného tara (karty prohnuté), růžice malých listů na větvích (epifyty), zralé fíky pod
+    větvemi; víčka z kůry ukáže jen mrknutí. Akce jako dřív (`sway` s mrknutím, `shaken`), velikost jako sprite
+    (32 x 24 px). Hra mu nechá dlouhé kořeny růst po čele skály (`FUghTreeRoots`): zpod deskových kořenů přes hranu
+    římsy dolů po čele, bloudí, větví se, tenčí, špička do skály; jen nad skálou kolizní masky (pixel skály vedle,
+    nikdy nad vzduchem hry ani nad povrchem římsy), ne pod vodou a přes potok; trubky z dlaždicové kůry stromu
+    (slot `roots`) položené na čelo, trochu zapuštěné do čela, jedna síť, pár tisíc trojúhelníků.
   - Kámen (cestující vzhledu 4) je naskenovaný mechem porostlý kámen `MossyForestRock_02`
     (`stone_boulder.py`: z milionu trojúhelníků 40 tisíc, jeho mapy) vtěsnaný do elipsoidu kroku 16, s vlhkýma očima
     zapuštěnýma do mechové tváře pod těžkými víčky z kamene. Od kroku 25e ho nahradil balvan břidlice podle Janovy

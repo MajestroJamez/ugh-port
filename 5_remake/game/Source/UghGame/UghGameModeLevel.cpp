@@ -25,6 +25,7 @@
 #include "UghStage.h"
 #include "UghStreams.h"
 #include "UghTorches.h"
+#include "UghTreeRoots.h"
 #include "UghTurf.h"
 #include "UghWater.h"
 #include "Engine/Engine.h"
@@ -41,6 +42,7 @@ struct FUghLevelPlan
 	FUghRockMesh Rock;
 	TArray<FMeshDescription> RockPieces;   // its pieces described (FUghRockMesh::Describe)
 	FUghTurf Turf;
+	FUghTreeRoots Roots;
 	TArray<FUghDecoration> Decorations;
 	TArray<FUghRockPiece> Pieces;
 	double PlanSeconds = 0;
@@ -82,7 +84,7 @@ namespace
 }
 
 TSharedPtr<FUghLevelPlan> AUghGameMode::PlanLevel(const ugh_logic* Logic, const ugh_logic_view& View,
-	TArray<FColor> Art, TArray<FUghArtTile> Doors, TArray<FUghArtTile> Signs)
+	TArray<FColor> Art, TArray<FUghArtTile> Doors, TArray<FUghArtTile> Signs, TArray<FVector2D> Trees)
 {
 	const double Started = FPlatformTime::Seconds();
 	TSharedPtr<FUghLevelPlan> Plan = MakeShared<FUghLevelPlan>();
@@ -103,6 +105,7 @@ TSharedPtr<FUghLevelPlan> AUghGameMode::PlanLevel(const ugh_logic* Logic, const 
 	if (View.level_id >= 0)
 	{
 		Plan->Turf.Build(Logic, Plan->Field, Plan->WaterRow, Plan->Streams);
+		Plan->Roots.Build(Logic, Plan->Field, Trees, Plan->WaterRow, Plan->Streams, View.level_id);
 		const double Planned = FPlatformTime::Seconds();
 		Plan->Decorations =
 			UghDecorations::Plan(Logic, Plan->Field, View.level_id, Plan->WaterRow, Plan->PadSigns, Plan->Streams);
@@ -117,7 +120,7 @@ TSharedPtr<FUghLevelPlan> AUghGameMode::PlanLevel(const ugh_logic* Logic, const 
 void AUghGameMode::BuildLevel(const ugh_logic_view& View)
 {
 	const TSharedPtr<FUghLevelPlan> Built = PlanLevel(Simulation.GetLogic(), View, LevelArt.Draw(View.level_id, Sprites),
-		LevelArt.Doors(View.level_id), LevelArt.Signs(View.level_id));
+		LevelArt.Doors(View.level_id), LevelArt.Signs(View.level_id), TreePlaces.Of(View.level_id));
 	for (int32 Step = 0; ApplyLevel(*Built, Step); ++Step)
 	{
 	}
@@ -162,6 +165,7 @@ bool AUghGameMode::ApplyLevel(const FUghLevelPlan& Built, int32 Step)
 		if (bLevel)
 		{
 			Background->AddBlades(Built.Turf);
+			Background->AddRoots(Built.Roots);
 		}
 		break;
 	case StepShown:
@@ -302,9 +306,10 @@ void AUghGameMode::SwitchVoyage(const ugh_logic_view& Live)
 		const ugh_logic* Logic = Simulation.GetLogic();
 		TArray<FColor> Art = LevelArt.Draw(Live.level_id, Sprites);   // (the sprites load here, on this thread)
 		PlanTask = UE::Tasks::Launch(TEXT("UghLevelPlan"),
-			[Logic, Live, Art = MoveTemp(Art), Doors = LevelArt.Doors(Live.level_id), Signs = LevelArt.Signs(Live.level_id)]
+			[Logic, Live, Art = MoveTemp(Art), Doors = LevelArt.Doors(Live.level_id), Signs = LevelArt.Signs(Live.level_id),
+				Trees = TreePlaces.Of(Live.level_id)]
 			{
-				return PlanLevel(Logic, Live, Art, Doors, Signs);
+				return PlanLevel(Logic, Live, Art, Doors, Signs, Trees);
 			});
 		CameraLog.Note(TEXT("planning"));
 	}

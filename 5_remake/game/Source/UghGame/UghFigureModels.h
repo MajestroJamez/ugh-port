@@ -36,7 +36,7 @@ struct FUghFigureSlot
  * The figures besides the copters: the passengers as people of their look (FUghCaveman: MetaHumans or the caveman)
  * or the stone with eyes (a scanned mossy rock, else a boulder), the flyer as a pterodactyl, the walker as Jan's
  * triceratops (else a cartoon one), the blower as Jan's T-rex asleep snorting dust out of its nostrils (else a
- * puffing beast), the tree as a scanned hornbeam with a face carved into it (else a cartoon tree), the bonus items as
+ * puffing beast), the tree as a jungle fig with a face carved into it (else a cartoon tree), the bonus items as
  * fruits and a stone tablet. Each entity keeps its own component; Show places it as its sprite (UghFigurePlace) and
  * lets it do its action (FUghFigureActions). A model that is not imported shows nothing: the caller shows clay
  * instead.

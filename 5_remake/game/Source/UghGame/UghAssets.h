@@ -81,7 +81,7 @@ namespace UghAssets
 	 */
 	inline const TCHAR* BlowerTrex = TEXT("blower_trex");
 	inline const TCHAR* WalkerTriceratops = TEXT("walker_triceratops");
-	inline const TCHAR* TreeHornbeam = TEXT("tree_hornbeam");
+	inline const TCHAR* TreeJungle = TEXT("tree_jungle");
 
 	/** The content folder of asset `Id`. */
 	inline FString Folder(const FString& Id) { return FString(ImportedRoot) / Id; }

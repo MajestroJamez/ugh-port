@@ -3,6 +3,7 @@
 #include "Algo/Find.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/Texture2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "MeshDescription.h"
@@ -13,6 +14,7 @@
 #include "UghRockMesh.h"
 #include "UghShapes.h"
 #include "UghTexture.h"
+#include "UghTreeRoots.h"
 #include "UghTurf.h"
 
 namespace
@@ -226,6 +228,11 @@ void AUghBackground::BeginBuild(const TArray<FColor>& Art, const FUghTurf* Turf)
 		NewBlades->DestroyComponent();
 		NewBlades = nullptr;
 	}
+	if (NewRoots)
+	{
+		NewRoots->DestroyComponent();
+		NewRoots = nullptr;
+	}
 	// the cliff takes the drawing's areas, the drawing's colours on their own its pixels
 	TArray<FColor> Shown = bCliff ? Soften(Art) : Art;
 	if (bCliff)
@@ -285,12 +292,53 @@ void AUghBackground::AddBlades(const FUghTurf& Turf)
 		NewBlades ? TEXT("") : TEXT(" (not shown: no M_UghTurf, run build.ps1)"));
 }
 
+void AUghBackground::AddRoots(const FUghTreeRoots& TreeRoots)
+{
+	// the tiling bark of the jungle tree's model (its slot roots: its own aerial roots and lianas)
+	UMaterialInterface* Bark = nullptr;
+	if (const USkeletalMesh* Tree = UghAssets::SkeletalMesh(UghAssets::TreeJungle))
+	{
+		for (const FSkeletalMaterial& Slot : Tree->GetMaterials())
+		{
+			Bark = Slot.MaterialSlotName == TEXT("roots") ? Slot.MaterialInterface.Get() : Bark;
+		}
+	}
+	UStaticMesh* RootsMesh = Bark ? TreeRoots.GetMesh().ToStaticMesh(this) : nullptr;
+	if (RootsMesh)
+	{
+		NewRoots = NewObject<UStaticMeshComponent>(this);
+		NewRoots->SetMobility(EComponentMobility::Static);
+		NewRoots->SetStaticMesh(RootsMesh);
+		NewRoots->SetMaterial(0, Bark);
+		NewRoots->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		NewRoots->bVisibleInRayTracing = false;
+		NewRoots->bAffectDistanceFieldLighting = false;
+		NewRoots->SetVisibility(false);   // (until FinishBuild)
+		NewRoots->SetupAttachment(RootComponent);
+		NewRoots->RegisterComponent();
+		AddInstanceComponent(NewRoots);
+	}
+	UE_LOG(LogTemp, Display, TEXT("UGH tree roots: %d (%d triangles)%s"), TreeRoots.GetStrands().Num(),
+		TreeRoots.GetMesh().Triangles.Num() / 3, RootsMesh || TreeRoots.GetStrands().IsEmpty() ? TEXT("") :
+		TEXT(" (not shown: no jungle tree, fetch-assets.ps1 and build.ps1)"));
+}
+
 void AUghBackground::FinishBuild()
 {
 	DestroyParts(Rocks);
 	if (Blades)
 	{
 		Blades->DestroyComponent();
+	}
+	if (Roots)
+	{
+		Roots->DestroyComponent();
+	}
+	Roots = NewRoots;
+	NewRoots = nullptr;
+	if (Roots)
+	{
+		Roots->SetVisibility(true);
 	}
 	Rocks = MoveTemp(NewRocks);
 	NewRocks.Reset();

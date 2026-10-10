@@ -8,8 +8,8 @@
 class UStaticMesh;
 
 /**
- * Exports the static meshes of UghElectricDreams::ForBlender from the copy of the sample (UghCopyElectricDreams first)
- * for the Blender scripts that make the scanned enemies: to <folder>/<mesh name>/ the mesh (its source, the full
+ * Exports the static meshes (and the textures, as <folder>/<surface>/<texture>.png) of UghElectricDreams::ForBlender
+ * from the copy of the sample (UghCopyElectricDreams first) for the Blender scripts that make the scanned enemies: to <folder>/<mesh name>/ the mesh (its source, the full
  * scan, not Nanite's fallback) as <name>.obj in metres with Z up and the front of the scan towards -Y (Blender's axes;
  * one group a material slot, named as the slot), every texture parameter of each slot's material as
  * <slot>_<parameter>.png (as stored: a normal map DirectX's, green down) and <name>.json (the slots, their textures

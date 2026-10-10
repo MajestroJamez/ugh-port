@@ -381,10 +381,10 @@
       "files": ["source/Triceratops/triceratops.fbx", "textures/triceratops_col4.png"]
     },
     {
-      "id": "electricdreams_scans", "kind": "local", "use": "scans of Epic's Electric Dreams sample as OBJ and PNG (UghElectricDreams::ForBlender: a hornbeam sapling), the tree is made of them",
+      "id": "electricdreams_scans", "kind": "local", "use": "scans of Epic's Electric Dreams sample as OBJ and PNG (UghElectricDreams::ForBlender: a taro, the bark of a buttress root), the jungle tree is made of them",
       "page": "electric-dreams.ps1 (exports them from its copy of the sample)", "license": "Epic-Sample", "author": "Epic Games, Quixel Megascans",
       "path": "electricdreams",
-      "files": ["SM_EuropeanHornbeam_Sapling_03/SM_EuropeanHornbeam_Sapling_03.obj", "SM_EuropeanHornbeam_Sapling_03/Tileable_Albedo.png", "SM_EuropeanHornbeam_Sapling_03/TwoSided_Albedo.png"]
+      "files": ["SM_Taro_02/SM_Taro_02.obj", "SM_Taro_02/SM_Taro_02.json", "ButtressRoot/T_ButtressRoot_01_BC.png", "ButtressRoot/T_ButtressRoot_01_N.png", "ButtressRoot/T_ButtressRoot_01_AoRDp.png"]
     },
     {
       "id": "walker_triceratops", "kind": "generated", "use": "the walker from Jan's triceratops, refined (rigged; actions walk, watch, charge, recover, stunned); without it triceratops",
@@ -401,11 +401,11 @@
       "import": ["blower_trex.glb"]
     },
     {
-      "id": "tree_hornbeam", "kind": "generated", "use": "the tree with a face that drops fruit: an old hornbeam of scanned bark and crowns, a face carved into it (rigged; actions sway, shaken); without it fruit_tree",
-      "page": "Blender/tree_hornbeam.py", "license": "Epic-Sample", "author": "Quixel Megascans (Electric Dreams sample), the trunk and its face by the UGH remake (Blender/tree_hornbeam.py)",
-      "path": "generated/tree_hornbeam",
-      "blender": { "script": "Blender/tree_hornbeam.py", "inputs": ["electricdreams_scans"], "outputs": ["tree_hornbeam.glb"] },
-      "import": ["tree_hornbeam.glb"]
+      "id": "tree_jungle", "kind": "generated", "use": "the tree with a face that drops fruit: a jungle fig (buttresses, aerial roots, lianas, taro leaves, epiphytes) of scanned bark and leaves, a face carved into it (rigged; actions sway, shaken; its slot roots also the roots the game grows down the rock); without it fruit_tree",
+      "page": "Blender/tree_jungle.py", "license": "Epic-Sample", "author": "Quixel Megascans (Electric Dreams sample), the tree and its face by the UGH remake (Blender/tree_jungle.py)",
+      "path": "generated/tree_jungle",
+      "blender": { "script": "Blender/tree_jungle.py", "inputs": ["electricdreams_scans"], "outputs": ["tree_jungle.glb"] },
+      "import": ["tree_jungle.glb"]
       },
     {
       "id": "font_lilita_one", "kind": "font", "use": "font: the titles and numbers of the menu and the HUD (UghUiStyle)",

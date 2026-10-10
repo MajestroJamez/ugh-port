@@ -63,7 +63,7 @@ TArray<const TCHAR*> UghAssets::All()
 	}
 	Ids.Append({ Fern, Stump, Palm, Campfire, Bones, Totem, Hut, Vines, Signs, Torch, BridgeWood, SkyDay, SkyEvening,
 		SkyDusk, SkyNight, SkyStorm, Copter, Caveman, StoneSlate, StonePassenger, Pterodactyl, Triceratops, Blower,
-		FruitTree, BonusItems, BlowerTrex, WalkerTriceratops, TreeHornbeam });
+		FruitTree, BonusItems, BlowerTrex, WalkerTriceratops, TreeJungle });
 	TArray<const TCHAR*> Once;
 	for (const TCHAR* Id : Ids)
 	{

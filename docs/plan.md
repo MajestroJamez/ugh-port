@@ -2186,3 +2186,21 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   (324) a 219 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32f-after` bez vad (skála v 16 kusech bez
   švů), fps medián 19, 1 % low 12. Zbývá: skutečný konec levelu s ohňostrojem nenatočen (autopilot level nedohraje,
   let spuštěn `-UghShotVoyage`); balíček nezměřen (nepřebalen, PSO cache bez nových běhů). Další: **krok 32g**.
+- 2026-10-10: krok 32g hotový - strom z džungle s kořeny skrz skálu (`docs/visual-concept.md`, README hry). Nový
+  `Blender/tree_jungle.py` (asset `tree_jungle`, místo `tree_hornbeam.py`): fíkovník škrtič - kmen ze srostlých kmínků,
+  deskové kořeny, široké větve, vzdušné kořeny (vnější jako sloupy), liány, koruna z velkých listů naskenovaného tara
+  (srdčité listy z geometrie, ne vyříznuté alfou: vyříznuté hra kreslila černé nebo vůbec), epifyty, fíky; kůra
+  naskenovaného `ButtressRoot`; tvář (19h), akce a velikost (32 x 24 px, `Ugh.Figures.Models`) beze změny, 38 tis.
+  trojúhelníků. `UghElectricDreams::ForBlender` exportuje taro a textury `ButtressRoot` (commandlet umí i textury;
+  co chce jen Blender, se necookuje). `FUghTreeRoots` (+ `FUghTreePlaces` z `tree x= y=` dat): dlouhé kořeny zpod
+  stromu přes hranu římsy dolů po čele skály, bloudí, větví se, po tenké římse se plazí (nejvýš 7 px), špička do
+  skály; jen nad skálou kolizní masky (pixel rezervy, nikdy nad vzduchem ani nad povrchem), ne u vody a potoka;
+  kůra stromu (slot `roots`), jedna síť `AUghBackground`, ~1,9 tis. trojúhelníků na level. Test `Ugh.TreeRoots`
+  (140 stromů na zemi, 121 nad vodou všechny s kořeny, 892 kořenů, 194 delších než 30 px). Strom je ve 134 mapách:
+  jeden hráč 1-7, 9-35, 37-41, 44-58, 60-65, 67-68, tým 1-7, 9-40, 42-48, 51-68, 70-76, 79-80. Snímky
+  `Saved\Shots\32g\tree-before-after.png` (výřezy všech 140 stromů před/po), `closeup-v7.png` (zblízka, level 1),
+  `blender4-front.png`; celé levely `Levels-32g-before` / `Levels-32g-after` (fps medián 14, 1 % low 10 před i po).
+  Pozor: `UghImportAssets` při novém importu nepřepíše existující materiály a textury (`Renamed Assets`) - po změně
+  materiálů v Blenderu smazat `Content\Imported\<id>` (nebo `build.ps1 -ForceImport`). CTest logiky, `6_verification`
+  (324) a 219 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32g-after-quick` bez vad. Balíček
+  nepřebalen. Další: **balení** (32a-32h hotové).

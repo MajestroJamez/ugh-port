@@ -147,10 +147,14 @@ namespace UghElectricDreams
 
 	/**
 	 * What Blender scripts make figures of (the commandlet UghExportElectricDreams exports them from the copy to
-	 * assets/3d/electricdreams/<name>): a hornbeam sapling for the tree with a face (its crown and its bark).
+	 * assets/3d/electricdreams/<name>): for the jungle tree with a face (Blender/tree_jungle.py) the taro (its big
+	 * leaves; a plant of the game too) and the scanned bark of a buttress root (textures, to the surface's folder).
+	 * What only Blender wants is not cooked.
 	 */
-	inline const TCHAR* const ForBlender[] = {
-		TEXT("Megascans/3D_Plants/EuropeanHornbeam/Geometry/SimpleWind/SM_EuropeanHornbeam_Sapling_03") };
+	inline const TCHAR* const ForBlender[] = { TEXT("Megascans/3D_Plants/Taro/SM_Taro_02"),
+		TEXT("Megascans/Surfaces/ButtressRoot/T_ButtressRoot_01_BC"),
+		TEXT("Megascans/Surfaces/ButtressRoot/T_ButtressRoot_01_N"),
+		TEXT("Megascans/Surfaces/ButtressRoot/T_ButtressRoot_01_AoRDp") };
 
 	/** The copy is there (its first asset is; the log says it once when not). */
 	bool IsCopied();

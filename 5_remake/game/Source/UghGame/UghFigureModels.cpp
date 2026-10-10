@@ -43,7 +43,7 @@ void FUghFigureModels::Load()
 	BlowerScale = bTrex ? UghFigurePlace::TrexScale : FVector::OneVector;
 	BlowerTurn = bTrex ? UghFigurePlace::TrexTurn : 0;
 	BlowerBack = bTrex ? UghFigurePlace::TrexBack : 0;
-	Either(Tree, UghAssets::TreeHornbeam, UghAssets::FruitTree, EUghModel::Tree);
+	Either(Tree, UghAssets::TreeJungle, UghAssets::FruitTree, EUghModel::Tree);
 	Stone = UghAssets::Stone();
 	Wings = nullptr;
 	UTexture* WingPicture = Flyer.IsLoaded() ? UghAssets::Texture(UghAssets::Pterodactyl, WingColor) : nullptr;
