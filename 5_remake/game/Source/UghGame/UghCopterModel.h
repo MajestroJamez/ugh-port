@@ -64,13 +64,18 @@ namespace UghCopterModel
 	/** The chain's links are at most this far apart along it (the chainring's teeth). */
 	constexpr double ChainPitch = UE_TWO_PI * ChainringRadius / ChainringTeeth;
 
-	/** The stone passenger's origin when it hangs in the sling (its middle at -63, half its height 53). */
-	inline const FVector Hanging(0, 0, -116);
 	/**
-	 * When it rides in the cabin (nobody else there), it sits on the passenger's seat this much smaller, looking at the
-	 * camera (its eyes over the chair's arms).
+	 * The stone passenger's origin when it hangs in the sling (its middle at -63, half its height 53), freely below the
+	 * body. The logic only ever carries it so (never in the cabin): it hides it while it hangs and lets the copter land
+	 * with it, the stone deep in the ground (UghSling).
 	 */
-	constexpr double SeatedStone = 0.45;
+	inline const FVector Hanging(0, 0, -116);
+	/** The stone's half width across the screen, its height and half depth (cm; HANGING_SEMI). */
+	constexpr double StoneHalfWidth = 79, StoneHeight = 106, StoneHalfDepth = 42;
+	/** The mesh SlingRope: a metre down from the floor's hook here to the sling's knot (in the sling's frame). */
+	inline const TCHAR* SlingRope = TEXT("SlingRope");
+	inline const FVector SlingHook(0, 0, 12);
+	inline const FVector SlingKnot(0, 0, -4);
 	/**
 	 * The crank turns this way about X for the pilot's action pedal: its left pedal (+X) from the top towards the
 	 * camera (the layout's -Y), the top of the chainring forward; the chain and the sprocket go with it.

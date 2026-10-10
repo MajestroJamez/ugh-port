@@ -124,7 +124,8 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 		{
 			// let go, it falls out of the sling
 			const bool bFalling = FCString::Strcmp(Action->Action, TEXT("fall")) == 0;
-			const double Below = StoneDrops.Below(E.index, At.Y, bFalling);
+			const double Room = Logic ? UghSling::Room(Logic, At.X + Size.X / 2.0, At.Y + Size.Y) : UE_DOUBLE_BIG_NUMBER;
+			const double Below = StoneDrops.Below(E.index, At.Y, bFalling, Room);
 			Offset += UghShapes::ToWorld(0, Below, 0) - UghShapes::ToWorld(0, 0, 0);
 		}
 		if (Action && Models.Show(this, E, *Action, At, Size, Velocity, Seconds, Offset))
@@ -150,12 +151,13 @@ void AUghFigures::ShowEntities(const ugh_logic_view& Previous, const ugh_logic_v
 	ShowBubbles(Bubbles);
 }
 
-void AUghFigures::LoadBubbles(const ugh_logic* Logic, int32 SpriteCount)
+void AUghFigures::LoadBubbles(const ugh_logic* InLogic, int32 SpriteCount)
 {
+	Logic = InLogic;
 	BubbleLooks.Reset();
 	for (int32 Sprite = 0; Sprite < SpriteCount; ++Sprite)
 	{
-		BubbleLooks.Add(UghBubbles::Look(Logic, Sprite));
+		BubbleLooks.Add(UghBubbles::Look(InLogic, Sprite));
 	}
 }
 

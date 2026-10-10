@@ -25,8 +25,9 @@ struct FUghHighScores;
  * logged).
  *
  * For a look at the copters (the autopilot never picks a passenger up): -UghShotCargo=<look> shows them with a
- * passenger of the logic's cargo look sitting in the cabin, with -UghShotHanging hanging below instead (only the
- * picture: the logic is not changed); -UghShotLand lets the copters come down slowly instead of hovering, until they
+ * passenger of the logic's cargo look sitting in the cabin, with -UghShotHanging hanging below instead (the stone, 4,
+ * always hangs: the logic never puts it in the cabin; only the picture: the logic is not changed); -UghShotLand lets
+ * the copters come down slowly instead of hovering, until they
  * stand on the ground (a pad) below; -UghShotCloseUp frames the copters instead of the screen, -UghShotFrame=<left>,
  * <top>,<width>,<height> that part of the screen (pixels: a look at the figures; with -UghShotCloseUp from the first
  * copter's corner, wherever it hovers: a look into its cabin). -UghShotBubbles gives every passenger shown a speech

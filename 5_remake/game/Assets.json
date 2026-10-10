@@ -264,7 +264,7 @@
       "import": ["Models/FBX format/campfire_stones.fbx", "Models/FBX format/campfire_logs.fbx"]
     },
     {
-      "id": "copter", "kind": "generated", "use": "the pedal copters (body, rotor, shaft, crank, drive, chain link, sling; both players' colours)",
+      "id": "copter", "kind": "generated", "use": "the pedal copters (body, rotor, shaft, crank, drive, chain link, sling and its rope; both players' colours)",
       "page": "Blender/copter.py", "license": "CC0-1.0", "author": "UGH remake (Blender/copter.py), textures palm_bark and rock_face_03 (Poly Haven)",
       "path": "generated/copter",
       "blender": { "script": "Blender/copter.py", "inputs": ["palm_bark", "rock_face_03"], "outputs": ["copter.glb"] },
@@ -285,7 +285,7 @@
       "import": ["stone_passenger.glb"]
     },
     {
-      "id": "stone_slate", "kind": "generated", "use": "the stone (the stone passenger: hanging in the sling, dropped, on the seat) after Jan's reference: a boulder of dark blue grey slate in beds of sharp flakes with thin white quartz veins, wet eyes under lids of rock; without it stone_passenger",
+      "id": "stone_slate", "kind": "generated", "use": "the stone (the stone passenger: hanging in the sling, resting beside a landed copter, dropped) after Jan's reference: an angular chunk of dark blue grey slate in deep beds of sharp flakes with thin white quartz veins, wet eyes under lids of rock; without it stone_passenger",
       "page": "Blender/stone_slate.py", "license": "CC0-1.0", "author": "UGH remake (Blender/stone_slate.py), texture dark_rock_02 (Poly Haven)",
       "path": "generated/stone_slate",
       "blender": { "script": "Blender/stone_slate.py", "inputs": ["dark_rock_02"], "outputs": ["stone_slate.glb"] },

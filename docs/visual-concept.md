@@ -100,7 +100,7 @@ Skála je jedno pole hustoty ve 3D (`FUghRockField`, mřížka středů pixelů 
     s vyřezanou tváří (hluboké oční důlky pod obočím s vlhkýma očima, suk nosu, otevřená ústa), koruna ze dvou
     naskenovaných korun mladého habru (větvičky a listy), mezi listy pár planých jablek; víčka z kůry ukáže jen
     mrknutí. Akce jako dřív (`sway` s mrknutím, `shaken`).
-  - Kámen (cestující vzhledu 4 i zmenšený na sedadle) je naskenovaný mechem porostlý kámen `MossyForestRock_02`
+  - Kámen (cestující vzhledu 4) je naskenovaný mechem porostlý kámen `MossyForestRock_02`
     (`stone_boulder.py`: z milionu trojúhelníků 40 tisíc, jeho mapy) vtěsnaný do elipsoidu kroku 16, s vlhkýma očima
     zapuštěnýma do mechové tváře pod těžkými víčky z kamene. Od kroku 25e ho nahradil balvan břidlice podle Janovy
     reference (`stone_slate.py`, viz níže).
@@ -376,8 +376,8 @@ oba sedí a jsou stejně velcí jako při chůzi, kámen vezený v kabině sedí
   v ±45. Akce MetaHumanů jsou udělané pro jejich tělo (`retarget_source_asset`): engine dřív pánev „přetargetoval“ ze
   skeletu do proporcí těla a sedící a mávající postavy se vznášely ~7 cm nad sedadlem a zemí; test teď počítá
   pózy jako hra.
-- **Kámen v kabině**: veze-li vrtulník kámen s očima (vzhled 4) a nevisí-li pod ním, sedí na sedadle cestujícího
-  zmenšený na 0,32 a dívá se do kamery (`AUghCopters`, `SeatedStone`; `shot.ps1 -Cargo 4 -CloseUp`).
+- **Kámen v kabině** (zrušeno v kroku 32e: logika kámen do kabiny nikdy nedá, jen na lano): dřív seděl na sedadle cestujícího
+  zmenšený na 0,32 (`SeatedStone`, mrtvá větev; `shot.ps1 -Cargo 4` teď ukáže kámen na laně).
 - **Výkon**: karty vlasů stojí na Radeonu 890M asi 1 ms snímku (interpolace karet, BLAS paprsků, base pass), proto
   lidé nejsou ve scéně ray tracingu (`SetVisibleInRayTracing(false)`: odrazy Lumenu by je stejně neukázaly) a jinde
   se šetří, co není vidět (od kroku 22 předvolba kvality Epic v `UghGraphics.cpp`, dřív `DefaultEngine.ini`): odrazy
@@ -763,8 +763,8 @@ vrstvy a šupiny, hluboké stíny mezi vrstvami, tenké bílé křemenné žilky
 
 - Kde všude je: kámen je v logice „stojící cestující“ (vzhled 4) - stojí na plošině, vrtulník ho vezme do smyčky,
   pustí (`Falling`, padá z bodu shozu vrtulníku), odrazí se od nepřítele, na kterého dopadne (strom pustí plod,
-  ostatní omráčí), nebo jako cestující sedí v kabině. Všude jeden model `UghAssets::Stone()`: postava na plošině, pád
-  a odraz (`FUghFigureModels`, při pádu se kutálí), ve smyčce a zmenšený na sedadle (`AUghCopters`).
+  ostatní omráčí); v kabině nikdy nesedí (krok 32e). Všude jeden model `UghAssets::Stone()`: postava na plošině, pád
+  a odraz (`FUghFigureModels`, při pádu se kutálí), ve smyčce (`AUghCopters`).
 - Model `stone_slate.py` (CC0, z textury `dark_rock_02`; bez ní starý `stone_passenger`): balvan tmavé modrošedé
   břidlice 1,58 x 0,84 x 1,06 m (sprite 16 x 11 px, elipsoid kroku 16). Podrobný povrch (krychle-koule ~400 tisíc
   trojúhelníků): hranatý, hrbolatý blok s plochými lomovými plochami, vyšší vlevo, plochá pata; vrstvy po 13 cm
@@ -1069,3 +1069,22 @@ u sebe a nic za dosahem, deterministicky).
   bodu 2,5-5,5 m nad vrtulníkem ve vlastní chvíli během 1,7 s, průměr asi 8 m), k tomu okvětní lístky a třpyt.
   Jen světlo (Glint) kromě lístků: levné i na Low. Obraz při ztmavení na konci levelu zhasíná pozvolna (`1 - (1 - f)^2`),
   takže je ohňostroj vidět po většinu 1,8 s, které logika na ztmavení dává; delší by byl až s letem mezi levely (32f).
+
+## Kámen ostřejší, nikdy ve skále (krok 32e)
+
+- Tvar (`stone_slate.py`): místo hrbolatého elipsoidu hranatý kus břidlice - zakulacený kvádr (exponent 3,4)
+  ořezaný 29 lomovými rovinami (11 ručně, 18 náhodných do 70-88 % jeho rozměru) s ostrými hranami (zaoblení 1,2 cm
+  místo 5), 4 vylomené rohy ve stupních (pravý horní blok nižší, levý přední roh, zadní hrana, pravý spodní roh),
+  plochá pata. Vrstvy po 15 cm s hlubšími stupni (břit až 11 cm místo 6, ostřejší), šupiny širší (méně „dlažby“),
+  hlubší praskliny; žilky, oči a víčka beze změny, lehký model stejný rozpočet (kámen s víčky 9 tisíc
+  trojúhelníků), pečení s klecí 5 cm a dosahem 15 cm (hlubší stupně). Srovnání `Saved\Shots\32e\pair-reference.png`.
+- Logika (`passengers/standing`): kámen jen na lano (`Hanging` - `pickUpHanging`, cíl -1), skrytý, bez polohy
+  a bez kolize; vrtulník přistává na lyžinách (`CopterShape::SKIDS`) jako bez něj a kámen bere lyžinami těsně nad
+  zemí. Visící kámen (spodek 116 cm pod podlahou) byl proto při přistání i při sebrání až po oči ve skále.
+- Teď (`UghSling`): pod kamenem se hledá zem v kolizní masce (jeho sloupce); dokud je místo, visí volně, jinak
+  leží na zemi (nikdy níž) a čím níž vrtulník, tím víc je odsunut po zemi stranou (`Side`: strana, kde mu v cestě
+  není skála a zem je nejvýš o 3 px níž, napřed ta, kde už je; jinak ke kameře), až mimo tělo; kývání ustane.
+  Lano je zvlášť (`SlingRope` v `copter.py`, metr od háku v podlaze, natažené k uzlu smyčky). Puštěný kámen
+  (`FUghStoneDrops`) nikdy pod zemí. Testy `Ugh.Copter.Sling`, `Ugh.Drop.Ground` (level 1: vezme, vystoupá,
+  pomalu přistane, vzlétne - kámen nikdy přes pixel skály, ležel vedle, visel volně). Snímky
+  `Saved\Shots\32e\landing-sheet.png`.

@@ -17,7 +17,10 @@ origin where the game turns it (copter_layout):
 - Drive: the layshaft with the sprocket the chain turns and the lantern pinion. Origin: the sprocket's middle, in the
   pilot's frame as the crank (the rotor's shaft towards -X); it turns about X, RATIO times as fast as the crank.
 - ChainLink: one link of the chain (bone), along Y; the game moves the links along the chain.
-- Sling: the rope that holds a hanging stone passenger below the body. Origin: the bottom middle of the body.
+- Sling: the two rope loops round a hanging stone passenger and their knot above it. Origin: the bottom middle of the
+  body (where it hangs freely).
+- SlingRope: the rope from the floor's hook to the sling's knot, a metre long down -Z from its origin (the hook); the
+  game stretches it to the knot wherever the sling is (on the ground the stone is pushed behind the copter).
 
     blender -b --factory-startup --python-exit-code 1 --python copter.py -- <folder> <palm_bark> <rock_face_03>
 
@@ -470,11 +473,10 @@ def chain_link():
 
 
 def sling():
-    """Two rope loops round the hanging boulder, tied together above it and to the floor."""
+    """Two rope loops round the hanging boulder, tied together above it (the rope to the floor: sling_rope)."""
     part = Part("Sling")
     middle, semi = Vector(layout.HANGING_MIDDLE), Vector(layout.HANGING_SEMI)
     knot = Vector((0, 0, middle.z + semi.z + 0.06))
-    part.tube([(0, 0, FLOOR), knot], ROPE * 1.5, "rope", sides=6, uv_length=0.05, twist=4)
     part.blob(knot, (0.04, 0.04, 0.035), "rope")
     for y in (-semi.y * 0.45, semi.y * 0.45):
         shrink = math.sqrt(1 - (y / semi.y) ** 2)
@@ -486,11 +488,18 @@ def sling():
     return part
 
 
+def sling_rope():
+    """The rope from the floor's hook down to the sling's knot: a metre, the game stretches it."""
+    part = Part("SlingRope")
+    part.tube([(0, 0, 0), (0, 0, -1)], ROPE * 1.5, "rope", sides=6, uv_length=0.05, twist=4)
+    return part
+
+
 def build():
     kit.clear_scene()
     materials = copter_materials.make(FOLDER, WOOD, STONE)
     materials.update((made.name, made) for made in vines.materials(FOLDER))   # stem, leaf, moss: ivy and lianas
-    parts = [body(1), body(2), rotor(1), rotor(2), shaft(), crank(), drive(), chain_link(), sling()]
+    parts = [body(1), body(2), rotor(1), rotor(2), shaft(), crank(), drive(), chain_link(), sling(), sling_rope()]
     kit.export(os.path.join(FOLDER, "copter.glb"), [part.done(materials) for part in parts])
 
 

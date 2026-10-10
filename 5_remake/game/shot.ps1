@@ -4,7 +4,7 @@
 #   powershell -ExecutionPolicy Bypass -File C:\Users\Ja079591\IdeaProjects\UGH\5_remake\game\shot.ps1 -Level 12 -Team
 # -Level: from 1 in the order of the mode (one player 1 .. 69, -Team 1 .. 81); -Commands: console commands before the
 # play, separated by commas (e.g. "r.Shadow.Virtual.Enable 0"); -Cargo <look>: the copters shown with a passenger of
-# the logic's cargo look in the cabin (1 .. 4: 4 the stone, smaller), -Hanging below instead, -Fare: the first copter takes a
+# the logic's cargo look in the cabin (1 .. 3; 4 the stone always hangs), -Hanging below instead, -Fare: the first copter takes a
 # fare (lands by the first passenger, it gets in) and the shot shows it on its way to the pad wanted (the status shows
 # the pad and the fare; the name ends in -fare), -Land: the copters come
 # down slowly instead of hovering until they stand on the ground below (give it -At 8), -Bubbles: every passenger
@@ -63,6 +63,7 @@ $ErrorActionPreference = 'Stop'
 $mode = if ($Team) { 'team' } else { '1p' }
 $folder = Join-Path $PSScriptRoot 'Saved\Shots'
 $suffix = ''
+if ($Cargo -eq 4) { $Hanging = [switch]$true }   # the stone never rides in the cabin
 if ($Cargo -gt 0) { $suffix += '-{0}{1}' -f $(if ($Hanging) { 'hanging' } else { 'cargo' }), $Cargo }
 if ($Land) { $suffix += '-landed' }
 if ($Fare) { $suffix += '-fare' }

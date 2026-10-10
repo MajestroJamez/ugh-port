@@ -1,11 +1,11 @@
 """The stone of the remake (the original's standing passenger: the stone the copter carries in its sling, drops onto the
-enemies and has sitting on its seat) as stone_slate.glb, after Jan's reference: a boulder of dark blue grey slate in
+enemies and sets down beside itself when it lands) as stone_slate.glb, after Jan's reference: a sharp chunk of slate in
 beds of sharp fractured flakes, strong relief, thin white quartz veins along the beds and a few across them, matte;
 two wet eyes sunk into its face (-Y: the camera's side) under heavy lids of the rock, as the stone of step 19h had.
 
 The boulder fills the stone passenger's ellipsoid (copter_layout.HANGING_SEMI: 1.58 x 0.84 x 1.06 m, the sprite's
-16 x 11 px; it hangs in the sling and sits on the seat as the older ones did), its origin the bottom middle (where it
-stands). Made as a detailed surface (a cube sphere of about 400 thousand triangles: a broken, lumpy block with flat
+16 x 11 px; it hangs in the sling as the older ones did), its origin the bottom middle (where it
+stands). Made as a detailed surface (a cube sphere of about 400 thousand triangles: a broken chunk of sharp-edged flat
 fracture faces and a flat foot, its beds - dipping as the whole sea stack's, UghRockNoise::StrataDip - each out most at
 its foot, a sharp lip shading the bed below, broken into flakes standing out each its own way with cracks between them,
 thin laminae on them) baked onto a light one (about 5 thousand triangles; the engine's Nanite takes it further down far
@@ -36,8 +36,8 @@ FACES = 2600             # the light one's faces (quads and triangles; about 500
 MAP_SIZE = 2048
 SEED = 25
 DIP = 0.12               # the beds rise to the right as the stone's (UghRockNoise::StrataDip, about 0.14)
-BED, LAMINA = 0.13, 0.028          # how thick the beds and the laminae on them are (m)
-BED_OUT, LAMINA_OUT = 0.06, 0.006  # how far a bed's (a lamina's) foot stands out (m)
+BED, LAMINA = 0.15, 0.028          # how thick the beds and the laminae on them are (m)
+BED_OUT, LAMINA_OUT = 0.11, 0.005  # how far a bed's (a lamina's) foot stands out (m)
 TONE = (0.032, 0.036, 0.045)       # the slate's albedo (linear), dark: the figures' lights (24c) brighten it
 VEIN = (0.4, 0.4, 0.38)
 BED_VEINS = (-0.2, -0.04, 0.11, 0.27)      # the veins along the beds: at these heights of them (m)
@@ -139,30 +139,47 @@ def cube_sphere():
     return made, sphere
 
 
+def _cut(d, normal, height):
+    """How far along the directions `d` the plane of `normal` at `height` from the middle is (far where it is not)."""
+    normal = numpy.array(normal) / numpy.linalg.norm(normal)
+    facing = d @ normal
+    return numpy.where(facing > 0.02, height / numpy.maximum(facing, 0.02), 9.0)
+
+
 def block(directions):
-    """The boulder's body (metres, about its middle) along `directions`: a lumpy, squarish ellipsoid broken by flat
-    fracture faces (the front one broad, towards the camera), higher on its left, its upper right standing out, its
-    foot flat."""
-    semi = numpy.array((0.8, 0.46, 0.56))
+    """The boulder's body (metres, about its middle) along `directions`: a chunk broken off a bed of slate, all flat
+    fracture faces meeting at sharp edges (the front one broad, towards the camera, a few at random angles all round),
+    corners broken out of it in steps (its upper right a lower block, a ledge at its lower left front, a notch behind),
+    higher on its left, its foot flat - angular, not a blob."""
+    semi = numpy.array((0.82, 0.47, 0.58))
     d = directions
-    radius = numpy.sum(numpy.abs(d / semi) ** 2.6, axis=1) ** (-1 / 2.6)
-    radius *= 1 + 0.07 * fbm(d * 1.4 + 3.1, SEED, octaves=3) + 0.03 * fbm(d * 4.5, SEED + 50, octaves=2)
-    for towards, amount, width in (((-0.35, 0.1, 0.93), 0.12, 0.35), ((0.82, -0.1, 0.5), 0.07, 0.15),
-                                   ((-0.9, 0.2, -0.2), -0.05, 0.2)):
-        towards = numpy.array(towards) / numpy.linalg.norm(towards)
-        radius *= 1 + amount * numpy.exp(-numpy.sum((d - towards) ** 2, axis=1) / width)
-    # fracture faces: a plane of normal n at h cuts the body where it is further (rounded a little)
-    for normal, height in (((0.0, -1.0, 0.04), 0.38), ((0.25, -0.75, 0.6), 0.6), ((-0.6, -0.7, 0.3), 0.6),
-                           ((0.9, -0.2, -0.15), 0.72), ((-0.15, 0.2, 1.0), 0.6), ((0.55, 0.4, 0.75), 0.62),
-                           ((-0.5, 0.85, 0.2), 0.48), ((0.4, 0.9, -0.1), 0.45), ((-0.95, -0.1, 0.25), 0.74)):
-        normal = numpy.array(normal) / numpy.linalg.norm(normal)
-        facing = d @ normal
-        cut = numpy.where(facing > 0.05, height / numpy.maximum(facing, 0.05), 9.0)
-        radius = smooth_min(radius, cut, 0.05)
+    radius = numpy.sum(numpy.abs(d / semi) ** 3.4, axis=1) ** (-1 / 3.4)
+    radius *= 1 + 0.025 * fbm(d * 1.6 + 3.1, SEED, octaves=2)
+    radius *= 1 + 0.1 * numpy.exp(-numpy.sum((d - numpy.array((-0.3, 0.1, 0.95))) ** 2, axis=1) / 0.3)
+    # fracture faces: a plane of normal n at h cuts the body where it is further (hardly rounded: sharp edges); the
+    # broad front, the hand placed ones, then random ones a little inside the body's own extent that way
+    planes = [((0.0, -1.0, 0.03), 0.37), ((0.3, -0.7, 0.62), 0.55), ((-0.62, -0.68, 0.32), 0.58),
+              ((0.93, -0.25, -0.2), 0.7), ((-0.2, 0.15, 1.0), 0.6), ((0.5, 0.35, 0.8), 0.55),
+              ((-0.55, 0.8, 0.25), 0.46), ((0.45, 0.88, -0.1), 0.44), ((-0.97, -0.15, 0.2), 0.74),
+              ((0.2, -0.9, -0.45), 0.42), ((-0.4, -0.5, -0.75), 0.5)]
+    random = numpy.random.RandomState(SEED)
+    for _ in range(18):
+        normal = random.normal(size=3)
+        normal[2] = abs(normal[2]) * 0.8 - 0.1     # more of them on the top and the sides than underneath
+        normal /= numpy.linalg.norm(normal)
+        planes.append((normal, numpy.sqrt(numpy.sum((semi * normal) ** 2)) * random.uniform(0.7, 0.88)))
+    for normal, height in planes:
+        radius = smooth_min(radius, _cut(d, normal, height), 0.012)
+    # corners broken out in steps: what is beyond both planes of a notch is gone (its inner edge sharp too)
+    for first, second in ((((0.1, 0.0, 1.0), 0.3), ((1.0, 0.1, 0.15), 0.42)),
+                          (((-0.05, -1.0, 0.1), 0.3), ((-1.0, 0.0, -0.3), 0.5)),
+                          (((0.0, 1.0, 0.2), 0.22), ((-0.25, 0.1, 1.0), 0.36)),
+                          (((0.97, -0.2, 0.0), 0.62), ((0.0, -0.45, -1.0), 0.18))):
+        radius = smooth_min(radius, -smooth_min(-_cut(d, *first), -_cut(d, *second), 0.01), 0.01)
     points = d * radius[:, None]
     # the foot flat
     foot = -0.41
-    points[:, 2] = -smooth_min(-points[:, 2], -foot, 0.06)
+    points[:, 2] = -smooth_min(-points[:, 2], -foot, 0.03)
     return points
 
 
@@ -198,13 +215,13 @@ def beds(points, normals):
     up = s - bed                            # 0 at a bed's foot .. 1 at its top
     bed_number = _hash(numpy.stack((bed, bed * 0, bed * 0), axis=1), SEED + 2)
     # flakes: big irregular scales of a bed, each standing out its own way; a crack between some of them
-    flake_at = numpy.stack((x * 2.6, y * 2.6, bed * 1.37 + 0.5), axis=1) + \
+    flake_at = numpy.stack((x * 1.8, y * 1.8, bed * 1.37 + 0.5), axis=1) + \
         numpy.stack([0.45 * fbm(points * 3.5, SEED + 3 + axis) for axis in range(3)], axis=1)
     first, second, flake_number = cells(flake_at, SEED + 4)
-    crack = (1 - smoothstep(0.0, 0.05, second - first)) * smoothstep(0.0, 0.4, fbm(points * 2.5, SEED + 12))
-    lip = 0.06
-    profile = numpy.where(up < lip, up / lip, ((1 - up) / (1 - lip)) ** 0.6)
-    out = BED_OUT * (0.35 + 0.9 * bed_number) * (0.2 + 1.3 * flake_number ** 2) * profile - 0.008 * crack
+    crack = (1 - smoothstep(0.0, 0.05, second - first)) * smoothstep(0.15, 0.5, fbm(points * 2.5, SEED + 12))
+    lip = 0.03
+    profile = numpy.where(up < lip, up / lip, ((1 - up) / (1 - lip)) ** 0.45)
+    out = BED_OUT * (0.35 + 0.9 * bed_number) * (0.2 + 1.3 * flake_number ** 2) * profile - 0.014 * crack
     s2 = along / LAMINA + 0.6 * fbm(points * 7, SEED + 5) + 3 * bed_number
     up2 = s2 - numpy.floor(s2)
     out += LAMINA_OUT * numpy.where(up2 < 0.15, up2 / 0.15, ((1 - up2) / 0.85) ** 0.8)
@@ -406,9 +423,9 @@ def bake_maps(detail, made):
         _graph(source, kind)
         if kind == "normal":
             bpy.ops.object.bake(type="NORMAL", normal_space="TANGENT", use_selected_to_active=True,
-                                cage_extrusion=0.03, max_ray_distance=0.09)
+                                cage_extrusion=0.05, max_ray_distance=0.15)
         else:
-            bpy.ops.object.bake(type="EMIT", use_selected_to_active=True, cage_extrusion=0.03, max_ray_distance=0.09)
+            bpy.ops.object.bake(type="EMIT", use_selected_to_active=True, cage_extrusion=0.05, max_ray_distance=0.15)
         image.filepath_raw = os.path.join(FOLDER, image.name + ".png")
         image.file_format = "PNG"
         image.save()

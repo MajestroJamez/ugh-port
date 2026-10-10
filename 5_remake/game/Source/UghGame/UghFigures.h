@@ -40,7 +40,10 @@ public:
 	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
 		const FUghSprites& Sprites, const FUghFigureActions& Actions, const TArray<FTransform>& ClayRiders,
 		const FUghFlings* Flings = nullptr);
-	/** Learns what the speech bubbles among the `SpriteCount` sprites of `Logic`'s data show (UghBubbles::Look). */
+	/**
+	 * Learns what the speech bubbles among the `SpriteCount` sprites of `Logic`'s data show (UghBubbles::Look); keeps
+	 * `Logic` for its collision mask (a stone let go never falls into the ground, UghSling).
+	 */
 	void LoadBubbles(const ugh_logic* Logic, int32 SpriteCount);
 	/** Makes spare passengers ahead (while a level is built in the black): none is made in the play (FUghCaveman). */
 	void Stock();
@@ -72,5 +75,6 @@ private:
 	UPROPERTY() TMap<int32, TObjectPtr<UTexture2D>> BubbleTextures;   // by the key of their look and side
 	TArray<TOptional<FUghBubbleLook>> BubbleLooks;   // by sprite (LoadBubbles)
 	FUghStoneDrops StoneDrops;   // the stones let go, seen falling from their slings
+	const ugh_logic* Logic = nullptr;   // of LoadBubbles
 	FUghLively Lively;           // the passengers on land waving, ducking, glad (their actions only)
 };

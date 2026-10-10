@@ -13,6 +13,7 @@
 #include "UghProfile.h"
 #include "UghReplays.h"
 #include "UghBursts.h"
+#include "UghCaveman.h"
 #include "UghFringe.h"
 #include "UghKnockPilot.h"
 #include "UghShapes.h"
@@ -50,7 +51,9 @@ bool FUghShot::Configure()
 	SaveReplay = SaveReplay.IsEmpty() ? SaveReplay : FPaths::ConvertRelativePathToFull(SaveReplay);
 	FParse::Value(CommandLine, TEXT("-UghShotGhost="), GhostFile);
 	FParse::Value(CommandLine, TEXT("-UghShotCargo="), CargoLook);
-	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging"));
+	// the stone (the logic never puts it in the cabin) always hangs below
+	bHanging = FParse::Param(CommandLine, TEXT("UghShotHanging")) ||
+		(CargoLook > 0 && !FUghCaveman::IsPassenger(CargoLook));
 	bLand = FParse::Param(CommandLine, TEXT("UghShotLand"));
 	bFare = FParse::Param(CommandLine, TEXT("UghShotFare"));
 	bBubbles = FParse::Param(CommandLine, TEXT("UghShotBubbles"));

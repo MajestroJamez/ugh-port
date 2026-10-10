@@ -314,7 +314,7 @@ void AUghGameMode::ShowFrame(double Seconds)
 	TArray<FTransform> ClayRiders;
 	{
 		FSlowPart Part{ TEXT("copters") };
-		Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders, &Dunks);
+		Copters->Show(Previous, Current, Simulation.Alpha(), Seconds, ClayRiders, &Dunks, Simulation.GetLogic());
 		Ghosts->Show(&Ghost, Simulation.Alpha(), Seconds);
 		CopterShadows->Show(Simulation.GetLogic(), Previous, Current, Simulation.Alpha());
 	}

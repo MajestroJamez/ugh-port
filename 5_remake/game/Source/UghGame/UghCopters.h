@@ -15,7 +15,8 @@ class UStaticMeshComponent;
 
 /**
  * A copter's model: its parts (the drive's chain links instances of one mesh), its pilot, its passenger in the cabin,
- * the stone passenger in its sling or on the passenger's seat.
+ * the stone passenger in its sling (the rope from the floor's hook to the sling apart: stretched when the stone rests
+ * on the ground beside the copter, UghSling).
  */
 USTRUCT()
 struct FUghCopterParts
@@ -30,20 +31,22 @@ struct FUghCopterParts
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Chain;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Sling;
 	UPROPERTY() TObjectPtr<UStaticMeshComponent> Stone;
-	UPROPERTY() TObjectPtr<UStaticMeshComponent> SeatedStone;
+	UPROPERTY() TObjectPtr<UStaticMeshComponent> SlingRope;
 	UPROPERTY() TObjectPtr<USceneComponent> Pilot;
 	UPROPERTY() TObjectPtr<USceneComponent> Rider;   // of the cargo look RiderLook; made when first needed
 	FUghRotorSpin Spin;
 	int32 RiderLook = 0;
 	double Sway = 0;       // of the sling, radians
+	FVector2D Push = FVector2D::ZeroVector;   // how far the stone on the ground is pushed aside, cm (UghSling)
 };
 
 /**
  * The copters of the play in the slab of the play, between the views of two steps (UghBetween): the pedal copters of
  * Blender/copter.py in each player's colours, the rotor turning and the pilot sitting and pedalling as fast as the
  * rotor's sprites change (FUghRotorSpin), his crank driving the rotor by the chain (FUghCopterChain), the layshaft
- * and the crown wheel, a passenger sitting behind him (a person of his look, FUghCaveman; the stone
- * passenger smaller) or the stone passenger hanging in the sling below, swaying as the copter moves. Without the
+ * and the crown wheel, a passenger sitting behind him (a person of his look, FUghCaveman) or the stone passenger
+ * hanging in the sling below (the logic never puts it in the cabin), swaying as the copter moves, never in the ground:
+ * low over it the stone rests on it, pushed aside (UghSling). Without the
  * imported models: clay, a box with a rotor that gets shorter and longer as its sprites change; its riders are clay
  * passengers of AUghFigures.
  */
@@ -61,10 +64,11 @@ public:
 	/**
 	 * Shows the copters between `Previous` and `Current` (Alpha 0 .. 1), `Seconds` after the last frame; none outside
 	 * the play. Without the models, the riders go to `OutClayRiders` (boxes of the clay passengers). A copter afloat
-	 * bobs and rocks as `Dunks` say (FUghDunks).
+	 * bobs and rocks as `Dunks` say (FUghDunks). The stone in a sling stays out of the ground of `Logic` (its collision
+	 * mask; none: it always hangs freely).
 	 */
 	void Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
-		TArray<FTransform>& OutClayRiders, const FUghDunks* Dunks = nullptr);
+		TArray<FTransform>& OutClayRiders, const FUghDunks* Dunks = nullptr, const ugh_logic* Logic = nullptr);
 	/** Makes spare riders ahead (while a level is built in the black): none is made in the play (FUghCaveman). */
 	void Stock();
 
@@ -74,11 +78,12 @@ protected:
 private:
 	bool LoadModels();
 	void ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From, const ugh_logic_copter& To, double Alpha,
-		double Seconds, const FUghCopterBob& Bob);
-	void ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copter, double Seconds, double Velocity);
+		double Seconds, const FUghCopterBob& Bob, const ugh_logic* Logic);
+	void ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copter, double Seconds, double Velocity,
+		const ugh_logic* Logic, const FVector2D& Under);
 	void HideModel(FUghCopterParts& Parts);
 	void ShowClay(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-		TArray<FTransform>& OutRiders, const FUghDunks* Dunks);
+		TArray<FTransform>& OutRiders, const FUghDunks* Dunks, const ugh_logic* Logic);
 
 	UPROPERTY() FUghCaveman Caveman;
 	FUghCopterChain Chain;

@@ -2153,3 +2153,13 @@ Postupně, jeden agent na skupinu: 32a, 32b, 32c, 32d, 32e, 32f, 32g, 32h, pak b
   v 1,8 s ztmavení logiky (delší až s letem mezi levely, 32f). Snímky `Saved\Shots\32d\blower-before-after.png`
   (všech 9 map), `celebration-before-1p-01.png` (29a) / `celebration-after-1p-01.png`, `-1p-03.png`. Testy a arch
   jako 32c. Balíček nepřebalen. Další: **krok 32e**.
+- 2026-10-10: krok 32e hotový - kámen ostřejší, nikdy ve skále (`docs/visual-concept.md`, README hry). Tvar
+  `stone_slate.py`: hranatý kus břidlice (29 lomových rovin s ostrými hranami, 4 vylomené rohy ve stupních, hlubší
+  vrstvy a břity), rozpočet beze změny (9 tisíc trojúhelníků s očima). Logika kámen jen bere na lano (`Hanging`,
+  cíl -1), do kabiny nikdy: `SeatedStone` a jeho zbytky pryč (`shot.ps1 -Cargo 4` = na laně). Při přistání logika
+  o kameni neví (skrytý, bez kolize, přistává na lyžinách), proto byl ve skále; teď `UghSling`: zem pod ním z kolizní
+  masky, leží na ní a odsune se po zemi stranou (jinak ke kameře), lano `SlingRope` (nové v `copter.py`) natažené.
+  Testy `Ugh.Copter.Sling`, `Ugh.Drop.Ground`. Snímky `Saved\Shots\32e\pair-reference.png` (reference / 25e /
+  Blender / hra), `landing-sheet.png` (visí, dosedá, odsunut, přistál), `land-*.png`. CTest logiky, `6_verification`
+  (324) a 220 testů v UE zelené. `levels.ps1 -Quick` 0 chyb, arch `Levels-32e-after` bez vad, fps medián 18, 1 % low
+  14. Balíček nepřebalen. Další: **krok 32f**.

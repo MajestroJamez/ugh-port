@@ -9,6 +9,7 @@
 #include "UghCopterModel.h"
 #include "UghFigureLook.h"
 #include "UghShapes.h"
+#include "UghStoneDrop.h"
 
 namespace
 {
@@ -28,6 +29,8 @@ namespace
 
 	/** The sling sways against the copter's way: radians per pixel a step, at most, how slowly (seconds). */
 	constexpr double SwayPerPixel = 0.12, MaxSway = 0.25, SwaySeconds = 0.4;
+	/** How slowly the stone on the ground is pushed aside and comes back under the copter (seconds). */
+	constexpr double PushSeconds = 0.12;
 
 	UStaticMeshComponent* AddPart(AActor* Owner, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& At)
 	{
@@ -80,6 +83,7 @@ bool AUghCopters::LoadModels()
 	UStaticMesh* DriveMesh = UghAssets::Mesh(UghAssets::Copter, Drive);
 	UStaticMesh* LinkMesh = UghAssets::Mesh(UghAssets::Copter, ChainLink);
 	UStaticMesh* SlingMesh = UghAssets::Mesh(UghAssets::Copter, Sling);
+	UStaticMesh* RopeMesh = UghAssets::Mesh(UghAssets::Copter, SlingRope);
 	UStaticMesh* StoneMesh = UghAssets::Stone();
 	TArray<UStaticMesh*> BodyMeshes, RotorMeshes;
 	for (int32 Player = 0; Player < UE_ARRAY_COUNT(Bodies); ++Player)
@@ -87,7 +91,8 @@ bool AUghCopters::LoadModels()
 		BodyMeshes.Add(UghAssets::Mesh(UghAssets::Copter, Bodies[Player]));
 		RotorMeshes.Add(UghAssets::Mesh(UghAssets::Copter, Rotors[Player]));
 	}
-	if (!Caveman.Load() || !CrankMesh || !ShaftMesh || !DriveMesh || !LinkMesh || !SlingMesh || !StoneMesh ||
+	if (!Caveman.Load() || !CrankMesh || !ShaftMesh || !DriveMesh || !LinkMesh || !SlingMesh || !RopeMesh ||
+		!StoneMesh ||
 		BodyMeshes.Contains(nullptr) ||
 		RotorMeshes.Contains(nullptr))
 	{
@@ -114,10 +119,8 @@ bool AUghCopters::LoadModels()
 		Parts.Chain->AddInstances(ChainLinks, false);
 		Parts.Sling = AddPart(this, SlingMesh, Parts.Body, FVector::ZeroVector);
 		Parts.Stone = AddPart(this, StoneMesh, Parts.Sling, Hanging);
-		Parts.SeatedStone = AddPart(this, StoneMesh, Parts.Body, PassengerSeat);
-		Parts.SeatedStone->SetRelativeScale3D(FVector(SeatedStone));
+		Parts.SlingRope = AddPart(this, RopeMesh, Parts.Body, SlingHook);
 		UghFigureLook::Mark(Parts.Stone);
-		UghFigureLook::Mark(Parts.SeatedStone, false);
 		Parts.Pilot = Caveman.Add(this, FUghCaveman::PilotLook);
 		Parts.Pilot->AttachToComponent(Parts.Body, FAttachmentTransformRules::KeepRelativeTransform);
 		Parts.Pilot->SetRelativeLocationAndRotation(PilotSeat, FRotator(0, PilotYaw, 0));
@@ -127,13 +130,13 @@ bool AUghCopters::LoadModels()
 }
 
 void AUghCopters::Show(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha, double Seconds,
-	TArray<FTransform>& OutClayRiders, const FUghDunks* Dunks)
+	TArray<FTransform>& OutClayRiders, const FUghDunks* Dunks, const ugh_logic* Logic)
 {
 	const bool bPlay = Current.phase == UGH_LOGIC_PHASE_PLAY && Current.level_id >= 0;
 	const ugh_logic_view& From = UghBetween::From(Previous, Current);
 	if (Models.IsEmpty())
 	{
-		ShowClay(From, Current, Alpha, OutClayRiders, Dunks);
+		ShowClay(From, Current, Alpha, OutClayRiders, Dunks, Logic);
 		return;
 	}
 	for (int32 Player = 0; Player < Models.Num(); ++Player)
@@ -145,12 +148,12 @@ void AUghCopters::Show(const ugh_logic_view& Previous, const ugh_logic_view& Cur
 		}
 		const ugh_logic_copter& To = Current.copters[Player];
 		ShowModel(Models[Player], Player < From.copter_count ? From.copters[Player] : To, To, Alpha, Seconds,
-			Dunks ? Dunks->Of(Player) : FUghCopterBob());
+			Dunks ? Dunks->Of(Player) : FUghCopterBob(), Logic);
 	}
 }
 
 void AUghCopters::ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From, const ugh_logic_copter& To,
-	double Alpha, double Seconds, const FUghCopterBob& Bob)
+	double Alpha, double Seconds, const FUghCopterBob& Bob, const ugh_logic* Logic)
 {
 	const FVector2D At = UghBetween::Position(From.x, From.y, To.x, To.y, Alpha);
 	// afloat it bobs and rocks (FUghDunks) about the middle of its waterline
@@ -175,23 +178,47 @@ void AUghCopters::ShowModel(FUghCopterParts& Parts, const ugh_logic_copter& From
 	}
 	const double Velocity = UghBetween::Moved(From.x, From.y, To.x, To.y)
 		? double(To.x - From.x) / UghShapes::Subpixels : 0;
-	ShowCargo(Parts, To, Seconds, Velocity);
+	// the stone in the sling over the ground: under its middle, from the body's bottom
+	ShowCargo(Parts, To, Seconds, Velocity, Logic,
+		FVector2D(At.X + CopterMiddle, At.Y + UghShapes::CopterBodyHeight - Bob.Lift));
 }
 
 /**
- * The passenger: sitting behind the pilot as a person of his look (the stone passenger smaller on the seat), or the
- * stone passenger hanging in the sling.
+ * The passenger: sitting behind the pilot as a person of his look, or the stone passenger hanging in the sling (the
+ * logic's cargo without a destination; it never rides in the cabin) over the ground of `Logic` (none: it always hangs
+ * freely), `Under` its middle and the body's bottom (pixels): low over the ground it rests on it, pushed aside, and
+ * does not sway (UghSling).
  */
-void AUghCopters::ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copter, double Seconds, double Velocity)
+void AUghCopters::ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copter, double Seconds, double Velocity,
+	const ugh_logic* Logic, const FVector2D& Under)
 {
+	using namespace UghCopterModel;
 	const bool bHangs = Copter.cargo_look != 0 && Copter.destination < 0;
 	const bool bSits = !bHangs && FUghCaveman::IsPassenger(Copter.cargo_look);
 	Parts.Sling->SetVisibility(bHangs);
+	Parts.SlingRope->SetVisibility(bHangs);
 	Parts.Stone->SetVisibility(bHangs);
-	Parts.SeatedStone->SetVisibility(!bHangs && Copter.cargo_look != 0 && !bSits);
-	const double Wanted = bHangs ? FMath::Clamp(Velocity * SwayPerPixel, -MaxSway, MaxSway) : 0;
-	Parts.Sway = FMath::Lerp(Wanted, Parts.Sway, FMath::Exp(-Seconds / SwaySeconds));
-	Parts.Sling->SetRelativeRotation(FQuat(FVector::YAxisVector, Parts.Sway));
+	if (!bHangs)
+	{
+		Parts.Sway = 0;
+		Parts.Push = FVector2D::ZeroVector;
+	}
+	else
+	{
+		const bool bRests = Logic && UghSling::Pose(Parts.Sway, UghSling::Room(Logic, Under.X, Under.Y),
+			FVector2D::ZeroVector).Lift > 0;
+		const double Wanted = bRests ? 0 : FMath::Clamp(Velocity * SwayPerPixel, -MaxSway, MaxSway);
+		Parts.Sway = FMath::Lerp(Wanted, Parts.Sway, FMath::Exp(-Seconds / SwaySeconds));
+		const FUghSlingPose Pose = Logic
+			? UghSling::Follow(Logic, Under.X, Under.Y, Parts.Sway, Parts.Push, FMath::Exp(-Seconds / PushSeconds))
+			: UghSling::Pose(Parts.Sway, UghSling::Look, FVector2D::ZeroVector);
+		Parts.Sling->SetRelativeLocationAndRotation(Pose.Sling, Pose.Turn);
+		// the rope (a metre down its -Z) from the hook to the knot
+		const FVector Rope = Pose.Knot - SlingHook;
+		const double Length = Rope.Size();
+		Parts.SlingRope->SetRelativeRotation(Length > 1 ? FRotationMatrix::MakeFromZ(-Rope).ToQuat() : FQuat::Identity);
+		Parts.SlingRope->SetRelativeScale3D(FVector(1, 1, FMath::Max(Length, 1.0) / 100));
+	}
 	if (bSits && Parts.RiderLook != Copter.cargo_look)
 	{
 		if (Parts.Rider)
@@ -218,7 +245,7 @@ void AUghCopters::ShowCargo(FUghCopterParts& Parts, const ugh_logic_copter& Copt
 void AUghCopters::HideModel(FUghCopterParts& Parts)
 {
 	const TArray<USceneComponent*> All = { Parts.Body, Parts.Rotor, Parts.Shaft, Parts.Crank, Parts.Drive,
-		Parts.Chain, Parts.Sling, Parts.Stone, Parts.SeatedStone, Parts.Pilot, Parts.Rider };
+		Parts.Chain, Parts.Sling, Parts.SlingRope, Parts.Stone, Parts.Pilot, Parts.Rider };
 	for (USceneComponent* Part : All)
 	{
 		if (Part)
@@ -229,7 +256,7 @@ void AUghCopters::HideModel(FUghCopterParts& Parts)
 }
 
 void AUghCopters::ShowClay(const ugh_logic_view& Previous, const ugh_logic_view& Current, double Alpha,
-	TArray<FTransform>& OutRiders, const FUghDunks* Dunks)
+	TArray<FTransform>& OutRiders, const FUghDunks* Dunks, const ugh_logic* Logic)
 {
 	const bool bPlay = Current.phase == UGH_LOGIC_PHASE_PLAY && Current.level_id >= 0;
 	TArray<FTransform> RotorBoxes;
@@ -251,7 +278,13 @@ void AUghCopters::ShowClay(const ugh_logic_view& Previous, const ugh_logic_view&
 				FigureThickness / 2));
 			if (C.cargo_look != 0)
 			{
-				const double Top = C.destination < 0 ? HangingTop : (UghShapes::CopterBodyHeight - RiderSize) / 2;
+				// hanging, never in the ground (on it it rises into the body)
+				const double Room = Logic
+					? UghSling::Room(Logic, At.X + CopterMiddle, At.Y + UghShapes::CopterBodyHeight)
+					: UE_DOUBLE_BIG_NUMBER;
+				const double Top = C.destination < 0
+					? FMath::Min(HangingTop, UghShapes::CopterBodyHeight + Room - RiderSize)
+					: (UghShapes::CopterBodyHeight - RiderSize) / 2;
 				OutRiders.Add(UghShapes::Box(At.X + CopterMiddle - RiderSize / 2, At.Y + Top, RiderSize, RiderSize,
 					FigureDepth - FigureThickness / 2, FigureThickness / 2));
 			}
